@@ -1,5 +1,5 @@
 MetaFileClass {
- Name "{62795FDEB8A4422E}Prefabs/MP/Managers/Factions/FactionManager_Editor2.et"
+ Name "{4D1750C5F5444560}Prefabs/MP/Managers/Factions/FactionManager_Lobby.et"
  Configurations {
   EntityTemplateResourceClass PC {
   }

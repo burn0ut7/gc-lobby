@@ -207,10 +207,22 @@ class GC_GroupWidgetComponent : SCR_ScriptedWidgetComponent
 		{
 			string description;
 			if (m_Group)
-				description = m_Group.GC_GetDescription();
-			m_wSquadDescription.SetText(description);
+				description = GetGroupDescription();
+			m_wSquadDescription.SetText(WidgetManager.Translate(description));
 			m_wSquadDescription.SetVisible(!description.IsEmpty());
 		}
+	}
+
+	protected string GetGroupDescription()
+	{
+		string description = m_Group.GC_GetDescription();
+		if (!description.IsEmpty())
+			return description;
+
+		SCR_EditableGroupComponent editableGroup = SCR_EditableGroupComponent.Cast(m_Group.FindComponent(SCR_EditableGroupComponent));
+		if (editableGroup && editableGroup.GetInfo())
+			return editableGroup.GetInfo().GetName();
+		return string.Empty;
 	}
 
 	void RefreshAdminNamePresentation(int playerId = -1)
