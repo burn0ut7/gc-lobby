@@ -50,8 +50,14 @@ AI_WORLD_ALIASES = {
     '33A5B976E41B0A4C': ('Prefabs/AI/SCR_AIWorld_BadOrb.et', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et'),
 }
 STOCK_RESOURCE_ALIASES = {
+    ('1F3291C2A7E2BA00', 'Prefabs/Props/Wrecks/BRDM2_wreck_static.et'):
+        'Prefabs/Props/Wrecks/BRDM2_wreck/BRDM2_wreck_static.et',
     ('23C0BE9D80929DBD', 'Prefabs/Vegetation/Bush/b_salix_cinerea_1w_collision.et'):
         'Prefabs/Vegetation/Bush/b_salix_cinerea_1w.et',
+    ('25B265F3E7CBDFC8', 'Prefabs/Props/Wrecks/BMP1_wreck.et'):
+        'Prefabs/Props/Wrecks/BMP1_wreck/BMP1_wreck.et',
+    ('AE300E34EA8FF40C', 'Prefabs/Props/Wrecks/Ural4320_wreck_static.et'):
+        'Prefabs/Props/Wrecks/Ural4320_wreck/Ural4320_wreck_static.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
     ('77CA4803A4A2B8E3', 'Prefabs/Drones/FPVBase/FPVRPG.et'): (
@@ -590,7 +596,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
 
 
 def world_draft(source, dev, world, row, staged, area_placements, interactions, convert_group_block, asset_aliases,
-                local_loadouts, delayed=None):
+                local_loadouts, convert_crew, delayed=None):
     draft, blockers = {}, []
     reviewed_replacements = {}
     if row.get('playtestCandidate') or row.get('raceConversion'):
@@ -689,8 +695,16 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     names, converted = restriction_zones(block, len(zones) + 1)
                     zones.extend(names)
                     result.append(converted)
-                elif (converted := native_placement(block)) is not None:
-                    result.append(converted)
+                elif NATIVE.match(head):
+                    try:
+                        converted = native_placement(convert_crew(block))
+                    except ValueError as exc:
+                        blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
+                    else:
+                        if converted is None:
+                            blockers.append({'rule': kind, 'file': layer, 'line': line})
+                        else:
+                            result.append(converted)
                 else:
                     rule = 'framework events' if kind == 'TILW_MissionFrameworkEntity' else kind
                     blockers.append({'rule': rule, 'file': layer, 'line': line})
@@ -825,12 +839,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
 
 
 def plan(source, dev, report, staged, area_placements, interactions, convert_group_block, asset_aliases,
-         local_loadouts, delayed_extractions):
+         local_loadouts, convert_crew, delayed_extractions):
     results, emitted, totals, families = {}, {}, Counter(), Counter()
     for world, row in report['worlds'].items():
         draft, result = world_draft(source, dev, world, row, staged, area_placements.get(world, {}),
                                     interactions.get(world, ((), {})), convert_group_block, asset_aliases,
-                                    local_loadouts, delayed_extractions.get(world))
+                                    local_loadouts, convert_crew, delayed_extractions.get(world))
         results[world] = result
         totals[result['status']] += 1
         families.update({blocker['rule'] for blocker in result.get('blockers', [])})

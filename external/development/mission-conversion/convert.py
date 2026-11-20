@@ -11,6 +11,7 @@ import breach
 import arc_capture
 import batch
 import local_loadouts
+import vehicle_crew
 import bugout
 from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
@@ -648,12 +649,15 @@ def main():
             return group_layer(body, source_units, dev_units, stock, locally_owned,
                                reviewed_members=reviewed_members, external_ai=external_ai, allow_stock_ai=True)
 
+        def convert_crew(block):
+            return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned)
+
         try:
             asset_aliases = batch.resource_aliases(args.workshop_addons, dev_units, stock)
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
-                         asset_aliases, loadouts, delayed_extractions)
+                         asset_aliases, loadouts, convert_crew, delayed_extractions)
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
                         for path, contents in out.items()}
