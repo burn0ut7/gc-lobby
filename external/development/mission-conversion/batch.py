@@ -27,6 +27,9 @@ LIGHT_COMPONENT = [
 ]
 LIGHT_FIELDS = {'ID', 'coords', 'Color', 'LV', 'ClipEV', 'Radius', 'NearPlane', 'SpotAngle',
                 'SpotAngleAttenuation', 'DistanceAttenuation', 'LensFlareType', 'LensFlareScale'}
+AI_WORLD_ALIASES = {
+    '33A5B976E41B0A4C': ('Prefabs/AI/SCR_AIWorld_BadOrb.et', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et'),
+}
 
 
 def blocks(text):
@@ -138,6 +141,11 @@ def migrate_assets(source, dev, draft):
 
         def relocate(ref):
             resource, path = ref[1].upper(), ref[2]
+            old_ai_path, new_ai_path = AI_WORLD_ALIASES.get(resource, (None, None))
+            if path == old_ai_path and dev.resources.get(resource) == [new_ai_path]:
+                identity = META_NAME.search(dev.read(new_ai_path + '.meta'))
+                if identity and identity[3] == new_ai_path and dev.read(new_ai_path).startswith('SCR_AIWorld : '):
+                    return f'"{{{ref[1]}}}{new_ai_path}"'
             paths = source.resources.get(resource, [])
             if not paths or path in draft or path in dev.files:
                 return ref[0]

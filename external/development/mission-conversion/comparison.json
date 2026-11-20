@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "69edea1f227e1af01dded15e24ffb135f5dccffe",
+  "target": "d26a513fe801794f239d51176e2701f2fd2bcdf4",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -337,7 +337,7 @@
         "worlds/Elite/PonderingThyOrb/PonderingThyOrb.ent"
       ],
       "declaredPath": "worlds/Elite/PonderingThyOrb/PonderingThyOrb.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{5BF3D5B115126C3B}worlds/Elite/PonderingThyOrb/PonderingThyOrb.ent"
     },
     "Missions/FSM/TVT66ZherebetsRiverCache.conf": {
@@ -6100,7 +6100,9 @@
     "worlds/Elite/PonderingThyOrb/PonderingThyOrb.ent": {
       "sourceResourceCount": 5,
       "devPaths": {
-        "absent": 5
+        "absent": 1,
+        "changed": 3,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -6137,7 +6139,8 @@
       },
       "groupLayers": {
         "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/Players.layer": {
-          "gap": "unresolved character prefab 64AD55FF89C97DF9"
+          "playableGroups": 8,
+          "unitPrefabEntries": 48
         }
       },
       "boundaryLayers": {
@@ -6159,7 +6162,7 @@
               "lastLine": 94
             }
           },
-          "placementLayer": "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/default_GC_Boundaries.layer"
+          "gap": "Dev already contains the original layer path; review before adding boundary siblings"
         }
       },
       "directBriefingsRead": 10,
@@ -15345,7 +15348,7 @@
           "gap": "unresolved or duplicate Units prefab 1BB20A4B3A53D0F5"
         },
         "worlds/Huska/MortonBay/MortonBay_Layers/Players.layer": {
-          "gap": "inherited slot roster differs"
+          "gap": "group component needs review"
         }
       },
       "boundaryLayers": {
@@ -19996,7 +19999,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_Layers/Players.layer": {
-          "gap": "unresolved character prefab 47B0BA658525301A"
+          "playableGroups": 4,
+          "unitPrefabEntries": 32
         }
       },
       "boundaryLayers": {
@@ -24570,7 +24574,8 @@
           "gap": "unresolved or duplicate Units prefab 0D10CCEEC7B3EC34"
         },
         "worlds/Til/GoreyRaid/GoreyRaid_Layers/players.layer": {
-          "gap": "unresolved character prefab 47B0BA658525301A"
+          "playableGroups": 4,
+          "unitPrefabEntries": 24
         }
       },
       "boundaryLayers": {
@@ -24727,7 +24732,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/GreenScreen/GreenScreen_Layers/us_players.layer": {
-          "gap": "inherited slot roster differs"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "directBriefingsRead": 4,
@@ -26679,7 +26684,7 @@
           "gap": "unresolved or duplicate Units prefab 84029128FA6F6BB9"
         },
         "worlds/Til/RouteTremaux/RouteTremaux_Layers/players.layer": {
-          "gap": "inherited slot roster differs"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "boundaryLayers": {

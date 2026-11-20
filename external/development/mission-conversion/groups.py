@@ -203,6 +203,29 @@ def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, ext
     return result, 0
 
 
+def inherited_playable_roster(old, new, stock, owned_resources):
+    old_slots, new_slots = SLOTS.search(old), SLOTS.search(new)
+    if not old_slots or not new_slots:
+        raise ValueError('inherited slot roster requires comparison')
+    legacy = REF.findall(old_slots[1])
+    current = REF.findall(new_slots[1])
+    if len(legacy) != len(current):
+        raise ValueError('inherited slot roster differs')
+    wrappers = set()
+    for (guid, path), (dev_guid, dev_path) in zip(legacy, current):
+        if guid.upper() == dev_guid.upper():
+            continue
+        parent = None
+        if not any(guid.upper() in resources for resources in owned_resources):
+            parent = stock_character(guid, path, stock)
+        if not parent or tuple(parent) != (dev_guid.upper(), dev_path):
+            raise ValueError('inherited slot roster differs')
+        wrappers.add(guid.upper())
+    if wrappers and (REF.sub('', old_slots[1]).strip() or REF.sub('', new_slots[1]).strip()):
+        raise ValueError('inherited wrapper roster contains unsupported entries')
+    return [guid for guid, _ in legacy], wrappers
+
+
 def convert_instance(lines, guid, old, new, source_units, dev_units, stock, locally_owned,
                      reviewed_callsigns=frozenset(), reviewed_members=None, external_ai=None):
     reviewed_members = reviewed_members or {}
@@ -214,12 +237,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     roster = []
     converted_wrappers = set()
     if not replace_slots:
-        old_slots, new_slots = SLOTS.search(old), SLOTS.search(new)
-        if not old_slots or not new_slots:
-            raise ValueError('inherited slot roster requires comparison')
-        roster = [g for g, _ in REF.findall(old_slots[1])]
-        if roster != [g for g, _ in REF.findall(new_slots[1])]:
-            raise ValueError('inherited slot roster differs')
+        roster, converted_wrappers = inherited_playable_roster(
+            old, new, stock, (locally_owned, source_units.resources, dev_units.resources))
     override = next((l.strip()[-1] for l in lines if l.strip().startswith('m_bSetPlayable ')), None)
     force = override == '1' if override is not None else scalar(inheritance(source_units, guid), 'm_bSetPlayable') == 1
     out = []

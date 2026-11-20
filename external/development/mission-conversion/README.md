@@ -374,3 +374,12 @@ Batch event conversion preserves named entity cleanup, supply quantities, repair
 The catalog matched eight cleanup events against their exact source targets and delays. Pondering Thy Orb now has all authored framework events accounted for. Its 180-second display countdown is retained independently of the event that removes its staging boundaries. The same countdown rule cleared a mode blocker in one other world. Pondering Thy Orb still needs two missing character prefab identities and a reviewed inherited-roster conversion.
 
 The focused file checks covered clock, weather, marker audience, supply and repair mappings and unsupported inputs. Two batch runs reproduced the inventory byte for byte. All 982 prior explicit migration outputs remained byte-identical.
+
+
+## Verified aliases in inherited rosters
+
+Batch roster comparison accepts a legacy playable wrapper and its native stock parent as the same slot when the path and GUID are verified and the position in the ordered roster matches. Unrecognized wrappers, ambiguous resources, changes in membership and reordering still stop conversion. The four additional US and Soviet rifleman wrappers include their reciprocal alternate variants. The archived GC Lobby and stock prefab files agree on those links after applying the reviewed resource identities.
+
+The Bad Orb AI world now uses the existing Missions Dev path for its archived Core GUID. The current prefab matches the published legacy Core prefab and loads the same three navigation resources. The path rule applies to legacy references that use the old filename and preserves the world and placement identities.
+
+Pondering Thy Orb is in local Missions Dev commit `d26a513f`. The file comparison verified all 48 ordered slots across eight groups, the ten briefing pages, both staging-boundary targets at 180 seconds, the 90 percent casualty outcomes and the three timeout messages and announcements. The existing Dev boundary layer was reused. The resource audit passed and all nine committed draft files match the reviewed manifest. Live staging release, map rendering and occupied-side casualty timing remain open. The shared roster rules cleared 21 group placement blockers across eight worlds.
