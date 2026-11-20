@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "4c203b292efdd174a5c3b89a7d6d29fa32eb78c6",
+  "target": "3235061c8b978ed3ac0e9327ff47c770632e2c59",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -321,7 +321,7 @@
         "worlds/Elite/ConcreteJungle/ConcreteJungle.ent"
       ],
       "declaredPath": "worlds/Elite/ConcreteJungle/ConcreteJungle.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{E9689B35F167C067}worlds/Elite/ConcreteJungle/ConcreteJungle.ent"
     },
     "Missions/Elite/DesertHeat.conf": {
@@ -2472,7 +2472,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Insurgents/Insurgent_AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         },
         "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Insurgents/Insurgent_Players.layer": {
           "gap": "mission-owned slot 4677203BEDF7D1A9"
@@ -2857,7 +2857,7 @@
       },
       "groupLayers": {
         "worlds/Blue/Ruckusberg/RuckusBerg_Layers/UK/UKAI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab FFB42452E9AD5FFC"
         },
         "worlds/Blue/Ruckusberg/RuckusBerg_Layers/UK/UKPlayers.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -2962,7 +2962,7 @@
       },
       "groupLayers": {
         "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/BLUFOR/BLUFORAI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI slots require character playability review 9FB82322D0798CEE"
         },
         "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/BLUFOR/BLUFORPlayer.layer": {
           "gap": "group component needs review"
@@ -3164,7 +3164,7 @@
       },
       "groupLayers": {
         "worlds/Burger4606/Hush/Hush_Layers/OPFOR.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab 5436629450D8387A"
         },
         "worlds/Burger4606/Hush/Hush_Layers/players_UK.layer": {
           "playableGroups": 3,
@@ -5584,7 +5584,7 @@
       },
       "groupLayers": {
         "worlds/Delfer/Grouse_Hunt/Grouse_Hunt_Layers/AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab 22E43956740A6794"
         },
         "worlds/Delfer/Grouse_Hunt/Grouse_Hunt_Layers/Players.layer": {
           "gap": "unresolved character prefab BF38869730F83577"
@@ -5673,7 +5673,7 @@
       },
       "groupLayers": {
         "worlds/Delfer/Morning_Routine/Morning_Routine_Layers/Blufor_AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab FFB42452E9AD5FFC"
         },
         "worlds/Delfer/Morning_Routine/Morning_Routine_Layers/blufor_players.layer": {
           "gap": "group field needs review: m_iGroupRadioFrequency"
@@ -5785,13 +5785,13 @@
       },
       "groupLayers": {
         "worlds/Delfer/Topdown/Topdown_Layers/blufor_AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         },
         "worlds/Delfer/Topdown/Topdown_Layers/blufor_players.layer": {
           "gap": "group field needs review: {"
         },
         "worlds/Delfer/Topdown/Topdown_Layers/redfor_AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab 1701B425406974A0"
         },
         "worlds/Delfer/Topdown/Topdown_Layers/redfor_players.layer": {
           "gap": "legacy slot playability requires review 3CABD69DABD06AED"
@@ -5859,9 +5859,9 @@
     "worlds/Elite/ConcreteJungle/ConcreteJungle.ent": {
       "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 7,
-        "changed": 1,
-        "identical": 1
+        "absent": 1,
+        "changed": 6,
+        "identical": 2
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -5890,7 +5890,8 @@
       },
       "groupLayers": {
         "worlds/Elite/ConcreteJungle/ConcreteJungle_Layers/AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/Elite/ConcreteJungle/ConcreteJungle_Layers/Players.layer": {
           "playableGroups": 9,
@@ -7466,7 +7467,7 @@
       },
       "groupLayers": {
         "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab 22E43956740A6794"
         },
         "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/Blufor.layer": {
           "gap": "group field needs review: m_iGroupRadioFrequency"
@@ -8632,7 +8633,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/BLUFOR/BLU_AI_Mid_Trench_28xAI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: DangerEventRange"
         },
         "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/BLUFOR/BLU_AI_Town_Defene_60xAI.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -8950,10 +8951,10 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol_Layers/INS/Exterior_Defenders.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol_Layers/INS/Village_Defenders.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         },
         "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol_Layers/Players/Players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -9376,7 +9377,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/TAK_Players/AI_Def.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/TAK_Players/TAK_Players.layer": {
           "gap": "group field needs review: m_aUnitPrefabColorTeams"
@@ -9848,10 +9849,10 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/AI_Defenders/AI_Defenders_Apartment.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         },
         "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/AI_Defenders/AI_Defenders_Infantry_Buildings.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         },
         "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/BLUFOR_Players/BLUFOR_Players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -10067,7 +10068,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay_Layers/NVA_AI/Middle_Defenders_58AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay_Layers/US_Players/US_Players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -14132,10 +14133,10 @@
       },
       "groupLayers": {
         "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/AiA.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: m_bDeleteIfNoPlayer"
         },
         "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/AiB.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/Players.layer": {
           "playableGroups": 6,
@@ -14900,10 +14901,10 @@
       },
       "groupLayers": {
         "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/BrownFor/Market1.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         },
         "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/BrownFor/Market2.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         },
         "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/CIVFor/Groups.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -15040,7 +15041,8 @@
           "unitPrefabEntries": 30
         },
         "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/TeamGreen.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/TeamRed.layer": {
           "playableGroups": 5,
@@ -15416,7 +15418,7 @@
       },
       "groupLayers": {
         "worlds/Huska/WindyGoat/WindyGoat_Layers/AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Huska/WindyGoat/WindyGoat_Layers/Blufor_Players.layer": {
           "gap": "mission-owned slot 60E1492FD0E1529B"
@@ -15495,7 +15497,7 @@
       },
       "groupLayers": {
         "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/AIgroups.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/NATO_playergroups.layer": {
           "gap": "legacy slot playability requires review 852FD90D22A94116"
@@ -17919,7 +17921,8 @@
           "gap": "legacy slot playability requires review 7BB0A58F40CB2528"
         },
         "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/INDFOR/AI/Prespawned.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         }
       },
       "stockPlacementLayers": {
@@ -18052,7 +18055,8 @@
       },
       "groupLayers": {
         "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/TKA/INF.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/players.layer": {
           "gap": "group component needs review"
@@ -19726,7 +19730,8 @@
       },
       "groupLayers": {
         "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/SEP/AIGroups.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/SEP/players.layer": {
           "gap": "mission-owned slot 580115E439977772"
@@ -19887,10 +19892,10 @@
       },
       "groupLayers": {
         "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/AI_Units.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: m_bDeleteWhenEmpty"
         },
         "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/Insurgent_AI_Groups.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: m_bDeleteWhenEmpty"
         },
         "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/Players_us.layer": {
           "gap": "group field needs review: m_iMaxMembers"
@@ -19982,7 +19987,7 @@
       },
       "groupLayers": {
         "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_Layers/AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_Layers/Players.layer": {
           "gap": "unresolved character prefab 47B0BA658525301A"
@@ -20394,7 +20399,7 @@
       },
       "groupLayers": {
         "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_Layers/BLUFOR/Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab 59DC74EF0ECF7E49"
         },
         "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_Layers/OPFOR/AI.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -21566,7 +21571,7 @@
           "gap": "legacy slot playability requires review F1802349655D63BC"
         },
         "worlds/TheLocalPub/Joutus/Joutus_Layers/FIA/AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         },
         "worlds/TheLocalPub/Joutus/Joutus_Layers/FIA/Players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -22136,7 +22141,7 @@
           "gap": "group component needs review"
         },
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/INDFOR/AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: m_sCustomNameSet"
         },
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/INDFOR/Players.layer": {
           "gap": "legacy slot playability requires review 255BA49B817E33AD"
@@ -22410,10 +22415,11 @@
           "gap": "legacy slot playability requires review F29C8B7CB50A0F2A"
         },
         "worlds/TheLocalPub/RapidAttack/RapidAttack_Layers/FIA/AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/TheLocalPub/RapidAttack/RapidAttack_Layers/FIA/WP.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "boundaryLayers": {
@@ -22495,7 +22501,8 @@
       },
       "groupLayers": {
         "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/BLUFOR/AI/Prespawned.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/BLUFOR/Players.layer": {
           "playableGroups": 1,
@@ -22706,13 +22713,13 @@
       },
       "groupLayers": {
         "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/AI/Spawners.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI slots require character playability review 2DFC92038A21BA8A"
         },
         "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Indfor/Players.layer": {
           "gap": "group field needs review: m_aStaticVehicles"
         },
         "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Opfor/Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         }
       },
       "boundaryLayers": {
@@ -23389,7 +23396,7 @@
       },
       "groupLayers": {
         "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/cdf.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         },
         "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/ru.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -23668,7 +23675,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_Layers/nva.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         }
       },
       "stockPlacementLayers": {
@@ -24145,7 +24152,7 @@
       },
       "groupLayers": {
         "worlds/Til/DevilsDrive/DevilsDrive_Layers/nva.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         },
         "worlds/Til/DevilsDrive/DevilsDrive_Layers/us.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -25204,7 +25211,7 @@
       },
       "groupLayers": {
         "worlds/Til/JunctionJab/JunctionJab_Layers/ai_ca.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/JunctionJab/JunctionJab_Layers/players_caf.layer": {
           "gap": "legacy slot playability requires review FC5B6E3946BB6F48"
@@ -25462,7 +25469,8 @@
       },
       "groupLayers": {
         "worlds/Til/KasselbergClamber/KasselbergClamber_Layers/nva_ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/Til/KasselbergClamber/KasselbergClamber_Layers/nva_players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -25891,7 +25899,7 @@
       },
       "groupLayers": {
         "worlds/Til/Metalwave/Metalwave_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         },
         "worlds/Til/Metalwave/Metalwave_Layers/players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -26040,7 +26048,8 @@
       },
       "groupLayers": {
         "worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/cdf.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -26658,7 +26667,7 @@
       },
       "groupLayers": {
         "worlds/Til/RouteTremaux/RouteTremaux_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab 84029128FA6F6BB9"
         },
         "worlds/Til/RouteTremaux/RouteTremaux_Layers/players.layer": {
           "gap": "inherited slot roster differs"
@@ -26910,25 +26919,25 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/ai_2sq.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/ai_adj1.layer": {
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/ai_adj2.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/ai_adj3.layer": {
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/ai_adjhq.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/ai_hq.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/ai_ru.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab 1701B425406974A0"
         },
         "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -27070,7 +27079,7 @@
       },
       "groupLayers": {
         "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/ai_us.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab 84029128FA6F6BB9"
         },
         "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/players_us.layer": {
           "gap": "mission-owned slot D0725F1D7828E507"
@@ -27177,7 +27186,7 @@
       },
       "groupLayers": {
         "worlds/Til/TrenchAssault/TrenchAssault_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab 1701B425406974A0"
         },
         "worlds/Til/TrenchAssault/TrenchAssault_Layers/players_cdf.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -27594,13 +27603,13 @@
           "gap": "unresolved or duplicate Units prefab 0D10CCEEC7B3EC34"
         },
         "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/obj1.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/obj2.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/obj3.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/players_muj.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -28492,7 +28501,7 @@
       },
       "groupLayers": {
         "worlds/ac337/GravetteGamble/GravetteGamble_Layers/garrisoned_AI/ai_in_House.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         },
         "worlds/ac337/GravetteGamble/GravetteGamble_Layers/players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -28747,7 +28756,7 @@
           "gap": "mission-owned group CA9E43E782DD23B4"
         },
         "worlds/anteante101/Its all uphill from here/Its all uphill from here_Layers/opfor.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI slots require character playability review 2DFC92038A21BA8A"
         }
       },
       "boundaryLayers": {
@@ -29336,7 +29345,8 @@
           "unitPrefabEntries": 22
         },
         "worlds/arc/BarnBustersXS/BarnBustersXS_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         }
       },
       "stockPlacementLayers": {
@@ -29536,7 +29546,7 @@
       },
       "groupLayers": {
         "worlds/arc/BunkerBusters/BunkerBusters_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         },
         "worlds/arc/BunkerBusters/BunkerBusters_Layers/players.layer": {
           "playableGroups": 5,
@@ -30271,7 +30281,8 @@
       },
       "groupLayers": {
         "worlds/arc/DustyDrive/DustyDrive_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/arc/DustyDrive/DustyDrive_Layers/players.layer": {
           "playableGroups": 5,
@@ -30380,7 +30391,8 @@
       },
       "groupLayers": {
         "worlds/arc/DustyDrive95/DustyDrive95_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/arc/DustyDrive95/DustyDrive95_Layers/players.layer": {
           "gap": "group field needs review: m_faction"
@@ -30489,7 +30501,7 @@
       },
       "groupLayers": {
         "worlds/arc/EFPLumberjacks/EFPLumberjacks_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab 1701B425406974A0"
         },
         "worlds/arc/EFPLumberjacks/EFPLumberjacks_Layers/players.layer": {
           "gap": "legacy slot playability requires review F29C8B7CB50A0F2A"
@@ -31800,10 +31812,11 @@
       },
       "groupLayers": {
         "worlds/arc/HappyCampers/HappyCampers_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/arc/HappyCampers/HappyCampers_Layers/hostages.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab E9DC26EB507F224C"
         },
         "worlds/arc/HappyCampers/HappyCampers_Layers/players.layer": {
           "playableGroups": 4,
@@ -32223,7 +32236,8 @@
       },
       "groupLayers": {
         "worlds/arc/Hunted/Hunted_Layers/AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/arc/Hunted/Hunted_Layers/Players.layer": {
           "gap": "ambiguous duplicate callsign component"
@@ -32668,7 +32682,7 @@
       },
       "groupLayers": {
         "worlds/arc/JEFRMCWAC/JEFRMCWAC_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab 1701B425406974A0"
         },
         "worlds/arc/JEFRMCWAC/JEFRMCWAC_Layers/players.layer": {
           "playableGroups": 4,
@@ -32909,7 +32923,8 @@
       },
       "groupLayers": {
         "worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux_Layers/players_ru.layer": {
           "gap": "legacy slot playability requires review E227EF76A95B5198"
@@ -32995,7 +33010,7 @@
       },
       "groupLayers": {
         "worlds/arc/NorthCoastRaid/NorthCoastRaid_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab 1701B425406974A0"
         },
         "worlds/arc/NorthCoastRaid/NorthCoastRaid_Layers/players.layer": {
           "playableGroups": 13,
@@ -33230,7 +33245,8 @@
       },
       "groupLayers": {
         "worlds/arc/PirateRadio/PirateRadio_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/arc/PirateRadio/PirateRadio_Layers/players.layer": {
           "playableGroups": 5,
@@ -33345,7 +33361,8 @@
       },
       "groupLayers": {
         "worlds/arc/Privateering/Privateering_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/arc/Privateering/Privateering_Layers/players.layer": {
           "playableGroups": 4,
@@ -33472,7 +33489,8 @@
       },
       "groupLayers": {
         "worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux_Layers/ai.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux_Layers/players_ru.layer": {
           "gap": "legacy slot playability requires review 725760D740B6846E"
@@ -33586,7 +33604,7 @@
       },
       "groupLayers": {
         "worlds/arc/QuickReaction/QuickReaction_Layers/ai_cdf.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/arc/QuickReaction/QuickReaction_Layers/ai_sep.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -34379,7 +34397,8 @@
       },
       "groupLayers": {
         "worlds/arc/SOBRUp/SOBRUp_Layers/AI.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/arc/SOBRUp/SOBRUp_Layers/Players.layer": {
           "playableGroups": 6,
@@ -35530,10 +35549,10 @@
       },
       "groupLayers": {
         "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/ai_ins.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/ai_nta.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "AI group field needs review: components"
         },
         "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/players_ins.layer": {
           "playableGroups": 3,
@@ -36402,7 +36421,7 @@
       },
       "groupLayers": {
         "worlds/blackskimask/Plant Attack/PlantAttack_Layers/ai_block.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/blackskimask/Plant Attack/PlantAttack_Layers/players_sep.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -36486,10 +36505,10 @@
       },
       "groupLayers": {
         "worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/AIRU.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/AIUKR.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/players_ru.layer": {
           "gap": "legacy slot playability requires review 742F15CA6FD6286A"
@@ -36961,7 +36980,7 @@
       },
       "groupLayers": {
         "worlds/chllboy/Trifecta/Trifecta_Layers/FACTIONS/CIV.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved or duplicate Units prefab 22E43956740A6794"
         },
         "worlds/chllboy/Trifecta/Trifecta_Layers/FACTIONS/FIA.layer": {
           "gap": "mixed layer or custom group declaration"

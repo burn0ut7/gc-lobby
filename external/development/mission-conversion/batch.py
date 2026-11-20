@@ -11,7 +11,7 @@ from catalog import REF, SOURCE_TEXT
 from extraction import condition as extraction_condition
 from launchers import META_NAME, launcher
 from markers import convert_layer
-from outcomes import FRAMEWORK
+from outcomes import FRAMEWORK, leaves
 
 LEGACY = re.compile(r'\b(?:TILW|PS)_\w+')
 MODE = re.compile(r'^PS_GameModeCoop(?: [\w.-]+)? : "\{4CFD54745CD45673\}[^"]+" \{$')
@@ -149,7 +149,7 @@ def faction_overrides(lines):
 '''
 
 
-def render_mode(world, root, preset, additional_rules, zones):
+def render_mode(world, root, preset, additional_rules, zones, ai_faction=None):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, coords, freeze, children = '', None, 0, ''
@@ -189,6 +189,11 @@ def render_mode(world, root, preset, additional_rules, zones):
     settings = ''
     if additional_rules:
         settings += f'''  GC_PeakFactionPopulationComponent "{{{guid(world + '/population')}}}" {{
+  }}
+'''
+    if ai_faction:
+        settings += f'''  GC_LivingAndDeadAIComponent "{{{guid(world + '/ai population')}}}" {{
+   m_sFaction "{ai_faction}"
   }}
 '''
     if zones:
@@ -252,7 +257,9 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
     framework_supported = (len(represented) == row['serializedTypes'].get('TILW_MissionEvent', 0)
                            and not outcome.get('gap'))
     rule_text = staged.get(outcome.get('stagedFragment'), '')
-    used_flags = {event.get('flag') for event in rules.values() if 'gap' not in event}
+    terms = [term for event in rules.values() if 'gap' not in event for term in leaves(event)]
+    used_flags = {term.get('flag') for term in terms}
+    ai_faction = next((term['faction'] for term in terms if term['trigger'] == 'AI loss'), None)
     mode = None
     mode_index = None
     zones = []
@@ -319,7 +326,7 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
     elif preset:
         try:
             layer, index = mode_index
-            parts[layer][index] = render_mode(world, mode, preset, rule_text, zones)
+            parts[layer][index] = render_mode(world, mode, preset, rule_text, zones, ai_faction)
         except ValueError as exc:
             blockers.append({'rule': 'mode settings', 'file': mode_index[0], 'detail': str(exc)})
     for path, blocks_in_layer in parts.items():
@@ -391,6 +398,8 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
         'status': 'blocked by conversion rules' if blockers else 'generated for file review',
         'blockers': blockers, 'files': sorted(draft), 'mixedLayerGroups': group_blocks,
         'verifiedPlayableSlots': slots, 'advertisedSlots': advertised,
+        **({'remainingBehavior': ['AI casualty tracking uses native registration and confirmed death events. '
+                                  'Compare possession, faction changes and delayed recounts separately.']} if ai_faction else {}),
     }
 
 

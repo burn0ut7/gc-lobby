@@ -87,13 +87,88 @@ def stock_character(guid, path, stock):
     return None
 
 
+def compare_ai_parents(source_units, dev_units, guid):
+    """Compare native AI group ancestry after removing lobby presentation metadata."""
+    def normalize(body):
+        lines = body.splitlines()
+        kept = []
+        index = 0
+        while index < len(lines):
+            line = lines[index]
+            component = CALL.fullmatch(line)
+            if component and component[1].upper() == STANDARD_CALLSIGN:
+                end = block_end(lines, index)
+                callsign(lines[index + 1:end])
+                index = end + 1
+                continue
+            if not re.match(r'^ (?:m_sCustomNameSet|m_sGC_Description|m_iGC_Callsign\w+|m_bPlayable|m_bSetPlayable) ', line):
+                kept.append(REF.sub(lambda match: '{' + match[1].upper() + '}', line))
+            index += 1
+        normalized = '\n'.join(kept).replace(' components {\n }\n', '')
+        if re.search(r'\b(?:TILW|PS)_\w+', normalized):
+            raise ValueError('AI group parent has custom legacy behavior')
+        return normalized
+
+    old = inheritance(source_units, guid)
+    new = inheritance(dev_units, guid)
+    if not old or tuple(map(normalize, old)) != tuple(map(normalize, new)):
+        raise ValueError('inherited AI group behavior differs')
+    if scalar(old, 'm_bSetPlayable') not in (None, 0) or scalar(new, 'm_bPlayable') not in (None, 0):
+        raise ValueError('inherited AI group playability differs')
+    return old
+
+
+def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned):
+    old_chain = compare_ai_parents(source_units, dev_units, guid)
+    checked = set()
+
+    def member(match):
+        resource = match[1].upper()
+        if resource not in checked:
+            path = only_path(source_units, resource)
+            character = source_units.read(path)
+            if resource in locally_owned or not character.startswith('SCR_ChimeraCharacter') or legacy_member(source_units, resource, True):
+                raise ValueError('AI slots require character playability review ' + resource)
+            checked.add(resource)
+        return '"{' + resource + '}' + only_path(dev_units, resource) + '"'
+
+    for parent in old_chain:
+        slots = SLOTS.search(parent)
+        if slots:
+            REF.sub(member, slots[1])
+
+    result = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        token = line.strip()
+        if re.fullmatch(r'm_aUnitPrefabSlots (?:\+ ?)?\{', token):
+            end = block_end(lines, index)
+            if any(REF.sub('', entry).strip() for entry in lines[index + 1:end]):
+                raise ValueError('unsupported AI slot list')
+            result.extend([line, *(REF.sub(member, entry) for entry in lines[index + 1:end]), lines[end]])
+            index = end
+        elif token == 'm_aStaticWaypoints {':
+            end = block_end(lines, index)
+            if any(not re.fullmatch(r'\s*(?:"[\w.-]+"\s*)+', entry) for entry in lines[index + 1:end]):
+                raise ValueError('unsupported AI waypoint name')
+            result.extend(lines[index:end + 1])
+            index = end
+        elif token.startswith(('coords ', 'angles ', 'angleX ', 'angleY ', 'angleZ ', 'scale ', 'm_bSnapToTerrain ')):
+            result.append(line)
+        elif token != 'm_bSetPlayable 0':
+            raise ValueError('AI group field needs review: ' + token.split()[0])
+        index += 1
+    return result, 0
+
+
 def convert_instance(lines, guid, old, new, source_units, dev_units, stock, locally_owned,
                      reviewed_callsigns=frozenset(), reviewed_members=None):
     reviewed_members = reviewed_members or {}
     explicit_force = any(l.strip() == 'm_bSetPlayable 1' for l in lines)
     native_playable = any(l.strip() == 'm_bPlayable 1' for l in lines) or scalar(inheritance(dev_units, guid), 'm_bPlayable') == 1
     if not native_playable and not explicit_force:
-        raise ValueError('parent playability requires inheritance or member review')
+        return convert_ai_instance(lines, guid, source_units, dev_units, locally_owned)
     replace_slots = any(l.strip() == 'm_aUnitPrefabSlots {' for l in lines)
     roster = []
     converted_wrappers = set()
@@ -278,13 +353,13 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
                 body, members = convert(lines[j+1:last])
                 result.extend([lines[j], *body, lines[last]])
                 slots += members
-                count += 1
+                count += int(members > 0)
                 j = last + 1
         else:
             body, members = convert(lines[i+1:end])
             result.extend(body)
             slots += members
-            count += 1
+            count += int(members > 0)
         result.append(lines[end])
         i = end + 1
     return '\n'.join(result) + '\n', count, slots

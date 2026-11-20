@@ -259,7 +259,7 @@ def main():
                     arc_areas[world] = area
                 elif args.batch:
                     captures, batch_areas[world] = batch.area_rules(source, world)
-                rules, outcome_audit, gap = compile_outcomes(source, world, captures)
+                rules, outcome_audit, gap = compile_outcomes(source, world, captures, compound=args.batch)
                 outcome = {'events': outcome_audit}
                 if gap:
                     outcome['gap'] = gap

@@ -10,6 +10,8 @@ FRAMEWORK = re.compile(r'^TILW_MissionFrameworkEntity(?: [\w.-]+)? : "\{8F846D0F
 ENDING = re.compile(r'^    TILW_EndGameInstruction "\{([\da-fA-F]{16})\}" \{$')
 KEY = r'"[\w.-]+"'
 RESULT = {'EDITOR_FACTION_VICTORY': 1, 'EDITOR_FACTION_DEFEAT': 2, 'EDITOR_FACTION_DRAW': 3}
+TERM = re.compile(r'\s*(?:m_condition )?TILW_(Literal|Conjunction|Disjunction)Term "\{[\da-fA-F]{16}\}" \{')
+AI_FLAG = re.compile(r'^  TILW_FactionAIKilledFlag "\{[\da-fA-F]{16}\}" \{$')
 
 
 def end_action(lines, key):
@@ -26,7 +28,38 @@ def end_action(lines, key):
     ], {'faction': faction[1:-1], 'result': kind, 'delaySeconds': delay}
 
 
-def read_event(fields, key, flags, captures):
+def read_term(lines, flags, captures, ai, depth=0):
+    match = TERM.fullmatch(lines[0])
+    if not match or depth > 8:
+        raise ValueError('unsupported outcome term')
+    if match[1] == 'Literal':
+        values = properties(lines[1:-1], {'m_flagName', 'm_invertTerm'})
+        flag = values.get('m_flagName', '""')
+        invert = values.get('m_invertTerm', '0')
+        if flag == '""' and invert == '1' and depth == 0:
+            return {'trigger': 'Match start'}
+        if invert == '0' and flag in flags:
+            faction, ratio = flags[flag]
+            return {'trigger': 'peak player loss', 'flag': flag[1:-1], 'faction': faction, 'ratio': ratio}
+        if invert == '0' and flag in ai:
+            faction, ratio = ai[flag]
+            return {'trigger': 'AI loss', 'flag': flag[1:-1], 'faction': faction, 'ratio': ratio}
+        if invert == '0' and flag in captures:
+            return {'trigger': 'area capture', 'flag': flag[1:-1]}
+        raise ValueError('unresolved or unsupported outcome flag ' + flag)
+    if len(lines) < 4 or lines[1].strip() != 'm_operands {' or block_end(lines, 1) != len(lines) - 2:
+        raise ValueError('unsupported compound outcome term fields')
+    index, operands = 2, []
+    while index < len(lines) - 2:
+        end = block_end(lines, index)
+        operands.append(read_term(lines[index:end + 1], flags, captures, ai, depth + 1))
+        index = end + 1
+    if not 1 <= len(operands) <= 64:
+        raise ValueError('unsupported number of outcome operands')
+    return {'trigger': 'all' if match[1] == 'Conjunction' else 'any', 'operands': operands}
+
+
+def read_event(fields, key, flags, captures, ai, compound):
     actions = defaultdict(list)
     notices = []
     seen = set()
@@ -38,20 +71,9 @@ def read_event(fields, key, flags, captures):
         if field in seen:
             raise ValueError('duplicate event field: ' + field)
         seen.add(field)
-        if LITERAL.fullmatch(line):
+        if LITERAL.fullmatch(line) or (compound and field == 'm_condition' and TERM.fullmatch(line)):
             end = block_end(fields, i)
-            values = properties(fields[i + 1:end], {'m_flagName', 'm_invertTerm'})
-            flag = values.get('m_flagName', '""')
-            invert = values.get('m_invertTerm', '0')
-            if flag == '""' and invert == '1':
-                term = {'trigger': 'Match start'}
-            elif invert == '0' and flag in flags:
-                faction, ratio = flags[flag]
-                term = {'trigger': 'peak player loss', 'flag': flag[1:-1], 'faction': faction, 'ratio': ratio}
-            elif invert == '0' and flag in captures:
-                term = {'trigger': 'area capture', 'flag': flag[1:-1]}
-            else:
-                raise ValueError('unresolved or unsupported outcome flag ' + flag)
+            term = read_term(fields[i:end + 1], flags, captures, ai)
             i = end
         elif line == '   m_instructions {':
             end = block_end(fields, i)
@@ -78,6 +100,34 @@ def read_event(fields, key, flags, captures):
     return term, actions, notices
 
 
+def leaves(term):
+    if 'operands' in term:
+        for item in term['operands']:
+            yield from leaves(item)
+    else:
+        yield term
+
+
+def render_check(term, key, captures):
+    trigger = term['trigger']
+    if trigger == 'area capture':
+        # Each occurrence needs its own serialized subtree IDs.
+        return [re.sub(r'"\{([0-9A-F]{16})\}"', lambda match: '"{' + guid(key + '/' + match[1]) + '}"', line)
+                for line in captures['"' + term['flag'] + '"']]
+    if trigger in ('all', 'any'):
+        result = [f'      GC_ConditionGroup "{{{guid(key + "/group")}}}" {{',
+                  f'       m_iMatch {int(trigger == "any")}', '       m_aConditions {']
+        for index, child in enumerate(term['operands']):
+            result.extend('  ' + line for line in render_check(child, f'{key}/{index}', captures))
+        return result + ['       }', '      }']
+    check = 'GC_LivingAndDeadAICheck' if trigger == 'AI loss' else 'GC_PeakFactionPopulationCheck'
+    result = [f'      GC_CustomScriptCondition "{{{guid(key + "/condition")}}}" {{',
+              f'       m_Script {check} "{{{guid(key + "/check")}}}" {{']
+    if trigger != 'AI loss':
+        result.append(f'        m_sFaction "{term["faction"]}"')
+    return result + [f'        m_fRatio {term["ratio"]}', '       }', '      }']
+
+
 def render(key, name, term, actions, captures):
     condition = term['trigger'] != 'Match start'
     result = []
@@ -85,11 +135,7 @@ def render(key, name, term, actions, captures):
         if term['trigger'] == 'area capture':
             check = captures['"' + term['flag'] + '"']
         else:
-            check = [
-                f'      GC_CustomScriptCondition "{{{guid(key + "/condition")}}}" {{',
-                f'       m_Script GC_PeakFactionPopulationCheck "{{{guid(key + "/check")}}}" {{',
-                f'        m_sFaction "{term["faction"]}"', f'        m_fRatio {term["ratio"]}', '       }', '      }',
-            ]
+            check = render_check(term, key, captures)
         result.extend([
             f'    GC_Event "{{{guid(key + "/trigger")}}}" {{', f'     m_sName "{name}"',
             '     m_aConditions {', *check, '     }',
@@ -109,7 +155,7 @@ def render(key, name, term, actions, captures):
     return result
 
 
-def compile_outcomes(source, world, captures=None):
+def compile_outcomes(source, world, captures=None, *, compound=False):
     captures = captures or {}
     layers = source.layers[world.lower()]
     owners = [(path, source.read(path)) for path in layers if 'TILW_MissionFrameworkEntity' in source.read(path)]
@@ -129,6 +175,9 @@ def compile_outcomes(source, world, captures=None):
     if any(line.strip() == 'm_suppressGameEnd 0' for line in body):
         return [], {}, 'instance ends the mission and needs a separate runtime port'
     flags = peak_flags(body)
+    ai = peak_flags(body, AI_FLAG) if compound else {}
+    if set(ai) & set(flags) or len({faction for faction, _ in ai.values()}) > 1:
+        return [], {}, 'ambiguous AI casualty faction tracking'
     compiled, audit = [], {}
     names = set()
     for i, line in enumerate(body):
@@ -146,7 +195,7 @@ def compile_outcomes(source, world, captures=None):
         try:
             if name in names:
                 raise ValueError('duplicate outcome name')
-            term, actions, notices = read_event(fields, world + '/' + event[1], flags, captures)
+            term, actions, notices = read_event(fields, world + '/' + event[1], flags, captures, ai, compound)
             compiled.extend(render(world + '/' + event[1], name, term, actions, captures))
             audit[loc] = {**term, 'name': name, 'announcements': notices,
                           'instructionDelaysSeconds': [f'{delay:f}' for delay in actions]}

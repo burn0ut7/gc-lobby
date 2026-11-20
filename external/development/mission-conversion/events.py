@@ -168,10 +168,10 @@ def latched_script_event(key, name, condition, delay, action):
 PEAK_FLAG = re.compile(r'^  TILW_FactionPlayersKilledFlag "\{[\da-fA-F]{16}\}" \{$')
 
 
-def peak_flags(lines):
+def peak_flags(lines, declaration=PEAK_FLAG):
     flags = {}
     for start, line in enumerate(lines):
-        if not PEAK_FLAG.fullmatch(line):
+        if not declaration.fullmatch(line):
             continue
         stop = block_end(lines, start)
         data = properties(lines[start + 1:stop], {'m_flagName', 'm_factionKey', 'm_casualtyRatio'})

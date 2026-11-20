@@ -305,3 +305,13 @@ The marker converter resolves moved image assets against a unique Dev GUID and m
 The shared roster converter recognizes 17 group wrappers and 72 character wrappers from the published legacy GC Lobby package 0315131312150201. The catalog records each original identity, archive content hash and stock parent. Its character entries have no changes beyond enabling legacy playability. Its group entries inherit a stock group and supply an ordered roster. The converter verifies the referenced paths and stock parents, applies the old placement's replacement and append operations, and writes the resulting roster for native lobby playability. Unsupported loadout overrides, uncertain inherited members and other custom group authoring still need separate rules.
 
 The batch inventory verified 261 more slots across 12 worlds. Last Bastion was the first complete draft from these rules and is committed to Missions Dev in 4c203b29. The file comparison matched all eight group names, positions and ordered stock role identities. All 48 slots match the launcher count. The draft passed the resource check and reproduced byte-for-byte on a second run.
+
+## Non-playable AI and compound outcomes
+
+The batch converter can retain AI-only groups whose native prefab ancestry matches across Units revisions. It compares inherited group behavior by resource GUID, checks both playability settings and verifies the authored character slots. It preserves placements and named static waypoints. Unknown group fields and ambiguous player-versus-AI membership still stop the draft.
+
+Batch outcome conversion now supports nested conjunctions and disjunctions over resolved casualty and area flags. The native condition tree stays live until the source expression becomes true. At that point the event latches and runs its original delayed instructions independently. Single-faction AI casualty authoring uses the native living-plus-confirmed-deaths observer. Legacy research references are the TilW Mission Framework character controller and casualty flag sources. The comparison still calls out possession, faction changes and recount timing.
+
+Concrete Jungle is committed to Missions Dev in 3235061c. The file review matched its 60 playable slots, all eight CDF AI groups and their authored waypoint assignments. Russian victory retains both checks, complete British player loss and at least 80 percent CDF AI loss. The warnings and announcements at 4,800, 5,400 and 5,410 seconds are preserved. The draft passed the configured resource audit.
+
+This pass removed 124 AI group placement blockers across 59 other worlds. The generated draft and report reproduced byte-for-byte, and previously staged conversions still match.
