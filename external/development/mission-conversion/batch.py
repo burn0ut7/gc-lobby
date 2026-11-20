@@ -5,7 +5,7 @@ from hashlib import sha256
 from pathlib import PurePosixPath
 import re
 
-from arc_capture import capture_instance
+from arc_capture import CAPTURE_EDITOR_FIELDS, capture_instance
 from boundaries import convert_boundaries
 from briefings import block_end, guid, properties
 from catalog import REF, SOURCE_TEXT
@@ -14,6 +14,7 @@ from interactions import convert_block as convert_interaction_block
 from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer
 from outcomes import FRAMEWORK, leaves
+import polygon_capture
 from scenery import FIELD, StockPrefabs, WAYPOINT_CLASS
 
 LEGACY = re.compile(r'\b(?:TILW|PS)_\w+')
@@ -305,36 +306,35 @@ def area_rules(source, world):
             continue
         for line, block in blocks(text):
             match = TRIGGER.fullmatch(block[0])
-            if not match:
+            shape = polygon_capture.SHAPE.fullmatch(block[0])
+            if not match and not shape:
                 continue
-            members = [(match['name'], block[1:-1])]
-            if match['group']:
-                members = []
-                index = 1
-                while index < len(block) - 1:
-                    member = re.fullmatch(r' (?:([\w.-]+) )?\{', block[index])
-                    if not member:
-                        raise ValueError('unsupported grouped area placement')
-                    end = block_end(block, index)
-                    members.append((member[1], block[index + 1:end]))
-                    index = end + 1
+            root = shape or match
             result, areas, capture_details = {}, [], {}
             try:
-                for name, fields in members:
+                for name, fields in polygon_capture.members(block, root['group'], root['name']):
+                    trigger = match
+                    if shape:
+                        placement, (trigger, fields), vertices = polygon_capture.read(fields, TRIGGER)
                     flag_field = next(value.strip() for value in fields if value.strip().startswith('m_flagName '))
                     flag = flag_field.removeprefix('m_flagName ')
                     if not re.fullmatch(r'"\w+"', flag) or flag in conditions or flag in result:
                         raise ValueError('invalid or duplicate area flag')
                     area_name = 'GC_MigrationArea_' + flag[1:-1]
-                    if match['kind'] == 'Extraction' and match['guid'] == '192ABD6B9232E064':
-                        rule, area = extraction_rule(world, area_name, flag, fields)
-                    elif match['kind'] == 'Faction' and match['guid'] == '8C576D46F6579229':
+                    if shape or trigger['kind'] == 'Faction':
                         area_name = name or area_name
-                        built, area, details = capture_instance(world, area_name, fields)
+                    if trigger['kind'] == 'Extraction' and trigger['guid'] == '192ABD6B9232E064':
+                        rule, area = extraction_rule(world, area_name, flag, fields, polygon=bool(shape))
+                    elif trigger['kind'] == 'Faction' and trigger['guid'] == '8C576D46F6579229':
+                        built, area, details = capture_instance(world, area_name, fields, polygon=bool(shape))
                         capture_details[flag[1:-1]] = {'area': area_name, **details}
                         rule = built[flag]
                     else:
                         raise ValueError('inconsistent trigger identity')
+                    if shape:
+                        area = '\n'.join([f'PolylineShapeEntity {area_name} {{', *placement, '}', ''])
+                        capture_details.setdefault(flag[1:-1], {'area': area_name})
+                        capture_details[flag[1:-1]]['polygonVertices'] = vertices
                     result[flag] = rule
                     areas.append(area)
             except (StopIteration, ArithmeticError, KeyError, ValueError):
@@ -346,19 +346,21 @@ def area_rules(source, world):
     return conditions, placements, audit
 
 
-def extraction_rule(world, area_name, flag, fields):
+def extraction_rule(world, area_name, flag, fields, *, polygon=False):
     data = properties(fields, {'coords', 'm_queryRadius', 'm_captureTime', 'm_flagName',
-                               'm_stopAfterFirstChange', 'm_factionKey', 'm_ratioThreshold', 'm_playersOnly'})
+                               'm_stopAfterFirstChange', 'm_factionKey', 'm_ratioThreshold', 'm_playersOnly'}
+                      | CAPTURE_EDITOR_FIELDS)
     if data.get('m_stopAfterFirstChange') != '1' or data.get('m_playersOnly', '1') != '1':
         raise ValueError('unsupported extraction settings')
-    faction, coords, radius = data['m_factionKey'], data['coords'], data['m_queryRadius']
-    hold, ratio = data.get('m_captureTime', '0'), data['m_ratioThreshold']
-    if not (re.fullmatch(r'"[\w.-]+"', faction) and 0 < float(radius) < float('inf')
+    faction, coords = data['m_factionKey'], data.get('coords', '')
+    radius = data.get('m_queryRadius', '25') if polygon else data['m_queryRadius']
+    hold, ratio = data.get('m_captureTime', '0'), data.get('m_ratioThreshold', '1')
+    if not (re.fullmatch(r'"[\w.-]+"', faction) and (polygon or 0.1 <= float(radius) <= 100000)
             and (float(hold) == 0 or 0.1 <= float(hold) <= 86400)
-            and 0 <= float(ratio) <= 1 and re.fullmatch(r'[-+\d.]+ [-+\d.]+ [-+\d.]+', coords)):
+            and 0 <= float(ratio) <= 1 and (polygon or re.fullmatch(r'[-+\d.]+ [-+\d.]+ [-+\d.]+', coords))):
         raise ValueError('invalid extraction settings')
     check = extraction_condition(world, flag[1:-1], area_name, faction, ratio, hold if float(hold) else None)
-    area = f'''GC_RadiusAreaEntity {area_name} : "{{2C4447C53A1E450B}}Prefabs/Logic/Mission/RadiusArea.et" {{
+    area = '' if polygon else f'''GC_RadiusAreaEntity {area_name} : "{{2C4447C53A1E450B}}Prefabs/Logic/Mission/RadiusArea.et" {{
  coords {coords}
  m_fRadius {radius}
 }}
@@ -585,7 +587,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
                 elif (layer, line) in area_placements and area_placements[(layer, line)][0] <= used_flags:
                     areas = area_placements[(layer, line)][1]
-                    area_names.extend(re.findall(r'^GC_RadiusAreaEntity ([\w.-]+) :', areas, re.M))
+                    area_names.extend(re.findall(r'^(?:GC_RadiusAreaEntity|PolylineShapeEntity) ([\w.-]+) ', areas, re.M))
                     result.append(areas)
                 elif (layer, line) in interaction_placements:
                     result.append(interaction_placements[(layer, line)])

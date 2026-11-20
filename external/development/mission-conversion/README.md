@@ -450,3 +450,9 @@ The shared radius capture rule now uses the legacy defaults of a 25-metre radius
 The catalog pass cleared faction-trigger blockers in 51 worlds and framework-event blockers in 45. Nested polygon triggers and custom trigger-side effects remain open. Live discovery, loss and status-message timing still need shared multiplayer coverage.
 
 Crash Party and Ridge Rumble are in local Missions Dev commit `0abd5519`. The comparison matched 75 and 68 ordered slots respectively, both 25-metre capture areas, both 180-second holds, casualty thresholds and authored timeout notices. Ridge Rumble's original launcher advertises 66 and retains that value. Crash Party's world reference was normalized to the verified path with its original GUID. Both drafts passed the installed resource audit.
+
+## Polygon captures and editor preview fields
+
+The batch converts a closed native polyline with one supported unnamed legacy capture child into a named native area. It retains the parent's original points, transform and editor line color. Counts use the polygon boundary and preserve the child's faction, comparison and hold settings. The rule covers standalone and grouped polylines. Extra child entities, named child triggers, map-shape components, and unsupported geometry stay in the blocker report.
+
+The legacy base trigger's sphere surface, outline and color settings are used only by its Workbench debug drawing. They no longer block conversion. In-game shape components and audiences still require conversion. The catalog identified eight supported polygon captures across three worlds. Faction-trigger blockers fell from 92 to 81 worlds and framework-event blockers from 168 to 157 worlds. Counter the Counter's six grouped areas retained every authored vertex and transform. Shared runtime coverage is still open for polygon boundary membership, capture timing and status delivery.

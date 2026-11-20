@@ -155,6 +155,7 @@ def capture(source, world):
 
 
 CAPTURE_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ', 'scale'}
+CAPTURE_EDITOR_FIELDS = {'m_drawShapeSurface', 'm_drawShapeOutline', 'm_setShapeColor'}
 CAPTURE_TEXT = {
     'm_sCaptured': '"The %1 has taken control of %2."',
     'm_sCapturing': '"The %1 is taking control of %2."',
@@ -172,13 +173,13 @@ def faction_keys(value):
     return keys
 
 
-def capture_instance(world, area_name, lines):
+def capture_instance(world, area_name, lines, *, polygon=False):
     data = properties(lines, {
         'm_queryRadius', 'm_captureTime', 'm_sendStatusMessages', 'm_locationName',
         'm_flagName', 'm_stopAfterFirstChange', 'm_playersOnly', 'm_ownerFactionKey', 'm_ratioThreshold',
         'm_comparisonMode', 'm_ignoredFactions', 'm_displayTo', 'm_statusMessages',
         'm_skipFirstQuery', 'm_eventsOnlyDuringGame',
-    } | CAPTURE_TRANSFORM)
+    } | CAPTURE_TRANSFORM | CAPTURE_EDITOR_FIELDS)
     players_only = data.get('m_playersOnly', '0')
     stops = data.get('m_stopAfterFirstChange', '0')
     status = data.get('m_sendStatusMessages', '0')
@@ -195,10 +196,12 @@ def capture_instance(world, area_name, lines):
     radius = data.get('m_queryRadius', '25')
     hold = data.get('m_captureTime', '0')
     transform = {key: value for key, value in data.items() if key in CAPTURE_TRANSFORM}
-    if ('coords' not in transform or any(not FIELD.fullmatch(f'{key} {value}') for key, value in transform.items())
+    if ((not polygon and 'coords' not in transform)
+            or any(not FIELD.fullmatch(f'{key} {value}') for key, value in transform.items())
             or not re.fullmatch(r'"[\w.-]+"', owner)
             or any(not re.fullmatch(NUMBER, value) for value in (ratio, radius, hold))
-            or not (0 <= Decimal(ratio) <= 1 and 0 < Decimal(radius) <= 100000 and 0 <= Decimal(hold) <= 86400)
+            or not (0 <= Decimal(ratio) <= 1 and 0 <= Decimal(hold) <= 86400)
+            or (not polygon and not Decimal('0.1') <= Decimal(radius) <= 100000)
             or not re.fullmatch(QUOTED, location) or len(location.encode()) - 2 > 80
             or '<' in location or '>' in location):
         raise ValueError('invalid capture location, threshold or timing')
@@ -244,16 +247,20 @@ def capture_instance(world, area_name, lines):
         m_iInterruption 3
 {stop}{discovery}{messages}       }}
       }}'''
-    position = ''.join(f' {field} {value}\n' for field, value in transform.items())
-    area = f'''GC_RadiusAreaEntity {area_name} : "{{2C4447C53A1E450B}}Prefabs/Logic/Mission/RadiusArea.et" {{
+    area = ''
+    geometry = {}
+    if not polygon:
+        position = ''.join(f' {field} {value}\n' for field, value in transform.items())
+        area = f'''GC_RadiusAreaEntity {area_name} : "{{2C4447C53A1E450B}}Prefabs/Logic/Mission/RadiusArea.et" {{
 {position} m_fRadius {radius}
 }}
 '''
+        geometry['radiusMeters'] = float(radius) if '.' in radius or 'e' in radius.lower() else int(radius)
     audit = {
         'faction': owner[1:-1],
         'location': location[1:-1],
         'seconds': int(Decimal(hold)) if Decimal(hold) == Decimal(hold).to_integral_value() else float(hold),
-        'radiusMeters': float(radius) if '.' in radius or 'e' in radius.lower() else int(radius),
+        **geometry,
         'requiredLocalShare': float(ratio) if ratio != '1' else 1,
         'timing': 'elapsed mission seconds',
         'population': 'players' if players_only == '1' else 'players and AI',
