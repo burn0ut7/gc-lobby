@@ -2821,7 +2821,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Blue/Ruckusberg/RuckusBerg_Layers/USSR/USSRPlayer.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved character prefab D1BA3D1164545A8D"
         }
       },
       "boundaryLayers": {
@@ -2918,7 +2918,7 @@
           "gap": "group field needs review: m_aUnitPrefabSlots"
         },
         "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/OPFOR/OPFORPlayer.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "group field needs review: m_aUnitPrefabSlots"
         }
       },
       "boundaryLayers": {
@@ -3020,7 +3020,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/OPFOR.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 8558FB262DBF1D64"
         },
         "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/OPFORAI.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -3681,7 +3681,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Corax/BlackhawkBrawl/blackhawk_brawl_Layers/USA.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 8,
+          "unitPrefabEntries": 56
         }
       },
       "boundaryLayers": {
@@ -3894,7 +3895,8 @@
       },
       "groupLayers": {
         "worlds/Corax/Hnevice/Hnevice_Layers/blu.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 8,
+          "unitPrefabEntries": 68
         }
       },
       "boundaryLayers": {
@@ -3923,7 +3925,17 @@
       },
       "briefingModePreset": "worlds/Corax/Hnevice/Hnevice_GC_Settings.et",
       "renumberedInSourceOrder": true,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "playtestCandidate": {
+        "remainingBehavior": [
+          "Convert the two 80% casualty notifications with legacy peak-population semantics",
+          "Convert the crash site and the two side-filtered platoon icons",
+          "Convert the disabled AO instance as a map-only polygon with US and USSR visibility",
+          "Match the legacy 120-second staging behavior and countdown",
+          "Verify faction loadouts, eight groups, 68 slots, 11 briefing entries and weather in play",
+          "Verify JIP, respawn defaults, and after-action flow against the legacy session"
+        ]
+      }
     },
     "worlds/Corax/IntercectingForces/IntersectingForces.ent": {
       "sourceResourceCount": 10,
@@ -4353,7 +4365,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/OPFOR.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
       "directBriefingsRead": 9,
@@ -4464,7 +4476,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/OPFOR.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
       "boundaryLayers": {
@@ -4980,7 +4992,7 @@
           "unitPrefabEntries": 28
         },
         "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/_OPFOR.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
       "directBriefingsRead": 10,
@@ -5791,7 +5803,7 @@
       },
       "groupLayers": {
         "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache_Layers/Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 6B8232E5A8ED3EBA"
         }
       },
       "directBriefingsRead": 12,
@@ -6351,10 +6363,10 @@
       },
       "groupLayers": {
         "worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals_Layers/CAF.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 6B8232E5A8ED3EBA"
         },
         "worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals_Layers/Separatist.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review E1CF84BB8F21BBB5"
         }
       },
       "directBriefingsRead": 8,
@@ -6723,7 +6735,7 @@
       },
       "groupLayers": {
         "worlds/Gabe/BlocParty/BlocParty_Layers/Players_AFRF.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 15CDD8ADC00E4B45"
         },
         "worlds/Gabe/BlocParty/BlocParty_Layers/Players_INSURGENTS.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -9184,7 +9196,7 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Encircled NVA/EncircledNVA_Layers/NVA_Players/NVA_Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "group field needs review: m_faction"
         },
         "worlds/HitTheMan/Encircled NVA/EncircledNVA_Layers/US_Players/US_Players.layer": {
           "gap": "group field needs review: DangerEventRange"
@@ -9625,7 +9637,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Hall Boss Mines/HallBossMines_Layers/OPFOR_Players/OPFOR_Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
       "boundaryLayers": {
@@ -9711,7 +9723,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Hall Boss/HallBoss_Layers/OPFOR_Players/OPFOR_Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
       "boundaryLayers": {
@@ -10154,7 +10166,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence_Layers/OPFOR_Players/OPFOR_Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mission-owned slot A2B3DB1BABEF1F4E"
         }
       },
       "boundaryLayers": {
@@ -10519,7 +10531,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/OPFOR/OPF_Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review FFE45AFCB29CD014"
         }
       },
       "boundaryLayers": {
@@ -11222,7 +11234,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_Layers/Players_Soviets/OPFOR_Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         },
         "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_Layers/Players_UK/UK_Players.layer": {
           "gap": "mission-owned slot CFEF5849657BF84D"
@@ -11572,7 +11584,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/OPFOR_Players/OPFOR_Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mission-owned slot DF863BB1C3B845D5"
         }
       },
       "directBriefingsRead": 16,
@@ -11658,7 +11670,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_Layers/OPFOR_Players/OPFOR_Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 13,
+          "unitPrefabEntries": 66
         }
       },
       "boundaryLayers": {
@@ -11869,7 +11882,7 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack_Layers/NVA_Players/NVA_Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "group field needs review: m_faction"
         },
         "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack_Layers/US_Players/US_Players.layer": {
           "gap": "mission-owned slot 4BE122E83008AA87"
@@ -13168,7 +13181,7 @@
           "gap": "unresolved character prefab 547BA14003A67C04"
         },
         "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/OPFOR/PlayerOPFOR.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
       "boundaryLayers": {
@@ -13244,7 +13257,7 @@
           "gap": "legacy slot playability requires review 5E4D30EAE4DDA13A"
         },
         "worlds/IronFunnelEvent/MSN3/SovietLevies_Layers/players_ussr.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
       "directBriefingsRead": 0,
@@ -13338,7 +13351,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs_Layers/ussr.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
       "directBriefingsRead": 13,
@@ -13755,7 +13768,7 @@
           "gap": "group field needs review: m_iGroupRadioFrequency"
         },
         "worlds/James/LacourtManor/LacourtManor_Layers/red_players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "group field needs review: m_iGroupRadioFrequency"
         }
       },
       "boundaryLayers": {
@@ -13842,7 +13855,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/James/LehtoTussle/LehtoTussle_Layers/red_players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
       "boundaryLayers": {
@@ -15240,7 +15253,7 @@
       },
       "groupLayers": {
         "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/BLUFOR/BLUFOR_Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 54AA8E6E06148F39"
         },
         "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/OPFOR/OPFOR_Players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -15347,7 +15360,7 @@
           "unitPrefabEntries": 13
         },
         "worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR_Layers/USSR/USSR_Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "unresolved character prefab 2C4AD617FBDE35C4"
         }
       },
       "boundaryLayers": {
@@ -17212,7 +17225,7 @@
       },
       "groupLayers": {
         "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/IRAQ/Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 0F40B7C9697E9742"
         },
         "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/UK/Players.layer": {
           "playableGroups": 6,
@@ -17411,7 +17424,7 @@
           "unitPrefabEntries": 30
         },
         "worlds/TheLocalPub/CimicHouse/CimicHouse_Layers/OPFOR/Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 1AB3DC8EFD701A91"
         }
       },
       "directBriefingsRead": 9,
@@ -17585,7 +17598,7 @@
           "unitPrefabEntries": 50
         },
         "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint_Layers/OPFOR/Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 255BA49B817E33AD"
         }
       },
       "boundaryLayers": {
@@ -17697,7 +17710,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_Layers/OPFOR/Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 255BA49B817E33AD"
         }
       },
       "boundaryLayers": {
@@ -17777,7 +17790,7 @@
       },
       "groupLayers": {
         "worlds/TheLocalPub/Joutus/Joutus_Layers/CAF/Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review F1802349655D63BC"
         },
         "worlds/TheLocalPub/Joutus/Joutus_Layers/FIA/AI.layer": {
           "gap": "parent playability requires inheritance or member review"
@@ -18042,7 +18055,7 @@
           "gap": "mission-owned slot 25E3B9F72EA757BC"
         },
         "worlds/TheLocalPub/OilRigRangos/OilRigRangos_Layers/CIV/Player.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mission-owned slot B18D7B30D4C389FA"
         },
         "worlds/TheLocalPub/OilRigRangos/OilRigRangos_Layers/OPFOR/Players.layer": {
           "gap": "mission-owned group 558D7D02AE68982F"
@@ -18284,7 +18297,7 @@
           "gap": "parent playability requires inheritance or member review"
         },
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/INDFOR/Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 255BA49B817E33AD"
         },
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/OPFOR/Players.layer": {
           "playableGroups": 10,
@@ -18505,7 +18518,7 @@
       },
       "groupLayers": {
         "worlds/TheLocalPub/RapidAttack/RapidAttack_Layers/CAF/Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review F29C8B7CB50A0F2A"
         },
         "worlds/TheLocalPub/RapidAttack/RapidAttack_Layers/FIA/AI.layer": {
           "gap": "parent playability requires inheritance or member review"
@@ -18597,10 +18610,11 @@
           "gap": "parent playability requires inheritance or member review"
         },
         "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/BLUFOR/Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "playableGroups": 1,
+          "unitPrefabEntries": 1
         },
         "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/OPFOR/Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "group field needs review: m_aUnitPrefabSlots"
         }
       },
       "stockPlacementLayers": {
@@ -19022,7 +19036,7 @@
           "unitPrefabEntries": 24
         },
         "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress_Layers/OPFOR/Players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review BDDF016F45B7851F"
         }
       },
       "boundaryLayers": {
@@ -19486,10 +19500,10 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/Countdown/Countdown_Layers/players_civ.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 22E43956740A6794"
         },
         "worlds/Til/Countdown/Countdown_Layers/players_sep.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 7F16C773F44030E6"
         },
         "worlds/Til/Countdown/Countdown_Layers/players_us.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -20536,7 +20550,7 @@
           "gap": "parent playability requires inheritance or member review"
         },
         "worlds/Til/JunctionJab/JunctionJab_Layers/players_caf.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review FC5B6E3946BB6F48"
         },
         "worlds/Til/JunctionJab/JunctionJab_Layers/players_nva.layer": {
           "gap": "group field needs review: m_aUnitPrefabSlots"
@@ -20624,7 +20638,7 @@
       },
       "groupLayers": {
         "worlds/Til/JunctionJabXL/JunctionJabXL_Layers/players_caf.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review FC5B6E3946BB6F48"
         },
         "worlds/Til/JunctionJabXL/JunctionJabXL_Layers/players_nva.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -22219,7 +22233,7 @@
       },
       "groupLayers": {
         "worlds/Wade/TheLocalFiles/TheLocalFiles_Layers/PlayersCIV.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "mission-owned slot DE94F9CA70A9C23B"
         },
         "worlds/Wade/TheLocalFiles/TheLocalFiles_Layers/PlayersIND.layer": {
           "gap": "mission-owned slot 53C0A621CB97E80D"
@@ -22328,7 +22342,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/players_ussr.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 8558FB262DBF1D64"
         }
       },
       "boundaryLayers": {
@@ -23117,10 +23131,10 @@
       },
       "groupLayers": {
         "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/B4_heart_OP4.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 880C5D691FD13F6E"
         },
         "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/Howlers.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 63892DDB3954C8A5"
         }
       },
       "directBriefingsRead": 0,
@@ -23195,7 +23209,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/anteante101/Castle Crushers/CastleCrushers_Layers/UK.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "group field needs review: m_aUnitPrefabSlots"
         }
       },
       "boundaryLayers": {
@@ -23858,10 +23872,10 @@
       },
       "groupLayers": {
         "worlds/arc/BrambledeepBypass/BrambledeepBypass_Layers/players_ru.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 725760D740B6846E"
         },
         "worlds/arc/BrambledeepBypass/BrambledeepBypass_Layers/players_us.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 3367BFA2568E9046"
         }
       },
       "directBriefingsRead": 11,
@@ -24299,7 +24313,7 @@
           "unitPrefabEntries": 50
         },
         "worlds/arc/CrashParty/CrashParty_Layers/USPlayers.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 88B61981BD94BAE1"
         }
       },
       "boundaryLayers": {
@@ -24503,7 +24517,7 @@
           "gap": "parent playability requires inheritance or member review"
         },
         "worlds/arc/EFPLumberjacks/EFPLumberjacks_Layers/players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review F29C8B7CB50A0F2A"
         }
       },
       "boundaryLayers": {
@@ -24785,10 +24799,10 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/arc/FactorySiegeRedux/FactorySiegeRedux_Layers/players_ru.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review E227EF76A95B5198"
         },
         "worlds/arc/FactorySiegeRedux/FactorySiegeRedux_Layers/players_us.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "group field needs review: m_aUnitPrefabSlots"
         }
       },
       "boundaryLayers": {
@@ -25857,10 +25871,10 @@
           "gap": "parent playability requires inheritance or member review"
         },
         "worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux_Layers/players_ru.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review E227EF76A95B5198"
         },
         "worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux_Layers/players_us.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 96BC236C0E598201"
         }
       },
       "boundaryLayers": {
@@ -26264,10 +26278,10 @@
           "gap": "parent playability requires inheritance or member review"
         },
         "worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux_Layers/players_ru.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 725760D740B6846E"
         },
         "worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux_Layers/players_us.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 3367BFA2568E9046"
         }
       },
       "boundaryLayers": {
@@ -27234,7 +27248,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/arc/SunnyWAC/SunnyWAC_Layers/players.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 88B61981BD94BAE1"
         }
       },
       "directBriefingsRead": 9,
@@ -27895,10 +27909,10 @@
       },
       "groupLayers": {
         "worlds/arc/VilleneufPunchupRedux/VilleneufPunchupRedux_Layers/players_caf.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review F1802349655D63BC"
         },
         "worlds/arc/VilleneufPunchupRedux/VilleneufPunchupRedux_Layers/players_ru.layer": {
-          "gap": "parent playability requires inheritance or member review"
+          "gap": "legacy slot playability requires review 8BEC67677F23304C"
         }
       },
       "directBriefingsRead": 11,

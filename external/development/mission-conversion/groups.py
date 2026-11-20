@@ -77,9 +77,9 @@ def legacy_member(snapshot, guid, force):
 
 
 def convert_instance(lines, guid, old, new, source_units, dev_units, stock, locally_owned):
-    # Publish only verified playable parents with the same inherited slot roster.
-    # Unknown parent composition is left for full prefab-chain resolution.
-    if not any(l.strip() == 'm_bPlayable 1' for l in lines) and scalar(inheritance(dev_units, guid), 'm_bPlayable') != 1:
+    explicit_force = any(l.strip() == 'm_bSetPlayable 1' for l in lines)
+    native_playable = any(l.strip() == 'm_bPlayable 1' for l in lines) or scalar(inheritance(dev_units, guid), 'm_bPlayable') == 1
+    if not native_playable and not explicit_force:
         raise ValueError('parent playability requires inheritance or member review')
     replace_slots = any(l.strip() == 'm_aUnitPrefabSlots {' for l in lines)
     roster = []
@@ -166,6 +166,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
         if not legacy_member(source_units, member, force):
             raise ValueError('legacy slot playability requires review ' + member)
         only_path(dev_units, member)
+    if not native_playable:
+        metadata.append(indent + 'm_bPlayable 1')
     return out + metadata, len(roster)
 
 

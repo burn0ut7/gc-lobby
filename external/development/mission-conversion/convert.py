@@ -11,6 +11,7 @@ from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
 from events import world_events
 from groups import group_layer
+import hnevice
 from launchers import launcher
 from markers import convert_layer as convert_markers
 from respawns import read_respawns, ticket_event
@@ -33,6 +34,7 @@ def main():
     parser.add_argument('--units-source', default='origin/master')
     parser.add_argument('--units-dev', default='origin/dev')
     parser.add_argument('--include-ruha', action='store_true', help='generate the reviewed Ruha race world')
+    parser.add_argument('--include-hnevice-candidate', action='store_true', help='stage the incomplete Hnevice playtest world externally')
     args = parser.parse_args()
     source = Snapshot(args.missions, args.source)
     dev = Snapshot(args.missions, args.dev)
@@ -220,6 +222,15 @@ def main():
                 'Compare transfer action reach, map rendering and roadblock cleanup in play',
                 'Check boundary at the five-centimetre crossover adjustment',
             ])
+    if args.include_hnevice_candidate:
+        if not args.stage or not args.units:
+            parser.error('the Hnevice playtest candidate requires --stage and --units')
+        row = report['worlds'][hnevice.WORLD]
+        for path, data in hnevice.assemble(source, dev, row, out).items():
+            if path in dev.files and dev.read(path).strip() != data.strip():
+                parser.error(f'Dev already has differing {path}')
+            out[path] = data
+        row['playtestCandidate'] = {'remainingBehavior': hnevice.GAPS}
     if args.stage:
         stage = args.stage.resolve()
         if any(stage.is_relative_to(root.resolve()) for root in ([args.missions, lobby] + ([args.units] if args.units else []))):
