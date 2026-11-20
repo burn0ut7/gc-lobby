@@ -1,6 +1,7 @@
 """Stage the Hnevice terrain, lobby mode, briefings, groups and supported AO."""
 from briefings import block_end, guid
 from launchers import launcher
+from markers import LEGACY, instance
 
 WORLD = 'worlds/Corax/Hnevice/Hnevice.ent'
 HEADER = 'Missions/Corax/Hnevice/Hnevice.conf'
@@ -12,12 +13,41 @@ REVIEWED = {
 }
 GAPS = [
     'Convert the two 80% casualty notifications with legacy peak-population semantics',
-    'Convert the crash site and the two side-filtered platoon icons',
+    'Compare the crash site and both platoon icons before slotting and as each assigned side',
     'Convert the disabled AO instance as a map-only polygon with US and USSR visibility',
     'Match the legacy 120-second staging behavior and countdown',
     'Verify faction loadouts, eight groups, 68 slots, 11 briefing entries and weather in play',
     'Verify JIP, respawn defaults, and after-action flow against the legacy session',
 ]
+
+MARKER_PRESETS = {
+    # Reviewed TilW objective and platoon prefabs. Each placed marker overrides
+    # the inherited transform, tint, and label. The platoon icons also override the imageset.
+    'BA3177FCACC39F3A': {'m_sQuadName': '"objective-marker"', 'm_fWorldSize': '50'},
+    '63BCE30CF8B65BCE': {'m_sQuadName': '"infantry"', 'm_fWorldSize': '95'},
+    '676B84E0291E12D6': {'m_sQuadName': '"infantry"', 'm_fWorldSize': '95'},
+}
+
+
+def mission_icons(source):
+    output = []
+    for name in ('default.layer', 'briefing.layer'):
+        lines = source.read(FOLDER + name).splitlines()
+        for pos, line in enumerate(lines):
+            match = LEGACY.fullmatch(line)
+            if not match:
+                continue
+            if match['group'] or match['guid'] not in MARKER_PRESETS:
+                raise ValueError('Hnevice marker preset changed')
+            inherited = {
+                'm_sImageSetGlow': '""', 'm_bVisibleForEmptyFaction': '1', 'm_bShowForAnyFaction': '1',
+                **MARKER_PRESETS[match['guid']],
+            }
+            label = ' ' + match['name'] if match['name'] else ''
+            output.append(instance(lines[pos + 1:block_end(lines, pos)], label, inherited))
+    if len(output) != 3:
+        raise ValueError('expected three Hnevice icons')
+    return '\n'.join(output) + '\n'
 
 
 def assemble(source, dev, row, generated):
@@ -49,6 +79,7 @@ def assemble(source, dev, row, generated):
     ai_world = '\n'.join(lines[:next(i for i, line in enumerate(lines) if line.startswith('PerceptionManager '))])
     # Core Dev has no GC_Bystrany wrapper. Its legacy layer added only the terrain map.
     files[WORLD] = 'SubScene {\n Parent "{7A888BF1C248E2E6}Worlds/Bystrany/Bystrany.ent"\n}\n'
+    files[FOLDER + 'icons.layer'] = mission_icons(source)
     files[FOLDER + 'map.layer'] = '''SCR_MapEntity MapEntity1 : "{731564B66F91B107}Prefabs/World/Game/MapEntity.et" {
  "Map Geometry Data" "{0C931F860C09AC4C}Worlds/Bystrany/Bystrany.topo"
  "Satellite background image" "{10EB7E9261F936BC}UI/Textures/Map/Worlds/Bystrany/Bystrany_Rasterized_Enhanced.edds"

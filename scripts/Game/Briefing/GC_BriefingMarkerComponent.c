@@ -44,6 +44,9 @@ class GC_BriefingMarkerComponent : ScriptComponent
 	[Attribute("", UIWidgets.Auto, "Authoritative base-game faction keys. Empty shows the marker to everyone")]
 	protected ref array<FactionKey> m_aFactionKeys;
 
+	[Attribute("0", UIWidgets.CheckBox, "Hide an otherwise public marker from viewers who have no faction")]
+	protected bool m_bHideWithoutFaction;
+
 	[Attribute("0", UIWidgets.ComboBox, "Earliest game-mode phase from which this marker is shown", enumType: SCR_EGameModeState)]
 	protected SCR_EGameModeState m_eShowAtGameModeState;
 
@@ -127,6 +130,8 @@ class GC_BriefingMarkerComponent : ScriptComponent
 			m_bWorldScale, m_fSize, m_fMinSize, m_sDescription, GC_FactionKeys.ToStrings(m_aFactionKeys),
 			m_eShowAtGameModeState, m_bInvertGameModeState, true, markerColor, m_bAlignTextWithMarkerRotation);
 		marker.SetTextColor(textColor);
+		if (m_bHideWithoutFaction)
+			marker.SetFactionVisibility("", false);
 		return marker;
 	}
 

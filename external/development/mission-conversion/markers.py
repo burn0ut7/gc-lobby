@@ -23,13 +23,14 @@ DEFAULTS = {
 }
 
 
-def instance(lines, name):
-    values = properties(lines, ALLOWED)
+def instance(lines, name, inherited=None):
+    placed = properties(lines, ALLOWED)
+    values = {**(inherited or {}), **placed}
     any_side = values.get('m_bShowForAnyFaction', '0')
     unassigned = values.get('m_bVisibleForEmptyFaction', '0')
     factions = values.get('m_aVisibleForFactions', '')
     keys = re.findall(r'"([^"]+)"', factions)
-    if any_side not in ('0', '1') or unassigned != any_side or (any_side == '0' and not keys):
+    if any_side not in ('0', '1') or unassigned not in ('0', '1') or (any_side == '0' and (unassigned == '1' or not keys)):
         raise ValueError('separate unassigned audience')
     if factions and (not re.fullmatch(r'(?:\s*"[^"]+"\s*)+', factions)
                      or len(set(keys)) != len(keys) or len(keys) > 16):
@@ -49,6 +50,8 @@ def instance(lines, name):
         output.append(f'   {new} ' + merged[old].replace('\n', '\n   '))
     if any_side == '0':
         output.extend(['   m_aFactionKeys {', '    ' + factions, '   }'])
+    elif unassigned == '0':
+        output.append('   m_bHideWithoutFaction 1')
     output.extend(['  }', ' }'])
     output.extend(f' {k} {v}' for k, v in merged.items() if k in TRANSFORM)
     return '\n'.join(output + ['}'])

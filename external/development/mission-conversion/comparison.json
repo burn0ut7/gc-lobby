@@ -3081,7 +3081,7 @@
       ],
       "markerLayers": {
         "worlds/Burger4606/Hush/Hush_Layers/Markers.layer": {
-          "gap": "line 2 separate unassigned audience"
+          "candidateIcons": 4
         }
       },
       "groupLayers": {
@@ -3929,7 +3929,7 @@
       "playtestCandidate": {
         "remainingBehavior": [
           "Convert the two 80% casualty notifications with legacy peak-population semantics",
-          "Convert the crash site and the two side-filtered platoon icons",
+          "Compare the crash site and both platoon icons before slotting and as each assigned side",
           "Convert the disabled AO instance as a map-only polygon with US and USSR visibility",
           "Match the legacy 120-second staging behavior and countdown",
           "Verify faction loadouts, eight groups, 68 slots, 11 briefing entries and weather in play",
@@ -4966,7 +4966,7 @@
       ],
       "markerLayers": {
         "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/Markers.layer": {
-          "gap": "line 13 separate unassigned audience"
+          "candidateIcons": 4
         }
       },
       "boundaryLayers": {
@@ -16239,7 +16239,7 @@
       ],
       "markerLayers": {
         "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/Markers/MarksALL.layer": {
-          "gap": "line 2 separate unassigned audience"
+          "gap": "line 15 custom or duplicate field m_aHideOnGameModeStates"
         },
         "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/Markers/MarksSEP.layer": {
           "gap": "line 232 custom or duplicate field m_aHideOnGameModeStates"
@@ -28118,7 +28118,7 @@
       ],
       "markerLayers": {
         "worlds/blackskimask/Deadly Crossing/DeadlyCrossing_Layers/markers.layer": {
-          "gap": "line 102 separate unassigned audience"
+          "candidateIcons": 9
         }
       },
       "boundaryLayers": {
