@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "1e49382a6a20df4686844ca19cece47d18428a8f",
+  "target": "074137c157003b8919da8120bf4f1ee7f91bf7ae",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1983,6 +1983,18 @@
           "candidateIcons": 3
         }
       },
+      "boundaryLayers": {
+        "worlds/Aurelas/Montignac Meat Grind/Montignac Meat Grind_Layers/AO.layer": {
+          "instances": {
+            "10": {
+              "vertices": 6,
+              "name": null,
+              "lastLine": 37
+            }
+          },
+          "placementLayer": "worlds/Aurelas/Montignac Meat Grind/Montignac Meat Grind_Layers/AO_GC_Boundaries.layer"
+        }
+      },
       "groupLayers": {
         "worlds/Aurelas/Montignac Meat Grind/Montignac Meat Grind_Layers/American_Players.layer": {
           "playableGroups": 5,
@@ -2152,6 +2164,22 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "boundaryLayers": {
+        "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/AO_Limits/Bruiser_AO.layer": {
+          "instances": {
+            "1": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
+        },
+        "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/AO_Limits/Insurgent_AO.layer": {
+          "instances": {
+            "1": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
+        }
+      },
       "groupLayers": {
         "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Army/Army_Players.layer": {
           "gap": "group component needs review"
@@ -2235,6 +2263,18 @@
           "gap": "group component needs review"
         }
       },
+      "boundaryLayers": {
+        "worlds/Blue/Bangalorious/Bangalorious_Layers/default.layer": {
+          "instances": {
+            "44": {
+              "vertices": 9,
+              "name": null,
+              "lastLine": 75
+            }
+          },
+          "placementLayer": "worlds/Blue/Bangalorious/Bangalorious_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/Blue/Bangalorious/Bangalorious_Layers/default.layer:79": {
@@ -2301,6 +2341,15 @@
         },
         "worlds/Blue/DirectionFound/DirectionFound_Layers/OPFOR/Players.layer": {
           "gap": "mission-owned slot 719DC1D47B6C1C74"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Blue/DirectionFound/DirectionFound_Layers/CORE.layer": {
+          "instances": {
+            "89": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
         }
       },
       "directBriefingsRead": 14,
@@ -2375,6 +2424,25 @@
         },
         "worlds/Blue/Opportunity Knocks/OpportunityKnocks_Layers/QRF.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Blue/Opportunity Knocks/OpportunityKnocks_Layers/QRF.layer": {
+          "instances": {
+            "26": {
+              "vertices": 4,
+              "name": "QRFRestrict",
+              "lastLine": 51
+            }
+          },
+          "placementLayer": "worlds/Blue/Opportunity Knocks/OpportunityKnocks_Layers/QRF_GC_Boundaries.layer"
+        },
+        "worlds/Blue/Opportunity Knocks/OpportunityKnocks_Layers/default.layer": {
+          "instances": {
+            "81": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
         }
       },
       "directBriefingsRead": 11,
@@ -2479,6 +2547,18 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/Blue/Ruckusberg/RuckusBerg_Layers/default.layer": {
+          "instances": {
+            "29": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 50
+            }
+          },
+          "placementLayer": "worlds/Blue/Ruckusberg/RuckusBerg_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/Blue/Ruckusberg/RuckusBerg_Layers/default.layer:54": {
@@ -2564,6 +2644,28 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/BLUFOR/BLUFORPlayer.layer": {
+          "instances": {
+            "54": {
+              "vertices": 15,
+              "name": "BLUFOR_AO",
+              "lastLine": 111
+            }
+          },
+          "placementLayer": "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/BLUFOR/BLUFORPlayer_GC_Boundaries.layer"
+        },
+        "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/OPFOR/OPFORPlayer.layer": {
+          "instances": {
+            "81": {
+              "vertices": 12,
+              "name": "OPFOR_AO",
+              "lastLine": 126
+            }
+          },
+          "placementLayer": "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/OPFOR/OPFORPlayer_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 11,
       "frameworkEvents": {
         "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/default.layer:163": {
@@ -2647,6 +2749,18 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/default.layer": {
+          "instances": {
+            "89": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 113
+            }
+          },
+          "placementLayer": "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 11,
       "frameworkEvents": {
         "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/default.layer:117": {
@@ -2710,6 +2824,18 @@
           "placements": 22
         }
       },
+      "boundaryLayers": {
+        "worlds/Burger4606/Hush/Hush_Layers/default.layer": {
+          "instances": {
+            "36": {
+              "vertices": 17,
+              "name": null,
+              "lastLine": 92
+            }
+          },
+          "placementLayer": "worlds/Burger4606/Hush/Hush_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Burger4606/Hush/Hush_Layers/default.layer:96": {
@@ -2758,6 +2884,25 @@
         },
         "worlds/Burn0ut7/Farm/Farm_Layers/Opfor.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Burn0ut7/Farm/Farm_Layers/Blufor.layer": {
+          "instances": {
+            "70": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        },
+        "worlds/Burn0ut7/Farm/Farm_Layers/Opfor.layer": {
+          "instances": {
+            "695": {
+              "vertices": 13,
+              "name": null,
+              "lastLine": 746
+            }
+          },
+          "placementLayer": "worlds/Burn0ut7/Farm/Farm_Layers/Opfor_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -2823,6 +2968,15 @@
         },
         "worlds/Burn0ut7/Killzone/Killzone_Layers/zblufor.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Burn0ut7/Killzone/Killzone_Layers/default.layer": {
+          "instances": {
+            "94": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -2907,6 +3061,15 @@
         },
         "worlds/Burn0ut7/Rocky Road/Rocky_Road_Layers/Opfor.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Burn0ut7/Rocky Road/Rocky_Road_Layers/default.layer": {
+          "instances": {
+            "44": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
         }
       },
       "directBriefingsRead": 11,
@@ -3244,6 +3407,26 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/Corax/BlackhawkBrawl/blackhawk_brawl_Layers/default.layer": {
+          "instances": {
+            "90": {
+              "vertices": 10,
+              "name": null,
+              "lastLine": 132
+            },
+            "133": {
+              "vertices": 15,
+              "name": null,
+              "lastLine": 190
+            },
+            "191": {
+              "gap": "unsupported boundary settings"
+            }
+          },
+          "placementLayer": "worlds/Corax/BlackhawkBrawl/blackhawk_brawl_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/Corax/BlackhawkBrawl/blackhawk_brawl_Layers/default.layer:239": {
@@ -3302,6 +3485,21 @@
           "gap": "mission-owned slot 10FC237FEBFC9F6D"
         }
       },
+      "boundaryLayers": {
+        "worlds/Corax/Breach and clear/Breach_and_Clear_Layers/default.layer": {
+          "instances": {
+            "196": {
+              "gap": "separate unassigned map fill audience"
+            },
+            "255": {
+              "vertices": 4,
+              "name": "opforAO",
+              "lastLine": 290
+            }
+          },
+          "placementLayer": "worlds/Corax/Breach and clear/Breach_and_Clear_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 11,
       "frameworkEvents": {
         "worlds/Corax/Breach and clear/Breach_and_Clear_Layers/Fixtures.layer:379": {
@@ -3354,6 +3552,15 @@
         "worlds/Corax/Green mountain/Greenmountain_Layers/Blufor.layer": {
           "playableGroups": 9,
           "unitPrefabEntries": 75
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Corax/Green mountain/Greenmountain_Layers/default.layer": {
+          "instances": {
+            "48": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "directBriefingsRead": 7,
@@ -3411,6 +3618,21 @@
       "groupLayers": {
         "worlds/Corax/Hnevice/Hnevice_Layers/blu.layer": {
           "gap": "parent playability requires inheritance or member review"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Corax/Hnevice/Hnevice_Layers/default.layer": {
+          "instances": {
+            "53": {
+              "vertices": 8,
+              "name": null,
+              "lastLine": 89
+            },
+            "90": {
+              "gap": "unsupported boundary settings"
+            }
+          },
+          "placementLayer": "worlds/Corax/Hnevice/Hnevice_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 11,
@@ -3471,6 +3693,21 @@
       "groupLayers": {
         "worlds/Corax/IntercectingForces/IntersectingForces_Layers/Blufor.layer": {
           "gap": "group field needs review: m_aUnitPrefabSlots"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Corax/IntercectingForces/IntersectingForces_Layers/default.layer": {
+          "instances": {
+            "47": {
+              "vertices": 10,
+              "name": null,
+              "lastLine": 91
+            },
+            "92": {
+              "gap": "unsupported boundary settings"
+            }
+          },
+          "placementLayer": "worlds/Corax/IntercectingForces/IntersectingForces_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 8,
@@ -3536,6 +3773,26 @@
         },
         "worlds/Corax/SerriffBusters/SerrifBusters_Layers/OPFOR.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Corax/SerriffBusters/SerrifBusters_Layers/default.layer": {
+          "instances": {
+            "46": {
+              "vertices": 16,
+              "name": "bluforAO",
+              "lastLine": 116
+            },
+            "117": {
+              "vertices": 27,
+              "name": "opforAO",
+              "lastLine": 220
+            },
+            "221": {
+              "gap": "active cover map needs separate conversion"
+            }
+          },
+          "placementLayer": "worlds/Corax/SerriffBusters/SerrifBusters_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 9,
@@ -3678,6 +3935,33 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1_Layers/Briefing.layer": {
+          "instances": {
+            "143": {
+              "vertices": 12,
+              "name": null,
+              "lastLine": 191
+            },
+            "192": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "225": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "255": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "287": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "317": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          },
+          "placementLayer": "worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1_Layers/Briefing_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 1,
       "frameworkEvents": {
         "worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1_Layers/default.layer:109": {
@@ -3749,6 +4033,42 @@
       "markerLayers": {
         "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/markers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/AO.layer": {
+          "instances": {
+            "2": {
+              "vertices": 5,
+              "name": "OPFOR_AO",
+              "lastLine": 37
+            },
+            "38": {
+              "vertices": 12,
+              "name": "BLUFOR_AO",
+              "lastLine": 95
+            }
+          },
+          "placementLayer": "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/AO_GC_Boundaries.layer"
+        },
+        "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/markers.layer": {
+          "instances": {
+            "2": {
+              "gap": "unsupported boundary settings"
+            },
+            "118": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "207": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "240": {
+              "gap": "unsupported boundary settings"
+            },
+            "340": {
+              "gap": "unsupported boundary settings"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -3870,6 +4190,23 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/Logic.layer": {
+          "instances": {
+            "10": {
+              "vertices": 49,
+              "name": "BLUFOR_AO",
+              "lastLine": 170
+            },
+            "171": {
+              "vertices": 85,
+              "name": "OPFOR_AO",
+              "lastLine": 440
+            }
+          },
+          "placementLayer": "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/Logic_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/default.layer:67": {
@@ -3954,6 +4291,21 @@
         },
         "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_Layers/props.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_Layers/markers.layer": {
+          "instances": {
+            "2": {
+              "vertices": 88,
+              "name": "blufor_AO",
+              "lastLine": 278
+            },
+            "279": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_Layers/markers_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 12,
@@ -4062,6 +4414,78 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "boundaryLayers": {
+        "worlds/Cunnah/Darwin_Hill/Darwin_Hill_Layers/AO.layer": {
+          "instances": {
+            "2": {
+              "vertices": 22,
+              "name": "BLUFOR_AO",
+              "lastLine": 84
+            },
+            "85": {
+              "vertices": 12,
+              "name": "OPFOR_AO2",
+              "lastLine": 136
+            }
+          },
+          "placementLayer": "worlds/Cunnah/Darwin_Hill/Darwin_Hill_Layers/AO_GC_Boundaries.layer"
+        },
+        "worlds/Cunnah/Darwin_Hill/Darwin_Hill_Layers/markers.layer": {
+          "instances": {
+            "68": {
+              "gap": "unsupported boundary settings"
+            },
+            "255": {
+              "gap": "unsupported boundary settings"
+            },
+            "307": {
+              "gap": "unsupported boundary settings"
+            },
+            "436": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "534": {
+              "gap": "unsupported boundary settings"
+            },
+            "565": {
+              "gap": "unsupported boundary settings"
+            },
+            "596": {
+              "gap": "unsupported boundary settings"
+            },
+            "627": {
+              "gap": "unsupported boundary settings"
+            },
+            "658": {
+              "gap": "unsupported boundary settings"
+            },
+            "695": {
+              "gap": "unsupported boundary settings"
+            },
+            "726": {
+              "gap": "unsupported boundary settings"
+            },
+            "757": {
+              "gap": "unsupported boundary settings"
+            },
+            "797": {
+              "gap": "unsupported boundary settings"
+            },
+            "828": {
+              "gap": "unsupported boundary settings"
+            },
+            "855": {
+              "gap": "unsupported boundary settings"
+            },
+            "884": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "915": {
+              "gap": "unsupported boundary settings"
+            }
+          }
+        }
+      },
       "groupLayers": {
         "worlds/Cunnah/Darwin_Hill/Darwin_Hill_Layers/BLUFOR.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -4151,6 +4575,18 @@
       "markerLayers": {
         "worlds/Cunnah/Local_Problems/Local_Problems_Layers/Markers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Cunnah/Local_Problems/Local_Problems_Layers/AO_LIMIT.layer": {
+          "instances": {
+            "1": {
+              "vertices": 23,
+              "name": null,
+              "lastLine": 85
+            }
+          },
+          "placementLayer": "worlds/Cunnah/Local_Problems/Local_Problems_Layers/AO_LIMIT_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -4244,6 +4680,23 @@
           "gap": "line 13 separate unassigned audience"
         }
       },
+      "boundaryLayers": {
+        "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/AO.layer": {
+          "instances": {
+            "5": {
+              "vertices": 29,
+              "name": "BLUFOR_AO",
+              "lastLine": 105
+            },
+            "106": {
+              "vertices": 49,
+              "name": "OPFOR_AO",
+              "lastLine": 266
+            }
+          },
+          "placementLayer": "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/AO_GC_Boundaries.layer"
+        }
+      },
       "groupLayers": {
         "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/_BLUFOR.layer": {
           "playableGroups": 4,
@@ -4312,6 +4765,18 @@
         },
         "worlds/Delfer/Grouse_Hunt/Grouse_Hunt_Layers/Players.layer": {
           "gap": "unresolved character prefab BF38869730F83577"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Delfer/Grouse_Hunt/Grouse_Hunt_Layers/AO.layer": {
+          "instances": {
+            "2": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "20": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
         }
       },
       "directBriefingsRead": 0,
@@ -4392,6 +4857,26 @@
         },
         "worlds/Delfer/Morning_Routine/Morning_Routine_Layers/redfor_players.layer": {
           "gap": "group field needs review: {"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Delfer/Morning_Routine/Morning_Routine_Layers/Markers.layer": {
+          "instances": {
+            "126": {
+              "vertices": 8,
+              "name": "blufor_ao",
+              "lastLine": 171
+            },
+            "172": {
+              "vertices": 12,
+              "name": "blufor_ao_OPs",
+              "lastLine": 229
+            },
+            "230": {
+              "gap": "active cover map needs separate conversion"
+            }
+          },
+          "placementLayer": "worlds/Delfer/Morning_Routine/Morning_Routine_Layers/Markers_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 17,
@@ -4489,6 +4974,28 @@
           "gap": "legacy slot playability requires review 3CABD69DABD06AED"
         }
       },
+      "boundaryLayers": {
+        "worlds/Delfer/Topdown/Topdown_Layers/markers_blue.layer": {
+          "instances": {
+            "131": {
+              "vertices": 9,
+              "name": "blufor_ao",
+              "lastLine": 181
+            }
+          },
+          "placementLayer": "worlds/Delfer/Topdown/Topdown_Layers/markers_blue_GC_Boundaries.layer"
+        },
+        "worlds/Delfer/Topdown/Topdown_Layers/markers_red.layer": {
+          "instances": {
+            "140": {
+              "vertices": 11,
+              "name": "redfor_ao",
+              "lastLine": 194
+            }
+          },
+          "placementLayer": "worlds/Delfer/Topdown/Topdown_Layers/markers_red_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 16,
       "respawn": {
         "factions": [
@@ -4576,6 +5083,15 @@
           "placements": 6
         }
       },
+      "boundaryLayers": {
+        "worlds/Elite/ConcreteJungle/ConcreteJungle_Layers/default.layer": {
+          "instances": {
+            "15": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 1,
       "frameworkEvents": {
         "worlds/Elite/ConcreteJungle/ConcreteJungle_Layers/default.layer:43": {
@@ -4627,6 +5143,21 @@
         "worlds/Elite/DesertHeat/DesertHeat_Layers/Players.layer": {
           "playableGroups": 7,
           "unitPrefabEntries": 63
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Elite/DesertHeat/DesertHeat_Layers/default.layer": {
+          "instances": {
+            "16": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "41": {
+              "vertices": 4,
+              "name": "TILW_AOLimit_2_Opfor",
+              "lastLine": 57
+            }
+          },
+          "placementLayer": "worlds/Elite/DesertHeat/DesertHeat_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 5,
@@ -4688,6 +5219,28 @@
           "gap": "unresolved character prefab DBC177C261C93B9D"
         }
       },
+      "boundaryLayers": {
+        "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/default.layer": {
+          "instances": {
+            "21": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 42
+            },
+            "43": {
+              "vertices": 4,
+              "name": "Blufor_Setup",
+              "lastLine": 68
+            },
+            "69": {
+              "vertices": 4,
+              "name": "Opfor_Setup",
+              "lastLine": 94
+            }
+          },
+          "placementLayer": "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 7,
       "frameworkEvents": {
         "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/default.layer:99": {
@@ -4744,6 +5297,18 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/FSM/Worlds/Co55EntreDeux_attack/CO_55EntreDeux_attack_Layers/hIDE.layer": {
+          "instances": {
+            "166": {
+              "vertices": 11,
+              "name": null,
+              "lastLine": 209
+            }
+          },
+          "placementLayer": "worlds/FSM/Worlds/Co55EntreDeux_attack/CO_55EntreDeux_attack_Layers/hIDE_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 7,
       "frameworkEvents": {
         "worlds/FSM/Worlds/Co55EntreDeux_attack/CO_55EntreDeux_attack_Layers/hIDE.layer:233": {
@@ -4792,6 +5357,21 @@
       "markerLayers": {
         "worlds/FSM/Worlds/TVT62ForestTrouble/TVT62ForestTrouble_Layers/markers.layer": {
           "gap": "line 2 separate unassigned audience"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/FSM/Worlds/TVT62ForestTrouble/TVT62ForestTrouble_Layers/default.layer": {
+          "instances": {
+            "128": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "192": {
+              "vertices": 17,
+              "name": "OPFORAOLimit",
+              "lastLine": 255
+            }
+          },
+          "placementLayer": "worlds/FSM/Worlds/TVT62ForestTrouble/TVT62ForestTrouble_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -4852,6 +5432,18 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "boundaryLayers": {
+        "worlds/FSM/Worlds/TVT66BlockBusters/TVT66BlockBusters_Layers/Framework.layer": {
+          "instances": {
+            "280": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "306": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        }
+      },
       "groupLayers": {
         "worlds/FSM/Worlds/TVT66BlockBusters/TVT66BlockBusters_Layers/Players.layer": {
           "gap": "mission-owned group BB49EA4063459740"
@@ -4903,6 +5495,21 @@
       "markerLayers": {
         "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache_Layers/Framework.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache_Layers/Framework.layer": {
+          "instances": {
+            "298": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "328": {
+              "vertices": 7,
+              "name": null,
+              "lastLine": 362
+            }
+          },
+          "placementLayer": "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache_Layers/Framework_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -4961,6 +5568,21 @@
       "markerLayers": {
         "worlds/FSM/Worlds/TVTBarrackHoldout/TVT67BarrackHoldout_Layers/Framework.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/FSM/Worlds/TVTBarrackHoldout/TVT67BarrackHoldout_Layers/Framework.layer": {
+          "instances": {
+            "262": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "289": {
+              "vertices": 8,
+              "name": null,
+              "lastLine": 326
+            }
+          },
+          "placementLayer": "worlds/FSM/Worlds/TVTBarrackHoldout/TVT67BarrackHoldout_Layers/Framework_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -5026,6 +5648,18 @@
       "groupLayers": {
         "worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache_Layers/Players.layer": {
           "gap": "group field needs review: m_aUnitPrefabSlots"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache_Layers/default.layer": {
+          "instances": {
+            "107": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "136": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "directBriefingsRead": 7,
@@ -5513,6 +6147,21 @@
           "candidateIcons": 1
         }
       },
+      "boundaryLayers": {
+        "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/AO.layer": {
+          "instances": {
+            "2": {
+              "gap": "native polygon requires 3 to 128 points"
+            },
+            "5": {
+              "gap": "native polygon requires 3 to 128 points"
+            },
+            "16": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        }
+      },
       "groupLayers": {
         "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/Blufor1/Blufor.layer": {
           "gap": "group component needs review"
@@ -5591,6 +6240,21 @@
         },
         "worlds/Fruz/Korengal Vacation/Korengal Vacation_Layers/Static.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Fruz/Korengal Vacation/Korengal Vacation_Layers/Static.layer": {
+          "instances": {
+            "274": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "330": {
+              "vertices": 9,
+              "name": null,
+              "lastLine": 376
+            }
+          },
+          "placementLayer": "worlds/Fruz/Korengal Vacation/Korengal Vacation_Layers/Static_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 13,
@@ -5674,6 +6338,18 @@
           "placements": 4
         }
       },
+      "boundaryLayers": {
+        "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/default.layer": {
+          "instances": {
+            "43": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "99": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/default.layer:137": {
@@ -5734,6 +6410,38 @@
         },
         "worlds/Gabe/BlocParty/BlocParty_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Gabe/BlocParty/BlocParty_Layers/CapZones.layer": {
+          "instances": {
+            "2": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "117": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
+        },
+        "worlds/Gabe/BlocParty/BlocParty_Layers/Structures.layer": {
+          "instances": {
+            "1": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
+        },
+        "worlds/Gabe/BlocParty/BlocParty_Layers/default.layer": {
+          "instances": {
+            "186": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "254": {
+              "vertices": 26,
+              "name": "AO_INSURGENT",
+              "lastLine": 353
+            }
+          },
+          "placementLayer": "worlds/Gabe/BlocParty/BlocParty_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -5813,6 +6521,40 @@
         },
         "worlds/Gabe/GuerrillasByDay/GuerrillasByDay_Layers/WeaponsCaches.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Gabe/GuerrillasByDay/GuerrillasByDay_Layers/Default.layer": {
+          "instances": {
+            "138": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "196": {
+              "vertices": 9,
+              "name": "AOLimitOpfor",
+              "lastLine": 244
+            },
+            "245": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          },
+          "placementLayer": "worlds/Gabe/GuerrillasByDay/GuerrillasByDay_Layers/Default_GC_Boundaries.layer"
+        },
+        "worlds/Gabe/GuerrillasByDay/GuerrillasByDay_Layers/Markers.layer": {
+          "instances": {
+            "2": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "117": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "232": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "347": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -5900,6 +6642,24 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/Gabe/IronResolve/IronResolve_Layers/default.layer": {
+          "instances": {
+            "162": {
+              "vertices": 12,
+              "name": "AOLimitOpfor",
+              "lastLine": 218
+            },
+            "219": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "310": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          },
+          "placementLayer": "worlds/Gabe/IronResolve/IronResolve_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Gabe/IronResolve/IronResolve_Layers/default.layer:441": {
@@ -5961,6 +6721,28 @@
       "markerLayers": {
         "worlds/Gabe/PowerStruggle/TVT97PowerStruggle_Layers/Markers.layer": {
           "gap": "line 1 inherited marker preset 60226647F08EF462"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Gabe/PowerStruggle/TVT97PowerStruggle_Layers/Default.layer": {
+          "instances": {
+            "125": {
+              "vertices": 37,
+              "name": null,
+              "lastLine": 258
+            },
+            "259": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          },
+          "placementLayer": "worlds/Gabe/PowerStruggle/TVT97PowerStruggle_Layers/Default_GC_Boundaries.layer"
+        },
+        "worlds/Gabe/PowerStruggle/TVT97PowerStruggle_Layers/Markers.layer": {
+          "instances": {
+            "19": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -6029,6 +6811,15 @@
           "gap": "mission-owned slot 56158B2C2A6297B7"
         }
       },
+      "boundaryLayers": {
+        "worlds/Gabe/TheHillsHaveEyes/TheHillsHaveEyes_Layers/default.layer": {
+          "instances": {
+            "106": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 11,
       "frameworkEvents": {
         "worlds/Gabe/TheHillsHaveEyes/TheHillsHaveEyes_Layers/default.layer:224": {
@@ -6084,6 +6875,56 @@
       "markerLayers": {
         "worlds/Gabe/ZavarakSlums/TVT50ZavarakSlums_Layers/Markers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Gabe/ZavarakSlums/TVT50ZavarakSlums_Layers/Default.layer": {
+          "instances": {
+            "117": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
+        },
+        "worlds/Gabe/ZavarakSlums/TVT50ZavarakSlums_Layers/Markers.layer": {
+          "instances": {
+            "1": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
+        },
+        "worlds/Gabe/ZavarakSlums/TVT50ZavarakSlums_Layers/Structures.layer": {
+          "instances": {
+            "54": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "96": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "139": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "171": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "208": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "256": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "286": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "316": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "353": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "384": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -6165,6 +7006,18 @@
           "gap": "unresolved or duplicate Units prefab 1BF443A793E269EB"
         }
       },
+      "boundaryLayers": {
+        "worlds/HelloCam3/worlds/COOP_StashedCache/COOP_StashedCache_v2_Layers/framework.layer": {
+          "instances": {
+            "198": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 230
+            }
+          },
+          "placementLayer": "worlds/HelloCam3/worlds/COOP_StashedCache/COOP_StashedCache_v2_Layers/framework_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 6,
       "frameworkEvents": {
         "worlds/HelloCam3/worlds/COOP_StashedCache/COOP_StashedCache_v2_Layers/default.layer:500": {
@@ -6238,6 +7091,15 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_Layers/default.layer": {
+          "instances": {
+            "492": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_Layers/default.layer:861": {
@@ -6309,6 +7171,15 @@
         },
         "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/Players/NVA_Players.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/default.layer": {
+          "instances": {
+            "492": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
         }
       },
       "directBriefingsRead": 10,
@@ -6429,6 +7300,21 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/default.layer": {
+          "instances": {
+            "242": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "347": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "430": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 13,
       "respawn": {
         "factions": [
@@ -6541,6 +7427,15 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol_Layers/default.layer": {
+          "instances": {
+            "152": {
+              "gap": "unsupported boundary settings"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 9,
       "frameworkEvents": {
         "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol_Layers/default.layer:271": {
@@ -6622,6 +7517,18 @@
         },
         "worlds/HitTheMan/BMP Incursion/BMPIncursion_Layers/OPFOR_Players/OPFOR_Players.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/BMP Incursion/BMPIncursion_Layers/default.layer": {
+          "instances": {
+            "235": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "346": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "directBriefingsRead": 15,
@@ -6737,6 +7644,18 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/default.layer": {
+          "instances": {
+            "257": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "342": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 16,
       "frameworkEvents": {
         "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/default.layer:431": {
@@ -6832,6 +7751,21 @@
           "gap": "group field needs review: m_aUnitPrefabColorTeams"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/default.layer": {
+          "instances": {
+            "168": {
+              "gap": "separate unassigned map fill audience"
+            },
+            "309": {
+              "vertices": 20,
+              "name": "OPF_AO_Limit",
+              "lastLine": 387
+            }
+          },
+          "placementLayer": "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 15,
       "frameworkEvents": {
         "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/default.layer:443": {
@@ -6920,6 +7854,18 @@
           "gap": "group field needs review: m_aUnitPrefabColorTeams"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/default.layer": {
+          "instances": {
+            "153": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "313": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 15,
       "frameworkEvents": {
         "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/default.layer:447": {
@@ -7000,6 +7946,18 @@
         },
         "worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/US_Players/US_Players.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/default.layer": {
+          "instances": {
+            "162": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "352": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
         }
       },
       "directBriefingsRead": 15,
@@ -7160,6 +8118,18 @@
           "placements": 3
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/default.layer": {
+          "instances": {
+            "246": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "370": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 11,
       "respawn": {
         "factions": [
@@ -7303,6 +8273,15 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay_Layers/default.layer": {
+          "instances": {
+            "150": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 9,
       "frameworkEvents": {
         "worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay_Layers/default.layer:313": {
@@ -7374,6 +8353,18 @@
         },
         "worlds/HitTheMan/Brambledeep Adventure/BrambledeepAdventure_Layers/Players_UK/UK_Players.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Brambledeep Adventure/BrambledeepAdventure_Layers/default.layer": {
+          "instances": {
+            "241": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "362": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
         }
       },
       "directBriefingsRead": 15,
@@ -7462,6 +8453,18 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov_Layers/default.layer": {
+          "instances": {
+            "233": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "352": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 15,
       "frameworkEvents": {
         "worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov_Layers/default.layer:450": {
@@ -7536,6 +8539,18 @@
         },
         "worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo_Layers/OPFOR_Players/OPFOR_Players.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo_Layers/default.layer": {
+          "instances": {
+            "219": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "336": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
         }
       },
       "directBriefingsRead": 15,
@@ -7621,6 +8636,18 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Clearing The Path/ClearingThePath_Layers/default.layer": {
+          "instances": {
+            "247": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "338": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 15,
       "frameworkEvents": {
         "worlds/HitTheMan/Clearing The Path/ClearingThePath_Layers/default.layer:445": {
@@ -7691,6 +8718,23 @@
         },
         "worlds/HitTheMan/Damn The Dam/Damn the Dam_Layers/OP_Players.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Damn The Dam/Damn the Dam_Layers/Core.layer": {
+          "instances": {
+            "76": {
+              "vertices": 24,
+              "name": "TILW_AOLimit_USSR",
+              "lastLine": 162
+            },
+            "163": {
+              "vertices": 34,
+              "name": null,
+              "lastLine": 274
+            }
+          },
+          "placementLayer": "worlds/HitTheMan/Damn The Dam/Damn the Dam_Layers/Core_GC_Boundaries.layer"
         }
       },
       "stockPlacementLayers": {
@@ -7779,6 +8823,18 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Devils Crossing/DevilsCrossing_Layers/default.layer": {
+          "instances": {
+            "244": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "369": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 16,
       "frameworkEvents": {
         "worlds/HitTheMan/Devils Crossing/DevilsCrossing_Layers/default.layer:460": {
@@ -7857,6 +8913,18 @@
           "gap": "group field needs review: DangerEventRange"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Encircled NVA/EncircledNVA_Layers/default.layer": {
+          "instances": {
+            "193": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "257": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 15,
       "frameworkEvents": {
         "worlds/HitTheMan/Encircled NVA/EncircledNVA_Layers/default.layer:327": {
@@ -7929,6 +8997,18 @@
         },
         "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon_Layers/US_Players/US_Players.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon_Layers/default.layer": {
+          "instances": {
+            "175": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "359": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
         }
       },
       "directBriefingsRead": 15,
@@ -8008,6 +9088,18 @@
         },
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/US_Players/US_Players.layer": {
           "gap": "group field needs review: m_faction"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/default.layer": {
+          "instances": {
+            "163": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "245": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
         }
       },
       "directBriefingsRead": 15,
@@ -8091,6 +9183,18 @@
           "gap": "group field needs review: m_faction"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/default.layer": {
+          "instances": {
+            "197": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "254": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 9,
       "frameworkEvents": {
         "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/default.layer:342": {
@@ -8167,6 +9271,18 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Green Hill Assault/GreenHillAssault_Layers/default.layer": {
+          "instances": {
+            "236": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "347": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 16,
       "frameworkEvents": {
         "worlds/HitTheMan/Green Hill Assault/GreenHillAssault_Layers/default.layer:545": {
@@ -8233,6 +9349,18 @@
         },
         "worlds/HitTheMan/Hall Boss Mines/HallBossMines_Layers/OPFOR_Players/OPFOR_Players.layer": {
           "gap": "parent playability requires inheritance or member review"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Hall Boss Mines/HallBossMines_Layers/default.layer": {
+          "instances": {
+            "171": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "250": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
         }
       },
       "directBriefingsRead": 15,
@@ -8309,6 +9437,18 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Hall Boss/HallBoss_Layers/default.layer": {
+          "instances": {
+            "171": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "250": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 15,
       "frameworkEvents": {
         "worlds/HitTheMan/Hall Boss/HallBoss_Layers/default.layer:321": {
@@ -8378,6 +9518,28 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Leaf and The Saw/Leaf and Saw_Layers/Core.layer": {
+          "instances": {
+            "123": {
+              "vertices": 27,
+              "name": null,
+              "lastLine": 213
+            },
+            "214": {
+              "vertices": 24,
+              "name": null,
+              "lastLine": 298
+            },
+            "299": {
+              "vertices": 8,
+              "name": null,
+              "lastLine": 332
+            }
+          },
+          "placementLayer": "worlds/HitTheMan/Leaf and The Saw/Leaf and Saw_Layers/Core_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 15,
       "frameworkEvents": {
         "worlds/HitTheMan/Leaf and The Saw/Leaf and Saw_Layers/Core.layer:381": {
@@ -8441,6 +9603,23 @@
           "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Leaf and Two Bridges/Leaf and Two Bridges_Layers/Core.layer": {
+          "instances": {
+            "133": {
+              "vertices": 42,
+              "name": null,
+              "lastLine": 268
+            },
+            "269": {
+              "vertices": 36,
+              "name": null,
+              "lastLine": 389
+            }
+          },
+          "placementLayer": "worlds/HitTheMan/Leaf and Two Bridges/Leaf and Two Bridges_Layers/Core_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 16,
       "frameworkEvents": {
         "worlds/HitTheMan/Leaf and Two Bridges/Leaf and Two Bridges_Layers/Core.layer:430": {
@@ -8500,6 +9679,18 @@
         },
         "worlds/HitTheMan/Mechanized Leaf/MechanizedLeaf_Layers/OPFOR_Town_AI.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Mechanized Leaf/MechanizedLeaf_Layers/Core.layer": {
+          "instances": {
+            "113": {
+              "vertices": 39,
+              "name": null,
+              "lastLine": 242
+            }
+          },
+          "placementLayer": "worlds/HitTheMan/Mechanized Leaf/MechanizedLeaf_Layers/Core_GC_Boundaries.layer"
         }
       },
       "stockPlacementLayers": {
@@ -8593,6 +9784,18 @@
           "gap": "group field needs review: m_faction"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/default.layer": {
+          "instances": {
+            "260": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "324": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 9,
       "frameworkEvents": {
         "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/default.layer:400": {
@@ -8677,6 +9880,18 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence_Layers/default.layer": {
+          "instances": {
+            "221": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "347": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 15,
       "frameworkEvents": {
         "worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence_Layers/default.layer:456": {
@@ -8755,6 +9970,18 @@
         },
         "worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice_Layers/OPFOR_Players/OPFOR_Players.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice_Layers/default.layer": {
+          "instances": {
+            "235": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "403": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
         }
       },
       "directBriefingsRead": 15,
@@ -8839,6 +10066,23 @@
           "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/River Crossing Leaf/River Crossing Leaf_Layers/Core.layer": {
+          "instances": {
+            "135": {
+              "vertices": 30,
+              "name": null,
+              "lastLine": 235
+            },
+            "236": {
+              "vertices": 25,
+              "name": null,
+              "lastLine": 323
+            }
+          },
+          "placementLayer": "worlds/HitTheMan/River Crossing Leaf/River Crossing Leaf_Layers/Core_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 16,
       "frameworkEvents": {
         "worlds/HitTheMan/River Crossing Leaf/River Crossing Leaf_Layers/Core.layer:360": {
@@ -8911,6 +10155,18 @@
         },
         "worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/OPFOR_Players/OPFOR_Players.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/default.layer": {
+          "instances": {
+            "223": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "378": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
         }
       },
       "directBriefingsRead": 15,
@@ -8987,6 +10243,18 @@
         },
         "worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/OPFOR/OPF_Players.layer": {
           "gap": "parent playability requires inheritance or member review"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/default.layer": {
+          "instances": {
+            "155": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "238": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
         }
       },
       "directBriefingsRead": 6,
@@ -9451,6 +10719,24 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla_Layers/default.layer": {
+          "instances": {
+            "4149": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "4217": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "4340": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "4384": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 21,
       "frameworkEvents": {
         "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla_Layers/default.layer:4509": {
@@ -9665,6 +10951,24 @@
           "gap": "mission-owned slot CFEF5849657BF84D"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_Layers/default.layer": {
+          "instances": {
+            "228": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "339": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "399": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "482": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 21,
       "frameworkEvents": {
         "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_Layers/default.layer:617": {
@@ -9766,6 +11070,15 @@
         },
         "worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault_Layers/BLUFOR_Players/BLUFOR_Players.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault_Layers/default.layer": {
+          "instances": {
+            "212": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
         }
       },
       "directBriefingsRead": 9,
@@ -9874,6 +11187,18 @@
         },
         "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/Players_UK/UK_Players.layer": {
           "gap": "group field needs review: m_faction"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/default.layer": {
+          "instances": {
+            "306": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "465": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
         }
       },
       "directBriefingsRead": 16,
@@ -10059,6 +11384,15 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_Layers/default.layer": {
+          "instances": {
+            "232": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 15,
       "frameworkEvents": {
         "worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_Layers/default.layer:373": {
@@ -10142,6 +11476,18 @@
         },
         "worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn_Layers/Players_UK/UK_Players.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn_Layers/default.layer": {
+          "instances": {
+            "267": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "379": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
         }
       },
       "directBriefingsRead": 15,
@@ -10252,6 +11598,18 @@
           "gap": "mission-owned slot 4BE122E83008AA87"
         }
       },
+      "boundaryLayers": {
+        "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack_Layers/default.layer": {
+          "instances": {
+            "193": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "316": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 15,
       "frameworkEvents": {
         "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack_Layers/default.layer:362": {
@@ -10324,6 +11682,15 @@
         "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/Players.layer": {
           "playableGroups": 6,
           "unitPrefabEntries": 63
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/framework.layer": {
+          "instances": {
+            "58": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
         }
       },
       "directBriefingsRead": 0,
@@ -10442,6 +11809,18 @@
             "waypoints"
           ],
           "placements": 18
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase_Layers/Managers.layer": {
+          "instances": {
+            "197": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 223
+            }
+          },
+          "placementLayer": "worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase_Layers/Managers_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -10573,6 +11952,18 @@
           "unitPrefabEntries": 43
         }
       },
+      "boundaryLayers": {
+        "worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon_Layers/default.layer": {
+          "instances": {
+            "71": {
+              "vertices": 6,
+              "name": null,
+              "lastLine": 105
+            }
+          },
+          "placementLayer": "worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon_Layers/default.layer:148": {
@@ -10677,6 +12068,18 @@
         },
         "worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete_Layers/Redfor/RedTeam.layer": {
           "gap": "group field needs review: m_aStaticVehicles"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete_Layers/default.layer": {
+          "instances": {
+            "286": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "316": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "directBriefingsRead": 6,
@@ -10802,6 +12205,18 @@
         },
         "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/PhaseOneRedfor/MilitarySiteDefense.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/default.layer": {
+          "instances": {
+            "84": {
+              "vertices": 6,
+              "name": "AOPhase1",
+              "lastLine": 116
+            }
+          },
+          "placementLayer": "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 0,
@@ -10955,6 +12370,18 @@
           "placements": 4
         }
       },
+      "boundaryLayers": {
+        "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/default.layer": {
+          "instances": {
+            "176": {
+              "vertices": 5,
+              "name": "Phase1AO",
+              "lastLine": 202
+            }
+          },
+          "placementLayer": "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 1,
       "respawn": {
         "factions": [
@@ -11064,6 +12491,26 @@
         "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/TeamRed.layer": {
           "playableGroups": 5,
           "unitPrefabEntries": 30
+        }
+      },
+      "boundaryLayers": {
+        "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/default.layer": {
+          "instances": {
+            "241": {
+              "vertices": 6,
+              "name": "AO_Limit_Blufor",
+              "lastLine": 273
+            },
+            "274": {
+              "vertices": 7,
+              "name": "AO_Limit_Opfor",
+              "lastLine": 308
+            },
+            "309": {
+              "gap": "active cover map needs separate conversion"
+            }
+          },
+          "placementLayer": "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 0,
@@ -11256,6 +12703,18 @@
           "gap": "inherited slot roster differs"
         }
       },
+      "boundaryLayers": {
+        "worlds/Huska/MortonBay/MortonBay_Layers/Briefing.layer": {
+          "instances": {
+            "94": {
+              "vertices": 7,
+              "name": null,
+              "lastLine": 130
+            }
+          },
+          "placementLayer": "worlds/Huska/MortonBay/MortonBay_Layers/Briefing_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Huska/MortonBay/MortonBay_Layers/default.layer:79": {
@@ -11316,6 +12775,15 @@
           "gap": "mission-owned slot D12224DAE8AE4A10"
         }
       },
+      "boundaryLayers": {
+        "worlds/Huska/WindyGoat/WindyGoat_Layers/default.layer": {
+          "instances": {
+            "185": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 4,
       "frameworkEvents": {
         "worlds/Huska/WindyGoat/WindyGoat_Layers/default.layer:222": {
@@ -11370,6 +12838,21 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/briefing.layer": {
+          "instances": {
+            "10": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "52": {
+              "vertices": 10,
+              "name": null,
+              "lastLine": 106
+            }
+          },
+          "placementLayer": "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/briefing_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -11409,6 +12892,23 @@
         },
         "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/OPFOR/PlayerOPFOR.layer": {
           "gap": "parent playability requires inheritance or member review"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/MissionCore/AOLimits.layer": {
+          "instances": {
+            "2": {
+              "vertices": 15,
+              "name": "BLUFOR_AOLimit",
+              "lastLine": 56
+            },
+            "57": {
+              "vertices": 10,
+              "name": "OPFOR_AOLimit",
+              "lastLine": 99
+            }
+          },
+          "placementLayer": "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/MissionCore/AOLimits_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 11,
@@ -11451,6 +12951,15 @@
       "markerLayers": {
         "worlds/IronFunnelEvent/MSN3/SovietLevies_Layers/markers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/IronFunnelEvent/MSN3/SovietLevies_Layers/default.layer": {
+          "instances": {
+            "127": {
+              "gap": "unsupported boundary property {"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -11530,6 +13039,23 @@
           "candidateIcons": 2
         }
       },
+      "boundaryLayers": {
+        "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs_Layers/default.layer": {
+          "instances": {
+            "117": {
+              "vertices": 14,
+              "name": null,
+              "lastLine": 168
+            },
+            "169": {
+              "vertices": 11,
+              "name": null,
+              "lastLine": 216
+            }
+          },
+          "placementLayer": "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "groupLayers": {
         "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs_Layers/uk.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -11606,6 +13132,25 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "boundaryLayers": {
+        "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney_Layers/blu.layer": {
+          "instances": {
+            "306": {
+              "vertices": 28,
+              "name": null,
+              "lastLine": 406
+            }
+          },
+          "placementLayer": "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney_Layers/blu_GC_Boundaries.layer"
+        },
+        "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney_Layers/red.layer": {
+          "instances": {
+            "267": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        }
+      },
       "groupLayers": {
         "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney_Layers/blu.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -11676,6 +13221,23 @@
           "gap": "mission-owned slot 0D858729AE7F04DF"
         }
       },
+      "boundaryLayers": {
+        "worlds/James/IDidntStealThisConcept/IDidntStealThisConcept_Layers/Misc.layer": {
+          "instances": {
+            "112": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 136
+            },
+            "137": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 161
+            }
+          },
+          "placementLayer": "worlds/James/IDidntStealThisConcept/IDidntStealThisConcept_Layers/Misc_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 11,
       "frameworkEvents": {
         "worlds/James/IDidntStealThisConcept/IDidntStealThisConcept_Layers/Misc.layer:173": {
@@ -11738,6 +13300,21 @@
         },
         "worlds/James/JavoryPrelude/JavoryPrelude_Layers/red.layer": {
           "gap": "group field needs review: m_aUnitPrefabSlots"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/James/JavoryPrelude/JavoryPrelude_Layers/default.layer": {
+          "instances": {
+            "86": {
+              "vertices": 31,
+              "name": null,
+              "lastLine": 199
+            },
+            "200": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/James/JavoryPrelude/JavoryPrelude_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 9,
@@ -11812,6 +13389,18 @@
         },
         "worlds/James/KhandarClearance/KhandarClearance_Layers/ussr.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/James/KhandarClearance/KhandarClearance_Layers/default.layer": {
+          "instances": {
+            "83": {
+              "vertices": 21,
+              "name": null,
+              "lastLine": 162
+            }
+          },
+          "placementLayer": "worlds/James/KhandarClearance/KhandarClearance_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 7,
@@ -11892,6 +13481,23 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/James/LacourtManor/LacourtManor_Layers/misc.layer": {
+          "instances": {
+            "124": {
+              "vertices": 11,
+              "name": null,
+              "lastLine": 170
+            },
+            "171": {
+              "vertices": 11,
+              "name": null,
+              "lastLine": 218
+            }
+          },
+          "placementLayer": "worlds/James/LacourtManor/LacourtManor_Layers/misc_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 9,
       "frameworkEvents": {
         "worlds/James/LacourtManor/LacourtManor_Layers/misc.layer:230": {
@@ -11962,6 +13568,23 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/James/LehtoTussle/LehtoTussle_Layers/default.layer": {
+          "instances": {
+            "102": {
+              "vertices": 11,
+              "name": null,
+              "lastLine": 151
+            },
+            "152": {
+              "vertices": 12,
+              "name": null,
+              "lastLine": 203
+            }
+          },
+          "placementLayer": "worlds/James/LehtoTussle/LehtoTussle_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/James/LehtoTussle/LehtoTussle_Layers/default.layer:214": {
@@ -12018,6 +13641,18 @@
         },
         "worlds/James/OrbSturm/OrbSturm_Layers/minefield_markers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/James/OrbSturm/OrbSturm_Layers/default.layer": {
+          "instances": {
+            "41": {
+              "vertices": 50,
+              "name": null,
+              "lastLine": 204
+            }
+          },
+          "placementLayer": "worlds/James/OrbSturm/OrbSturm_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -12099,6 +13734,21 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "boundaryLayers": {
+        "worlds/James/RichahlamRumble/RichahlamRumble_Layers/default.layer": {
+          "instances": {
+            "101": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "184": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "228": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
+        }
+      },
       "groupLayers": {
         "worlds/James/RichahlamRumble/RichahlamRumble_Layers/insurgent_players.layer": {
           "playableGroups": 4,
@@ -12175,6 +13825,21 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/James/TorskeTussle/TorskeTussle_Layers/default.layer": {
+          "instances": {
+            "91": {
+              "vertices": 15,
+              "name": null,
+              "lastLine": 152
+            },
+            "153": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/James/TorskeTussle/TorskeTussle_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/James/TorskeTussle/TorskeTussle_Layers/default.layer:230": {
@@ -12232,6 +13897,18 @@
       "markerLayers": {
         "worlds/Jub/ALHADRA RUMBLE/ALHADRA RUMBLE_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Jub/ALHADRA RUMBLE/ALHADRA RUMBLE_Layers/default.layer": {
+          "instances": {
+            "111": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "200": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -12307,6 +13984,18 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "boundaryLayers": {
+        "worlds/Jub/Another Hill/Another Hill_Layers/AO.layer": {
+          "instances": {
+            "2": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "36": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "groupLayers": {
         "worlds/Jub/Another Hill/Another Hill_Layers/Argies.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -12374,6 +14063,15 @@
       "markerLayers": {
         "worlds/Jub/CobrasBite/Cobras_bite_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Jub/CobrasBite/Cobras_bite_Layers/default.layer": {
+          "instances": {
+            "51": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -12466,6 +14164,15 @@
           "gap": "legacy slot playability requires review A59EA43640B5DE47"
         }
       },
+      "boundaryLayers": {
+        "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/default.layer": {
+          "instances": {
+            "72": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/default.layer:120": {
@@ -12540,6 +14247,18 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "boundaryLayers": {
+        "worlds/Jub/Duck Hunt/Duck Hunt_Layers/default.layer": {
+          "instances": {
+            "92": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "119": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "groupLayers": {
         "worlds/Jub/Duck Hunt/Duck Hunt_Layers/players_RU.layer": {
           "gap": "mission-owned slot 750C271941571B1F"
@@ -12611,6 +14330,15 @@
           "gap": "legacy slot playability requires review F4A5D8E2672E8D2B"
         }
       },
+      "boundaryLayers": {
+        "worlds/Jub/LightArmoredRecon/LightArmoredRecon_Layers/default.layer": {
+          "instances": {
+            "113": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 6,
       "frameworkEvents": {
         "worlds/Jub/LightArmoredRecon/LightArmoredRecon_Layers/default.layer:181": {
@@ -12671,6 +14399,18 @@
       "markerLayers": {
         "worlds/Jub/MissionWithAssets/MissionWithAssets_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Jub/MissionWithAssets/MissionWithAssets_Layers/default.layer": {
+          "instances": {
+            "115": {
+              "gap": "tilted AO needs world-space validation"
+            },
+            "144": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -12739,6 +14479,15 @@
       "markerLayers": {
         "worlds/Jub/OpSteel/OpSteel_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Jub/OpSteel/OpSteel_Layers/default.layer": {
+          "instances": {
+            "123": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -12832,6 +14581,15 @@
           "placements": 2
         }
       },
+      "boundaryLayers": {
+        "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/default.layer": {
+          "instances": {
+            "46": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 6,
       "frameworkEvents": {
         "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/default.layer:290": {
@@ -12919,6 +14677,15 @@
           "gap": "group component needs review"
         }
       },
+      "boundaryLayers": {
+        "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/default.layer": {
+          "instances": {
+            "57": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 0,
       "respawn": {
         "factions": [
@@ -13001,6 +14768,15 @@
         },
         "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles_Layers/players.layer": {
           "gap": "legacy slot playability requires review 6E2E128D68393FDF"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles_Layers/default.layer": {
+          "instances": {
+            "49": {
+              "gap": "crossing or touching polygon edges"
+            }
+          }
         }
       },
       "directBriefingsRead": 0,
@@ -13087,6 +14863,15 @@
         },
         "worlds/Jub/OperationJaws/OperationJaws_Layers/players_usmc.layer": {
           "gap": "legacy slot playability requires review 7153E67D0072703C"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Jub/OperationJaws/OperationJaws_Layers/default.layer": {
+          "instances": {
+            "121": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
         }
       },
       "directBriefingsRead": 13,
@@ -13184,6 +14969,21 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/default.layer": {
+          "instances": {
+            "42": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "127": {
+              "vertices": 14,
+              "name": "AO_Limit_GC_MUJ",
+              "lastLine": 185
+            }
+          },
+          "placementLayer": "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/default.layer:190": {
@@ -13271,6 +15071,21 @@
         },
         "worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR_Layers/USSR/USSR_Players.layer": {
           "gap": "parent playability requires inheritance or member review"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR_Layers/default.layer": {
+          "instances": {
+            "34": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "119": {
+              "vertices": 14,
+              "name": "AO_Limit_GC_MUJ",
+              "lastLine": 177
+            }
+          },
+          "placementLayer": "worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 4,
@@ -13366,6 +15181,21 @@
           "gap": "group component needs review"
         }
       },
+      "boundaryLayers": {
+        "worlds/Perfk/AbadDayinKunarUSTVT/AbadDayinKunarUSTVT_Layers/default.layer": {
+          "instances": {
+            "110": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "195": {
+              "vertices": 14,
+              "name": "AO_Limit_GC_MUJ",
+              "lastLine": 253
+            }
+          },
+          "placementLayer": "worlds/Perfk/AbadDayinKunarUSTVT/AbadDayinKunarUSTVT_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Perfk/AbadDayinKunarUSTVT/AbadDayinKunarUSTVT_Layers/default.layer:258": {
@@ -13455,6 +15285,15 @@
         },
         "worlds/Perfk/NagalamTrafficJam/NagalamTrafficJam_Layers/Blufor_Convoy/Blufor_Convoy_Vehicles.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Perfk/NagalamTrafficJam/NagalamTrafficJam_Layers/default.layer": {
+          "instances": {
+            "39": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
         }
       },
       "directBriefingsRead": 1,
@@ -13580,6 +15419,25 @@
         },
         "worlds/Perfk/PowerPlay/PowerPlay_Layers/OPFOR/Players/Players.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Perfk/PowerPlay/PowerPlay_Layers/OPFOR/Players/Players.layer": {
+          "instances": {
+            "20": {
+              "vertices": 7,
+              "name": "opforAoLimit",
+              "lastLine": 57
+            }
+          },
+          "placementLayer": "worlds/Perfk/PowerPlay/PowerPlay_Layers/OPFOR/Players/Players_GC_Boundaries.layer"
+        },
+        "worlds/Perfk/PowerPlay/PowerPlay_Layers/default.layer": {
+          "instances": {
+            "873": {
+              "gap": "unsupported boundary settings"
+            }
+          }
         }
       },
       "directBriefingsRead": 1,
@@ -13776,6 +15634,24 @@
           "candidateIcons": 5
         }
       },
+      "boundaryLayers": {
+        "worlds/Reapzr/Deadlock/Deadlock_Layers/AOLimit_Factions.layer": {
+          "instances": {
+            "2": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "41": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "77": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "113": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
+        }
+      },
       "groupLayers": {
         "worlds/Reapzr/Deadlock/Deadlock_Layers/Groups/AI.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -13876,6 +15752,30 @@
           "gap": "mission-owned slot 08F44C5DF10F7A6B"
         }
       },
+      "boundaryLayers": {
+        "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_Layers/Markers/Markers_All.layer": {
+          "instances": {
+            "1": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
+        },
+        "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_Layers/System/AO_zones.layer": {
+          "instances": {
+            "2": {
+              "vertices": 18,
+              "name": "AO_All",
+              "lastLine": 65
+            },
+            "66": {
+              "vertices": 14,
+              "name": "AO_Opfor",
+              "lastLine": 122
+            }
+          },
+          "placementLayer": "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_Layers/System/AO_zones_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 16,
       "frameworkEvents": {
         "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_Layers/System/objectives.layer:19": {
@@ -13948,6 +15848,23 @@
         },
         "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen_Layers/Markers/MarkersTKA.layer": {
           "candidateIcons": 4
+        }
+      },
+      "boundaryLayers": {
+        "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen_Layers/AO_and_Map.layer": {
+          "instances": {
+            "2": {
+              "vertices": 4,
+              "name": "AO_ALL",
+              "lastLine": 23
+            },
+            "24": {
+              "vertices": 10,
+              "name": "AO_TKA",
+              "lastLine": 75
+            }
+          },
+          "placementLayer": "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen_Layers/AO_and_Map_GC_Boundaries.layer"
         }
       },
       "stockPlacementLayers": {
@@ -14038,6 +15955,26 @@
         },
         "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/Markers/MarksUS.layer": {
           "gap": "line 2 separate unassigned audience"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/AO.layer": {
+          "instances": {
+            "2": {
+              "vertices": 18,
+              "name": "AO_US",
+              "lastLine": 70
+            },
+            "71": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "151": {
+              "vertices": 27,
+              "name": "AO_ALL",
+              "lastLine": 248
+            }
+          },
+          "placementLayer": "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/AO_GC_Boundaries.layer"
         }
       },
       "stockPlacementLayers": {
@@ -14227,6 +16164,15 @@
           "placements": 7
         }
       },
+      "boundaryLayers": {
+        "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/default.layer": {
+          "instances": {
+            "26": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/default.layer:115": {
@@ -14291,6 +16237,18 @@
           "gap": "unresolved character prefab A5F4D7FEBDB57182"
         }
       },
+      "boundaryLayers": {
+        "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_Layers/GameLogic.layer": {
+          "instances": {
+            "18": {
+              "vertices": 5,
+              "name": null,
+              "lastLine": 42
+            }
+          },
+          "placementLayer": "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_Layers/GameLogic_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_Layers/GameLogic.layer:68": {
@@ -14351,6 +16309,18 @@
       "markerLayers": {
         "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_Layers/Logic.layer": {
           "gap": "line 1 inherited marker preset 676B84E0291E12D6"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_Layers/Logic.layer": {
+          "instances": {
+            "5": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "32": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -14474,6 +16444,15 @@
           "gap": "group field needs review: m_iGroupRadioFrequency"
         }
       },
+      "boundaryLayers": {
+        "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/default.layer": {
+          "instances": {
+            "70": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 0,
       "respawn": {
         "factions": [
@@ -14570,6 +16549,18 @@
           "unitPrefabEntries": 3
         }
       },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_Layers/SYSTEMS/AllMarkers.layer": {
+          "instances": {
+            "20432": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "20664": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 11,
       "frameworkEvents": {
         "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_Layers/default.layer:56": {
@@ -14652,6 +16643,23 @@
         },
         "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_Layers/OPFOR_PLAYERS.layer": {
           "gap": "mission-owned group 640ED8F5257D3D2F"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_Layers/GE.layer": {
+          "instances": {
+            "11": {
+              "vertices": 18,
+              "name": "US_AOLIMIT",
+              "lastLine": 78
+            },
+            "79": {
+              "vertices": 18,
+              "name": "USSR_AOLIMIT",
+              "lastLine": 146
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_Layers/GE_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 7,
@@ -14933,6 +16941,18 @@
           "unitPrefabEntries": 41
         }
       },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/SYSTEMS/AllMarkers.layer": {
+          "instances": {
+            "2": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "315": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 11,
       "respawn": {
         "factions": [
@@ -15095,6 +17115,18 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/CimicHouse/CimicHouse_Layers/BLUFOR/Markers.layer": {
+          "instances": {
+            "1": {
+              "vertices": 4,
+              "name": "UK_AOLimit",
+              "lastLine": 28
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/CimicHouse/CimicHouse_Layers/BLUFOR/Markers_GC_Boundaries.layer"
+        }
+      },
       "groupLayers": {
         "worlds/TheLocalPub/CimicHouse/CimicHouse_Layers/BLUFOR/Players.layer": {
           "playableGroups": 4,
@@ -15168,6 +17200,21 @@
         },
         "worlds/TheLocalPub/CleanHouse/CleanHouse_Layers/OFPOR/Players.layer": {
           "gap": "group component needs review"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/CleanHouse/CleanHouse_Layers/SYSTEMS/Logics.layer": {
+          "instances": {
+            "2": {
+              "vertices": 4,
+              "name": "OPFORAO",
+              "lastLine": 27
+            },
+            "28": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/CleanHouse/CleanHouse_Layers/SYSTEMS/Logics_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 10,
@@ -15261,6 +17308,18 @@
         },
         "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint_Layers/OPFOR/Players.layer": {
           "gap": "parent playability requires inheritance or member review"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint_Layers/SYSTEMS/AllMarkers.layer": {
+          "instances": {
+            "1": {
+              "vertices": 32,
+              "name": "IRAQ_AOLimit",
+              "lastLine": 109
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint_Layers/SYSTEMS/AllMarkers_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 10,
@@ -15363,6 +17422,18 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_Layers/OPFOR/Markers.layer": {
+          "instances": {
+            "1": {
+              "vertices": 40,
+              "name": "OPFOR_AOLIMIT",
+              "lastLine": 134
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_Layers/OPFOR/Markers_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 11,
       "respawn": {
         "factions": [
@@ -15435,6 +17506,28 @@
         },
         "worlds/TheLocalPub/Joutus/Joutus_Layers/FIA/Players.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/Joutus/Joutus_Layers/FIA/Markers.layer": {
+          "instances": {
+            "1": {
+              "vertices": 32,
+              "name": "FIA_AOlimit",
+              "lastLine": 110
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/Joutus/Joutus_Layers/FIA/Markers_GC_Boundaries.layer"
+        },
+        "worlds/TheLocalPub/Joutus/Joutus_Layers/SYSTEMS/AllMarkers.layer": {
+          "instances": {
+            "1": {
+              "vertices": 4,
+              "name": "AOLimit",
+              "lastLine": 22
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/Joutus/Joutus_Layers/SYSTEMS/AllMarkers_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 10,
@@ -15583,6 +17676,18 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/LongmoorLashings/LongmoorLashings_Layers/Markers.layer": {
+          "instances": {
+            "1": {
+              "vertices": 14,
+              "name": "OpforAOLimit",
+              "lastLine": 55
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/LongmoorLashings/LongmoorLashings_Layers/Markers_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 11,
       "frameworkEvents": {
         "worlds/TheLocalPub/LongmoorLashings/LongmoorLashings_Layers/default.layer:66": {
@@ -15663,6 +17768,18 @@
         },
         "worlds/TheLocalPub/OilRigRangos/OilRigRangos_Layers/OPFOR/Players.layer": {
           "gap": "mission-owned group 558D7D02AE68982F"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/OilRigRangos/OilRigRangos_Layers/Systems/Core.layer": {
+          "instances": {
+            "57": {
+              "vertices": 4,
+              "name": "AO",
+              "lastLine": 82
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/OilRigRangos/OilRigRangos_Layers/Systems/Core_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 11,
@@ -15760,6 +17877,23 @@
         },
         "worlds/TheLocalPub/PublicEnemies/PublicEnemies_Layers/OPFOR/Player.layer": {
           "gap": "mission-owned group 1CE33BB24C41F43C"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/PublicEnemies/PublicEnemies_Layers/Systems/MISC.layer": {
+          "instances": {
+            "54": {
+              "vertices": 11,
+              "name": "BigAO",
+              "lastLine": 104
+            },
+            "105": {
+              "vertices": 28,
+              "name": "SmallAO",
+              "lastLine": 201
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/PublicEnemies/PublicEnemies_Layers/Systems/MISC_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 10,
@@ -15893,6 +18027,18 @@
           "placements": 3
         }
       },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/SYSTEMS/Triggers.layer": {
+          "instances": {
+            "30": {
+              "vertices": 22,
+              "name": "INDFOR_AO",
+              "lastLine": 110
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/SYSTEMS/Triggers_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 19,
       "respawn": {
         "factions": [
@@ -16012,6 +18158,18 @@
           "gap": "legacy slot playability requires review 7B3956EFB4BC6008"
         }
       },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/SYSTEMS/Logics.layer": {
+          "instances": {
+            "228": {
+              "vertices": 74,
+              "name": "OPFOR_AO",
+              "lastLine": 464
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/SYSTEMS/Logics_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/default.layer:36": {
@@ -16076,6 +18234,18 @@
         },
         "worlds/TheLocalPub/RapidAttack/RapidAttack_Layers/FIA/WP.layer": {
           "gap": "parent playability requires inheritance or member review"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/RapidAttack/RapidAttack_Layers/SYSTEMS/AllMarkers.layer": {
+          "instances": {
+            "1": {
+              "vertices": 22,
+              "name": "AOLimit",
+              "lastLine": 76
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/RapidAttack/RapidAttack_Layers/SYSTEMS/AllMarkers_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 6,
@@ -16161,6 +18331,21 @@
             "scenery"
           ],
           "placements": 2
+        }
+      },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/SYSTEMS/AllMarkers.layer": {
+          "instances": {
+            "2": {
+              "vertices": 20,
+              "name": "AOLimit",
+              "lastLine": 75
+            },
+            "76": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/SYSTEMS/AllMarkers_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 9,
@@ -16264,6 +18449,21 @@
         },
         "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Opfor/Players.layer": {
           "gap": "parent playability requires inheritance or member review"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Systems/Misc.layer": {
+          "instances": {
+            "279": {
+              "vertices": 77,
+              "name": "IndforAO1",
+              "lastLine": 531
+            },
+            "532": {
+              "gap": "unsupported boundary settings"
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Systems/Misc_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 10,
@@ -16377,6 +18577,28 @@
           "placements": 1
         }
       },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/TakingTrenches/TakingTrenches_Layers/RUS/Markers.layer": {
+          "instances": {
+            "1": {
+              "vertices": 35,
+              "name": "RUS_AOLimit",
+              "lastLine": 125
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/TakingTrenches/TakingTrenches_Layers/RUS/Markers_GC_Boundaries.layer"
+        },
+        "worlds/TheLocalPub/TakingTrenches/TakingTrenches_Layers/SYSTEMS/AllMarkers.layer": {
+          "instances": {
+            "1": {
+              "vertices": 53,
+              "name": "AOLimit",
+              "lastLine": 175
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/TakingTrenches/TakingTrenches_Layers/SYSTEMS/AllMarkers_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/TheLocalPub/TakingTrenches/TakingTrenches_Layers/default.layer:28": {
@@ -16443,6 +18665,18 @@
         "worlds/TheLocalPub/TopMaloHouse/TopMalohouse_Layers/Opfor/OPFOR_PLAYERS.layer": {
           "playableGroups": 1,
           "unitPrefabEntries": 13
+        }
+      },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/TopMaloHouse/TopMalohouse_Layers/Systems/Misc.layer": {
+          "instances": {
+            "59": {
+              "vertices": 27,
+              "name": "OpforAO",
+              "lastLine": 155
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/TopMaloHouse/TopMalohouse_Layers/Systems/Misc_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 12,
@@ -16513,6 +18747,18 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress_Layers/SYSTEM/AOLimit.layer": {
+          "instances": {
+            "1": {
+              "vertices": 6,
+              "name": "OPFOR_AOLIMIT",
+              "lastLine": 32
+            }
+          },
+          "placementLayer": "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress_Layers/SYSTEM/AOLimit_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 9,
       "frameworkEvents": {
         "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress_Layers/default.layer:39": {
@@ -16578,6 +18824,18 @@
             "scenery"
           ],
           "placements": 15
+        }
+      },
+      "boundaryLayers": {
+        "worlds/TheLocalPub/WetFeet/WetFeet_Layers/SYSTEMS/AllMarkers.layer": {
+          "instances": {
+            "2": {
+              "gap": "separate unassigned map fill audience"
+            },
+            "182": {
+              "gap": "separate unassigned map fill audience"
+            }
+          }
         }
       },
       "directBriefingsRead": 10,
@@ -16654,6 +18912,18 @@
         },
         "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/ru.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/default.layer": {
+          "instances": {
+            "98": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "156": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "directBriefingsRead": 2,
@@ -16733,6 +19003,15 @@
       "markerLayers": {
         "worlds/Til/AndresBeacon/AndresBeacon_Layers/markers.layer": {
           "gap": "line 1 inherited marker preset 63BCE30CF8B65BCE"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/AndresBeacon/AndresBeacon_Layers/default.layer": {
+          "instances": {
+            "83": {
+              "gap": "unsupported boundary property {"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -16816,6 +19095,18 @@
             "waypoints"
           ],
           "placements": 38
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_Layers/default.layer": {
+          "instances": {
+            "38": {
+              "vertices": 26,
+              "name": null,
+              "lastLine": 134
+            }
+          },
+          "placementLayer": "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 0,
@@ -16926,6 +19217,28 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/Til/Countdown/Countdown_Layers/default.layer": {
+          "instances": {
+            "103": {
+              "vertices": 7,
+              "name": "ao_us",
+              "lastLine": 137
+            },
+            "138": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/Til/Countdown/Countdown_Layers/default_GC_Boundaries.layer"
+        },
+        "worlds/Til/Countdown/Countdown_Layers/markers.layer": {
+          "instances": {
+            "1": {
+              "gap": "unsupported boundary settings"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Til/Countdown/Countdown_Layers/fw.layer:8": {
@@ -16989,6 +19302,18 @@
       "markerLayers": {
         "worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy_Layers/markers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy_Layers/default.layer": {
+          "instances": {
+            "90": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 114
+            }
+          },
+          "placementLayer": "worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -17080,6 +19405,21 @@
           "gap": "line 2 custom or duplicate field {"
         }
       },
+      "boundaryLayers": {
+        "worlds/Til/DevilsDrive/DevilsDrive_Layers/default.layer": {
+          "instances": {
+            "84": {
+              "gap": "unsupported boundary property {"
+            },
+            "218": {
+              "vertices": 4,
+              "name": "ao_nva_air",
+              "lastLine": 247
+            }
+          },
+          "placementLayer": "worlds/Til/DevilsDrive/DevilsDrive_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "groupLayers": {
         "worlds/Til/DevilsDrive/DevilsDrive_Layers/nva.layer": {
           "gap": "parent playability requires inheritance or member review"
@@ -17146,6 +19486,21 @@
       "markerLayers": {
         "worlds/Til/DieselPower/DieselPower_Layers/markers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/DieselPower/DieselPower_Layers/default.layer": {
+          "instances": {
+            "66": {
+              "vertices": 4,
+              "name": "ao_all",
+              "lastLine": 88
+            },
+            "89": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/Til/DieselPower/DieselPower_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -17229,6 +19584,21 @@
       "markerLayers": {
         "worlds/Til/FalconsFlight/FalconsFlight_Layers/markers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/FalconsFlight/FalconsFlight_Layers/default.layer": {
+          "instances": {
+            "93": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "124": {
+              "vertices": 4,
+              "name": "ao_nva",
+              "lastLine": 153
+            }
+          },
+          "placementLayer": "worlds/Til/FalconsFlight/FalconsFlight_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -17323,6 +19693,15 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "boundaryLayers": {
+        "worlds/Til/FarmDefense/FarmDefense_Layers/default.layer": {
+          "instances": {
+            "43": {
+              "gap": "unsupported boundary property {"
+            }
+          }
+        }
+      },
       "groupLayers": {
         "worlds/Til/FarmDefense/FarmDefense_Layers/players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -17405,6 +19784,21 @@
           "gap": "unresolved character prefab A5F4D7FEBDB57182"
         }
       },
+      "boundaryLayers": {
+        "worlds/Til/GoreyRaid/GoreyRaid_Layers/default.layer": {
+          "instances": {
+            "53": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 82
+            },
+            "83": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/Til/GoreyRaid/GoreyRaid_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Til/GoreyRaid/GoreyRaid_Layers/fw.layer:51": {
@@ -17466,6 +19860,15 @@
       "markerLayers": {
         "worlds/Til/GreenScreen/GreenScreen_Layers/markers.layer": {
           "gap": "line 1 inherited marker preset 676B84E0291E12D6"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/GreenScreen/GreenScreen_Layers/default.layer": {
+          "instances": {
+            "30": {
+              "gap": "unsupported boundary property {"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -17535,6 +19938,18 @@
           "gap": "group component needs review"
         }
       },
+      "boundaryLayers": {
+        "worlds/Til/GullBayGuns/GullBayGuns_Layers/default.layer": {
+          "instances": {
+            "37": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 63
+            }
+          },
+          "placementLayer": "worlds/Til/GullBayGuns/GullBayGuns_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Til/GullBayGuns/GullBayGuns_Layers/default.layer:66": {
@@ -17590,6 +20005,18 @@
         "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_Layers/Players.layer": {
           "playableGroups": 2,
           "unitPrefabEntries": 17
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_Layers/Markers.layer": {
+          "instances": {
+            "1": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 25
+            }
+          },
+          "placementLayer": "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_Layers/Markers_GC_Boundaries.layer"
         }
       },
       "stockPlacementLayers": {
@@ -17663,6 +20090,18 @@
             "waypoints"
           ],
           "placements": 5
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/HueyHill/HueyHill_Layers/default.layer": {
+          "instances": {
+            "104": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 129
+            }
+          },
+          "placementLayer": "worlds/Til/HueyHill/HueyHill_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 0,
@@ -17752,6 +20191,18 @@
           "placements": 8
         }
       },
+      "boundaryLayers": {
+        "worlds/Til/JavoryHill/JavoryHill_Layers/default.layer": {
+          "instances": {
+            "40": {
+              "vertices": 5,
+              "name": null,
+              "lastLine": 68
+            }
+          },
+          "placementLayer": "worlds/Til/JavoryHill/JavoryHill_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 2,
       "frameworkEvents": {
         "worlds/Til/JavoryHill/JavoryHill_Layers/fw.layer:74": {
@@ -17813,6 +20264,18 @@
           "gap": "group field needs review: m_aUnitPrefabSlots"
         }
       },
+      "boundaryLayers": {
+        "worlds/Til/JunctionJab/JunctionJab_Layers/default.layer": {
+          "instances": {
+            "71": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "115": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Til/JunctionJab/JunctionJab_Layers/default.layer:173": {
@@ -17867,6 +20330,18 @@
       "markerLayers": {
         "worlds/Til/JunctionJabXL/JunctionJabXL_Layers/markers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/JunctionJabXL/JunctionJabXL_Layers/default.layer": {
+          "instances": {
+            "87": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "131": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -17940,6 +20415,18 @@
       "markerLayers": {
         "worlds/Til/KasselbergClamber/KasselbergClamber_Layers/markers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/KasselbergClamber/KasselbergClamber_Layers/default.layer": {
+          "instances": {
+            "20": {
+              "vertices": 8,
+              "name": null,
+              "lastLine": 53
+            }
+          },
+          "placementLayer": "worlds/Til/KasselbergClamber/KasselbergClamber_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -18023,6 +20510,15 @@
           "gap": "line 25 custom or duplicate field {"
         }
       },
+      "boundaryLayers": {
+        "worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing_Layers/default.layer": {
+          "instances": {
+            "18": {
+              "gap": "unsupported boundary property {"
+            }
+          }
+        }
+      },
       "groupLayers": {
         "worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing_Layers/nva.layer": {
           "gap": "group field needs review: m_aUnitPrefabSlots"
@@ -18086,6 +20582,15 @@
       "markerLayers": {
         "worlds/Til/MetalsMight/MetalsMight_Layers/markers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/MetalsMight/MetalsMight_Layers/default.layer": {
+          "instances": {
+            "79": {
+              "gap": "unsupported boundary property {"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -18164,6 +20669,15 @@
         },
         "worlds/Til/Metalwave/Metalwave_Layers/players.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/Metalwave/Metalwave_Layers/default.layer": {
+          "instances": {
+            "151": {
+              "gap": "unsupported boundary property {"
+            }
+          }
         }
       },
       "directBriefingsRead": 0,
@@ -18270,6 +20784,21 @@
           "gap": "group field needs review: {"
         }
       },
+      "boundaryLayers": {
+        "worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/default.layer": {
+          "instances": {
+            "46": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "71": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 96
+            }
+          },
+          "placementLayer": "worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 0,
       "respawn": {
         "factions": [
@@ -18363,6 +20892,18 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/Til/OwlsPrey/OwlsPrey_Layers/default.layer": {
+          "instances": {
+            "56": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 77
+            }
+          },
+          "placementLayer": "worlds/Til/OwlsPrey/OwlsPrey_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Til/OwlsPrey/OwlsPrey_Layers/default.layer:126": {
@@ -18446,6 +20987,18 @@
             "waypoints"
           ],
           "placements": 14
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/default.layer": {
+          "instances": {
+            "71": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 97
+            }
+          },
+          "placementLayer": "worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 0,
@@ -18554,6 +21107,15 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/Til/RoutePierre/RoutePierre_Layers/default.layer": {
+          "instances": {
+            "82": {
+              "gap": "unsupported boundary property {"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Til/RoutePierre/RoutePierre_Layers/default.layer:128": {
@@ -18635,6 +21197,15 @@
       "markerLayers": {
         "worlds/Til/RouteRowan/RouteRowan_Layers/markers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/RouteRowan/RouteRowan_Layers/default.layer": {
+          "instances": {
+            "89": {
+              "gap": "unsupported boundary property {"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -18733,6 +21304,18 @@
           "gap": "inherited slot roster differs"
         }
       },
+      "boundaryLayers": {
+        "worlds/Til/RouteTremaux/RouteTremaux_Layers/default.layer": {
+          "instances": {
+            "73": {
+              "vertices": 8,
+              "name": null,
+              "lastLine": 110
+            }
+          },
+          "placementLayer": "worlds/Til/RouteTremaux/RouteTremaux_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 4,
       "frameworkEvents": {
         "worlds/Til/RouteTremaux/RouteTremaux_Layers/default.layer:113": {
@@ -18789,6 +21372,18 @@
       },
       "headers": [],
       "markerLayers": {},
+      "boundaryLayers": {
+        "worlds/Til/SteelPastures/SteelPastures_Layers/default.layer": {
+          "instances": {
+            "136": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 158
+            }
+          },
+          "placementLayer": "worlds/Til/SteelPastures/SteelPastures_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Til/SteelPastures/SteelPastures_Layers/default.layer:184": {
@@ -18843,6 +21438,18 @@
       "groupLayers": {
         "worlds/Til/TerminalTakeover/TerminalTakeover_Layers/Assets.layer": {
           "gap": "unresolved or duplicate Units prefab 126BE8C46FA39581"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/TerminalTakeover/TerminalTakeover_Layers/default.layer": {
+          "instances": {
+            "60": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "89": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "directBriefingsRead": 0,
@@ -18931,6 +21538,15 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/default.layer": {
+          "instances": {
+            "65": {
+              "gap": "unsupported boundary property {"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/default.layer:126": {
@@ -19003,6 +21619,15 @@
         },
         "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/players_ussr.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/default.layer": {
+          "instances": {
+            "68": {
+              "gap": "unsupported boundary property {"
+            }
+          }
         }
       },
       "stockPlacementLayers": {
@@ -19084,6 +21709,18 @@
           "unitPrefabEntries": 6
         }
       },
+      "boundaryLayers": {
+        "worlds/Til/TrenchAssault/TrenchAssault_Layers/default.layer": {
+          "instances": {
+            "19": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "45": {
+              "gap": "map fill and outline target different factions"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/Til/TrenchAssault/TrenchAssault_Layers/default.layer:77": {
@@ -19140,6 +21777,18 @@
         },
         "worlds/Til/TyroneThrust/TyroneThrust_Layers/Assets.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Til/TyroneThrust/TyroneThrust_Layers/default.layer": {
+          "instances": {
+            "76": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 102
+            }
+          },
+          "placementLayer": "worlds/Til/TyroneThrust/TyroneThrust_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 2,
@@ -19208,6 +21857,15 @@
         },
         "worlds/Wade/NightSeizure/NightSeizure_Layers/Players/Opfor.layer": {
           "gap": "unresolved or duplicate Units prefab 666A2B0A6B1967AE"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Wade/NightSeizure/NightSeizure_Layers/default.layer": {
+          "instances": {
+            "62": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
         }
       },
       "directBriefingsRead": 11,
@@ -19395,6 +22053,15 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/briefing.layer": {
+          "instances": {
+            "20": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 5,
       "frameworkEvents": {
         "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/framework.layer:4": {
@@ -19457,6 +22124,15 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/Woody/COTVTXX_Kassel_Crashers/COTVTXX_Kassel_Crashers_Layers/briefing.layer": {
+          "instances": {
+            "116": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 5,
       "frameworkEvents": {
         "worlds/Woody/COTVTXX_Kassel_Crashers/COTVTXX_Kassel_Crashers_Layers/framework.layer:142": {
@@ -19516,6 +22192,15 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/Woody/COTVTXX_Kassel_Crashers_MODERN_REDUX/COTVTXX_Kassel_Crashers_MODERN_REDUX_Layers/briefing.layer": {
+          "instances": {
+            "158": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 6,
       "frameworkEvents": {
         "worlds/Woody/COTVTXX_Kassel_Crashers_MODERN_REDUX/COTVTXX_Kassel_Crashers_MODERN_REDUX_Layers/framework.layer:154": {
@@ -19566,6 +22251,21 @@
         },
         "worlds/Woody/COTVTXX_Zavarak_Farmland/COTVTXX_Zavarak_Farmland_Layers/playergroups.layer": {
           "gap": "group component needs review"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Woody/COTVTXX_Zavarak_Farmland/COTVTXX_Zavarak_Farmland_Layers/briefing.layer": {
+          "instances": {
+            "20": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "58": {
+              "vertices": 7,
+              "name": null,
+              "lastLine": 91
+            }
+          },
+          "placementLayer": "worlds/Woody/COTVTXX_Zavarak_Farmland/COTVTXX_Zavarak_Farmland_Layers/briefing_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 5,
@@ -19629,6 +22329,15 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/Woody/COXX_Funf_Wege_Lodgement/COXX_Funf_Wege_Lodgement_Layers/briefing.layer": {
+          "instances": {
+            "68": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 3,
       "frameworkEvents": {
         "worlds/Woody/COXX_Funf_Wege_Lodgement/COXX_Funf_Wege_Lodgement_Layers/framework.layer:26": {
@@ -19683,6 +22392,15 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1_Layers/framework.layer": {
+          "instances": {
+            "1": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 3,
       "frameworkEvents": {
         "worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1_Layers/framework.layer:59": {
@@ -19733,6 +22451,15 @@
         },
         "worlds/Woody/COXX_Hof_Lomelsberg_Flank/COXX_Hof_Lomelsberg_Flank_Layers/playergroups.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Woody/COXX_Hof_Lomelsberg_Flank/COXX_Hof_Lomelsberg_Flank_Layers/briefing.layer": {
+          "instances": {
+            "69": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
         }
       },
       "directBriefingsRead": 3,
@@ -19796,6 +22523,15 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/Woody/COXX_Landay_Haul/COXX_Landay_Haul_Layers/briefing.layer": {
+          "instances": {
+            "67": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 3,
       "frameworkEvents": {
         "worlds/Woody/COXX_Landay_Haul/COXX_Landay_Haul_Layers/framework.layer:42": {
@@ -19855,6 +22591,15 @@
           "unitPrefabEntries": 64
         }
       },
+      "boundaryLayers": {
+        "worlds/Woody/COXX_Torske_Crossing/COXX_Torske_Crossing_Layers/briefing.layer": {
+          "instances": {
+            "72": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 3,
       "frameworkEvents": {
         "worlds/Woody/COXX_Torske_Crossing/COXX_Torske_Crossing_Layers/default.layer:98": {
@@ -19905,6 +22650,21 @@
       "markerLayers": {
         "worlds/Woody/TVTXX_Waterside_Punchup/TVTXX_Waterside_Punchup_Layers/mapmarkers.layer": {
           "gap": "line 1 inherited marker preset 63BCE30CF8B65BCE"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/Woody/TVTXX_Waterside_Punchup/TVTXX_Waterside_Punchup_Layers/briefing.layer": {
+          "instances": {
+            "20": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "67": {
+              "vertices": 13,
+              "name": null,
+              "lastLine": 119
+            }
+          },
+          "placementLayer": "worlds/Woody/TVTXX_Waterside_Punchup/TVTXX_Waterside_Punchup_Layers/briefing_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -19975,6 +22735,15 @@
         },
         "worlds/ac337/GravetteGamble/GravetteGamble_Layers/players.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/ac337/GravetteGamble/GravetteGamble_Layers/default.layer": {
+          "instances": {
+            "18": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -20051,6 +22820,21 @@
         },
         "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/markeranddeleter.layer": {
           "candidateIcons": 3
+        }
+      },
+      "boundaryLayers": {
+        "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/Ao.layer": {
+          "instances": {
+            "2": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            },
+            "33": {
+              "vertices": 4,
+              "name": "Howlers_ao",
+              "lastLine": 49
+            }
+          },
+          "placementLayer": "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/Ao_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -20136,6 +22920,18 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/anteante101/Castle Crushers/CastleCrushers_Layers/framework.layer": {
+          "instances": {
+            "5": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "39": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/anteante101/Castle Crushers/CastleCrushers_Layers/framework.layer:76": {
@@ -20201,6 +22997,18 @@
         },
         "worlds/anteante101/Its all uphill from here/Its all uphill from here_Layers/opfor.layer": {
           "gap": "parent playability requires inheritance or member review"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/anteante101/Its all uphill from here/Its all uphill from here_Layers/ao.layer": {
+          "instances": {
+            "2": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "26": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
         }
       },
       "directBriefingsRead": 0,
@@ -20275,6 +23083,15 @@
           "unitPrefabEntries": 18
         }
       },
+      "boundaryLayers": {
+        "worlds/anteante101/Operation Desert Sentinel/Operation Desert Sentinel_Layers/default.layer": {
+          "instances": {
+            "90": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 0,
       "frameworkEvents": {
         "worlds/anteante101/Operation Desert Sentinel/Operation Desert Sentinel_Layers/default.layer:120": {
@@ -20330,6 +23147,21 @@
       "markerLayers": {
         "worlds/anteante101/Role Reversal CDF edition/Role Reversal CDF edition_Layers/misc.layer": {
           "gap": "line 44 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/anteante101/Role Reversal CDF edition/Role Reversal CDF edition_Layers/framework.layer": {
+          "instances": {
+            "2": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "30": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 52
+            }
+          },
+          "placementLayer": "worlds/anteante101/Role Reversal CDF edition/Role Reversal CDF edition_Layers/framework_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -20400,6 +23232,21 @@
       "markerLayers": {
         "worlds/anteante101/RoleReversal/RoleReversal_Layers/marker.layer": {
           "candidateIcons": 4
+        }
+      },
+      "boundaryLayers": {
+        "worlds/anteante101/RoleReversal/RoleReversal_Layers/Framework.layer": {
+          "instances": {
+            "2": {
+              "vertices": 5,
+              "name": null,
+              "lastLine": 26
+            },
+            "27": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/anteante101/RoleReversal/RoleReversal_Layers/Framework_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -20479,6 +23326,18 @@
       "markerLayers": {
         "worlds/anteante101/South wind is blowing/South wind is blowing_Layers/marker.layer": {
           "candidateIcons": 5
+        }
+      },
+      "boundaryLayers": {
+        "worlds/anteante101/South wind is blowing/South wind is blowing_Layers/TRIGGER.layer": {
+          "instances": {
+            "43": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "67": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -20562,6 +23421,15 @@
         "worlds/arc/BarnBusters/BarnBusters_Layers/USplayers.layer": {
           "playableGroups": 6,
           "unitPrefabEntries": 36
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/BarnBusters/BarnBusters_Layers/default.layer": {
+          "instances": {
+            "97": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "directBriefingsRead": 11,
@@ -20693,6 +23561,21 @@
       "markerLayers": {
         "worlds/arc/BrambledeepBypass/BrambledeepBypass_Layers/briefings.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/BrambledeepBypass/BrambledeepBypass_Layers/default.layer": {
+          "instances": {
+            "119": {
+              "vertices": 16,
+              "name": null,
+              "lastLine": 176
+            },
+            "177": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/arc/BrambledeepBypass/BrambledeepBypass_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -20838,6 +23721,15 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/BunkerBustersXL/BunkerBustersXL_Layers/default.layer": {
+          "instances": {
+            "87": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        }
+      },
       "groupLayers": {
         "worlds/arc/BunkerBustersXL/BunkerBustersXL_Layers/players.layer": {
           "playableGroups": 10,
@@ -20900,6 +23792,18 @@
           "gap": "unresolved or duplicate Units prefab AE7E3C1147A807CD"
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/CoastalClearance/CoastalClearance_Layers/default.layer": {
+          "instances": {
+            "72": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 88
+            }
+          },
+          "placementLayer": "worlds/arc/CoastalClearance/CoastalClearance_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 3,
       "frameworkEvents": {
         "worlds/arc/CoastalClearance/CoastalClearance_Layers/default.layer:92": {
@@ -20956,6 +23860,21 @@
       "markerLayers": {
         "worlds/arc/CommandosReforged/CommandosReforged_Layers/insertions.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/CommandosReforged/CommandosReforged_Layers/default.layer": {
+          "instances": {
+            "213": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "239": {
+              "vertices": 6,
+              "name": null,
+              "lastLine": 272
+            }
+          },
+          "placementLayer": "worlds/arc/CommandosReforged/CommandosReforged_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -21103,6 +24022,15 @@
         },
         "worlds/arc/CrashParty/CrashParty_Layers/USPlayers.layer": {
           "gap": "parent playability requires inheritance or member review"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/CrashParty/CrashParty_Layers/default.layer": {
+          "instances": {
+            "85": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "directBriefingsRead": 10,
@@ -21300,6 +24228,18 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/EFPLumberjacks/EFPLumberjacks_Layers/default.layer": {
+          "instances": {
+            "40": {
+              "vertices": 16,
+              "name": null,
+              "lastLine": 97
+            }
+          },
+          "placementLayer": "worlds/arc/EFPLumberjacks/EFPLumberjacks_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 7,
       "frameworkEvents": {
         "worlds/arc/EFPLumberjacks/EFPLumberjacks_Layers/default.layer:120": {
@@ -21358,6 +24298,18 @@
       "markerLayers": {
         "worlds/arc/EFPStragglers/EFPStragglers_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/EFPStragglers/EFPStragglers_Layers/default.layer": {
+          "instances": {
+            "61": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 82
+            }
+          },
+          "placementLayer": "worlds/arc/EFPStragglers/EFPStragglers_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -21561,6 +24513,21 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/FactorySiegeRedux/FactorySiegeRedux_Layers/default.layer": {
+          "instances": {
+            "71": {
+              "vertices": 12,
+              "name": null,
+              "lastLine": 116
+            },
+            "117": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/arc/FactorySiegeRedux/FactorySiegeRedux_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "stockPlacementLayers": {
         "worlds/arc/FactorySiegeRedux/FactorySiegeRedux_Layers/props.layer": {
           "types": [
@@ -21623,6 +24590,18 @@
       "markerLayers": {
         "worlds/arc/FightingRetreat/FightingRetreat_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/FightingRetreat/FightingRetreat_Layers/default.layer": {
+          "instances": {
+            "87": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 103
+            }
+          },
+          "placementLayer": "worlds/arc/FightingRetreat/FightingRetreat_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -21860,6 +24839,18 @@
           "gap": "unresolved character prefab DBC177C261C93B9D"
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/default.layer": {
+          "instances": {
+            "55": {
+              "vertices": 6,
+              "name": null,
+              "lastLine": 77
+            }
+          },
+          "placementLayer": "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/default.layer:103": {
@@ -21932,6 +24923,15 @@
         "worlds/arc/HappyCampers/HappyCampers_Layers/players.layer": {
           "playableGroups": 4,
           "unitPrefabEntries": 16
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/HappyCampers/HappyCampers_Layers/default.layer": {
+          "instances": {
+            "82": {
+              "gap": "unsupported boundary settings"
+            }
+          }
         }
       },
       "directBriefingsRead": 6,
@@ -22054,6 +25054,15 @@
         },
         "worlds/arc/HeavenAndHell/HeavenAndHell_Layers/players.layer": {
           "gap": "unresolved character prefab DBC177C261C93B9D"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/HeavenAndHell/HeavenAndHell_Layers/default.layer": {
+          "instances": {
+            "69": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "directBriefingsRead": 8,
@@ -22207,6 +25216,18 @@
           "unitPrefabEntries": 20
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/Hunted/Hunted_Layers/default.layer": {
+          "instances": {
+            "69": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 85
+            }
+          },
+          "placementLayer": "worlds/arc/Hunted/Hunted_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 4,
       "frameworkEvents": {
         "worlds/arc/Hunted/Hunted_Layers/default.layer:89": {
@@ -22270,6 +25291,21 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/IndustrialMetal/IndustrialMetal_Layers/default.layer": {
+          "instances": {
+            "27": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "51": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 72
+            }
+          },
+          "placementLayer": "worlds/arc/IndustrialMetal/IndustrialMetal_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "groupLayers": {
         "worlds/arc/IndustrialMetal/IndustrialMetal_Layers/players_cdf.layer": {
           "gap": "group field needs review: m_aUnitPrefabSlots"
@@ -22330,6 +25366,18 @@
       "markerLayers": {
         "worlds/arc/IrishCheckpoint/IrishCheckpoint_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/IrishCheckpoint/IrishCheckpoint_Layers/default.layer": {
+          "instances": {
+            "71": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "98": {
+              "gap": "crossing or touching polygon edges"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -22399,6 +25447,15 @@
           "unitPrefabEntries": 28
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/JEFRMCWAC/JEFRMCWAC_Layers/default.layer": {
+          "instances": {
+            "54": {
+              "gap": "unsupported boundary settings"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 6,
       "frameworkEvents": {
         "worlds/arc/JEFRMCWAC/JEFRMCWAC_Layers/default.layer:82": {
@@ -22446,6 +25503,18 @@
       "groupLayers": {
         "worlds/arc/LastBastion/LastBastion_Layers/Players.layer": {
           "gap": "unresolved or duplicate Units prefab 17C7309FFE4775B0"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/LastBastion/LastBastion_Layers/default.layer": {
+          "instances": {
+            "52": {
+              "vertices": 5,
+              "name": null,
+              "lastLine": 71
+            }
+          },
+          "placementLayer": "worlds/arc/LastBastion/LastBastion_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 8,
@@ -22516,6 +25585,21 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux_Layers/default.layer": {
+          "instances": {
+            "35": {
+              "vertices": 9,
+              "name": null,
+              "lastLine": 71
+            },
+            "72": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux_Layers/default.layer:149": {
@@ -22583,6 +25667,18 @@
         "worlds/arc/NorthCoastRaid/NorthCoastRaid_Layers/players.layer": {
           "playableGroups": 13,
           "unitPrefabEntries": 89
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/NorthCoastRaid/NorthCoastRaid_Layers/default.layer": {
+          "instances": {
+            "44": {
+              "vertices": 9,
+              "name": null,
+              "lastLine": 80
+            }
+          },
+          "placementLayer": "worlds/arc/NorthCoastRaid/NorthCoastRaid_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 8,
@@ -22740,6 +25836,18 @@
           "unitPrefabEntries": 24
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/PirateRadio/PirateRadio_Layers/default.layer": {
+          "instances": {
+            "31": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 52
+            }
+          },
+          "placementLayer": "worlds/arc/PirateRadio/PirateRadio_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/arc/PirateRadio/PirateRadio_Layers/default.layer:76": {
@@ -22799,6 +25907,18 @@
         "worlds/arc/Privateering/Privateering_Layers/players.layer": {
           "playableGroups": 4,
           "unitPrefabEntries": 24
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/Privateering/Privateering_Layers/default.layer": {
+          "instances": {
+            "42": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 63
+            }
+          },
+          "placementLayer": "worlds/arc/Privateering/Privateering_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 10,
@@ -22872,6 +25992,21 @@
           "gap": "parent playability requires inheritance or member review"
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux_Layers/default.layer": {
+          "instances": {
+            "60": {
+              "vertices": 14,
+              "name": null,
+              "lastLine": 111
+            },
+            "112": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 11,
       "frameworkEvents": {
         "worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux_Layers/default.layer:168": {
@@ -22941,6 +26076,15 @@
         },
         "worlds/arc/QuickReaction/QuickReaction_Layers/players.layer": {
           "gap": "legacy slot playability requires review BB329B7033788B7B"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/QuickReaction/QuickReaction_Layers/default.layer": {
+          "instances": {
+            "77": {
+              "gap": "unsupported boundary settings"
+            }
+          }
         }
       },
       "stockPlacementLayers": {
@@ -23016,6 +26160,18 @@
       "markerLayers": {
         "worlds/arc/RavineRuckus/RavineRuckus_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/RavineRuckus/RavineRuckus_Layers/default.layer": {
+          "instances": {
+            "59": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 83
+            }
+          },
+          "placementLayer": "worlds/arc/RavineRuckus/RavineRuckus_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -23096,6 +26252,15 @@
           "unitPrefabEntries": 73
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/Retribution/Retribution_Layers/default.layer": {
+          "instances": {
+            "34": {
+              "gap": "unsupported boundary settings"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 8,
       "frameworkEvents": {
         "worlds/arc/Retribution/Retribution_Layers/default.layer:101": {
@@ -23154,6 +26319,18 @@
         "worlds/arc/ReturnOfTheWac/ReturnOfTheWac_Layers/Players.layer": {
           "playableGroups": 4,
           "unitPrefabEntries": 29
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/ReturnOfTheWac/ReturnOfTheWac_Layers/default.layer": {
+          "instances": {
+            "38": {
+              "vertices": 5,
+              "name": null,
+              "lastLine": 57
+            }
+          },
+          "placementLayer": "worlds/arc/ReturnOfTheWac/ReturnOfTheWac_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 4,
@@ -23226,6 +26403,18 @@
         },
         "worlds/arc/RidgeRumble/RidgeRumble_Layers/Players_US.layer": {
           "gap": "legacy slot playability requires review DC4E422BC996164F"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/RidgeRumble/RidgeRumble_Layers/default.layer": {
+          "instances": {
+            "69": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 90
+            }
+          },
+          "placementLayer": "worlds/arc/RidgeRumble/RidgeRumble_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 10,
@@ -23304,6 +26493,18 @@
             "waypoints"
           ],
           "placements": 8
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/RocketScience/RocketScience_Layers/default.layer": {
+          "instances": {
+            "74": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 90
+            }
+          },
+          "placementLayer": "worlds/arc/RocketScience/RocketScience_Layers/default_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 6,
@@ -23447,6 +26648,15 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/ShootAndScoot/ShootAndScoot_Layers/default.layer": {
+          "instances": {
+            "35": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
+        }
+      },
       "groupLayers": {
         "worlds/arc/ShootAndScoot/ShootAndScoot_Layers/friendlyAi.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -23527,6 +26737,21 @@
       "markerLayers": {
         "worlds/arc/SoumontSawmill/SoumontSawmill_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/SoumontSawmill/SoumontSawmill_Layers/default.layer": {
+          "instances": {
+            "30": {
+              "vertices": 15,
+              "name": null,
+              "lastLine": 84
+            },
+            "85": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/arc/SoumontSawmill/SoumontSawmill_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -23612,6 +26837,21 @@
       "markerLayers": {
         "worlds/arc/StationSmashers/StationSmashers_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/StationSmashers/StationSmashers_Layers/default.layer": {
+          "instances": {
+            "64": {
+              "gap": "public outline colored by a restricted faction"
+            },
+            "91": {
+              "vertices": 9,
+              "name": null,
+              "lastLine": 127
+            }
+          },
+          "placementLayer": "worlds/arc/StationSmashers/StationSmashers_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -23808,6 +27048,18 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/SyrianCheckpoint/SyrianCheckpoint_Layers/default.layer": {
+          "instances": {
+            "126": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 142
+            }
+          },
+          "placementLayer": "worlds/arc/SyrianCheckpoint/SyrianCheckpoint_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "groupLayers": {
         "worlds/arc/SyrianCheckpoint/SyrianCheckpoint_Layers/players.layer": {
           "gap": "unresolved or duplicate Units prefab 17C7309FFE4775B0"
@@ -23953,6 +27205,15 @@
           "unitPrefabEntries": 69
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/TheOldWood2024/TheOldWood2024_Layers/default.layer": {
+          "instances": {
+            "57": {
+              "gap": "unsupported boundary settings"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 8,
       "respawn": {
         "factions": [
@@ -24056,6 +27317,21 @@
           "unitPrefabEntries": 38
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/default.layer": {
+          "instances": {
+            "114": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 135
+            },
+            "136": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "stockPlacementLayers": {
         "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/waypoints.layer": {
           "types": [
@@ -24123,6 +27399,23 @@
       "markerLayers": {
         "worlds/arc/TwoCheckpoints/TwoCheckpoints_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/TwoCheckpoints/TwoCheckpoints_Layers/default.layer": {
+          "instances": {
+            "46": {
+              "vertices": 14,
+              "name": null,
+              "lastLine": 97
+            },
+            "98": {
+              "vertices": 8,
+              "name": null,
+              "lastLine": 135
+            }
+          },
+          "placementLayer": "worlds/arc/TwoCheckpoints/TwoCheckpoints_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -24220,6 +27513,21 @@
           "unitPrefabEntries": 31
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/UrbanTroubles/UrbanTroubles_Layers/default.layer": {
+          "instances": {
+            "48": {
+              "vertices": 15,
+              "name": null,
+              "lastLine": 105
+            },
+            "106": {
+              "gap": "active cover map needs separate conversion"
+            }
+          },
+          "placementLayer": "worlds/arc/UrbanTroubles/UrbanTroubles_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 16,
       "frameworkEvents": {
         "worlds/arc/UrbanTroubles/UrbanTroubles_Layers/default.layer:184": {
@@ -24290,6 +27598,21 @@
       "markerLayers": {
         "worlds/arc/VilleneufPunchupRedux/VilleneufPunchupRedux_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/VilleneufPunchupRedux/VilleneufPunchupRedux_Layers/default.layer": {
+          "instances": {
+            "23": {
+              "vertices": 14,
+              "name": null,
+              "lastLine": 74
+            },
+            "75": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/arc/VilleneufPunchupRedux/VilleneufPunchupRedux_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -24367,6 +27690,21 @@
           "unitPrefabEntries": 60
         }
       },
+      "boundaryLayers": {
+        "worlds/arc/WateryGrave/WateryGrave_Layers/default.layer": {
+          "instances": {
+            "64": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 85
+            },
+            "86": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          },
+          "placementLayer": "worlds/arc/WateryGrave/WateryGrave_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 6,
       "frameworkEvents": {
         "worlds/arc/WateryGrave/WateryGrave_Layers/default.layer:125": {
@@ -24421,6 +27759,15 @@
       "markerLayers": {
         "worlds/arc/ZeroArcThirty/ZeroArcThirty_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/arc/ZeroArcThirty/ZeroArcThirty_Layers/default.layer": {
+          "instances": {
+            "107": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "groupLayers": {
@@ -24480,6 +27827,21 @@
       "markerLayers": {
         "worlds/blackskimask/Deadly Crossing/DeadlyCrossing_Layers/markers.layer": {
           "gap": "line 102 separate unassigned audience"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/blackskimask/Deadly Crossing/DeadlyCrossing_Layers/default.layer": {
+          "instances": {
+            "27": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "56": {
+              "vertices": 4,
+              "name": "BLUFOR_AO",
+              "lastLine": 84
+            }
+          },
+          "placementLayer": "worlds/blackskimask/Deadly Crossing/DeadlyCrossing_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -24561,6 +27923,18 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/blackskimask/Plant Attack/PlantAttack_Layers/default.layer": {
+          "instances": {
+            "49": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "77": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
+        }
+      },
       "directBriefingsRead": 6,
       "frameworkEvents": {
         "worlds/blackskimask/Plant Attack/PlantAttack_Layers/default.layer:128": {
@@ -24635,6 +28009,22 @@
         },
         "worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/players_uk.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/default.layer": {
+          "instances": {
+            "29": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
+        },
+        "worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/players_ru.layer": {
+          "instances": {
+            "44": {
+              "gap": "tilted AO needs world-space validation"
+            }
+          }
         }
       },
       "directBriefingsRead": 7,
@@ -24717,6 +28107,21 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
+      "boundaryLayers": {
+        "worlds/chllboy/Gigantomachia/Gigantomachia_Layers/default.layer": {
+          "instances": {
+            "30": {
+              "gap": "active cover map needs separate conversion"
+            },
+            "88": {
+              "vertices": 7,
+              "name": null,
+              "lastLine": 122
+            }
+          },
+          "placementLayer": "worlds/chllboy/Gigantomachia/Gigantomachia_Layers/default_GC_Boundaries.layer"
+        }
+      },
       "directBriefingsRead": 14,
       "frameworkEvents": {
         "worlds/chllboy/Gigantomachia/Gigantomachia_Layers/default.layer:127": {
@@ -24778,6 +28183,15 @@
         },
         "worlds/chllboy/Hephaestus Forge/Hephaestus Forge_Layers/Opfor.layer": {
           "gap": "group component needs review"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/chllboy/Hephaestus Forge/Hephaestus Forge_Layers/BriefingOpfor.layer": {
+          "instances": {
+            "111": {
+              "gap": "public outline colored by a restricted faction"
+            }
+          }
         }
       },
       "directBriefingsRead": 18,
@@ -24852,6 +28266,25 @@
         },
         "worlds/chllboy/Makeup/Makeup_Layers/Opfor.layer": {
           "gap": "mixed layer or custom group declaration"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/chllboy/Makeup/Makeup_Layers/IndforBrief.layer": {
+          "instances": {
+            "96": {
+              "vertices": 4,
+              "name": null,
+              "lastLine": 123
+            }
+          },
+          "placementLayer": "worlds/chllboy/Makeup/Makeup_Layers/IndforBrief_GC_Boundaries.layer"
+        },
+        "worlds/chllboy/Makeup/Makeup_Layers/MissionLogic.layer": {
+          "instances": {
+            "1": {
+              "gap": "active cover map needs separate conversion"
+            }
+          }
         }
       },
       "directBriefingsRead": 14,
@@ -24941,6 +28374,15 @@
         },
         "worlds/chllboy/Trifecta/Trifecta_Layers/FACTIONS/FIA.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "boundaryLayers": {
+        "worlds/chllboy/Trifecta/Trifecta_Layers/BRIEFS/UNI_MARKERS.layer": {
+          "instances": {
+            "10": {
+              "gap": "zoom-dependent auxiliary outline needs separate conversion"
+            }
+          }
         }
       },
       "groupLayers": {

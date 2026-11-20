@@ -6,6 +6,7 @@ import json
 import re
 from pathlib import Path, PurePosixPath
 
+from boundaries import convert_boundaries
 from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
 from events import world_events
@@ -36,6 +37,8 @@ def main():
     dev = Snapshot(args.missions, args.dev)
     stock = StockPrefabs(args.base_database) if args.base_database else None
     locally_owned = set(source.resources) | set(dev.resources)
+    source_paths = {p.casefold() for p in source.files}
+    target_paths = {p.casefold(): p for p in dev.files}
     lobby = Path(__file__).resolve().parents[3]
     template = (lobby / 'Prefabs/MP/Modes/GC_LobbyGameMode.et.meta').read_text(encoding='utf-8')
     report = {'source': source.commit, 'target': dev.commit, 'headers': {}, 'worlds': {}}
@@ -70,6 +73,22 @@ def main():
         row['markerLayers'] = {}
         for layer in source.layers[world.lower()]:
             text = source.read(layer)
+            if world not in (RACE_WORLD, RUHA_WORLD):
+                ao_body, instances = convert_boundaries(text)
+                if instances:
+                    audit = {'instances': instances}
+                    row.setdefault('boundaryLayers', {})[layer] = audit
+                    if ao_body:
+                        dest = str(PurePosixPath(layer).with_suffix('')) + '_GC_Boundaries.layer'
+                        if dest.casefold() in source_paths:
+                            raise ValueError('boundary output collides with source: ' + dest)
+                        if layer in dev.files:
+                            audit['gap'] = 'Dev already contains the original layer path; review before adding boundary siblings'
+                        elif dest.casefold() in target_paths and (target_paths[dest.casefold()] != dest or dev.read(dest).strip() != ao_body.strip()):
+                            audit['gap'] = 'Dev has differing boundary output'
+                        else:
+                            out[dest] = ao_body
+                            audit['placementLayer'] = dest
             records, issues = read_respawns(text, layer)
             respawns.extend(records)
             ticket_gaps.extend(issues)
