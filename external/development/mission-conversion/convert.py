@@ -8,6 +8,7 @@ from pathlib import Path, PurePosixPath
 
 from boundaries import convert_boundaries
 import breach
+import arc_capture
 from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
 from events import world_events
@@ -53,6 +54,7 @@ def main():
     parser.add_argument('--include-outcomes', action='store_true', help='audit and stage supported legacy outcome rule fragments')
     parser.add_argument('--include-industrial-candidate', action='store_true', help='assemble the Industrial Metal playtest world')
     parser.add_argument('--include-irish-candidate', action='store_true', help='assemble the Irish Checkpoint playtest world')
+    parser.add_argument('--include-arc-capture-candidates', action='store_true', help='assemble Soumont Sawmill and Watery Grave')
     args = parser.parse_args()
     if args.include_industrial_candidate:
         if not args.stage or not args.units or not args.workshop_addons or not args.base_database:
@@ -61,6 +63,11 @@ def main():
     if args.include_irish_candidate:
         if not args.stage or not args.units or not args.base_database:
             parser.error('Irish Checkpoint requires --stage, --units and --base-database')
+        args.include_outcomes = True
+    arc_worlds = arc_capture.WORLDS if args.include_arc_capture_candidates else {}
+    if arc_worlds:
+        if not args.stage or not args.units or not args.base_database or not args.workshop_addons:
+            parser.error('the Arc capture worlds require --stage, --units, --base-database and --workshop-addons')
         args.include_outcomes = True
     if args.include_wetfeet_candidate:
         args.include_wetfeet_scene = args.include_wetfeet_rosters = True
@@ -87,6 +94,7 @@ def main():
         report['sourceUnits'] = source_units.commit
         report['targetUnits'] = dev_units.commit
     out = {}
+    arc_areas = {}
     headers_by_world = defaultdict(list)
     target_headers = set(dev.headers())
     for header in sorted(source.headers()):
@@ -113,7 +121,8 @@ def main():
         for layer in source.layers[world.lower()]:
             text = source.read(layer)
             if world not in (RACE_WORLD, RUHA_WORLD):
-                reviewed_tint = args.include_industrial_candidate and layer == industrial.DEFAULT
+                reviewed_tint = ((args.include_industrial_candidate and layer == industrial.DEFAULT)
+                                 or (world in arc_worlds and layer == world.removesuffix('.ent') + '_Layers/default.layer'))
                 if args.include_gwotline_mode and layer == gwotline.AO:
                     ao_body, instances = gwotline.stage_boundaries(source)
                 elif args.include_irish_candidate and layer == irish.DEFAULT:
@@ -140,6 +149,8 @@ def main():
                             args.include_industrial_candidate and layer == industrial.DEFAULT
                         ) or (
                             args.include_irish_candidate and layer == irish.DEFAULT
+                        ) or (
+                            world in arc_worlds and reviewed_tint
                         )
                         if layer in dev.files and not reviewed_candidate:
                             audit['gap'] = 'Dev already contains the original layer path; review before adding boundary siblings'
@@ -225,7 +236,12 @@ def main():
             row['frameworkEvents'] = review
         if args.include_outcomes and row['serializedTypes'].get('TILW_EndGameInstruction'):
             try:
-                rules, outcome_audit, gap = compile_outcomes(source, world)
+                captures = {}
+                if world in arc_worlds:
+                    captures, area, capture_audit = arc_capture.capture(source, world)
+                    row['captureCandidate'] = capture_audit
+                    arc_areas[world] = area
+                rules, outcome_audit, gap = compile_outcomes(source, world, captures)
                 outcome = {'events': outcome_audit}
                 if gap:
                     outcome['gap'] = gap
@@ -358,7 +374,8 @@ def main():
         files[breach.PLAYERS] = roster
         for path, body in files.items():
             if path in dev.files and dev.read(path).strip() != body.strip():
-                parser.error(f'Dev already has differing {path}')
+                if path != breach.PLAYERS or dev.files[path] != breach.PRIOR_ROSTER:
+                    parser.error(f'Dev already has differing {path}')
             out[path] = body
         row = report['worlds'][breach.WORLD]
         row['loadoutCandidates'] = audit
@@ -367,11 +384,13 @@ def main():
             candidate, icons = breach.assemble(source, dev, row['briefingModePreset'])
             for path, body in candidate.items():
                 if path in dev.files and dev.read(path).strip() != body.strip():
-                    if path != breach.LAYERS + 'default.layer' or dev.files[path] != breach.PRIOR_DEFAULT:
+                    approved = {breach.LAYERS + 'default.layer': breach.PRIOR_DEFAULT, breach.HEADER: breach.PRIOR_HEADER}
+                    if dev.files[path] != approved.get(path):
                         parser.error(f'Dev already has differing {path}')
                 out[path] = body
             row['playtestCandidate'] = {
-                'presentOnDev': all(path in dev.files for path in candidate),
+                'presentOnDev': all(path in dev.files and dev.read(path).strip() == body.strip()
+                                    for path, body in {**files, **candidate}.items()),
                 'icons': icons,
                 'playerLossAnnouncement': {'sourceEvent': '6508D983AB223731', 'lossFaction': 'RHS_AFRF',
                                            'ratio': 1, 'delaySeconds': 10, 'winner': 'RHS_USAF'},
@@ -483,6 +502,35 @@ def main():
                 'Compare issued equipment, vehicle handling and original callsigns',
             ],
         }
+    for world in arc_worlds:
+        row = report['worlds'][world]
+        outcome = row['outcomeCandidate']
+        if len(outcome.get('events', {})) != 4 or any('gap' in event for event in outcome['events'].values()):
+            parser.error(f'{world} needs all four reviewed source outcome events')
+        candidate, audit, icons, legacy_vehicle_groups = arc_capture.assemble(
+            source, dev, stock, args.workshop_addons, world, row, out,
+            out[outcome['stagedFragment']], arc_areas[world],
+        )
+        for path, body in candidate.items():
+            if path in dev.files and dev.read(path).strip() != body.strip():
+                boundary_path = world.removesuffix('.ent') + '_Layers/default_GC_Boundaries.layer'
+                prior_vehicles = legacy_vehicle_groups and path.endswith('/Vehicles.layer') and dev.files[path] == source.files[path]
+                if not prior_vehicles and (path != boundary_path or out.get(path) != body):
+                    parser.error(f'Dev already has differing {path}')
+            out[path] = body
+        row['playtestCandidate'] = {
+            'presentOnDev': all(path in dev.files and dev.read(path).strip() == body.strip()
+                                for path, body in candidate.items()),
+            'boundaries': audit, 'icons': icons,
+            'remainingBehavior': [
+                'Compare live capture, interrupted and contested capture, and remote notifications',
+                'Compare staging-zone enforcement, release and long timeout notices',
+                'Compare callsign labels, issued equipment and vehicle handling',
+            ],
+        }
+        if legacy_vehicle_groups:
+            row['playtestCandidate']['legacyVehicleGroups'] = legacy_vehicle_groups
+            row['playtestCandidate']['remainingBehavior'].append('Restore legacy vehicle previews and locked-vehicle removal')
     if args.stage:
         stage = args.stage.resolve()
         if any(stage.is_relative_to(root.resolve()) for root in ([args.missions, lobby] + ([args.units] if args.units else []))):

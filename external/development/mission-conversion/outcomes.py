@@ -26,7 +26,7 @@ def end_action(lines, key):
     ], {'faction': faction[1:-1], 'result': kind, 'delaySeconds': delay}
 
 
-def read_event(fields, key, flags):
+def read_event(fields, key, flags, captures):
     actions = defaultdict(list)
     notices = []
     seen = set()
@@ -48,6 +48,8 @@ def read_event(fields, key, flags):
             elif invert == '0' and flag in flags:
                 faction, ratio = flags[flag]
                 term = {'trigger': 'peak player loss', 'flag': flag[1:-1], 'faction': faction, 'ratio': ratio}
+            elif invert == '0' and flag in captures:
+                term = {'trigger': 'area capture', 'flag': flag[1:-1]}
             else:
                 raise ValueError('unresolved or unsupported outcome flag ' + flag)
             i = end
@@ -76,15 +78,21 @@ def read_event(fields, key, flags):
     return term, actions, notices
 
 
-def render(key, name, term, actions):
-    condition = term['trigger'] == 'peak player loss'
+def render(key, name, term, actions, captures):
+    condition = term['trigger'] != 'Match start'
     result = []
     if condition:
+        if term['trigger'] == 'area capture':
+            check = captures['"' + term['flag'] + '"']
+        else:
+            check = [
+                f'      GC_CustomScriptCondition "{{{guid(key + "/condition")}}}" {{',
+                f'       m_Script GC_PeakFactionPopulationCheck "{{{guid(key + "/check")}}}" {{',
+                f'        m_sFaction "{term["faction"]}"', f'        m_fRatio {term["ratio"]}', '       }', '      }',
+            ]
         result.extend([
             f'    GC_Event "{{{guid(key + "/trigger")}}}" {{', f'     m_sName "{name}"',
-            '     m_aConditions {', f'      GC_CustomScriptCondition "{{{guid(key + "/condition")}}}" {{',
-            f'       m_Script GC_PeakFactionPopulationCheck "{{{guid(key + "/check")}}}" {{',
-            f'        m_sFaction "{term["faction"]}"', f'        m_fRatio {term["ratio"]}', '       }', '      }', '     }',
+            '     m_aConditions {', *check, '     }',
             '     m_aActions {', f'      GC_MessageAction "{{{guid(key + "/log")}}}" {{',
             f'       m_sMessage "{name}"', '       m_iDelivery 2', '      }', '     }', '    }',
         ])
@@ -101,7 +109,8 @@ def render(key, name, term, actions):
     return result
 
 
-def compile_outcomes(source, world):
+def compile_outcomes(source, world, captures=None):
+    captures = captures or {}
     layers = source.layers[world.lower()]
     owners = [(path, source.read(path)) for path in layers if 'TILW_MissionFrameworkEntity' in source.read(path)]
     if len(owners) != 1:
@@ -137,8 +146,8 @@ def compile_outcomes(source, world):
         try:
             if name in names:
                 raise ValueError('duplicate outcome name')
-            term, actions, notices = read_event(fields, world + '/' + event[1], flags)
-            compiled.extend(render(world + '/' + event[1], name, term, actions))
+            term, actions, notices = read_event(fields, world + '/' + event[1], flags, captures)
+            compiled.extend(render(world + '/' + event[1], name, term, actions, captures))
             audit[loc] = {**term, 'name': name, 'announcements': notices,
                           'instructionDelaysSeconds': [f'{delay:f}' for delay in actions]}
             names.add(name)

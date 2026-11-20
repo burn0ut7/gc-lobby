@@ -11,6 +11,7 @@ WORLD = re.compile(r'^\s*World\s+"\{([0-9A-Fa-f]{16})\}', re.M)
 NAME = re.compile(r'^\s*Name\s+"\{([0-9A-Fa-f]{16})\}', re.M)
 # Match typed declarations, excluding quoted descriptions, resource paths and entity names.
 TYPES = re.compile(r'^[ \t]*(?:\$grp )?(?:(?:m_\w+) )?((?:TILW|PS|GC)_\w+|\w*GameMode\w*|SCR_AIGroup)\b[^\n]*\{[ \t]*$', re.M)
+VEHICLE_LINK = re.compile(r'^\s*m_sAttachmentGroupName\s+"([^"\r\n]+)"\s*$')
 SOURCE_TEXT = {'.ent', '.layer', '.et', '.conf', '.layout', '.ptc'}
 
 
@@ -88,6 +89,7 @@ def compare(source, target, start):
     kinds = Counter()
     delta = Counter()
     settings = defaultdict(list)
+    vehicle_links = defaultdict(list)
     for path in closure:
         if PurePosixPath(path).suffix.lower() in SOURCE_TEXT:
             text = source.read(path)
@@ -100,11 +102,17 @@ def compare(source, target, start):
                     settings[path].append([no, field[1], field[2]])
                 if re.match(r'^\s*PS_FactionRespawnCount\s', line):
                     settings[path].append([no, 'PS_FactionRespawnCount', 'see faction entry'])
+                attachment = VEHICLE_LINK.fullmatch(line)
+                if attachment:
+                    vehicle_links[path].append([no, attachment[1]])
         if path not in target.files:
             delta['absent'] += 1
         elif source.files[path] == target.files[path]:
             delta['identical'] += 1
         else:
             delta['changed'] += 1
-    return {'sourceResourceCount': len(closure), 'devPaths': dict(sorted(delta.items())),
-            'serializedTypes': dict(sorted(kinds.items())), 'configurationOverrides': dict(settings)}
+    report = {'sourceResourceCount': len(closure), 'devPaths': dict(sorted(delta.items())),
+              'serializedTypes': dict(sorted(kinds.items())), 'configurationOverrides': dict(settings)}
+    if vehicle_links:
+        report['legacyVehicleGroupLinks'] = dict(vehicle_links)
+    return report

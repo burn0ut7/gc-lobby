@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "0b3b69772af38396f3ffe519ad8a48ea20c1ee37",
+  "target": "fcf587f5623e665d718fb8f84745c6bc80f71a48",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -2073,7 +2073,7 @@
         "worlds/arc/SoumontSawmill/SoumontSawmill.ent"
       ],
       "declaredPath": "worlds/arc/SoumontSawmill/SoumontSawmill.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{F90DC63AB259B0EC}worlds/arc/SoumontSawmill/SoumontSawmill.ent"
     },
     "Missions/arc/StationSmashers.conf": {
@@ -2153,7 +2153,7 @@
         "worlds/arc/WateryGrave/WateryGrave.ent"
       ],
       "declaredPath": "worlds/arc/WateryGrave/WateryGrave.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{4E25905079DE8CE8}worlds/arc/WateryGrave/WateryGrave.ent"
     },
     "Missions/arc/ZeroArcThirty.conf": {
@@ -2711,6 +2711,14 @@
         "m_aHideOnGameModeStates": 4
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Blue/Opportunity Knocks/OpportunityKnocks_Layers/QRF.layer": [
+          [
+            4,
+            "QRF_RUS"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Blue/TVT66_OpportunityKnocks.conf"
       ],
@@ -2930,6 +2938,14 @@
             36,
             "m_iFreezeTime",
             "180000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/OPFOR/OPFORAssets.layer": [
+          [
+            94,
+            "TANK"
           ]
         ]
       },
@@ -3314,6 +3330,36 @@
         "m_aHideOnGameModeStates": 3
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Burn0ut7/Killzone/Killzone_Layers/opfor.layer": [
+          [
+            16,
+            "opfor_hq"
+          ],
+          [
+            148,
+            "opfor_hq"
+          ],
+          [
+            177,
+            "opfor_hq"
+          ]
+        ],
+        "worlds/Burn0ut7/Killzone/Killzone_Layers/zblufor.layer": [
+          [
+            96,
+            "heli1"
+          ],
+          [
+            119,
+            "heli2"
+          ],
+          [
+            142,
+            "heli3"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Burn0ut7/KillZone.conf"
       ],
@@ -3393,6 +3439,54 @@
         "TILW_SendMessageInstruction": 3
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Burn0ut7/Rocky Road/Rocky_Road_Layers/Blufor.layer": [
+          [
+            72,
+            "Squad_0"
+          ],
+          [
+            94,
+            "Squad_0"
+          ],
+          [
+            169,
+            "Squad_2"
+          ],
+          [
+            193,
+            "Squad_2"
+          ],
+          [
+            217,
+            "Squad_3"
+          ],
+          [
+            241,
+            "Squad_3"
+          ],
+          [
+            265,
+            "Squad_1"
+          ],
+          [
+            289,
+            "Squad_1"
+          ],
+          [
+            297,
+            "Squad_0"
+          ],
+          [
+            305,
+            "Squad_0"
+          ],
+          [
+            312,
+            "Squad_0"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Burn0ut7/RockyRoad.conf"
       ],
@@ -3926,13 +4020,13 @@
         "worlds/Corax/Breach and clear/No ETool/Character_RHS_RF_MSV_Flora_SR_NoETool_P.et": {
           "guid": "10FC237FEBFC9F6D",
           "unitsParent": "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/RHS Inherits/MSV/Flora/P/Character_RHS_RF_MSV_Flora_SR_P.et",
-          "legacyPlayableWithGroupOverride": false
+          "legacyPlayableWithGroupOverride": true
         }
       },
       "rosterCandidate": {
         "playableGroups": 7,
-        "unitPrefabEntries": 48,
-        "supportAI": 2
+        "unitPrefabEntries": 50,
+        "seniorRiflemanSlots": 2
       },
       "playtestCandidate": {
         "presentOnDev": true,
@@ -3956,7 +4050,7 @@
           "Compare dynamic RHS_USAF AI-loss behavior against the legacy session and verify remote delivery",
           "Compare restriction-zone boundary behavior and the legacy warning HUD for both sides",
           "Verify inherited vehicles, weather, scenery, faction marker audiences and issued equipment",
-          "Compare Senior Rifleman formation offsets and linked player and AI orders"
+          "Compare the Senior Rifleman slot equipment and role assignment in both rifle squads"
         ]
       }
     },
@@ -4143,6 +4237,42 @@
         "TILW_VehicleCrewComponent": 10
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Corax/IntercectingForces/IntersectingForces_Layers/Blufor.layer": [
+          [
+            229,
+            "b13"
+          ],
+          [
+            320,
+            "b16"
+          ],
+          [
+            381,
+            "b12"
+          ],
+          [
+            442,
+            "b11"
+          ],
+          [
+            503,
+            "b22"
+          ],
+          [
+            594,
+            "b26"
+          ],
+          [
+            655,
+            "b21"
+          ],
+          [
+            716,
+            "b23"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Corax/IntersectionForces/IntersectingForces.conf"
       ],
@@ -4543,6 +4673,32 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/BLUFOR.layer": [
+          [
+            52,
+            "BLUFOR_pilot"
+          ]
+        ],
+        "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/OPFOR.layer": [
+          [
+            124,
+            "OPFOR_tank_crew_1"
+          ],
+          [
+            130,
+            "OPFOR_rifle_squad_1"
+          ],
+          [
+            135,
+            "OPFOR_rifle_squad_2"
+          ],
+          [
+            140,
+            "OPFOR_rifle_squad_3"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Cunnah/A_Hop_Skip_And_A_Jump.conf"
       ],
@@ -4811,6 +4967,58 @@
             25,
             "PS_FactionRespawnCount",
             "see faction entry"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_Layers/opfor.layer": [
+          [
+            4,
+            "squad_1"
+          ],
+          [
+            9,
+            "hq"
+          ],
+          [
+            15,
+            "squad_3"
+          ],
+          [
+            20,
+            "squad_2"
+          ],
+          [
+            25,
+            "squad_1"
+          ],
+          [
+            32,
+            "brdm_crew_2"
+          ],
+          [
+            43,
+            "brdm_crew_1"
+          ],
+          [
+            62,
+            "drivers"
+          ],
+          [
+            79,
+            "drivers"
+          ],
+          [
+            96,
+            "drivers"
+          ],
+          [
+            103,
+            "drivers"
+          ],
+          [
+            108,
+            "drivers"
           ]
         ]
       },
@@ -5108,6 +5316,42 @@
         "TILW_SpawnPrefabInstruction": 2
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Cunnah/Local_Problems/Local_Problems_Layers/OPFOR.layer": [
+          [
+            24,
+            "HQ"
+          ],
+          [
+            91,
+            "Squad_2"
+          ],
+          [
+            96,
+            "Squad_2"
+          ],
+          [
+            101,
+            "Squad_3"
+          ],
+          [
+            106,
+            "Squad_3"
+          ],
+          [
+            112,
+            "HQ"
+          ],
+          [
+            118,
+            "Squad_1"
+          ],
+          [
+            123,
+            "Squad_1"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Cunnah/Local_Problems.conf"
       ],
@@ -5322,6 +5566,14 @@
         "TILW_SpawnPrefabInstruction": 15
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Delfer/Grouse_Hunt/Grouse_Hunt_Layers/Vehicles.layer": [
+          [
+            47,
+            "squad1"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Delfer/Grouse Hunt/Grouse Hunt.conf"
       ],
@@ -6551,6 +6803,38 @@
         "m_aHideOnGameModeStates": 5
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/FloridaMan/worlds/CounterTheCounter/CounterTheCounter_Layers/Vehicles.layer": [
+          [
+            7,
+            "BLU_12"
+          ],
+          [
+            14,
+            "BLU_13"
+          ],
+          [
+            21,
+            "BLU_11"
+          ],
+          [
+            28,
+            "BLU_16"
+          ],
+          [
+            35,
+            "BLU_14"
+          ],
+          [
+            42,
+            "BLU_2"
+          ],
+          [
+            49,
+            "BLU_3"
+          ]
+        ]
+      },
       "headers": [],
       "markerLayers": {
         "worlds/FloridaMan/worlds/CounterTheCounter/CounterTheCounter_Layers/Briefing.layer": {
@@ -7139,6 +7423,38 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/Vehicles.layer": [
+          [
+            20,
+            "K6"
+          ],
+          [
+            25,
+            "K3"
+          ],
+          [
+            30,
+            "K2"
+          ],
+          [
+            35,
+            "K2"
+          ],
+          [
+            40,
+            "K1"
+          ],
+          [
+            45,
+            "K1"
+          ],
+          [
+            64,
+            "K4"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Fruz/Operation_Tampa.conf"
       ],
@@ -7226,6 +7542,36 @@
             37,
             "m_iFreezeTime",
             "420000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Gabe/BlocParty/BlocParty_Layers/Players_AFRF.layer": [
+          [
+            323,
+            "CompanyHQ"
+          ],
+          [
+            334,
+            "CompanyHQ"
+          ]
+        ],
+        "worlds/Gabe/BlocParty/Prefabs/GAZ_TIGR_v2_AGS17_Gabe.et": [
+          [
+            32,
+            "CompanyHQ"
+          ]
+        ],
+        "worlds/Gabe/BlocParty/Prefabs/GAZ_TIGR_v2_KORD_Gabe.et": [
+          [
+            32,
+            "CompanyHQ"
+          ]
+        ],
+        "worlds/Gabe/BlocParty/Prefabs/Ural4320_transport_Gabe.et": [
+          [
+            17,
+            "CentralCommand"
           ]
         ]
       },
@@ -7452,6 +7798,54 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Gabe/IronResolve/IronResolve_Layers/Vehicles_Blufor.layer": [
+          [
+            18,
+            "StrykerCrew2"
+          ],
+          [
+            36,
+            "StrykerCrew1"
+          ],
+          [
+            42,
+            "PltHQ"
+          ],
+          [
+            48,
+            "Squad1"
+          ],
+          [
+            53,
+            "Squad2"
+          ],
+          [
+            58,
+            "Squad3"
+          ],
+          [
+            63,
+            "Weapons"
+          ],
+          [
+            70,
+            "Squad1"
+          ],
+          [
+            75,
+            "Squad2"
+          ],
+          [
+            80,
+            "Squad3"
+          ],
+          [
+            85,
+            "Weapons"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Gabe/IronResolve/IronResolve.conf"
       ],
@@ -7541,6 +7935,38 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Gabe/PowerStruggle/TVT97PowerStruggle_Layers/Vehicles.layer": [
+          [
+            29,
+            "USSR316"
+          ],
+          [
+            58,
+            "USSR315"
+          ],
+          [
+            93,
+            "USSR314"
+          ],
+          [
+            119,
+            "USSR310"
+          ],
+          [
+            148,
+            "USSR313"
+          ],
+          [
+            177,
+            "USSR312"
+          ],
+          [
+            206,
+            "USSR311"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Gabe/TVT97PowerStruggle/TVT97PowerStruggle.conf"
       ],
@@ -7621,6 +8047,98 @@
             27,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Gabe/TheHillsHaveEyes/TheHillsHaveEyes_Layers/Vehicles.layer": [
+          [
+            49,
+            "ekho69i"
+          ],
+          [
+            172,
+            "ekho20i"
+          ],
+          [
+            214,
+            "ekho31i"
+          ],
+          [
+            256,
+            "ekho32i"
+          ],
+          [
+            298,
+            "ekho30i"
+          ],
+          [
+            340,
+            "ekho22i"
+          ],
+          [
+            382,
+            "ekho21i"
+          ],
+          [
+            424,
+            "ekho11i"
+          ],
+          [
+            466,
+            "ekho_HQi"
+          ],
+          [
+            508,
+            "ekho10i"
+          ],
+          [
+            550,
+            "ekho12i"
+          ],
+          [
+            590,
+            "Tank1_HQ"
+          ],
+          [
+            623,
+            "Tank2"
+          ],
+          [
+            655,
+            "Tank3"
+          ],
+          [
+            688,
+            "Tank4"
+          ],
+          [
+            721,
+            "Bravo12"
+          ],
+          [
+            754,
+            "Bravo"
+          ],
+          [
+            787,
+            "Bravo016"
+          ],
+          [
+            820,
+            "Bravo11"
+          ],
+          [
+            853,
+            "Bravo13"
+          ],
+          [
+            881,
+            "Whiskey1i"
+          ],
+          [
+            907,
+            "Whiskey2i"
           ]
         ]
       },
@@ -7900,6 +8418,58 @@
         "TILW_VehicleCrewComponent": 19
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_Layers/Players/NVA_Players.layer": [
+          [
+            57,
+            "RifleSquad_1"
+          ],
+          [
+            119,
+            "RifleSquad_2"
+          ],
+          [
+            181,
+            "RifleSquad_3"
+          ],
+          [
+            240,
+            "CoyHQ"
+          ],
+          [
+            297,
+            "RifleSquad_1"
+          ],
+          [
+            359,
+            "RifleSquad_3"
+          ],
+          [
+            421,
+            "RifleSquad_2"
+          ],
+          [
+            456,
+            "CoyHQ"
+          ],
+          [
+            752,
+            "Tank_Crew_2"
+          ],
+          [
+            775,
+            "Tank_Crew_1"
+          ],
+          [
+            798,
+            "Tank_Crew_3"
+          ],
+          [
+            821,
+            "Tank_Crew_4"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/2nd Break The Line/2ndBreakTheLine.conf"
       ],
@@ -7990,6 +8560,58 @@
         "TILW_VehicleCrewComponent": 16
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/Players/NVA_Players.layer": [
+          [
+            59,
+            "RifleSquad_1"
+          ],
+          [
+            124,
+            "RifleSquad_2"
+          ],
+          [
+            189,
+            "RifleSquad_3"
+          ],
+          [
+            251,
+            "CoyHQ"
+          ],
+          [
+            310,
+            "RifleSquad_4"
+          ],
+          [
+            375,
+            "RifleSquad_5"
+          ],
+          [
+            440,
+            "RifleSquad_6"
+          ],
+          [
+            478,
+            "CoyHQ"
+          ],
+          [
+            799,
+            "Tank_Crew_2"
+          ],
+          [
+            822,
+            "Tank_Crew_1"
+          ],
+          [
+            845,
+            "Tank_Crew_3"
+          ],
+          [
+            868,
+            "Tank_Crew_4"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/3rd Break The Line/3rdBreakTheLine.conf"
       ],
@@ -8122,6 +8744,56 @@
             682,
             "m_allowSpecRespawn",
             "1"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/BLUFOR_Players/BLUFOR_Players.layer": [
+          [
+            5,
+            "CAFRifle_1"
+          ],
+          [
+            10,
+            "CAFRifle_1"
+          ],
+          [
+            17,
+            "CAFRifle_2"
+          ],
+          [
+            22,
+            "CAFRifle_2"
+          ],
+          [
+            110,
+            "CAFRifle_2"
+          ]
+        ],
+        "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/OPFOR_Players/OPFOR_Players.layer": [
+          [
+            20,
+            "Pilot_Hind_1"
+          ],
+          [
+            40,
+            "Pilot_Hind_2"
+          ],
+          [
+            426,
+            "Pilot_Mi8_1"
+          ],
+          [
+            466,
+            "Pilot_Mi8_2"
+          ],
+          [
+            506,
+            "Pilot_Mi8_4"
+          ],
+          [
+            551,
+            "Pilot_Mi8_3"
           ]
         ]
       },
@@ -8259,6 +8931,14 @@
         "TILW_SendMessageInstruction": 7
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol_Layers/Players/Players.layer": [
+          [
+            4,
+            "Coyhqins"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol.conf"
       ],
@@ -8350,6 +9030,38 @@
             59,
             "PS_FactionRespawnCount",
             "see faction entry"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/BMP Incursion/BMPIncursion_Layers/OPFOR_Players/OPFOR_Players.layer": [
+          [
+            44,
+            "Rifle1"
+          ],
+          [
+            88,
+            "Rifle3"
+          ],
+          [
+            132,
+            "Rifle2"
+          ],
+          [
+            176,
+            "Rifle4"
+          ],
+          [
+            220,
+            "Rifle5"
+          ],
+          [
+            264,
+            "Rifle6"
+          ],
+          [
+            308,
+            "COYHQ"
           ]
         ]
       },
@@ -8478,6 +9190,56 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/Players_Soviets/OPFOR_Players.layer": [
+          [
+            111,
+            "Squad1"
+          ],
+          [
+            180,
+            "Squad2"
+          ],
+          [
+            249,
+            "Squad3"
+          ],
+          [
+            315,
+            "CoyHQ"
+          ],
+          [
+            384,
+            "Squad4"
+          ],
+          [
+            453,
+            "Squad5"
+          ],
+          [
+            522,
+            "Squad6"
+          ]
+        ],
+        "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/Players_UK/UK_Players.layer": [
+          [
+            103,
+            "squad3u"
+          ],
+          [
+            126,
+            "squad2u"
+          ],
+          [
+            167,
+            "squad1u"
+          ],
+          [
+            191,
+            "PLthq"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/Battalion Breakthrough/BattalionBreakthrough.conf"
       ],
@@ -8576,6 +9338,18 @@
             34,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/US_Players/US_Players.layer": [
+          [
+            188,
+            "BradCrew_1"
+          ],
+          [
+            227,
+            "BradCrew_2"
           ]
         ]
       },
@@ -8692,6 +9466,36 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/NVA_Players/NVA_Players.layer": [
+          [
+            38,
+            "RifleSquad_1"
+          ],
+          [
+            76,
+            "RifleSquad_2"
+          ],
+          [
+            114,
+            "RifleSquad_3"
+          ],
+          [
+            152,
+            "CoyHQ"
+          ]
+        ],
+        "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/US_Players/US_Players.layer": [
+          [
+            75,
+            "US_BradCrew_1"
+          ],
+          [
+            109,
+            "US_BradCrew_2"
+          ]
+        ]
+      },
       "headers": [],
       "markerLayers": {
         "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/CORE/Props.layer": {
@@ -8795,6 +9599,30 @@
             31,
             "m_iFreezeTime",
             "180000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/NVA_Players/NVA_Players.layer": [
+          [
+            20,
+            "MotorPLT_1"
+          ],
+          [
+            40,
+            "MotorPLT_2"
+          ],
+          [
+            77,
+            "CoyHQ"
+          ],
+          [
+            299,
+            "T72_Crew_2"
+          ],
+          [
+            322,
+            "T72_Crew_1"
           ]
         ]
       },
@@ -8948,6 +9776,58 @@
             620,
             "m_allowSpecRespawn",
             "1"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/BLUFOR_Players/BLUFOR_Players.layer": [
+          [
+            24,
+            "Pilots_UH1H"
+          ],
+          [
+            64,
+            "CAFRifle_11"
+          ],
+          [
+            111,
+            "CAFRifle_12"
+          ],
+          [
+            164,
+            "CAFPL_HQ_1"
+          ],
+          [
+            211,
+            "CAFRifle_21"
+          ],
+          [
+            259,
+            "CAFRifle_22"
+          ],
+          [
+            313,
+            "CAFPL_HQ_2"
+          ],
+          [
+            367,
+            "CAF_COYHQ"
+          ],
+          [
+            414,
+            "CAFRifle_13"
+          ],
+          [
+            461,
+            "CAFRifle_23"
+          ],
+          [
+            497,
+            "Pilots_AH1S_2"
+          ],
+          [
+            626,
+            "Pilots_AH1S_1"
           ]
         ]
       },
@@ -9129,6 +10009,50 @@
         "TILW_VehicleCrewComponent": 9
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay_Layers/US_Players/US_Players.layer": [
+          [
+            126,
+            "COYHQ"
+          ],
+          [
+            162,
+            "COYHQ"
+          ],
+          [
+            197,
+            "BradPlatoon_1"
+          ],
+          [
+            232,
+            "RifleSquad_1"
+          ],
+          [
+            267,
+            "RifleSquad_2"
+          ],
+          [
+            302,
+            "RifleSquad_3"
+          ],
+          [
+            337,
+            "BradPlatoon_2"
+          ],
+          [
+            372,
+            "RifleSquad_5"
+          ],
+          [
+            407,
+            "RifleSquad_4"
+          ],
+          [
+            442,
+            "RifleSquad_6"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay.conf"
       ],
@@ -9213,6 +10137,42 @@
             55,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Brambledeep Adventure/BrambledeepAdventure_Layers/Players_Soviets/OPFOR_Players.layer": [
+          [
+            122,
+            "Squad1"
+          ],
+          [
+            191,
+            "Squad2"
+          ],
+          [
+            244,
+            "Squad3"
+          ],
+          [
+            310,
+            "CoyHQ"
+          ],
+          [
+            486,
+            "PltHQ2"
+          ],
+          [
+            597,
+            "Squad4"
+          ],
+          [
+            686,
+            "Squad5"
+          ],
+          [
+            775,
+            "Squad6"
           ]
         ]
       },
@@ -9402,6 +10362,14 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo_Layers/OPFOR_Players/OPFOR_Players.layer": [
+          [
+            453,
+            "CoyHQ"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo.conf"
       ],
@@ -9497,6 +10465,18 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Clearing The Path/ClearingThePath_Layers/Players_Soviets/OPFOR_Players.layer": [
+          [
+            297,
+            "BRDMCrew1"
+          ],
+          [
+            366,
+            "BRDMCrew2"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/Clearing The Path/ClearingThePath.conf"
       ],
@@ -9586,6 +10566,28 @@
             376,
             "m_suppressGameEnd",
             "1"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Damn The Dam/Damn the Dam_Layers/BLU_Players.layer": [
+          [
+            49,
+            "CAFRifle_2"
+          ],
+          [
+            83,
+            "CAFRifle_1"
+          ],
+          [
+            117,
+            "CAFPL_HQ"
+          ]
+        ],
+        "worlds/HitTheMan/Damn The Dam/Damn the Dam_Layers/OP_Players.layer": [
+          [
+            13,
+            "BRDMCrew"
           ]
         ]
       },
@@ -9681,6 +10683,14 @@
             53,
             "m_iFreezeTime",
             "180000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Devils Crossing/DevilsCrossing_Layers/OPFOR_Players/OPFOR_Players.layer": [
+          [
+            50,
+            "BRDM_Crew"
           ]
         ]
       },
@@ -9868,6 +10878,40 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon_Layers/NVA_Players/NVA_Players.layer": [
+          [
+            23,
+            "T72_Crew_1"
+          ],
+          [
+            46,
+            "T72_Crew_2"
+          ],
+          [
+            83,
+            "CoyHQ"
+          ]
+        ],
+        "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon_Layers/US_Players/US_Players.layer": [
+          [
+            13,
+            "US_TowCrew"
+          ],
+          [
+            51,
+            "US_RifleSquad_3"
+          ],
+          [
+            88,
+            "US_RifleSquad_2"
+          ],
+          [
+            125,
+            "US_RifleSquad_1"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon.conf"
       ],
@@ -9958,6 +11002,14 @@
             31,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/NVA_Players/NVA_Players.layer": [
+          [
+            190,
+            "ZSUCrew"
           ]
         ]
       },
@@ -10057,6 +11109,34 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/CDF_Players/CDF_Players.layer": [
+          [
+            19,
+            "Squad_1"
+          ],
+          [
+            38,
+            "Squad_2"
+          ],
+          [
+            57,
+            "Squad_3"
+          ],
+          [
+            76,
+            "Squad_4"
+          ],
+          [
+            415,
+            "ZSUCrew2"
+          ],
+          [
+            435,
+            "ZSUCrew"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite.conf"
       ],
@@ -10148,6 +11228,42 @@
             29,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Green Hill Assault/GreenHillAssault_Layers/BLUFOR_Players/BLUFOR_Players.layer": [
+          [
+            63,
+            "CAFRifle_12"
+          ],
+          [
+            126,
+            "CAFRifle_13"
+          ],
+          [
+            189,
+            "CAFPL_HQ_1"
+          ],
+          [
+            230,
+            "CAFRifle_23"
+          ]
+        ],
+        "worlds/HitTheMan/Green Hill Assault/GreenHillAssault_Layers/OPFOR_Players/OPFOR_Players.layer": [
+          [
+            66,
+            "RifleSquad_2"
+          ],
+          [
+            132,
+            "RifleSquad_1"
+          ]
+        ],
+        "worlds/HitTheMan/Green Hill Assault/GreenHillAssault_Layers/default.layer": [
+          [
+            233,
+            "CAFRifle_11"
           ]
         ]
       },
@@ -10405,6 +11521,20 @@
         "TILW_SendMessageInstruction": 4
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Leaf and The Saw/Leaf and Saw_Layers/BLU_Players.layer": [
+          [
+            106,
+            "CAFRifle_22"
+          ]
+        ],
+        "worlds/HitTheMan/Leaf and The Saw/Leaf and Saw_Layers/OPF_Players.layer": [
+          [
+            4,
+            "USSR_BRDM"
+          ]
+        ]
+      },
       "headers": [],
       "markerLayers": {
         "worlds/HitTheMan/Leaf and The Saw/Leaf and Saw_Layers/Markers.layer": {
@@ -10498,6 +11628,14 @@
         "TILW_SendMessageInstruction": 6
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Leaf and Two Bridges/Leaf and Two Bridges_Layers/BLU_Players.layer": [
+          [
+            117,
+            "CAFRifle_22"
+          ]
+        ]
+      },
       "headers": [],
       "markerLayers": {
         "worlds/HitTheMan/Leaf and Two Bridges/Leaf and Two Bridges_Layers/Markers.layer": {
@@ -10587,6 +11725,38 @@
         "TILW_VehicleCrewComponent": 7
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Mechanized Leaf/MechanizedLeaf_Layers/BLU_Players.layer": [
+          [
+            39,
+            "CAFRifle_11"
+          ],
+          [
+            46,
+            "CAFRifle_12"
+          ],
+          [
+            53,
+            "CAFPL_HQ_1"
+          ],
+          [
+            58,
+            "CAFRifle_21"
+          ],
+          [
+            63,
+            "CAFRifle_22"
+          ],
+          [
+            70,
+            "CAFPL_HQ_2"
+          ],
+          [
+            75,
+            "CAF_COYHQ"
+          ]
+        ]
+      },
       "headers": [],
       "markerLayers": {
         "worlds/HitTheMan/Mechanized Leaf/MechanizedLeaf_Layers/Markers.layer": {
@@ -10679,6 +11849,18 @@
             30,
             "m_bDisableBuildingModeAfterFreezeTime",
             "1"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/CDF_Players/CDF_Players.layer": [
+          [
+            344,
+            "ZSUCrew2"
+          ],
+          [
+            364,
+            "ZSUCrew"
           ]
         ]
       },
@@ -10873,6 +12055,36 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice_Layers/BLUFOR_Players/BLUFOR_Players.layer": [
+          [
+            52,
+            "LAV_Crew"
+          ]
+        ],
+        "worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice_Layers/OPFOR_Players/OPFOR_Players.layer": [
+          [
+            4,
+            "PLHQ"
+          ],
+          [
+            9,
+            "PLHQ"
+          ],
+          [
+            159,
+            "RifleSquad_3"
+          ],
+          [
+            203,
+            "RifleSquad_3"
+          ],
+          [
+            247,
+            "RifleSquad_3"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice.conf"
       ],
@@ -10963,6 +12175,40 @@
         "m_aHideOnGameModeStates": 1
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/River Crossing Leaf/River Crossing Leaf_Layers/BLU_Players.layer": [
+          [
+            22,
+            "CAFRifle_13"
+          ],
+          [
+            29,
+            "CAFRifle_11"
+          ],
+          [
+            36,
+            "CAFPL_HQ_1"
+          ],
+          [
+            43,
+            "CAFRifle_12"
+          ],
+          [
+            147,
+            "CAFRifle_22"
+          ],
+          [
+            183,
+            "CAFRifle_23"
+          ]
+        ],
+        "worlds/HitTheMan/River Crossing Leaf/River Crossing Leaf_Layers/OPF_Players.layer": [
+          [
+            22,
+            "USSR_Riflesquad"
+          ]
+        ]
+      },
       "headers": [],
       "markerLayers": {
         "worlds/HitTheMan/River Crossing Leaf/River Crossing Leaf_Layers/Markers.layer": {
@@ -11066,6 +12312,18 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/OPFOR_Players/OPFOR_Players.layer": [
+          [
+            321,
+            "BRDM_Crew"
+          ],
+          [
+            340,
+            "BRDM_Crew2"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/Ruinous Defence/RuinousDefence.conf"
       ],
@@ -11153,6 +12411,22 @@
         "TILW_VehicleCrewComponent": 7
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/OPFOR/OPF_Players.layer": [
+          [
+            526,
+            "CoyHQ"
+          ],
+          [
+            774,
+            "Berkut1"
+          ],
+          [
+            779,
+            "Berkut2"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/Screening The Orb/ScreeningTheOrb.conf"
       ],
@@ -11265,6 +12539,90 @@
             57,
             "PS_FactionRespawnCount",
             "see faction entry"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_Layers/OPFOR_Players/OPFOR_Players.layer": [
+          [
+            301,
+            "Engineers"
+          ],
+          [
+            319,
+            "VehicleCrew2"
+          ],
+          [
+            362,
+            "Engineers"
+          ],
+          [
+            375,
+            "Engineers"
+          ],
+          [
+            392,
+            "Engineers"
+          ],
+          [
+            402,
+            "VehicleCrew1"
+          ],
+          [
+            407,
+            "Engineers"
+          ],
+          [
+            434,
+            "Engineers"
+          ]
+        ],
+        "worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/BRDM2_AFRF1.et": [
+          [
+            29,
+            "VehicleCrew2"
+          ]
+        ],
+        "worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/BRDM2_AFRF2.et": [
+          [
+            29,
+            "VehicleCrew1"
+          ]
+        ],
+        "worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/Ural4320_engineer_camo1.et": [
+          [
+            17,
+            "Engineers"
+          ]
+        ],
+        "worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/Ural4320_engineer_camo2.et": [
+          [
+            17,
+            "Engineers"
+          ]
+        ],
+        "worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/Ural4320_repair1.et": [
+          [
+            17,
+            "Engineers"
+          ]
+        ],
+        "worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/Ural4320_repair2.et": [
+          [
+            10,
+            "Engineers"
+          ]
+        ],
+        "worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/Ural4320_tanker1.et": [
+          [
+            19,
+            "Engineers"
+          ]
+        ],
+        "worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/Ural4320_tanker2.et": [
+          [
+            19,
+            "Engineers"
           ]
         ]
       },
@@ -11626,6 +12984,66 @@
             52,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Stealthing Into Villa/Prefab/Mi24V_armed_UPK1_HTM.et": [
+          [
+            125,
+            "Pilot_Hind_1"
+          ]
+        ],
+        "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla_Layers/OPFOR_Players/FIA_RandomizedTrucks.layer": [
+          [
+            4,
+            "ConvoyEscort_1"
+          ],
+          [
+            8,
+            "ConvoyEscort_2"
+          ],
+          [
+            14,
+            "ConvoyCommand"
+          ]
+        ],
+        "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla_Layers/OPFOR_Players/OPFOR_Players.layer": [
+          [
+            5,
+            "RifleSquad_1"
+          ],
+          [
+            10,
+            "RifleSquad_2"
+          ],
+          [
+            15,
+            "RifleSquad_3"
+          ],
+          [
+            20,
+            "RifleSquad_4"
+          ],
+          [
+            25,
+            "RifleSquad_5"
+          ],
+          [
+            30,
+            "RifleSquad_6"
+          ],
+          [
+            37,
+            "PLHQ"
+          ],
+          [
+            42,
+            "PLHQ2"
+          ],
+          [
+            65,
+            "Pilot_Hind_1"
           ]
         ]
       },
@@ -11991,6 +13409,50 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault_Layers/BLUFOR_Players/BLUFOR_Players.layer": [
+          [
+            39,
+            "CAFRifle_11"
+          ],
+          [
+            78,
+            "CAFRifle_12"
+          ],
+          [
+            117,
+            "CAFPL_HQ_1"
+          ],
+          [
+            156,
+            "CAFRifle_21"
+          ],
+          [
+            195,
+            "CAFRifle_22"
+          ],
+          [
+            234,
+            "CAFPL_HQ_2"
+          ],
+          [
+            273,
+            "CAF_COYHQ"
+          ],
+          [
+            312,
+            "CAFRifle_13"
+          ],
+          [
+            351,
+            "CAFRifle_23"
+          ],
+          [
+            357,
+            "CAF_COYHQ"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/Urdarnik Assault/UdarnikAssault.conf"
       ],
@@ -12102,6 +13564,14 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/Players_UK/UK_Players.layer": [
+          [
+            343,
+            "BradleyCrew"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/VDV Blockade/VDVBlockadeEvent.conf"
       ],
@@ -12208,6 +13678,30 @@
         "m_aHideOnGameModeStates": 7
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/OPFOR_Players/OPFOR_Players.layer": [
+          [
+            427,
+            "Pilot_Hind_2"
+          ],
+          [
+            432,
+            "Pilot_Hind_1"
+          ],
+          [
+            490,
+            "Pilot_Mi8_1"
+          ],
+          [
+            546,
+            "Pilot_Mi8_1"
+          ],
+          [
+            602,
+            "Pilot_Mi8_1"
+          ]
+        ]
+      },
       "headers": [
         "Missions/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky.conf"
       ],
@@ -12392,6 +13886,22 @@
             55,
             "m_iFreezeTime",
             "360000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn_Layers/Players_Soviets/OPFOR_Players.layer": [
+          [
+            341,
+            "BRDMCrew_1"
+          ],
+          [
+            391,
+            "BRDMCrew_2"
+          ],
+          [
+            441,
+            "BRDMCrew_3"
           ]
         ]
       },
@@ -12892,6 +14402,44 @@
         "TILW_SpawnVehicleInstruction": 22
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon_Layers/Props.layer": [
+          [
+            126,
+            "ConstructionSquad"
+          ]
+        ],
+        "worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon_Layers/Vehicles.layer": [
+          [
+            37,
+            "ConstructionSquad"
+          ],
+          [
+            106,
+            "PHQ"
+          ],
+          [
+            164,
+            "ConstructionSquad"
+          ],
+          [
+            171,
+            "RifleSquad1"
+          ],
+          [
+            176,
+            "RifleSquad2"
+          ],
+          [
+            181,
+            "RifleSquad3"
+          ],
+          [
+            186,
+            "WeaponsSquad"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Hot Mic/DelayingActionRuhaPlatoon.conf"
       ],
@@ -12998,6 +14546,30 @@
             17,
             "m_iFreezeTime",
             "120000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete_Layers/Redfor/Vehicles.layer": [
+          [
+            33,
+            "PHQ"
+          ],
+          [
+            67,
+            "Rifle3"
+          ],
+          [
+            99,
+            "Rifle4"
+          ],
+          [
+            131,
+            "Rifle2"
+          ],
+          [
+            165,
+            "Rifle1"
           ]
         ]
       },
@@ -13297,6 +14869,26 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/GreenFor/Vehicles.layer": [
+          [
+            52,
+            "PHQ"
+          ],
+          [
+            92,
+            "TKA_PilotSquad"
+          ],
+          [
+            112,
+            "TKA_PilotSquad"
+          ],
+          [
+            132,
+            "TKA_PilotSquad"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Hot Mic/StopTheFOODMarketAtKunar.conf"
       ],
@@ -13590,6 +15182,22 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/HotMic/VehicleInterdictionCOOPKunar/VehicleInterdictionCOOPKunar_Layers/Vehicles.layer": [
+          [
+            27,
+            "TKA_PilotSquad"
+          ],
+          [
+            41,
+            "TKA_PilotSquad"
+          ],
+          [
+            55,
+            "TKA_PilotSquad"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Hot Mic/VehicleInterdictionAtKunarCOOP.conf"
       ],
@@ -13669,6 +15277,50 @@
         "TILW_SendMessageInstruction": 4
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Huska/MortonBay/MortonBay_Layers/BluforVehicles.layer": [
+          [
+            29,
+            "Group_US_MC_LAR_1990_A1_P"
+          ],
+          [
+            64,
+            "Group_US_MC_LAR_1990_A2_P_1"
+          ],
+          [
+            99,
+            "Group_US_MC_LAR_1990_B1_P_1"
+          ],
+          [
+            134,
+            "Group_US_MC_LAR_1990_B2_P_1"
+          ],
+          [
+            170,
+            "Group_US_Army_1985_MechSquad_P_1"
+          ],
+          [
+            198,
+            "Group_US_Army_1985_MechSquad_P_2"
+          ],
+          [
+            226,
+            "Group_US_Army_1985_MechSquad_P_3"
+          ],
+          [
+            254,
+            "Group_US_Army_1985_MechSquad_P_4"
+          ],
+          [
+            282,
+            "Group_US_Army_1985_MechSquad_P_6"
+          ],
+          [
+            341,
+            "Group_US_Army_1985_MechSquad_P_6"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Huska/MortonBay.conf"
       ],
@@ -13810,6 +15462,22 @@
         "TILW_VehicleCrewComponent": 2
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/PACT_playergroups.layer": [
+          [
+            130,
+            "ussr_1sq"
+          ],
+          [
+            157,
+            "ussr_2sq"
+          ],
+          [
+            184,
+            "ussr_3sq"
+          ]
+        ]
+      },
       "headers": [
         "Missions/IronFunnelEvent/MSN1.conf"
       ],
@@ -13939,6 +15607,22 @@
             45,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/IronFunnelEvent/MSN3/SovietLevies_Layers/players_ussr.layer": [
+          [
+            120,
+            "MTR322"
+          ],
+          [
+            140,
+            "MTR321"
+          ],
+          [
+            160,
+            "MTR323"
           ]
         ]
       },
@@ -14126,6 +15810,52 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney_Layers/blu.layer": [
+          [
+            117,
+            "blu_hq"
+          ],
+          [
+            157,
+            "blu_12"
+          ],
+          [
+            197,
+            "blu_11"
+          ],
+          [
+            237,
+            "blu_13"
+          ],
+          [
+            270,
+            "blu_cav1"
+          ],
+          [
+            303,
+            "blu_cav2"
+          ]
+        ],
+        "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney_Layers/red.layer": [
+          [
+            81,
+            "red_1"
+          ],
+          [
+            117,
+            "red_2"
+          ],
+          [
+            153,
+            "red_3"
+          ],
+          [
+            174,
+            "red_tank"
+          ]
+        ]
+      },
       "headers": [
         "Missions/James/FuckDitchesGetMoney.conf"
       ],
@@ -14300,6 +16030,62 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/James/JavoryPrelude/JavoryPrelude_Layers/blu.layer": [
+          [
+            104,
+            "gr_uk_61a"
+          ],
+          [
+            133,
+            "gr_uk_61b"
+          ],
+          [
+            162,
+            "gr_uk_61c"
+          ],
+          [
+            191,
+            "gr_uk_61d"
+          ],
+          [
+            385,
+            "gr_uk_13c"
+          ],
+          [
+            420,
+            "gr_uk_13b"
+          ],
+          [
+            455,
+            "gr_uk_13a"
+          ],
+          [
+            518,
+            "gr_uk_13"
+          ]
+        ],
+        "worlds/James/JavoryPrelude/JavoryPrelude_Layers/default.layer": [
+          [
+            391,
+            "gr_uk_86a"
+          ]
+        ],
+        "worlds/James/JavoryPrelude/JavoryPrelude_Layers/red.layer": [
+          [
+            41,
+            "gr_nva_1"
+          ],
+          [
+            64,
+            "gr_nva_2"
+          ],
+          [
+            87,
+            "gr_nva_3"
+          ]
+        ]
+      },
       "headers": [
         "Missions/James/JavoryPrelude.conf"
       ],
@@ -14391,6 +16177,26 @@
             9,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/James/KhandarClearance/KhandarClearance_Layers/ussr.layer": [
+          [
+            48,
+            "bronegruppa"
+          ],
+          [
+            96,
+            "bronegruppa"
+          ],
+          [
+            144,
+            "bronegruppa"
+          ],
+          [
+            583,
+            "bronegruppa"
           ]
         ]
       },
@@ -14878,6 +16684,40 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/James/TorskeTussle/TorskeTussle_Layers/blu.layer": [
+          [
+            46,
+            "blu_hq"
+          ],
+          [
+            92,
+            "blu_1sqd"
+          ],
+          [
+            138,
+            "blu_2sqd"
+          ],
+          [
+            184,
+            "blu_3sqd"
+          ],
+          [
+            200,
+            "blu_scouts2"
+          ],
+          [
+            214,
+            "blu_scouts"
+          ]
+        ],
+        "worlds/James/TorskeTussle/TorskeTussle_Layers/red.layer": [
+          [
+            88,
+            "redhq"
+          ]
+        ]
+      },
       "headers": [
         "Missions/James/TorskeTussle.conf"
       ],
@@ -14965,6 +16805,82 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Jub/ALHADRA RUMBLE/ALHADRA RUMBLE_Layers/vehicles.layer": [
+          [
+            4,
+            "ru_mr_sq3"
+          ],
+          [
+            10,
+            "LARPL"
+          ],
+          [
+            21,
+            "LARSG"
+          ],
+          [
+            33,
+            "LAR1"
+          ],
+          [
+            45,
+            "LAR2"
+          ],
+          [
+            58,
+            "ru_mr_sq1"
+          ],
+          [
+            63,
+            "ru_mr_sq2"
+          ],
+          [
+            68,
+            "sq2"
+          ],
+          [
+            73,
+            "sq1"
+          ],
+          [
+            78,
+            "sq1"
+          ],
+          [
+            84,
+            "ru_sso_hq2"
+          ],
+          [
+            89,
+            "ru_sso_hq2"
+          ],
+          [
+            96,
+            "ru_sso_hq"
+          ],
+          [
+            101,
+            "ru_sso_hq"
+          ],
+          [
+            107,
+            "sq1"
+          ],
+          [
+            112,
+            "ru_mr_hq"
+          ],
+          [
+            117,
+            "ru_mr_sq3"
+          ],
+          [
+            122,
+            "Phq"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Jub/AlHadraRumble.conf"
       ],
@@ -15044,6 +16960,26 @@
             59,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Jub/Another Hill/Another Hill_Layers/UK.layer": [
+          [
+            112,
+            "Flightcrew"
+          ],
+          [
+            117,
+            "Flightcrew"
+          ],
+          [
+            183,
+            "Flightcrew"
+          ],
+          [
+            188,
+            "Flightcrew"
           ]
         ]
       },
@@ -15131,6 +17067,34 @@
         "TILW_VehicleCrewComponent": 12
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Jub/CobrasBite/Cobras_bite_Layers/players.layer": [
+          [
+            4,
+            "ACE"
+          ],
+          [
+            9,
+            "ACE"
+          ],
+          [
+            135,
+            "ACE"
+          ],
+          [
+            140,
+            "CAAT"
+          ],
+          [
+            179,
+            "CAAT"
+          ],
+          [
+            184,
+            "CAAT"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Jub/CobrasBite.conf"
       ],
@@ -15252,6 +17216,42 @@
         "TILW_VehicleCrewComponent": 7
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/Vehicles.layer": [
+          [
+            4,
+            "ACE"
+          ],
+          [
+            19,
+            "CAAT1"
+          ],
+          [
+            33,
+            "CAAT2"
+          ],
+          [
+            39,
+            "PHQ"
+          ],
+          [
+            54,
+            "CAAT2"
+          ],
+          [
+            68,
+            "CAAT1"
+          ],
+          [
+            84,
+            "CAAT2"
+          ],
+          [
+            98,
+            "CAAT1"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Jub/CombindAntiArmorTeam.conf"
       ],
@@ -15523,6 +17523,58 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Jub/MissionWithAssets/MissionWithAssets_Layers/vehicles.layer": [
+          [
+            4,
+            "us_sqd"
+          ],
+          [
+            8,
+            "us_sqd"
+          ],
+          [
+            35,
+            "ru_mr_sq3"
+          ],
+          [
+            41,
+            "us_crew_1"
+          ],
+          [
+            46,
+            "us_crew_2"
+          ],
+          [
+            54,
+            "us_sqd"
+          ],
+          [
+            59,
+            "ru_sso_sq2"
+          ],
+          [
+            64,
+            "ru_sso_sq2"
+          ],
+          [
+            69,
+            "ru_sso_sq1"
+          ],
+          [
+            74,
+            "ru_sso_sq1"
+          ],
+          [
+            101,
+            "ru_mr_sq1"
+          ],
+          [
+            127,
+            "ru_mr_sq2"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Jub/MissionWithAssets.conf"
       ],
@@ -15600,6 +17652,84 @@
             59,
             "m_iFreezeTime",
             "180000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Jub/OpSteel/OpSteel_Layers/players_us.layer": [
+          [
+            5,
+            "BSEC"
+          ],
+          [
+            10,
+            "ASEC"
+          ],
+          [
+            15,
+            "BSEC"
+          ],
+          [
+            20,
+            "ASEC"
+          ],
+          [
+            25,
+            "CSEC"
+          ],
+          [
+            30,
+            "CSEC"
+          ]
+        ],
+        "worlds/Jub/OpSteel/OpSteel_Layers/vehicles.layer": [
+          [
+            23,
+            "RURECSQ2"
+          ],
+          [
+            54,
+            "RURECHQ"
+          ],
+          [
+            86,
+            "RUCOHQ"
+          ],
+          [
+            109,
+            "RUCOYXO"
+          ],
+          [
+            115,
+            "RECOYXO"
+          ],
+          [
+            121,
+            "RUTNKHQ1"
+          ],
+          [
+            126,
+            "RUTNKHQ2"
+          ],
+          [
+            131,
+            "RUTNK1"
+          ],
+          [
+            136,
+            "RUTNK2"
+          ],
+          [
+            141,
+            "RUTNK3"
+          ],
+          [
+            146,
+            "RUTNK4"
+          ],
+          [
+            160,
+            "RUCOHQ"
           ]
         ]
       },
@@ -15747,6 +17877,34 @@
         "TILW_VehicleCrewComponent": 10
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/BLUFOR/Vehicles.layer": [
+          [
+            4,
+            "SOAR"
+          ],
+          [
+            9,
+            "SOAR"
+          ],
+          [
+            21,
+            "SOAR"
+          ],
+          [
+            32,
+            "SOAR"
+          ],
+          [
+            45,
+            "SOAR"
+          ],
+          [
+            56,
+            "SOAR"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Jub/OperationArrowheadIronCipher.conf"
       ],
@@ -15855,6 +18013,34 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/Vehicles.layer": [
+          [
+            5,
+            "SQD3"
+          ],
+          [
+            10,
+            "SQD2"
+          ],
+          [
+            15,
+            "SQD1"
+          ],
+          [
+            28,
+            "SQD3"
+          ],
+          [
+            38,
+            "Gunfighter"
+          ],
+          [
+            98,
+            "SQD5"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Jub/OperationArrowheadMulladostPass.conf"
       ],
@@ -15948,6 +18134,34 @@
         "TILW_VehicleCrewComponent": 19
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles_Layers/Vehicles.layer": [
+          [
+            5,
+            "TankSec"
+          ],
+          [
+            10,
+            "TankSec2"
+          ],
+          [
+            15,
+            "FO"
+          ],
+          [
+            29,
+            "CAAT1"
+          ],
+          [
+            43,
+            "CAAT1"
+          ],
+          [
+            57,
+            "CAAT1"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Jub/OperationArrowheadTwoBloodyMiles.conf"
       ],
@@ -16059,6 +18273,30 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Jub/OperationJaws/OperationJaws_Layers/vehicles.layer": [
+          [
+            38,
+            "Tanks"
+          ],
+          [
+            43,
+            "Tanks"
+          ]
+        ],
+        "worlds/Jub/OperationJaws/prefabs/JAWs_GC_M1151_armed_M2HB_MDO_OGPK+Cover_tan.et": [
+          [
+            30,
+            "RESUP"
+          ]
+        ],
+        "worlds/Jub/OperationJaws/prefabs/JAWs_M1151_armed_MK19_cover_Tan.et": [
+          [
+            21,
+            "RESUP"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Jub/OperationJaws.conf"
       ],
@@ -16163,6 +18401,18 @@
         "m_aHideOnGameModeStates": 8
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/BLUFOR/BLUFOR_Trucks.layer": [
+          [
+            52,
+            "USMC_00"
+          ],
+          [
+            105,
+            "USMC_00"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Perfk/AbadDayinKunarUS.conf"
       ],
@@ -16266,6 +18516,26 @@
         "m_aHideOnGameModeStates": 9
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR_Layers/USSR/USSR_Trucks.layer": [
+          [
+            73,
+            "R200"
+          ],
+          [
+            132,
+            "R201R"
+          ],
+          [
+            161,
+            "R202"
+          ],
+          [
+            190,
+            "R203"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Perfk/AbadDayinKunarUSSR.conf"
       ],
@@ -16372,6 +18642,26 @@
             19,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Perfk/AbadDayinKunarUSTVT/AbadDayinKunarUSTVT_Layers/BLUFOR/BLUFOR_Trucks.layer": [
+          [
+            5,
+            "US_00"
+          ],
+          [
+            10,
+            "US_00"
+          ],
+          [
+            64,
+            "US_00"
+          ],
+          [
+            115,
+            "US_00"
           ]
         ]
       },
@@ -16483,6 +18773,78 @@
             18,
             "m_bDisableBuildingModeAfterFreezeTime",
             "1"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Perfk/NagalamTrafficJam/NagalamTrafficJam_Layers/Blufor_Convoy/Blufor_Convoy_Vehicles.layer": [
+          [
+            175,
+            "Rifle16"
+          ],
+          [
+            191,
+            "BFV_01_Group"
+          ],
+          [
+            196,
+            "BFV_02_Group"
+          ],
+          [
+            201,
+            "Rifle12"
+          ],
+          [
+            206,
+            "RifleConvoy03"
+          ],
+          [
+            211,
+            "RifleConvoy03"
+          ],
+          [
+            216,
+            "Rifle11"
+          ],
+          [
+            268,
+            "RifleConvoy03"
+          ],
+          [
+            305,
+            "RifleConvoy02"
+          ],
+          [
+            331,
+            "RifleConvoy01"
+          ],
+          [
+            336,
+            "Rifle11"
+          ],
+          [
+            341,
+            "Rifle12"
+          ],
+          [
+            518,
+            "Rifle31Engineering"
+          ],
+          [
+            628,
+            "Rifle14"
+          ],
+          [
+            738,
+            "Rifle13"
+          ],
+          [
+            805,
+            "Rifle16"
+          ],
+          [
+            824,
+            "Rifle31Engineering"
           ]
         ]
       },
@@ -16944,6 +19306,108 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_Layers/Blufor/vics.layer": [
+          [
+            61,
+            "BAF_Plt_1_HQ"
+          ],
+          [
+            122,
+            "BAF_Plt_1_Sqd_1"
+          ],
+          [
+            183,
+            "BAF_Plt_2_HQ"
+          ],
+          [
+            244,
+            "BAF_Plt_2_Sqd_2"
+          ],
+          [
+            305,
+            "BAF_Plt_1_Sqd_2"
+          ],
+          [
+            366,
+            "BAF_Coy_HQ"
+          ],
+          [
+            427,
+            "BAF_Plt_2_Sqd_1"
+          ],
+          [
+            488,
+            "BAF_Coy_Weps"
+          ],
+          [
+            554,
+            "BAF_Plt_1_Sqd_1"
+          ],
+          [
+            618,
+            "BAF_Plt_2_Sqd_1"
+          ],
+          [
+            679,
+            "BAF_Plt_2_Sqd_2"
+          ],
+          [
+            738,
+            "BAF_Plt_1_Sqd_2"
+          ]
+        ],
+        "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_Layers/Opfor/vics.layer": [
+          [
+            56,
+            "RUS_Squad_1"
+          ],
+          [
+            112,
+            "RUS_Squad_2"
+          ],
+          [
+            168,
+            "RUS_Squad_3"
+          ],
+          [
+            224,
+            "RUS_Squad_4"
+          ],
+          [
+            280,
+            "RUS_PltHQ"
+          ],
+          [
+            336,
+            "RUS_PltHQ"
+          ],
+          [
+            405,
+            "RUS_Squad_4"
+          ],
+          [
+            472,
+            "RUS_Squad_2"
+          ],
+          [
+            539,
+            "RUS_Squad_3"
+          ],
+          [
+            606,
+            "RUS_Squad_1"
+          ],
+          [
+            681,
+            "BRDM_Crew_2"
+          ],
+          [
+            718,
+            "BRDM_Crew_1"
+          ]
+        ]
+      },
       "headers": [
         "Missions/RedTheKnown/BritsAtBeauregard.conf"
       ],
@@ -17052,6 +19516,32 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen_Layers/Rebels/Vics.layer": [
+          [
+            115,
+            "VBIED_Crew"
+          ],
+          [
+            130,
+            "VBIED_Crew"
+          ],
+          [
+            145,
+            "VBIED_Crew"
+          ]
+        ],
+        "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen_Layers/TKA/Vics.layer": [
+          [
+            23,
+            "TKA_COY_HQ_1"
+          ],
+          [
+            28,
+            "TKA_COY_HQ_1"
+          ]
+        ]
+      },
       "headers": [
         "Missions/RedTheKnown/ChakChakChosen.conf"
       ],
@@ -17156,6 +19646,38 @@
             24,
             "m_iFreezeTime",
             "180"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/lobbyvics.layer": [
+          [
+            4,
+            "US_PltHQ"
+          ],
+          [
+            9,
+            "US_Sq_1"
+          ],
+          [
+            13,
+            "US_Sq_2"
+          ],
+          [
+            17,
+            "US_Sq_3"
+          ],
+          [
+            35,
+            "SEP_FT_1"
+          ],
+          [
+            51,
+            "SEP_FT_2"
+          ],
+          [
+            57,
+            "SEP_VicCrew_1"
           ]
         ]
       },
@@ -17832,6 +20354,26 @@
             51,
             "m_iFreezeTime",
             "180000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_Layers/BLUFOR/Vehicles.layer": [
+          [
+            17,
+            "UK_MountedSec1"
+          ],
+          [
+            34,
+            "UK_TRPHQ"
+          ],
+          [
+            51,
+            "UK_MountedSec2"
+          ],
+          [
+            68,
+            "UK_MountedSec3"
           ]
         ]
       },
@@ -19408,6 +21950,50 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/BLUFOR/Vehicles.layer": [
+          [
+            13,
+            "BLUFOR_PILOTS"
+          ],
+          [
+            18,
+            "BLUFOR_PILOTS"
+          ],
+          [
+            24,
+            "BLUFOR_PILOTS"
+          ],
+          [
+            29,
+            "BLUFOR_PILOTS"
+          ],
+          [
+            36,
+            "BLUFOR_PLTHQ"
+          ],
+          [
+            41,
+            "BLUFOR_PLTHQ"
+          ],
+          [
+            46,
+            "BLUFOR_PLTHQ"
+          ],
+          [
+            51,
+            "BLUFOR_PLTHQ"
+          ],
+          [
+            56,
+            "BLUFOR_PLTHQ"
+          ],
+          [
+            61,
+            "BLUFOR_PLTHQ"
+          ]
+        ]
+      },
       "headers": [
         "Missions/TheLocalPub/QuickReactions.conf"
       ],
@@ -19553,6 +22139,54 @@
             31,
             "m_iFreezeTime",
             "360000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/BLUFOR/Vehicles.layer": [
+          [
+            28,
+            "BLUWEP"
+          ],
+          [
+            55,
+            "BLUHQ"
+          ],
+          [
+            81,
+            "BLUHQ"
+          ],
+          [
+            148,
+            "BLU1st"
+          ],
+          [
+            213,
+            "BLU3rd"
+          ],
+          [
+            278,
+            "BLU2nd"
+          ],
+          [
+            343,
+            "BLUHQ"
+          ],
+          [
+            408,
+            "BLUWEP"
+          ],
+          [
+            473,
+            "BLU1st"
+          ],
+          [
+            538,
+            "BLU3rd"
+          ],
+          [
+            603,
+            "BLU2nd"
           ]
         ]
       },
@@ -19849,6 +22483,90 @@
             28,
             "PS_FactionRespawnCount",
             "see faction entry"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Opfor/Vehicles.layer": [
+          [
+            16,
+            "PLT1HQ3"
+          ],
+          [
+            26,
+            "COYHQ"
+          ],
+          [
+            31,
+            "PLT1HQ3"
+          ],
+          [
+            48,
+            "COYHQ"
+          ],
+          [
+            54,
+            "PLT1HQ2"
+          ],
+          [
+            59,
+            "PLT1HQ"
+          ],
+          [
+            71,
+            "LogiCrew"
+          ],
+          [
+            81,
+            "LogiCrew"
+          ],
+          [
+            87,
+            "COYHQ"
+          ],
+          [
+            97,
+            "LogiCrew"
+          ],
+          [
+            108,
+            "LogiCrew"
+          ],
+          [
+            118,
+            "LogiCrew"
+          ],
+          [
+            140,
+            "PLT1SQD1"
+          ],
+          [
+            160,
+            "PLT1SQD2"
+          ],
+          [
+            180,
+            "PLT1SQD3"
+          ],
+          [
+            200,
+            "PLT1SQD4"
+          ],
+          [
+            220,
+            "PLT1SQD5"
+          ],
+          [
+            240,
+            "PLT1SQD6"
+          ],
+          [
+            261,
+            "T72Crew"
+          ],
+          [
+            270,
+            "ZUCrew"
           ]
         ]
       },
@@ -20264,6 +22982,14 @@
         "m_aHideOnGameModeStates": 2
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/TheLocalPub/WetFeet/WetFeet_Layers/OPFOR/Vehicles.layer": [
+          [
+            4,
+            "BRDMCrew"
+          ]
+        ]
+      },
       "headers": [
         "Missions/TheLocalPub/WetFeet.conf"
       ],
@@ -20524,6 +23250,14 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/ru.layer": [
+          [
+            19,
+            "gr_ru_vehicle"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Til/ALittleWhileLonger.conf"
       ],
@@ -20714,6 +23448,92 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_Layers/nva.layer": [
+          [
+            92,
+            "mi24crew"
+          ],
+          [
+            99,
+            "mi24crew2"
+          ],
+          [
+            124,
+            "t72crew1"
+          ],
+          [
+            147,
+            "t72crew2"
+          ],
+          [
+            170,
+            "t72crew3"
+          ]
+        ],
+        "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_Layers/us.layer": [
+          [
+            7,
+            "us_bfv_1"
+          ],
+          [
+            30,
+            "us_bfv_2"
+          ],
+          [
+            51,
+            "us_bfv_3"
+          ],
+          [
+            72,
+            "us_bfv_4"
+          ],
+          [
+            107,
+            "us_rpr_1"
+          ],
+          [
+            131,
+            "us_tnk_3"
+          ],
+          [
+            157,
+            "us_tnk_4"
+          ],
+          [
+            183,
+            "us_tnk_5"
+          ],
+          [
+            207,
+            "us_tnk_6"
+          ],
+          [
+            233,
+            "us_tnk_10"
+          ],
+          [
+            259,
+            "us_tnk_9"
+          ],
+          [
+            285,
+            "us_tnk_8"
+          ],
+          [
+            311,
+            "us_tnk_7"
+          ],
+          [
+            337,
+            "us_tnk_2"
+          ],
+          [
+            360,
+            "us_tnk_1"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Til/CompanyTeamCounterAttack.conf"
       ],
@@ -20832,6 +23652,30 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/Countdown/Countdown_Layers/players_us.layer": [
+          [
+            48,
+            "GR_USAF_Pilots"
+          ],
+          [
+            114,
+            "GR_USAF_Pilots"
+          ],
+          [
+            120,
+            "GR_USAF_Pilots"
+          ],
+          [
+            125,
+            "GR_USAF_Pilots"
+          ],
+          [
+            130,
+            "GR_USAF_Pilots"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Til/Countdown.conf"
       ],
@@ -20936,6 +23780,30 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy_Layers/us.layer": [
+          [
+            44,
+            "us_pilots"
+          ],
+          [
+            117,
+            "us_pilots"
+          ],
+          [
+            121,
+            "us_pilots"
+          ],
+          [
+            125,
+            "us_pilots"
+          ],
+          [
+            129,
+            "us_pilots"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Til/DaybreakDiplomacy.conf"
       ],
@@ -21034,6 +23902,100 @@
             18,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/DevilsDrive/DevilsDrive_Layers/nva.layer": [
+          [
+            80,
+            "GR_NVA_pilots1"
+          ],
+          [
+            103,
+            "GR_NVA_pilots2"
+          ],
+          [
+            194,
+            "GR_NVA_T1"
+          ],
+          [
+            234,
+            "GR_NVA_T2"
+          ],
+          [
+            269,
+            "GR_NVA_T3"
+          ],
+          [
+            300,
+            "GR_NVA_BRDM_710"
+          ],
+          [
+            337,
+            "GR_NVA_BRDM_711"
+          ]
+        ],
+        "worlds/Til/DevilsDrive/DevilsDrive_Layers/us.layer": [
+          [
+            67,
+            "GR_US_BLUE1"
+          ],
+          [
+            72,
+            "GR_US_BLUE2"
+          ],
+          [
+            77,
+            "GR_US_BLUE3"
+          ],
+          [
+            82,
+            "GR_US_BLUE4"
+          ],
+          [
+            88,
+            "GR_US_BLACK7"
+          ],
+          [
+            110,
+            "GR_US_BLACK6"
+          ],
+          [
+            126,
+            "GR_US_BLACK5"
+          ],
+          [
+            148,
+            "GR_US_RED1"
+          ],
+          [
+            171,
+            "GR_US_WHITE1"
+          ],
+          [
+            194,
+            "GR_US_WHITE2"
+          ],
+          [
+            212,
+            "GR_US_WHITE3"
+          ],
+          [
+            230,
+            "GR_US_WHITE4"
+          ],
+          [
+            253,
+            "GR_US_RED2"
+          ],
+          [
+            271,
+            "GR_US_RED3"
+          ],
+          [
+            289,
+            "GR_US_RED4"
           ]
         ]
       },
@@ -21214,6 +24176,60 @@
             20,
             "PS_FactionRespawnCount",
             "see faction entry"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/FalconsFlight/FalconsFlight_Layers/nva.layer": [
+          [
+            187,
+            "GR_NVA_Mi24_1"
+          ],
+          [
+            210,
+            "GR_NVA_Mi24_2"
+          ],
+          [
+            238,
+            "GR_NVA_Mi8_12"
+          ],
+          [
+            264,
+            "GR_NVA_Mi8_12"
+          ],
+          [
+            290,
+            "GR_NVA_Mi8_34"
+          ],
+          [
+            316,
+            "GR_NVA_Mi8_34"
+          ]
+        ],
+        "worlds/Til/FalconsFlight/FalconsFlight_Layers/us.layer": [
+          [
+            179,
+            "GR_US_TrpXO"
+          ],
+          [
+            187,
+            "GR_US_1SG"
+          ],
+          [
+            192,
+            "GR_US_Medics"
+          ],
+          [
+            201,
+            "GR_US_Maintenance"
+          ],
+          [
+            234,
+            "GR_US_Supply"
+          ],
+          [
+            252,
+            "GR_US_TrpCDR"
           ]
         ]
       },
@@ -21499,6 +24515,56 @@
             15,
             "m_iFreezeTime",
             "360000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/GreenScreen/GreenScreen_Layers/nva_players.layer": [
+          [
+            114,
+            "BRDMCrew1"
+          ],
+          [
+            136,
+            "BRDMCrew2"
+          ],
+          [
+            158,
+            "BRDMCrew3"
+          ],
+          [
+            177,
+            "BRDMCrew0"
+          ],
+          [
+            199,
+            "BRDMCrew5"
+          ],
+          [
+            221,
+            "BRDMCrew4"
+          ],
+          [
+            241,
+            "BRDMCrew6"
+          ]
+        ],
+        "worlds/Til/GreenScreen/GreenScreen_Layers/us_players.layer": [
+          [
+            33,
+            "LAR_A1"
+          ],
+          [
+            40,
+            "LAR_A2"
+          ],
+          [
+            47,
+            "LAR_B1"
+          ],
+          [
+            54,
+            "LAR_B2"
           ]
         ]
       },
@@ -21891,6 +24957,14 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/JavoryHill/JavoryHill_Layers/players.layer": [
+          [
+            60,
+            "GR_USSR_BTR"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Til/JavoryHill.conf"
       ],
@@ -21969,6 +25043,36 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/JunctionJab/JunctionJab_Layers/players_caf.layer": [
+          [
+            16,
+            "GR_CAF_SQ1"
+          ],
+          [
+            21,
+            "GR_CAF_SQ1"
+          ]
+        ],
+        "worlds/Til/JunctionJab/JunctionJab_Layers/players_nva.layer": [
+          [
+            39,
+            "GR_NVA_1SQ"
+          ],
+          [
+            62,
+            "GR_NVA_2SQ"
+          ],
+          [
+            85,
+            "GR_NVA_3SQ"
+          ],
+          [
+            293,
+            "GR_NVA_FO"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Til/JunctionJab.conf"
       ],
@@ -22044,6 +25148,60 @@
             40,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/JunctionJabXL/JunctionJabXL_Layers/players_caf.layer": [
+          [
+            81,
+            "GR_CAF_SQ1"
+          ],
+          [
+            86,
+            "GR_CAF_SQ2"
+          ],
+          [
+            91,
+            "GR_CAF_SQ1"
+          ],
+          [
+            96,
+            "GR_CAF_SQ2"
+          ]
+        ],
+        "worlds/Til/JunctionJabXL/JunctionJabXL_Layers/players_nva.layer": [
+          [
+            50,
+            "GR_NVA_1SQ"
+          ],
+          [
+            73,
+            "GR_NVA_2SQ"
+          ],
+          [
+            96,
+            "GR_NVA_3SQ"
+          ],
+          [
+            119,
+            "GR_NVA_4SQ"
+          ],
+          [
+            142,
+            "GR_NVA_5SQ"
+          ],
+          [
+            165,
+            "GR_NVA_6SQ"
+          ],
+          [
+            187,
+            "GR_NVA_0HQ"
+          ],
+          [
+            436,
+            "GR_NVA_7FO"
           ]
         ]
       },
@@ -22128,6 +25286,36 @@
             18,
             "m_iFreezeTime",
             "120000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/KasselbergClamber/KasselbergClamber_Layers/nva_players.layer": [
+          [
+            73,
+            "gr_nva_brdm1"
+          ],
+          [
+            95,
+            "gr_nva_brdm2"
+          ]
+        ],
+        "worlds/Til/KasselbergClamber/KasselbergClamber_Layers/us_players.layer": [
+          [
+            11,
+            "gr_us_21"
+          ],
+          [
+            18,
+            "gr_us_20"
+          ],
+          [
+            25,
+            "gr_us_22"
+          ],
+          [
+            32,
+            "gr_us_23"
           ]
         ]
       },
@@ -22228,6 +25416,28 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing_Layers/nva.layer": [
+          [
+            42,
+            "nva_sq1"
+          ],
+          [
+            65,
+            "nva_sq2"
+          ],
+          [
+            88,
+            "nva_sq3"
+          ]
+        ],
+        "worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing_Layers/uk.layer": [
+          [
+            66,
+            "uk_hq"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Til/KoskelankylaCrossing.conf"
       ],
@@ -22298,6 +25508,148 @@
             18,
             "m_iFreezeTime",
             "360000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/MetalsMight/MetalsMight_Layers/nva.layer": [
+          [
+            23,
+            "GR_NVA_T72_11"
+          ],
+          [
+            68,
+            "GR_NVA_T72_12"
+          ],
+          [
+            108,
+            "GR_NVA_T72_13"
+          ],
+          [
+            148,
+            "GR_NVA_T72_15"
+          ],
+          [
+            188,
+            "GR_NVA_T72_16"
+          ],
+          [
+            228,
+            "GR_NVA_T72_14"
+          ],
+          [
+            273,
+            "GR_NVA_T72_17"
+          ],
+          [
+            318,
+            "GR_NVA_T72_18"
+          ],
+          [
+            358,
+            "GR_NVA_T72_19"
+          ],
+          [
+            395,
+            "GR_NVA_T72_10"
+          ],
+          [
+            436,
+            "GR_NVA_T72_20"
+          ],
+          [
+            480,
+            "GR_NVA_T72_21"
+          ],
+          [
+            525,
+            "GR_NVA_T72_22"
+          ],
+          [
+            565,
+            "GR_NVA_T72_23"
+          ],
+          [
+            605,
+            "GR_NVA_T72_26"
+          ],
+          [
+            645,
+            "GR_NVA_T72_24"
+          ],
+          [
+            690,
+            "GR_NVA_T72_25"
+          ],
+          [
+            730,
+            "GR_NVA_T72_28"
+          ],
+          [
+            770,
+            "GR_NVA_T72_29"
+          ],
+          [
+            810,
+            "GR_NVA_T72_27"
+          ],
+          [
+            849,
+            "GR_NVA_T72_00"
+          ],
+          [
+            888,
+            "GR_NVA_BRDM_0"
+          ],
+          [
+            930,
+            "GR_NVA_BRDM_1"
+          ],
+          [
+            968,
+            "GR_NVA_BRDM_2"
+          ]
+        ],
+        "worlds/Til/MetalsMight/MetalsMight_Layers/us.layer": [
+          [
+            5,
+            "GR_M2A2_1"
+          ],
+          [
+            29,
+            "GR_M2A2_2"
+          ],
+          [
+            48,
+            "GR_M2A2_3"
+          ],
+          [
+            67,
+            "GR_M2A2_4"
+          ],
+          [
+            91,
+            "GR_M2A2_5"
+          ],
+          [
+            110,
+            "GR_M2A2_6"
+          ],
+          [
+            144,
+            "GR_M1A1_1"
+          ],
+          [
+            168,
+            "GR_M1A1_2"
+          ],
+          [
+            188,
+            "GR_M1A1_3"
+          ],
+          [
+            207,
+            "GR_M1A1_4"
           ]
         ]
       },
@@ -22377,6 +25729,34 @@
             20,
             "PS_FactionRespawnCount",
             "see faction entry"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/Metalwave/Metalwave_Layers/players.layer": [
+          [
+            45,
+            "AFRF_Squad_1"
+          ],
+          [
+            108,
+            "AFRF_Squad_2"
+          ],
+          [
+            156,
+            "AFRF_Squad_3"
+          ],
+          [
+            180,
+            "CDF_Squad_1"
+          ],
+          [
+            234,
+            "AFRF_TankCrew"
+          ],
+          [
+            299,
+            "CDF_Squad_2"
           ]
         ]
       },
@@ -22505,6 +25885,30 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/ru.layer": [
+          [
+            78,
+            "ru_pilots_atk"
+          ],
+          [
+            102,
+            "ru_pilots_atk"
+          ],
+          [
+            132,
+            "ru_pilots_tp"
+          ],
+          [
+            238,
+            "ru_pilots_tp"
+          ],
+          [
+            344,
+            "ru_pilots_tp"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Til/MetsalaAirfield.conf"
       ],
@@ -22612,6 +26016,22 @@
             22,
             "m_iFreezeTime",
             "120000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/OwlsPrey/OwlsPrey_Layers/players.layer": [
+          [
+            4,
+            "GR_CDF_Pilots1"
+          ],
+          [
+            170,
+            "GR_CDF_Pilots2"
+          ],
+          [
+            274,
+            "GR_CDF_Pilots0"
           ]
         ]
       },
@@ -22982,6 +26402,14 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/RouteRowan/RouteRowan_Layers/us.layer": [
+          [
+            23,
+            "GR_US_Pilots"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Til/RouteRowan.conf"
       ],
@@ -23078,6 +26506,26 @@
         "TILW_VehicleCrewComponent": 7
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/RouteTremaux/RouteTremaux_Layers/players.layer": [
+          [
+            69,
+            "GR_US_A1"
+          ],
+          [
+            86,
+            "GR_US_A2"
+          ],
+          [
+            103,
+            "GR_US_B1"
+          ],
+          [
+            120,
+            "GR_US_B2"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Til/RouteTremaux.conf"
       ],
@@ -23443,6 +26891,52 @@
             16,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/players_us.layer": [
+          [
+            23,
+            "us_inf_sq"
+          ],
+          [
+            28,
+            "us_inf_hq"
+          ],
+          [
+            84,
+            "us_lar_a1"
+          ],
+          [
+            89,
+            "us_lar_a2"
+          ],
+          [
+            96,
+            "us_inf_sq"
+          ],
+          [
+            101,
+            "us_inf_sq"
+          ]
+        ],
+        "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/players_ussr.layer": [
+          [
+            7,
+            "ussr_plt2_brdm1"
+          ],
+          [
+            14,
+            "ussr_plt2_brdm2"
+          ],
+          [
+            19,
+            "ussr_plt2_brdm3"
+          ],
+          [
+            26,
+            "ussr_plt2_brdm4"
           ]
         ]
       },
@@ -23924,6 +27418,38 @@
         "TILW_VehicleCrewComponent": 3
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/players_ussr.layer": [
+          [
+            75,
+            "gr_ussr_220"
+          ],
+          [
+            105,
+            "gr_ussr_226"
+          ],
+          [
+            135,
+            "gr_ussr_221"
+          ],
+          [
+            165,
+            "gr_ussr_222"
+          ],
+          [
+            195,
+            "gr_ussr_223"
+          ],
+          [
+            225,
+            "gr_ussr_224"
+          ],
+          [
+            255,
+            "gr_ussr_225"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Woody/COTVTXX_Karachinar_Crashout.conf"
       ],
@@ -24029,6 +27555,18 @@
         "TILW_VehicleCrewComponent": 18
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Woody/COTVTXX_Kassel_Crashers/COTVTXX_Kassel_Crashers_Layers/playergroups.layer": [
+          [
+            64,
+            "sov_0"
+          ],
+          [
+            273,
+            "FO_TEAM"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Woody/COTVTXX_Kassel_Crashers.conf"
       ],
@@ -24097,6 +27635,46 @@
         "TILW_VehicleCrewComponent": 18
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Woody/COTVTXX_Kassel_Crashers_MODERN_REDUX/COTVTXX_Kassel_Crashers_MODERN_REDUX_Layers/playergroups.layer": [
+          [
+            113,
+            "sov_0"
+          ],
+          [
+            144,
+            "sov_1"
+          ],
+          [
+            175,
+            "sov_2"
+          ],
+          [
+            205,
+            "sov_3"
+          ],
+          [
+            398,
+            "sov_0"
+          ],
+          [
+            403,
+            "FO_TEAM"
+          ],
+          [
+            485,
+            "sov_4"
+          ],
+          [
+            515,
+            "sov_5"
+          ],
+          [
+            545,
+            "sov_6"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Woody/COTVTXX_Kassel_Crashers_MODERN_REDUX2.conf"
       ],
@@ -24250,6 +27828,38 @@
         "TILW_VehicleCrewComponent": 2
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Woody/COXX_Funf_Wege_Lodgement/COXX_Funf_Wege_Lodgement_Layers/playergroups.layer": [
+          [
+            39,
+            "chq"
+          ],
+          [
+            59,
+            "plt1sq1"
+          ],
+          [
+            79,
+            "plt1sq2"
+          ],
+          [
+            99,
+            "plt1sq3"
+          ],
+          [
+            119,
+            "plt2sq3"
+          ],
+          [
+            139,
+            "plt2sq1"
+          ],
+          [
+            159,
+            "plt2sq2"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Woody/COXX_Funf_Wege_Lodgement.conf"
       ],
@@ -24389,6 +27999,42 @@
         "TILW_VehicleCrewComponent": 19
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/Woody/COXX_Hof_Lomelsberg_Flank/COXX_Hof_Lomelsberg_Flank_Layers/playergroups.layer": [
+          [
+            5,
+            "coyhq"
+          ],
+          [
+            10,
+            "plt14"
+          ],
+          [
+            15,
+            "plt15"
+          ],
+          [
+            20,
+            "plt16"
+          ],
+          [
+            25,
+            "plt17"
+          ],
+          [
+            153,
+            "plt11"
+          ],
+          [
+            158,
+            "plt12"
+          ],
+          [
+            163,
+            "plt13"
+          ]
+        ]
+      },
       "headers": [
         "Missions/Woody/COXX_Hof_Lomelsberg_Flank.conf"
       ],
@@ -25667,6 +29313,14 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/arc/BrambledeepBypass/BrambledeepBypass_Layers/vehicles.layer": [
+          [
+            14,
+            "BRDMCREW"
+          ]
+        ]
+      },
       "headers": [
         "Missions/arc/BrambledeepBypass.conf"
       ],
@@ -26781,6 +30435,14 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/arc/EFPStragglers/EFPStragglers_Layers/vehicles.layer": [
+          [
+            4,
+            "SEP_HQ"
+          ]
+        ]
+      },
       "headers": [
         "Missions/arc/EFPStragglers.conf"
       ],
@@ -27142,6 +30804,30 @@
             17,
             "m_iFreezeTime",
             "120000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/arc/FactorySiegeRedux/FactorySiegeRedux_Layers/vics.layer": [
+          [
+            19,
+            "twofiveone"
+          ],
+          [
+            67,
+            "oneone"
+          ],
+          [
+            72,
+            "onetwo"
+          ],
+          [
+            77,
+            "onethree"
+          ],
+          [
+            82,
+            "onefour"
           ]
         ]
       },
@@ -29537,6 +33223,34 @@
         "TILW_VehicleCrewComponent": 7
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/arc/QuickReaction/QuickReaction_Layers/vehicles.layer": [
+          [
+            4,
+            "HIP2"
+          ],
+          [
+            8,
+            "HIP1"
+          ],
+          [
+            12,
+            "HIP1"
+          ],
+          [
+            16,
+            "HIP2"
+          ],
+          [
+            22,
+            "HIND2"
+          ],
+          [
+            26,
+            "HIND1"
+          ]
+        ]
+      },
       "headers": [
         "Missions/arc/QuickReaction.conf"
       ],
@@ -29808,6 +33522,22 @@
         "TILW_VehicleCrewComponent": 1
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/arc/Retribution/Retribution_Layers/vehicles.layer": [
+          [
+            4,
+            "AIR"
+          ],
+          [
+            8,
+            "AIR"
+          ],
+          [
+            12,
+            "AIR"
+          ]
+        ]
+      },
       "headers": [
         "Missions/arc/Retribution.conf"
       ],
@@ -30516,8 +34246,9 @@
     "worlds/arc/SoumontSawmill/SoumontSawmill.ent": {
       "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 7,
-        "changed": 1
+        "absent": 2,
+        "changed": 4,
+        "identical": 2
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -30561,7 +34292,9 @@
               "lastLine": 84
             },
             "85": {
-              "gap": "public outline colored by a restricted faction"
+              "vertices": 13,
+              "name": null,
+              "lastLine": 135
             }
           },
           "placementLayer": "worlds/arc/SoumontSawmill/SoumontSawmill_Layers/default_GC_Boundaries.layer"
@@ -30591,6 +34324,13 @@
         "worlds/arc/SoumontSawmill/SoumontSawmill_Layers/default.layer:200": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "captureCandidate": {
+        "faction": "RHS_AFRF",
+        "location": "the sawmill",
+        "seconds": 120,
+        "radiusMeters": 30,
+        "requiredLocalShare": 1
       },
       "outcomeCandidate": {
         "events": {
@@ -30646,15 +34386,48 @@
             ]
           },
           "worlds/arc/SoumontSawmill/SoumontSawmill_Layers/default.layer:200": {
+            "trigger": "area capture",
+            "flag": "RU_CAP",
             "name": "RU_CAP",
-            "gap": "unresolved or unsupported outcome flag \"RU_CAP\""
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
           }
         },
         "stagedFragment": "worlds/arc/SoumontSawmill/SoumontSawmill_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/SoumontSawmill/SoumontSawmill_GC_Settings.et",
       "renumberedInSourceOrder": true,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "playtestCandidate": {
+        "presentOnDev": true,
+        "boundaries": {
+          "30": {
+            "vertices": 15,
+            "name": null,
+            "lastLine": 84
+          },
+          "85": {
+            "vertices": 13,
+            "name": null,
+            "lastLine": 135
+          }
+        },
+        "icons": 2,
+        "remainingBehavior": [
+          "Compare live capture, interrupted and contested capture, and remote notifications",
+          "Compare staging-zone enforcement, release and long timeout notices",
+          "Compare callsign labels, issued equipment and vehicle handling"
+        ]
+      }
     },
     "worlds/arc/StationSmashers/StationSmashers.ent": {
       "sourceResourceCount": 11,
@@ -31116,6 +34889,34 @@
         "TILW_VehicleCrewComponent": 6
       },
       "configurationOverrides": {},
+      "legacyVehicleGroupLinks": {
+        "worlds/arc/TheBestDefense/TheBestDefense_Layers/vehicles.layer": [
+          [
+            8,
+            "AIR_CAS"
+          ],
+          [
+            12,
+            "AIR_CAS"
+          ],
+          [
+            18,
+            "AIR_TRANS"
+          ],
+          [
+            22,
+            "AIR_TRANS"
+          ],
+          [
+            26,
+            "AIR_TRANS"
+          ],
+          [
+            30,
+            "AIR_TRANS"
+          ]
+        ]
+      },
       "headers": [
         "Missions/arc/TheBestDefense.conf"
       ],
@@ -31771,6 +35572,38 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/arc/VilleneufPunchupRedux/VilleneufPunchupRedux_Layers/vics.layer": [
+          [
+            4,
+            "COY"
+          ],
+          [
+            10,
+            "P1S3"
+          ],
+          [
+            15,
+            "P2S3"
+          ],
+          [
+            20,
+            "P2S2"
+          ],
+          [
+            25,
+            "P1S1"
+          ],
+          [
+            30,
+            "P1S2"
+          ],
+          [
+            35,
+            "P2S1"
+          ]
+        ]
+      },
       "headers": [
         "Missions/arc/VilleneufPunchupRedux.conf"
       ],
@@ -31827,8 +35660,8 @@
     "worlds/arc/WateryGrave/WateryGrave.ent": {
       "sourceResourceCount": 5,
       "devPaths": {
-        "absent": 4,
-        "changed": 1
+        "changed": 4,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -31855,6 +35688,38 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/arc/WateryGrave/WateryGrave_Layers/Vehicles.layer": [
+          [
+            4,
+            "RUHQ"
+          ],
+          [
+            28,
+            "RUS1"
+          ],
+          [
+            51,
+            "RUS2"
+          ],
+          [
+            74,
+            "RUS3"
+          ],
+          [
+            99,
+            "RUS4"
+          ],
+          [
+            105,
+            "RUHQ"
+          ],
+          [
+            109,
+            "CDFHQ"
+          ]
+        ]
+      },
       "headers": [
         "Missions/arc/WateryGrave.conf"
       ],
@@ -31878,7 +35743,9 @@
               "lastLine": 85
             },
             "86": {
-              "gap": "public outline colored by a restricted faction"
+              "vertices": 4,
+              "name": null,
+              "lastLine": 109
             }
           },
           "placementLayer": "worlds/arc/WateryGrave/WateryGrave_Layers/default_GC_Boundaries.layer"
@@ -31899,11 +35766,30 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "captureCandidate": {
+        "faction": "RHS_AFRF",
+        "location": "the CDF command post",
+        "seconds": 300,
+        "radiusMeters": 15,
+        "requiredLocalShare": 1
+      },
       "outcomeCandidate": {
         "events": {
           "worlds/arc/WateryGrave/WateryGrave_Layers/default.layer:125": {
+            "trigger": "area capture",
+            "flag": "RU_CAP",
             "name": "RU_CAP",
-            "gap": "unresolved or unsupported outcome flag \"RU_CAP\""
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
           },
           "worlds/arc/WateryGrave/WateryGrave_Layers/default.layer:141": {
             "trigger": "peak player loss",
@@ -31961,7 +35847,38 @@
       },
       "briefingModePreset": "worlds/arc/WateryGrave/WateryGrave_GC_Settings.et",
       "renumberedInSourceOrder": true,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "playtestCandidate": {
+        "presentOnDev": true,
+        "boundaries": {
+          "64": {
+            "vertices": 4,
+            "name": null,
+            "lastLine": 85
+          },
+          "86": {
+            "vertices": 4,
+            "name": null,
+            "lastLine": 109
+          }
+        },
+        "icons": 2,
+        "remainingBehavior": [
+          "Compare live capture, interrupted and contested capture, and remote notifications",
+          "Compare staging-zone enforcement, release and long timeout notices",
+          "Compare callsign labels, issued equipment and vehicle handling",
+          "Restore legacy vehicle previews and locked-vehicle removal"
+        ],
+        "legacyVehicleGroups": {
+          "UAZ452_ambulance1": "RUHQ",
+          "BTR70_AFRF1": "RUS1",
+          "BTR70_AFRF2": "RUS2",
+          "BTR70_AFRF3": "RUS3",
+          "BTR70_AFRF4": "RUS4",
+          "GAZ_TIGR_v2_PKM1": "RUHQ",
+          "M1025_armed_M2HB_MDO_USAF1": "CDFHQ"
+        }
+      }
     },
     "worlds/arc/ZeroArcThirty/ZeroArcThirty.ent": {
       "sourceResourceCount": 7,
@@ -32323,6 +36240,18 @@
           ]
         ]
       },
+      "legacyVehicleGroupLinks": {
+        "worlds/chllboy/Gigantomachia/Gigantomachia_Layers/Opfor.layer": [
+          [
+            16,
+            "BRDM-2"
+          ],
+          [
+            219,
+            "Drone Operators"
+          ]
+        ]
+      },
       "headers": [
         "Missions/chillboy/Gigantomachia.conf"
       ],
@@ -32399,6 +36328,34 @@
             27,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/chllboy/Hephaestus Forge/Hephaestus Forge_Layers/Blufor.layer": [
+          [
+            31,
+            "pilot4"
+          ],
+          [
+            36,
+            "pilot5"
+          ],
+          [
+            41,
+            "pilot6"
+          ],
+          [
+            161,
+            "pilot1"
+          ],
+          [
+            177,
+            "pilot2"
+          ],
+          [
+            183,
+            "pilot3"
           ]
         ]
       },
@@ -32482,6 +36439,54 @@
             26,
             "m_iFreezeTime",
             "300000"
+          ]
+        ]
+      },
+      "legacyVehicleGroupLinks": {
+        "worlds/chllboy/Makeup/Makeup_Layers/Opfor.layer": [
+          [
+            5,
+            "sso1"
+          ],
+          [
+            10,
+            "sso2"
+          ],
+          [
+            15,
+            "sso3"
+          ],
+          [
+            37,
+            "rf1"
+          ],
+          [
+            42,
+            "rf3"
+          ],
+          [
+            49,
+            "rfhq"
+          ],
+          [
+            54,
+            "rf1"
+          ],
+          [
+            59,
+            "rf2"
+          ],
+          [
+            64,
+            "rf3"
+          ],
+          [
+            70,
+            "rf2"
+          ],
+          [
+            97,
+            "ssohq"
           ]
         ]
       },

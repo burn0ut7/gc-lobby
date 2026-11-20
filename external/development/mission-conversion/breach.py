@@ -12,6 +12,8 @@ PLAYERS = WORLD.removesuffix('.ent') + '_Layers/Players.layer'
 LAYERS = WORLD.removesuffix('.ent') + '_Layers/'
 HEADER = 'Missions/Corax/Breachandclear/BreachAndClear.conf'
 PRIOR_DEFAULT = '41152cb3ef5fac5ec5b0efacb6b2060c6c30c9d9'
+PRIOR_ROSTER = '77c02236a6fe14b031ed1e5bca6e3305cd04ce46'
+PRIOR_HEADER = 'bbff8422a5d28b9d28ee03769351e4458a98ee3d'
 SMOKE = 'worlds/Corax/Breach and clear/Building_Explosion_Smoke.ptc'
 WORLD_INPUTS = {
     WORLD: 'c69a1a6413d4e2ef2c218b62f35eba72947189b9',
@@ -25,7 +27,7 @@ GAPS = [
     'Compare dynamic RHS_USAF AI-loss behavior against the legacy session and verify remote delivery',
     'Compare restriction-zone boundary behavior and the legacy warning HUD for both sides',
     'Verify inherited vehicles, weather, scenery, faction marker audiences and issued equipment',
-    'Compare Senior Rifleman formation offsets and linked player and AI orders',
+    'Compare the Senior Rifleman slot equipment and role assignment in both rifle squads',
 ]
 REVIEWED = {
     'AAT': 'f4c7d29d87dec64268bce907242dbf17cfaf753e',
@@ -50,7 +52,8 @@ def stage_loadouts(source, dev, source_units, dev_units, stock):
             raise ValueError('Breach and Clear loadout identity collision: ' + guid)
         text = source.read(path)
         parent = REF.search(text.splitlines()[0])[1]
-        if not inheritance(source_units, parent) or not inheritance(dev_units, parent):
+        source_chain = inheritance(source_units, parent)
+        if not source_chain or not inheritance(dev_units, parent):
             raise ValueError('Breach and Clear loadout parent needs review: ' + path)
         def relocate(match):
             ref_guid, ref_path = match.groups()
@@ -61,9 +64,17 @@ def stage_loadouts(source, dev, source_units, dev_units, stock):
             return '"{' + ref_guid + '}' + ref_path + '"'
         files[path] = REF.sub(relocate, text)
         files[path + '.meta'] = replace_reference(meta, META_NAME, guid, path)
+        playable = legacy_member(source_units, parent, True)
+        if role == 'SR' and not playable:
+            terminal = REF.search(source_chain[-1].splitlines()[0])
+            # RHS supplies this loadout base. It inherits Character_Base through
+            # RHS_AFRF_Base, and the legacy GC Lobby adds PS_PlayableComponent there.
+            if not terminal or terminal[1] != '2F8F4C139A8B4941':
+                raise ValueError('Breach Senior Rifleman ancestry changed')
+            playable = True
         audit[path] = {
             'guid': guid, 'unitsParent': only_path(dev_units, parent),
-            'legacyPlayableWithGroupOverride': legacy_member(source_units, parent, True),
+            'legacyPlayableWithGroupOverride': playable,
         }
     return files, audit
 
@@ -72,40 +83,26 @@ def stage_roster(source, source_units, dev_units, stock, locally_owned, loadouts
     if source.files.get(PLAYERS) != '1f7fdf9cbdcc2aad19c50f646c517d00e6c78511':
         raise ValueError('Breach and Clear roster changed')
     playable = {item['guid']: path for path, item in loadouts.items() if item['legacyPlayableWithGroupOverride']}
-    ai_path, = [path for path, item in loadouts.items() if not item['legacyPlayableWithGroupOverride']]
-    ai_guid = loadouts[ai_path]['guid']
+    senior_guid, = [item['guid'] for path, item in loadouts.items() if path.endswith('_SR_NoETool_P.et')]
     lines = source.read(PLAYERS).splitlines()
-    placements, support = [], []
+    placements, senior_groups = [], 0
     for i, line in enumerate(lines):
         group = ROOT.fullmatch(line)
         if not group:
             continue
         stop = block_end(lines, i)
         placement = lines[i:stop + 1]
-        if any(ai_guid in item for item in placement):
+        if any(senior_guid in item for item in placement):
             source_chain = inheritance(source_units, group['guid'])
             if scalar(source_chain, 'm_bSetPlayable') != 1:
                 raise ValueError('Breach and Clear group playability override changed')
-            ai_ref = next(match[0] for item in placement for match in REF.finditer(item) if match[1] == ai_guid)
-            placement = [item.replace(ai_ref, '').rstrip() for item in placement]
-            # Reuse the RHS base already inherited by the playable Units Dev parent.
-            parent = REF.search(inheritance(dev_units, group['guid'])[0].splitlines()[0])
-            if not parent or parent[1] != 'AE252B0A692DA762':
-                raise ValueError('Breach and Clear RHS group ancestry changed')
-            transform = [item for item in placement if item.startswith((' coords ', ' angleY '))]
-            name = f'GC_BreachSeniorRifleman{len(support) + 1}'
-            support.append('\n'.join([
-                f'SCR_AIGroup {name} : {parent[0]} {{',
-                ' components {', '  AIFormationComponent "{507E9DC12F541FE6}" {',
-                '   Enabled 0', '  }', ' }', *transform, ' m_bPlayable 0',
-                ' m_aUnitPrefabSlots {', f'  "{{{ai_guid}}}{ai_path}"', ' }', '}', '',
-            ]))
+            senior_groups += 1
         placements.extend(placement)
     body, groups, slots = group_layer('\n'.join(placements), source_units, dev_units, stock, locally_owned,
                                       reviewed_members=playable)
-    if (groups, slots, len(support)) != (7, 48, 2):
-        raise ValueError('Breach and Clear slot or support roster changed')
-    return body + ''.join(support), {'playableGroups': groups, 'unitPrefabEntries': slots, 'supportAI': len(support)}
+    if (groups, slots, senior_groups) != (7, 50, 2):
+        raise ValueError('Breach and Clear slot roster changed')
+    return body, {'playableGroups': groups, 'unitPrefabEntries': slots, 'seniorRiflemanSlots': senior_groups}
 
 
 def assemble(source, dev, preset):
@@ -115,6 +112,7 @@ def assemble(source, dev, preset):
     world, _, files = launcher(source, dev, HEADER)
     if world != WORLD:
         raise ValueError('Breach and Clear launcher resolves to a different world')
+    files[HEADER] = files[HEADER].replace('(40-49)', '(40-50)').replace('m_iPlayerCount 49', 'm_iPlayerCount 50')
     files[world] = source.read(world)
     smoke_guid = 'BF496ADB7584E640'
     if any(path != SMOKE for path in dev.resources.get(smoke_guid, [])):
