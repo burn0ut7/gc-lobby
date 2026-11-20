@@ -1,5 +1,6 @@
 """Apply common migration rules to legacy missions and report unsupported authoring."""
 from collections import Counter
+from functools import lru_cache
 from hashlib import sha256
 from pathlib import PurePosixPath
 import re
@@ -9,10 +10,11 @@ from boundaries import convert_boundaries
 from briefings import block_end, guid, properties
 from catalog import REF, SOURCE_TEXT
 from extraction import condition as extraction_condition
+from interactions import convert_block as convert_interaction_block
 from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer
 from outcomes import FRAMEWORK, leaves
-from scenery import WAYPOINT_CLASS
+from scenery import StockPrefabs, WAYPOINT_CLASS
 
 LEGACY = re.compile(r'\b(?:TILW|PS)_\w+')
 MODE = re.compile(r'^PS_GameModeCoop(?: [\w.-]+)? : "\{4CFD54745CD45673\}[^"]+" \{$')
@@ -30,6 +32,17 @@ LIGHT_FIELDS = {'ID', 'coords', 'Color', 'LV', 'ClipEV', 'Radius', 'NearPlane', 
 AI_WORLD_ALIASES = {
     '33A5B976E41B0A4C': ('Prefabs/AI/SCR_AIWorld_BadOrb.et', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et'),
 }
+VEHICLE_ALIASES = {
+    '6B7CD408BDFB94F5': ('TacticalFlava-TIGR_DEADC0DE00000003',
+                         'Prefabs/Vehicles/Wheeled/TIGR/GAZ_TIGR_v2_PKM_Green.et',
+                         'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM_Green.et'),
+    '6F4D5B56F4905A62': ('TacticalFlava-TIGR_DEADC0DE00000003',
+                         'Prefabs/Vehicles/Wheeled/TIGR/GAZ_TIGR_v2_Unarmed_Green.et',
+                         'Prefabs/Vehicles/Wheeled/TIGR/Unarmed/GAZ_TIGR_v2_Unarmed_Green.et'),
+    'A317D959A4248173': ('WCS_AH-6M_6273146ADFE8241D',
+                         'Prefabs/Vehicles/Helicopters/AH6M/AH6M_GAU19.et',
+                         'Prefabs/Vehicles/Helicopters/AH6M/AH6M_GAU19_X1.et'),
+}
 
 
 def blocks(text):
@@ -44,6 +57,69 @@ def blocks(text):
         end = block_end(lines, index)
         yield index + 1, lines[index:end + 1]
         index = end + 1
+
+
+def interaction_rules(source, world):
+    placements, audit = {}, {}
+    names, flags = set(), set()
+    for path in source.layers[world.lower()]:
+        text = source.read(path)
+        if 'TILW_BaseInteraction' not in text:
+            continue
+        for line, block in blocks(text):
+            if not any('TILW_BaseInteraction' in item for item in block):
+                continue
+            location = f'{path}:{line}'
+            try:
+                native, details = convert_interaction_block(block, location)
+                if not details or LEGACY.search(native):
+                    raise ValueError('unconverted interaction component or side effect')
+                objectives = [record['flag'] for record in details]
+                entities = [record['entity'] for record in details]
+                if (len(set(objectives)) != len(objectives) or set(objectives) & flags
+                        or len(set(entities)) != len(entities) or set(entities) & names):
+                    raise ValueError('duplicate interaction entity or flag')
+                flags.update(objectives)
+                names.update(entities)
+                placements[(path, line)] = native
+                audit[location] = {'objectives': details}
+            except ValueError as exc:
+                audit[location] = {'gap': str(exc)}
+    return flags, placements, audit
+
+
+@lru_cache(maxsize=4)
+def script_text(source):
+    return '\n'.join(source.read_raw(path).decode('utf-8-sig')
+                     for path in source.files if path.lower().endswith('.c'))
+
+
+def unused_flag_sampling(source, world, path, line, framework):
+    start = framework.index(' m_randomFlags {')
+    end = block_end(framework, start)
+    flags = []
+    index = start + 1
+    while index < end:
+        if not re.fullmatch(r'  TILW_FlagSampling "\{[\da-fA-F]{16}\}" \{', framework[index]):
+            return []
+        stop = block_end(framework, index)
+        data = properties(framework[index + 1:stop], {'m_flagNames'})
+        names = data.get('m_flagNames', '')
+        if not re.fullmatch(r'(?:"[\w.-]+"\s*)+', names):
+            return []
+        flags.extend(re.findall(r'"([\w.-]+)"', names))
+        index = stop + 1
+    content = source.read(path).splitlines()
+    # Exclude the entire sampling block only. Declarations elsewhere in the same layer still count as uses.
+    rest = '\n'.join(content[:line + start - 1] + content[line + end:])
+    other = '\n'.join(source.read(p) for p in sorted(source.closure(world) - {path})
+                      if PurePosixPath(p).suffix.lower() in SOURCE_TEXT)
+    scripts = script_text(source)
+    if not flags or any(f'"{flag}"' in rest or f'"{flag}"' in other or flag in scripts for flag in flags):
+        return []
+    if 'GetFlagSetCopy' in scripts or 'm_flagSet' in scripts:
+        return []
+    return sorted(set(flags))
 
 
 def named_placements(layers):
@@ -132,15 +208,30 @@ def passive_asset(source, path):
     raise ValueError('requires a resource conversion rule')
 
 
-def migrate_assets(source, dev, draft):
+def vehicle_aliases(workshop):
+    aliases, databases = {}, {}
+    for resource, (provider, old, current) in VEHICLE_ALIASES.items():
+        if provider not in databases:
+            path = workshop / provider / 'resourceDatabase.rdb'
+            databases[provider] = StockPrefabs(path) if path.is_file() else None
+        database = databases[provider]
+        if database and database.contains(resource, current):
+            aliases[(resource, old)] = current
+    return aliases
+
+
+def migrate_assets(source, dev, draft, asset_aliases=None):
     files = list(draft)
     blockers = set()
+    asset_aliases = asset_aliases or {}
     for owner in files:
         if PurePosixPath(owner).suffix.lower() not in SOURCE_TEXT:
             continue
 
         def relocate(ref):
             resource, path = ref[1].upper(), ref[2]
+            if (resource, path) in asset_aliases and resource not in source.resources and resource not in dev.resources:
+                return f'"{{{ref[1]}}}{asset_aliases[(resource, path)]}"'
             old_ai_path, new_ai_path = AI_WORLD_ALIASES.get(resource, (None, None))
             if path == old_ai_path and dev.resources.get(resource) == [new_ai_path]:
                 identity = META_NAME.search(dev.read(new_ai_path + '.meta'))
@@ -286,7 +377,7 @@ def faction_overrides(lines):
 '''
 
 
-def render_mode(world, root, preset, additional_rules, zones, ai_faction=None):
+def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=()):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, coords, freeze, children = '', ' coords 0 0 0', 0, ''
@@ -359,12 +450,18 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None):
      }}
     }}
 '''
-    if additional_rules:
+    if additional_rules or objective_flags:
+        flags = ''
+        if objective_flags:
+            flag_lines = []
+            for flag in sorted(objective_flags):
+                identity = guid(world + '/interaction flag/' + flag)
+                flag_lines.extend([f'    GC_MissionFlag "{{{identity}}}" {{', f'     m_sName "{flag}"', '    }'])
+            flags = '   m_aMissionFlags + {\n' + '\n'.join(flag_lines) + '\n   }\n'
+        events = f'   m_aMissionEvents + {{\n{additional_rules}   }}\n' if additional_rules else ''
         settings += f'''
   GC_LobbyManager "{{6A137A39106A4973}}" {{
-   m_aMissionEvents + {{
-{additional_rules}   }}
-  }}
+{flags}{events}  }}
 '''
     return f'''GC_LobbyGameMode GC_MigratedMission : "{{{resource}}}{preset}" {{
  components {{
@@ -374,7 +471,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None):
 '''
 
 
-def world_draft(source, dev, world, row, staged, area_placements, convert_group_block):
+def world_draft(source, dev, world, row, staged, area_placements, interactions, convert_group_block, asset_aliases):
     draft, blockers = {}, []
     if row.get('playtestCandidate') or row.get('raceConversion'):
         return {}, {'status': 'explicit recipe'}
@@ -405,6 +502,8 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
     boundaries = {}
     reused_layers = set()
     group_blocks = []
+    objective_flags, interaction_placements = interactions
+    unused_flags = []
     for layer in source.layers[world.lower()]:
         if layer in staged:
             parts[layer] = [staged[layer]]
@@ -426,7 +525,12 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
                 elif FRAMEWORK.fullmatch(head) and framework_supported and represented:
                     roots = [field.strip().split()[0] for field in block[1:-1]
                              if field.startswith(' ') and not field.startswith('  ') and field.strip() != '}']
-                    if set(roots) - {'coords', 'm_missionEvents', 'm_casualtyFlags', 'm_suppressGameEnd'}:
+                    unsupported = set(roots) - {'coords', 'm_missionEvents', 'm_casualtyFlags', 'm_suppressGameEnd'}
+                    if unsupported == {'m_randomFlags'} and roots.count('m_randomFlags') == 1:
+                        unused_flags = unused_flag_sampling(source, world, layer, line, block)
+                        if unused_flags:
+                            unsupported.clear()
+                    if unsupported:
                         blockers.append({'rule': 'framework settings', 'file': layer, 'line': line, 'detail': roots})
                 elif kind == 'SCR_AIGroup':
                     try:
@@ -437,6 +541,8 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
                         blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
                 elif (layer, line) in area_placements and area_placements[(layer, line)][0] <= used_flags:
                     result.append(area_placements[(layer, line)][1])
+                elif (layer, line) in interaction_placements:
+                    result.append(interaction_placements[(layer, line)])
                 elif kind == 'PS_ManualMarker':
                     result.append(convert_layer(body, dev)[0])
                 elif 'TILW_AOLimit.et' in head or 'TILW_MapShape.et' in head:
@@ -471,7 +577,7 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
                              'detail': 'legacy instruction deletes its own game mode'})
         try:
             layer, index = mode_index
-            parts[layer][index] = render_mode(world, mode, preset, rule_text, zones, ai_faction)
+            parts[layer][index] = render_mode(world, mode, preset, rule_text, zones, ai_faction, objective_flags)
         except ValueError as exc:
             blockers.append({'rule': 'mode settings', 'file': mode_index[0], 'detail': str(exc)})
     for path, blocks_in_layer in parts.items():
@@ -519,7 +625,7 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
             draft.update(files)
         except ValueError as exc:
             blockers.append({'rule': 'launcher', 'file': header, 'detail': str(exc)})
-    blockers.extend(migrate_assets(source, dev, draft))
+    blockers.extend(migrate_assets(source, dev, draft, asset_aliases))
     for path, text in draft.items():
         if path not in dev.files:
             continue
@@ -537,15 +643,17 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
         'status': 'blocked by conversion rules' if blockers else 'generated for file review',
         'blockers': blockers, 'files': sorted(draft), 'mixedLayerGroups': group_blocks,
         'verifiedPlayableSlots': slots, 'advertisedSlots': advertised,
+        **({'unusedRandomFlags': unused_flags} if unused_flags else {}),
         **({'remainingBehavior': ['AI casualty tracking uses native registration and confirmed death events. '
                                   'Compare possession, faction changes and delayed recounts separately.']} if ai_faction else {}),
     }
 
 
-def plan(source, dev, report, staged, area_placements, convert_group_block):
+def plan(source, dev, report, staged, area_placements, interactions, convert_group_block, asset_aliases):
     results, emitted, totals, families = {}, {}, Counter(), Counter()
     for world, row in report['worlds'].items():
-        draft, result = world_draft(source, dev, world, row, staged, area_placements.get(world, {}), convert_group_block)
+        draft, result = world_draft(source, dev, world, row, staged, area_placements.get(world, {}),
+                                    interactions.get(world, ((), {})), convert_group_block, asset_aliases)
         results[world] = result
         totals[result['status']] += 1
         families.update({blocker['rule'] for blocker in result.get('blockers', [])})

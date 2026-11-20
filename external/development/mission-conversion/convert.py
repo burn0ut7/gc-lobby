@@ -117,6 +117,7 @@ def main():
     out = {}
     arc_areas = {}
     batch_areas = {}
+    batch_interactions = {}
     headers_by_world = defaultdict(list)
     target_headers = set(dev.headers())
     for header in sorted(source.headers()):
@@ -259,6 +260,14 @@ def main():
         messages, review = ([], {}) if world in (RACE_WORLD, RUHA_WORLD) else world_events(source, world)
         if review:
             row['frameworkEvents'] = review
+        objective_flags = ()
+        if args.batch and row['serializedTypes'].get('TILW_BaseInteraction'):
+            try:
+                objective_flags, interaction_placements, audit = batch.interaction_rules(source, world)
+                batch_interactions[world] = (objective_flags, interaction_placements)
+                row['interactionCandidate'] = audit
+            except ValueError as exc:
+                row['interactionCandidate'] = {'gap': str(exc)}
         has_outcomes = row['serializedTypes'].get('TILW_EndGameInstruction')
         has_event_actions = args.batch and any(row['serializedTypes'].get(kind) for kind in
                                               ('TILW_AssignWaypointsInstruction', 'TILW_SendMessageInstruction', *ACTIONS))
@@ -272,7 +281,8 @@ def main():
                 elif args.batch:
                     captures, batch_areas[world] = batch.area_rules(source, world)
                 rules, outcome_audit, gap = compile_outcomes(
-                    source, world, captures, compound=args.batch, notification_audit=review)
+                    source, world, captures, compound=args.batch, notification_audit=review,
+                    objective_flags=objective_flags)
                 outcome = {'events': outcome_audit}
                 if gap:
                     outcome['gap'] = gap
@@ -605,7 +615,11 @@ def main():
         def convert_group_block(body):
             return group_layer(body, source_units, dev_units, stock, locally_owned, external_ai=external_ai)
 
-        out = batch.plan(source, dev, report, out, batch_areas, convert_group_block)
+        try:
+            asset_aliases = batch.vehicle_aliases(args.workshop_addons) if args.workshop_addons else {}
+        except (OSError, ValueError) as exc:
+            parser.error(str(exc))
+        out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block, asset_aliases)
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
                         for path, contents in out.items()}

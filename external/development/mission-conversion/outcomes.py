@@ -51,7 +51,7 @@ def waypoint_action(lines, key):
     return Decimal(delay), [*body, '      }'], details
 
 
-def read_term(lines, flags, captures, ai, depth=0):
+def read_term(lines, flags, captures, ai, objective_flags, depth=0):
     match = TERM.fullmatch(lines[0])
     if not match or depth > 8:
         raise ValueError('unsupported outcome term')
@@ -69,20 +69,22 @@ def read_term(lines, flags, captures, ai, depth=0):
             return {'trigger': 'AI loss', 'flag': flag[1:-1], 'faction': faction, 'ratio': ratio}
         if invert == '0' and flag in captures:
             return {'trigger': 'area capture', 'flag': flag[1:-1]}
+        if invert == '0' and flag[1:-1] in objective_flags:
+            return {'trigger': 'interaction flag', 'flag': flag[1:-1]}
         raise ValueError('unresolved or unsupported outcome flag ' + flag)
     if len(lines) < 4 or lines[1].strip() != 'm_operands {' or block_end(lines, 1) != len(lines) - 2:
         raise ValueError('unsupported compound outcome term fields')
     index, operands = 2, []
     while index < len(lines) - 2:
         end = block_end(lines, index)
-        operands.append(read_term(lines[index:end + 1], flags, captures, ai, depth + 1))
+        operands.append(read_term(lines[index:end + 1], flags, captures, ai, objective_flags, depth + 1))
         index = end + 1
     if not 1 <= len(operands) <= 64:
         raise ValueError('unsupported number of outcome operands')
     return {'trigger': 'all' if match[1] == 'Conjunction' else 'any', 'operands': operands}
 
 
-def read_event(fields, key, flags, captures, ai, compound):
+def read_event(fields, key, flags, captures, ai, compound, objective_flags):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -99,7 +101,7 @@ def read_event(fields, key, flags, captures, ai, compound):
         seen.add(field)
         if LITERAL.fullmatch(line) or (compound and field == 'm_condition' and TERM.fullmatch(line)):
             end = block_end(fields, i)
-            term = read_term(fields[i:end + 1], flags, captures, ai)
+            term = read_term(fields[i:end + 1], flags, captures, ai, objective_flags)
             i = end
         elif line == '   m_instructions {':
             end = block_end(fields, i)
@@ -147,6 +149,9 @@ def leaves(term):
 
 def render_check(term, key, captures, capture_messages):
     trigger = term['trigger']
+    if trigger == 'interaction flag':
+        return [f'      GC_MissionFlagCondition "{{{guid(key + "/objective")}}}" {{',
+                f'       m_sFlagName "{term["flag"]}"', '      }']
     if trigger == 'area capture':
         flag = '"' + term['flag'] + '"'
         lines = captures[flag]
@@ -201,7 +206,7 @@ def render(key, name, term, actions, captures, capture_messages):
     return result
 
 
-def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None):
+def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=()):
     captures = captures or {}
     notification_audit = notification_audit or {}
     layers = source.layers[world.lower()]
@@ -225,6 +230,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     ai = peak_flags(body, AI_FLAG) if compound else {}
     if set(ai) & set(flags) or len({faction for faction, _ in ai.values()}) > 1:
         return [], {}, 'ambiguous AI casualty faction tracking'
+    if set(objective_flags) & {key[1:-1] for key in (*flags, *ai, *captures)}:
+        return [], {}, 'ambiguous interaction flag producer'
     compiled, audit = [], {}
     names = set()
     capture_messages = set() if compound else None
@@ -246,7 +253,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         name = name[1:-1]
         try:
             term, actions, notices, assignments, messages, converted_actions = read_event(
-                fields, world + '/' + event[1], flags, captures, ai, compound)
+                fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags)
             emitted_names = {f'{name} ({delay:f}s)' for delay in actions}
             if term['trigger'] != 'Match start':
                 emitted_names.add(name)

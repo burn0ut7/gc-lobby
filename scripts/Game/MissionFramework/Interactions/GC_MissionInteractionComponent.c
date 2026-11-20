@@ -13,9 +13,12 @@ class GC_MissionInteractionComponent : ScriptComponent
 	protected GC_MissionFlagName m_sRequiredFlag;
 	[Attribute("", UIWidgets.Auto, "Optional Mission Flag to call after use. Its own conditions and repeatability still apply; a rejected flag call does not undo the interaction. Leave empty when using Interaction Condition only.")]
 	protected GC_MissionFlagName m_sCallFlag;
+	[Attribute("0", UIWidgets.CheckBox, "Hide this interaction after its first successful use. The state lasts for the life of this object.")]
+	protected bool m_bSingleUse;
 	[RplProp()]
 	protected bool m_bAvailable;
 	protected bool m_bUsing;
+	protected bool m_bConsumed;
 	protected ref ScriptInvoker m_OnUsed = new ScriptInvoker();
 
 	//------------------------------------------------------------------------------------------------
@@ -80,6 +83,8 @@ class GC_MissionInteractionComponent : ScriptComponent
 			m_bUsing = false;
 			return false;
 		}
+		if (m_bSingleUse)
+			m_bConsumed = true;
 		m_OnUsed.Invoke();
 		manager.NotifyMissionInteraction(m_sCallFlag);
 		m_bUsing = false;
@@ -105,7 +110,7 @@ class GC_MissionInteractionComponent : ScriptComponent
 		if (!Replication.IsServer())
 			return;
 		GC_LobbyManager manager = GC_LobbyManager.GetManager();
-		bool available = manager && !m_sActionName.IsEmpty() && IsAvailable(manager);
+		bool available = manager && !m_bConsumed && !m_sActionName.IsEmpty() && IsAvailable(manager);
 		if (available == m_bAvailable)
 			return;
 		m_bAvailable = available;

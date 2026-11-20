@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "d26a513fe801794f239d51176e2701f2fd2bcdf4",
+  "target": "aa2e3a135aeb017cb994aeeb943c9ca164251407",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1745,7 +1745,7 @@
         "worlds/arc/BarnBustersXS/BarnBustersXS.ent"
       ],
       "declaredPath": "worlds/arc/BarnBustersXS/BarnBustersXS.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{9CF05819C869C3A4}worlds/arc/BarnBustersXS/BarnBustersXS.ent"
     },
     "Missions/arc/BrambledeepBypass.conf": {
@@ -2057,7 +2057,7 @@
         "worlds/arc/SOBRUp/SOBRUp.ent"
       ],
       "declaredPath": "worlds/arc/SOBRUp/SOBRUp.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{9BE9849088050747}worlds/arc/SOBRUp/SOBRUp.ent"
     },
     "Missions/arc/ShootAndScoot.conf": {
@@ -29327,9 +29327,9 @@
     "worlds/arc/BarnBustersXS/BarnBustersXS.ent": {
       "sourceResourceCount": 10,
       "devPaths": {
-        "absent": 8,
-        "changed": 1,
-        "identical": 1
+        "absent": 2,
+        "changed": 6,
+        "identical": 2
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -34375,8 +34375,9 @@
     "worlds/arc/SOBRUp/SOBRUp.ent": {
       "sourceResourceCount": 12,
       "devPaths": {
-        "absent": 11,
-        "changed": 1
+        "absent": 3,
+        "changed": 8,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
