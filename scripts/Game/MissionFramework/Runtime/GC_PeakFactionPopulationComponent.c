@@ -1,9 +1,9 @@
-[ComponentEditorProps(category: "GC Lobby/Mission", description: "Samples living players after native spawn and deletion events for peak population conditions.")]
-class GC_PeakFactionPopulationComponentClass : ScriptComponentClass
+[ComponentEditorProps(category: "GC Lobby/Mission", description: "Samples living players at match start and after native player lifecycle events.")]
+class GC_PeakFactionPopulationComponentClass : SCR_BaseGameModeComponentClass
 {
 }
 
-class GC_PeakFactionPopulationComponent : ScriptComponent
+class GC_PeakFactionPopulationComponent : SCR_BaseGameModeComponent
 {
 	protected GC_LobbyGameMode m_Mode;
 	protected bool m_bRecountPending;
@@ -41,7 +41,28 @@ class GC_PeakFactionPopulationComponent : ScriptComponent
 
 	protected void OnPlayerUpdated(int playerId, IEntity entity)
 	{
-		if (!IsActiveMatch() || m_bRecountPending)
+		if (IsActiveMatch())
+			ScheduleRecount();
+	}
+
+	override void OnGameModeStart()
+	{
+		super.OnGameModeStart();
+		// Lobby may transfer a prepared character to the player without a spawn event.
+		if (m_Mode && m_Mode == GC_LobbyGameMode.GetGameMode() && Replication.IsServer())
+			ScheduleRecount();
+	}
+
+	override void OnControllableDestroyed(notnull SCR_InstigatorContextData instigatorContextData)
+	{
+		super.OnControllableDestroyed(instigatorContextData);
+		if (IsActiveMatch() && instigatorContextData.GetVictimPlayerID() > 0)
+			ScheduleRecount();
+	}
+
+	protected void ScheduleRecount()
+	{
+		if (m_bRecountPending)
 			return;
 		m_bRecountPending = true;
 		GetGame().GetCallqueue().CallLater(Recount, 5000, false);

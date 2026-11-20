@@ -318,11 +318,14 @@ def main():
             candidate, icons = breach.assemble(source, dev, row['briefingModePreset'])
             for path, body in candidate.items():
                 if path in dev.files and dev.read(path).strip() != body.strip():
-                    parser.error(f'Dev already has differing {path}')
+                    if path != breach.LAYERS + 'default.layer' or dev.files[path] != breach.PRIOR_DEFAULT:
+                        parser.error(f'Dev already has differing {path}')
                 out[path] = body
             row['playtestCandidate'] = {
                 'presentOnDev': all(path in dev.files for path in candidate),
                 'icons': icons,
+                'playerLossAnnouncement': {'sourceEvent': '6508D983AB223731', 'lossFaction': 'RHS_AFRF',
+                                           'ratio': 1, 'delaySeconds': 10, 'winner': 'RHS_USAF'},
                 'remainingBehavior': breach.GAPS,
             }
     if args.stage:

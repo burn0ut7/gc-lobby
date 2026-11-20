@@ -1,6 +1,7 @@
 """Restore the Breach and Clear mission-owned loadout variants."""
 from catalog import REF
 from briefings import block_end, guid
+from events import peak_event
 from groups import ROOT, group_layer, inheritance, legacy_member, only_path, scalar
 from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer as convert_markers
@@ -10,6 +11,7 @@ FOLDER = 'worlds/Corax/Breach and clear/No ETool/'
 PLAYERS = WORLD.removesuffix('.ent') + '_Layers/Players.layer'
 LAYERS = WORLD.removesuffix('.ent') + '_Layers/'
 HEADER = 'Missions/Corax/Breachandclear/BreachAndClear.conf'
+PRIOR_DEFAULT = '616ce0fa54649b84d58f7a3130eac943efed526d'
 SMOKE = 'worlds/Corax/Breach and clear/Building_Explosion_Smoke.ptc'
 WORLD_INPUTS = {
     WORLD: 'c69a1a6413d4e2ef2c218b62f35eba72947189b9',
@@ -19,7 +21,8 @@ WORLD_INPUTS = {
     SMOKE: '54c8899b8d624bf2c11bf338e17af975a9cb160b',
 }
 GAPS = [
-    'Translate both loss events as notifications under the legacy Core end-game suppression',
+    'Compare an occupied RHS_AFRF side losing its players and verify remote announcement delivery',
+    'Port the RHS_USAF AI-loss announcement with the legacy dynamic AI denominator',
     'Compare restriction-zone boundary behavior and the legacy warning HUD for both sides',
     'Verify inherited vehicles, weather, scenery, faction marker audiences and issued equipment',
     'Compare Senior Rifleman formation offsets and linked player and AI orders',
@@ -125,6 +128,16 @@ def assemble(source, dev, preset):
     arms = next(i for i, line in enumerate(lines) if line.startswith('$grp PolylineShapeEntity '))
     component_end = block_end(lines, start + 1)
     weather = '\n'.join(lines[start + 2:component_end]).replace('5EE3229927D4D2F5', '6B71E9A8B1A8C501')
+    # The reviewed fixtures bind ruloss to all RHS_AFRF players and delay the
+    # RHS_USAF victory instruction by 10 seconds. Legacy Core suppresses game end.
+    key = WORLD + '/casualty/6508D983AB223731'
+    announcement = peak_event(key, 'RHS_AFRF', '1', 10, [
+        f'      GC_MessageAction "{{{guid(key + "/notice")}}}" {{',
+        '       m_sTitle "MISSION END"',
+        '       m_sMessage "End conditions have been met:"\\',
+        '       "U.S. Armed Forces victory."',
+        '      }',
+    ])
     mode = f'''GC_LobbyGameMode GC_BreachMode : "{{{guid(WORLD + '/resource')}}}{preset}" {{
  components {{
 {weather}
@@ -132,6 +145,8 @@ def assemble(source, dev, preset):
   }}
   GC_LobbyFreezeComponent "{{E81E75BC287148D0}}" {{
    m_iAuthoredCountdownSeconds 60
+  }}
+  GC_PeakFactionPopulationComponent "{{{guid(WORLD + '/population')}}}" {{
   }}
   GC_LobbyManager "{{6A137A39106A4973}}" {{
    m_aMissionEvents + {{
@@ -150,7 +165,7 @@ def assemble(source, dev, preset):
       }}
      }}
     }}
-   }}
+{announcement}   }}
   }}
  }}
  coords 1601.722 20.219 2178.804
