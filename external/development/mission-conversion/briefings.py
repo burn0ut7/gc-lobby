@@ -1,5 +1,6 @@
 """Translate placed mission descriptions to GC Lobby mode-prefab overrides."""
 from dataclasses import dataclass
+from enum import IntEnum
 from hashlib import sha256
 import re
 
@@ -13,6 +14,14 @@ PLACEMENT = re.compile(r'^(?P<group>\$grp )?PS_MissionDescription\b(?P<head>[^\n
 ALLOWED = set('coords angles angleX angleY angleZ scale ID m_sTitle m_sTextData m_iOrder m_aVisibleForFactions m_bEmptyFactionVisibility m_bShowForAnyFaction m_sDescriptionLayout'.split())
 
 
+class BriefingAudience(IntEnum):
+    # GC_EBriefingAudience values stored in authored prefabs.
+    DEFAULT = 0
+    LISTED_AND_UNASSIGNED = 1
+    ASSIGNED = 2
+    HIDDEN = 3
+
+
 def guid(key):
     return sha256(('gc-missions-dev/briefings/v1/' + key).encode()).hexdigest()[:16].upper()
 
@@ -24,6 +33,7 @@ class Page:
     body: str
     factions: str
     source: str
+    audience: BriefingAudience = BriefingAudience.DEFAULT
 
 
 def block_end(lines, start):
@@ -73,8 +83,14 @@ def page(lines, origin):
     if factions and (not re.fullmatch(r'(?:\s*"[^"]+"\s*)+', factions) or
                      len(keys) > 16 or len(set(keys)) != len(keys)):
         raise ValueError('unsupported faction key list')
-    if any_side != empty or (not any_side and not keys):
-        raise ValueError('legacy audience needs independent unaffiliated visibility')
+    audience = BriefingAudience.DEFAULT
+    if any_side:
+        if not empty:
+            audience = BriefingAudience.ASSIGNED
+    elif empty:
+        audience = BriefingAudience.LISTED_AND_UNASSIGNED
+    elif not keys:
+        audience = BriefingAudience.HIDDEN
     if not {'m_sTitle', 'm_sTextData'} <= values.keys():
         raise ValueError('inherited title or content')
     title = values['m_sTitle']
@@ -83,7 +99,7 @@ def page(lines, origin):
         raise ValueError('unsupported serialized briefing string')
     if len(title.encode()) - 2 > 128 or len(body.encode()) - 2 > 16384:
         raise ValueError('briefing exceeds GC Lobby string limit')
-    return Page(int(values.get('m_iOrder', 0)), title, body, '' if any_side else factions, origin)
+    return Page(int(values.get('m_iOrder', 0)), title, body, '' if any_side else factions, origin, audience)
 
 
 def read_pages(text, path):
@@ -131,6 +147,8 @@ def render(world, pages, event=()):
                       f'     m_sTitle {p.title}', '     m_sContent ' + p.body.replace('\n', '\n     ')])
         if p.factions:
             lines.extend(['     m_aFactionKeys {', '      ' + p.factions, '     }'])
+        if p.audience != BriefingAudience.DEFAULT:
+            lines.append(f'     m_eAudience {int(p.audience)}')
         lines.append('    }')
     if pages:
         lines.append('   }')

@@ -4419,10 +4419,10 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
         return true;
     }
 
-    bool SetBriefing(int order, string title, string content, array<string> factionKeys = null, SCR_EGameModeState showAtGameModeState = SCR_EGameModeState.GAME, bool invertGameModeState = false, bool visible = true)
+    bool SetBriefing(int order, string title, string content, array<string> factionKeys = null, SCR_EGameModeState showAtGameModeState = SCR_EGameModeState.GAME, bool invertGameModeState = false, bool visible = true, GC_EBriefingAudience audience = GC_EBriefingAudience.DEFAULT)
     {
         GC_Briefing update = new GC_Briefing();
-        update.Set(order, title, content, factionKeys, showAtGameModeState, invertGameModeState, visible);
+        update.Set(order, title, content, factionKeys, showAtGameModeState, invertGameModeState, visible, audience);
         return UpsertBriefing(update);
     }
 
@@ -4437,7 +4437,7 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 
         return SetBriefing(briefing.GetOrder(), briefing.GetTitle(), briefing.GetContent(),
             briefing.GetFactionKeys(), briefing.GetShowAtGameModeState(),
-            briefing.IsGameModeStateInverted(), visible);
+            briefing.IsGameModeStateInverted(), visible, briefing.GetAudience());
     }
 
     bool RemoveBriefing(int briefingOrder)
@@ -4464,7 +4464,8 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
             || !GC_LobbyPhase.IsValid(briefing.GetShowAtGameModeState()))
             return false;
 
-        return ValidateFactionKeys(briefing.GetFactionKeys(), GC_Briefing.MAX_FACTION_KEYS);
+        return GC_Briefing.IsValidAudience(briefing.GetAudience())
+            && ValidateFactionKeys(briefing.GetFactionKeys(), GC_Briefing.MAX_FACTION_KEYS);
     }
 
     protected bool ValidateFactionKeys(array<string> factionKeys, int maximumCount)

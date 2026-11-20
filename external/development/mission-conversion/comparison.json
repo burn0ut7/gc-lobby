@@ -2282,7 +2282,7 @@
           "unitPrefabEntries": 35
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 14,
       "frameworkEvents": {
         "worlds/Aurelas/Montignac Meat Grind/Montignac Meat Grind_Layers/default.layer:34": {
           "gap": "event field needs conversion: m_condition"
@@ -2305,9 +2305,8 @@
           ]
         }
       },
-      "notificationModePreset": "worlds/Aurelas/Montignac Meat Grind/Montignac Meat Grind_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Aurelas/Montignac Meat Grind/Montignac Meat Grind_Layers/Briefings/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Aurelas/Montignac Meat Grind/Montignac Meat Grind_GC_Settings.et"
       ]
     },
     "worlds/Aurelas/Spearhead Air Support/SpearheadAirSupport.ent": {
@@ -2367,7 +2366,7 @@
           "placements": 20
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 7,
       "frameworkEvents": {
         "worlds/Aurelas/Spearhead Air Support/SpearheadAirSupport_Layers/default.layer:43": {
           "gap": "message formatting or length needs review"
@@ -2388,9 +2387,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Aurelas/Spearhead Air Support/SpearheadAirSupport_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Aurelas/Spearhead Air Support/SpearheadAirSupport_GC_Settings.et",
+      "renumberedInSourceOrder": false,
+      "briefingGaps": []
     },
     "worlds/Barwick/The Blood and Smoke/The Blood and Smoke.ent": {
       "sourceResourceCount": 33,
@@ -2722,7 +2721,7 @@
           }
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 13,
       "frameworkEvents": {
         "worlds/Blue/Opportunity Knocks/OpportunityKnocks_Layers/default.layer:162": {
           "gap": "instruction needs conversion: TILW_DeleteEntitiesInstruction"
@@ -2754,9 +2753,8 @@
           "gap": "event field needs conversion: m_condition"
         }
       },
-      "notificationModePreset": "worlds/Blue/Opportunity Knocks/OpportunityKnocks_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Blue/Opportunity Knocks/OpportunityKnocks_Layers/MapMarking/GLOBAL.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Blue/Opportunity Knocks/OpportunityKnocks_GC_Settings.et"
       ]
     },
     "worlds/Blue/Ruckusberg/RuckusBerg.ent": {
@@ -2943,7 +2941,7 @@
           "placementLayer": "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/OPFOR/OPFORPlayer_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/default.layer:163": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -2964,9 +2962,9 @@
           "gap": "instruction needs conversion: TILW_SetFlagInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/default.layer:123 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Blue/SimonsAbatis/SimonsAbatis_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2.ent": {
       "sourceResourceCount": 9,
@@ -3038,7 +3036,7 @@
           "placementLayer": "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/default.layer:117": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -3047,9 +3045,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/default.layer:63 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Burger4606/Hush/Hush.ent": {
       "sourceResourceCount": 10,
@@ -3113,7 +3111,7 @@
           "placementLayer": "worlds/Burger4606/Hush/Hush_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 4,
       "frameworkEvents": {
         "worlds/Burger4606/Hush/Hush_Layers/default.layer:96": {
           "gap": "event field needs conversion: m_condition"
@@ -3128,9 +3126,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Burger4606/Hush/Hush_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Burger4606/Hush/Hush_GC_Settings.et",
+      "renumberedInSourceOrder": false,
+      "briefingGaps": []
     },
     "worlds/Burn0ut7/Farm/Farm.ent": {
       "sourceResourceCount": 7,
@@ -4439,7 +4437,7 @@
           "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
-      "directBriefingsRead": 9,
+      "directBriefingsRead": 13,
       "respawn": {
         "factions": [
           {
@@ -4463,8 +4461,7 @@
         "remainingBehavior": [
           "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
           "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
-        ],
-        "ticketModePreset": "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_GC_Settings.et"
+        ]
       },
       "frameworkEvents": {
         "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/default.layer:66": {
@@ -4487,10 +4484,8 @@
           ]
         }
       },
-      "notificationModePreset": "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/BLUFOR_brief.layer:1 legacy audience needs independent unaffiliated visibility",
-        "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/NOTES.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_GC_Settings.et"
       ]
     },
     "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty.ent": {
@@ -4567,7 +4562,7 @@
           "placementLayer": "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/Logic_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/default.layer:67": {
           "gap": "instruction needs conversion: TILW_SpawnPrefabInstruction"
@@ -4585,9 +4580,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/default.layer:39 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers.ent": {
       "sourceResourceCount": 15,
@@ -4668,7 +4663,7 @@
           "placementLayer": "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_Layers/markers_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 12,
+      "directBriefingsRead": 13,
       "respawn": {
         "factions": [
           {
@@ -4684,8 +4679,7 @@
         "remainingBehavior": [
           "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
           "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
-        ],
-        "ticketModePreset": "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_GC_Settings.et"
+        ]
       },
       "frameworkEvents": {
         "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_Layers/default.layer:66": {
@@ -4721,9 +4715,8 @@
           ]
         }
       },
-      "notificationModePreset": "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_Layers/NOTES.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_GC_Settings.et"
       ]
     },
     "worlds/Cunnah/Darwin_Hill/Darwin_Hill.ent": {
@@ -4854,7 +4847,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 11,
       "respawn": {
         "factions": [
           {
@@ -4870,8 +4863,7 @@
         "remainingBehavior": [
           "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
           "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
-        ],
-        "ticketModePreset": "worlds/Cunnah/Darwin_Hill/Darwin_Hill_GC_Settings.et"
+        ]
       },
       "frameworkEvents": {
         "worlds/Cunnah/Darwin_Hill/Darwin_Hill_Layers/default.layer:145": {
@@ -4890,9 +4882,8 @@
           ]
         }
       },
-      "notificationModePreset": "worlds/Cunnah/Darwin_Hill/Darwin_Hill_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Cunnah/Darwin_Hill/Darwin_Hill_Layers/default.layer:114 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Cunnah/Darwin_Hill/Darwin_Hill_GC_Settings.et"
       ]
     },
     "worlds/Cunnah/Local_Problems/Local_Problems.ent": {
@@ -4971,7 +4962,7 @@
           "placements": 29
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/Cunnah/Local_Problems/Local_Problems_Layers/default.layer:125": {
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
@@ -4998,9 +4989,9 @@
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Cunnah/Local_Problems/Local_Problems_Layers/Brief_Notes.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Cunnah/Local_Problems/Local_Problems_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Cunnah/Rocky_Start/Rocky_Start.ent": {
       "sourceResourceCount": 9,
@@ -5066,7 +5057,7 @@
           "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/default.layer:99": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -5081,9 +5072,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/default.layer:62 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Cunnah/Rocky_Start/Rocky_Start_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Delfer/Grouse_Hunt/Grouse_Hunt.ent": {
       "sourceResourceCount": 13,
@@ -5139,7 +5130,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 30,
       "frameworkEvents": {
         "worlds/Delfer/Grouse_Hunt/Grouse_Hunt_Layers/default.layer:71": {
           "gap": "event field needs conversion: m_condition"
@@ -5172,9 +5163,9 @@
           "gap": "instruction needs conversion: TILW_SpawnPrefabInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Delfer/Grouse_Hunt/Grouse_Hunt_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Delfer/Grouse_Hunt/Grouse_Hunt_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Delfer/Morning_Routine/Morning_Routine.ent": {
       "sourceResourceCount": 13,
@@ -5239,7 +5230,7 @@
           "placementLayer": "worlds/Delfer/Morning_Routine/Morning_Routine_Layers/Markers_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 17,
+      "directBriefingsRead": 19,
       "frameworkEvents": {
         "worlds/Delfer/Morning_Routine/Morning_Routine_Layers/default.layer:32": {
           "gap": "empty notification"
@@ -5263,9 +5254,9 @@
           "gap": "event field needs conversion: m_condition"
         }
       },
-      "briefingGaps": [
-        "worlds/Delfer/Morning_Routine/Morning_Routine_Layers/Briefinggeneral.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Delfer/Morning_Routine/Morning_Routine_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Delfer/Topdown/Topdown.ent": {
       "sourceResourceCount": 16,
@@ -5356,7 +5347,7 @@
           "placementLayer": "worlds/Delfer/Topdown/Topdown_Layers/markers_red_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 16,
+      "directBriefingsRead": 18,
       "respawn": {
         "factions": [
           {
@@ -5373,8 +5364,7 @@
           "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
           "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds",
           "Resolve the named destination at death and preserve original-slot fallback"
-        ],
-        "ticketModePreset": "worlds/Delfer/Topdown/Topdown_GC_Settings.et"
+        ]
       },
       "frameworkEvents": {
         "worlds/Delfer/Topdown/Topdown_Layers/default.layer:55": {
@@ -5391,7 +5381,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/Delfer/Topdown/Topdown_Layers/Briefinggeneral.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Delfer/Topdown/Topdown_GC_Settings.et"
       ]
     },
     "worlds/Elite/ConcreteJungle/ConcreteJungle.ent": {
@@ -5452,7 +5442,7 @@
           }
         }
       },
-      "directBriefingsRead": 1,
+      "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/Elite/ConcreteJungle/ConcreteJungle_Layers/default.layer:43": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -5464,9 +5454,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Elite/ConcreteJungle/ConcreteJungle_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Elite/ConcreteJungle/ConcreteJungle_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Elite/DesertHeat/DesertHeat.ent": {
       "sourceResourceCount": 9,
@@ -5520,7 +5510,7 @@
           "placementLayer": "worlds/Elite/DesertHeat/DesertHeat_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 5,
+      "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/Elite/DesertHeat/DesertHeat_Layers/default.layer:62": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -5532,9 +5522,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Elite/DesertHeat/DesertHeat_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Elite/DesertHeat/DesertHeat_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Elite/PonderingThyOrb/PonderingThyOrb.ent": {
       "sourceResourceCount": 5,
@@ -5601,7 +5591,7 @@
           "placementLayer": "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 7,
+      "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/default.layer:99": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -5616,9 +5606,9 @@
           "gap": "instruction needs conversion: TILW_DeleteEntitiesInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Elite/PonderingThyOrb/PonderingThyOrb_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/FSM/Worlds/Co55EntreDeux_attack/CO_55EntreDeux_attack.ent": {
       "sourceResourceCount": 110,
@@ -5739,7 +5729,7 @@
           "gap": "mission-owned group 28F372F9EBDDED58"
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 13,
       "frameworkEvents": {
         "worlds/FSM/Worlds/TVT62ForestTrouble/TVT62ForestTrouble_Layers/default.layer:269": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -5751,9 +5741,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/FSM/Worlds/TVT62ForestTrouble/TVT62ForestTrouble_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/FSM/Worlds/TVT62ForestTrouble/TVT62ForestTrouble_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/FSM/Worlds/TVT66BlockBusters/TVT66BlockBusters.ent": {
       "sourceResourceCount": 50,
@@ -5809,7 +5799,7 @@
           "gap": "mission-owned group BB49EA4063459740"
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 13,
       "frameworkEvents": {
         "worlds/FSM/Worlds/TVT66BlockBusters/TVT66BlockBusters_Layers/Framework.layer:374": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -5821,9 +5811,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/FSM/Worlds/TVT66BlockBusters/TVT66BlockBusters_Layers/Framework.layer:135 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/FSM/Worlds/TVT66BlockBusters/TVT66BlockBusters_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache.ent": {
       "sourceResourceCount": 48,
@@ -5877,7 +5867,7 @@
           "gap": "legacy slot playability requires review 6B8232E5A8ED3EBA"
         }
       },
-      "directBriefingsRead": 12,
+      "directBriefingsRead": 14,
       "frameworkEvents": {
         "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache_Layers/Framework.layer:367": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -5889,9 +5879,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache_Layers/Framework.layer:139 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/FSM/Worlds/TVTBarrackHoldout/TVT67BarrackHoldout.ent": {
       "sourceResourceCount": 63,
@@ -5950,7 +5940,7 @@
           "gap": "mission-owned slot A7D43F643E778268"
         }
       },
-      "directBriefingsRead": 7,
+      "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/FSM/Worlds/TVTBarrackHoldout/TVT67BarrackHoldout_Layers/Framework.layer:340": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -5962,9 +5952,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/FSM/Worlds/TVTBarrackHoldout/TVT67BarrackHoldout_Layers/Framework.layer:133 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/FSM/Worlds/TVTBarrackHoldout/TVT67BarrackHoldout_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache.ent": {
       "sourceResourceCount": 56,
@@ -6022,7 +6012,7 @@
           }
         }
       },
-      "directBriefingsRead": 7,
+      "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache_Layers/default.layer:176": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -6034,9 +6024,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/FloridaMan/worlds/AAC/AAC_ThroughTheValley/AAC_ThroughTheValley.ent": {
       "sourceResourceCount": 8,
@@ -6248,7 +6238,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 7,
+      "directBriefingsRead": 8,
       "frameworkEvents": {
         "worlds/FloridaMan/worlds/EminentDomain/EminentDomain_Layers/default.layer:39": {
           "gap": "event field needs conversion: m_condition"
@@ -6263,9 +6253,9 @@
           "gap": "instruction needs conversion: TILW_SpawnPrefabInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/FloridaMan/worlds/EminentDomain/EminentDomain_Layers/Briefing.layer:753 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/FloridaMan/worlds/EminentDomain/EminentDomain_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/FloridaMan/worlds/LostAndFound/LostAndFound.ent": {
       "sourceResourceCount": 15,
@@ -6311,7 +6301,7 @@
           "gap": "group field needs review: m_aStaticVehicles"
         }
       },
-      "directBriefingsRead": 1,
+      "directBriefingsRead": 9,
       "frameworkEvents": {
         "worlds/FloridaMan/worlds/LostAndFound/LostAndFound_Layers/default.layer:96": {
           "gap": "depends on a mission flag"
@@ -6380,9 +6370,9 @@
           "gap": "instruction needs conversion: TILW_SetFlagInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/FloridaMan/worlds/LostAndFound/LostAndFound_Layers/BriefingMaterials.layer:35 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/FloridaMan/worlds/LostAndFound/LostAndFound_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals.ent": {
       "sourceResourceCount": 9,
@@ -6440,7 +6430,7 @@
           "gap": "legacy slot playability requires review E1CF84BB8F21BBB5"
         }
       },
-      "directBriefingsRead": 8,
+      "directBriefingsRead": 10,
       "respawn": {
         "factions": [
           {
@@ -6465,9 +6455,9 @@
           "gap": "depends on a mission flag"
         }
       },
-      "briefingGaps": [
-        "worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals_Layers/briefings/common.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Fruz/Gwotline Bling/Gwotline Bling.ent": {
       "sourceResourceCount": 10,
@@ -6788,7 +6778,7 @@
           }
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/default.layer:137": {
           "gap": "instruction needs conversion: TILW_DeleteEntitiesInstruction"
@@ -6803,9 +6793,9 @@
           "gap": "depends on a mission flag"
         }
       },
-      "briefingGaps": [
-        "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Fruz/Operation Tampa/Operation Tampa_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Gabe/BlocParty/BlocParty.ent": {
       "sourceResourceCount": 11,
@@ -6890,7 +6880,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 6,
       "frameworkEvents": {
         "worlds/Gabe/BlocParty/BlocParty_Layers/default.layer:358": {
           "gap": "depends on a mission flag"
@@ -6913,9 +6903,8 @@
           "gap": "event field needs conversion: m_condition"
         }
       },
-      "notificationModePreset": "worlds/Gabe/BlocParty/BlocParty_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Gabe/BlocParty/BlocParty_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Gabe/BlocParty/BlocParty_GC_Settings.et"
       ]
     },
     "worlds/Gabe/GuerrillasByDay/GuerrillasByDay.ent": {
@@ -7008,7 +6997,7 @@
           "gap": "mission-owned slot 3774124C219B12FA"
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 15,
       "frameworkEvents": {
         "worlds/Gabe/GuerrillasByDay/GuerrillasByDay_Layers/Default.layer:285": {
           "gap": "event field needs conversion: m_condition"
@@ -7028,9 +7017,8 @@
           "gap": "depends on a mission flag"
         }
       },
-      "notificationModePreset": "worlds/Gabe/GuerrillasByDay/GuerrillasByDay_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Gabe/GuerrillasByDay/GuerrillasByDay_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Gabe/GuerrillasByDay/GuerrillasByDay_GC_Settings.et"
       ]
     },
     "worlds/Gabe/IronResolve/IronResolve.ent": {
@@ -7099,7 +7087,7 @@
           "placementLayer": "worlds/Gabe/IronResolve/IronResolve_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 14,
       "frameworkEvents": {
         "worlds/Gabe/IronResolve/IronResolve_Layers/default.layer:441": {
           "gap": "depends on a mission flag"
@@ -7116,9 +7104,8 @@
           "gap": "depends on a mission flag"
         }
       },
-      "notificationModePreset": "worlds/Gabe/IronResolve/IronResolve_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Gabe/IronResolve/IronResolve_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Gabe/IronResolve/IronResolve_GC_Settings.et"
       ]
     },
     "worlds/Gabe/PowerStruggle/TVT97PowerStruggle.ent": {
@@ -7189,7 +7176,7 @@
           "gap": "group field needs review: m_faction"
         }
       },
-      "directBriefingsRead": 8,
+      "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/Gabe/PowerStruggle/TVT97PowerStruggle_Layers/Default.layer:416": {
           "gap": "empty notification"
@@ -7204,9 +7191,9 @@
           "gap": "empty notification"
         }
       },
-      "briefingGaps": [
-        "worlds/Gabe/PowerStruggle/TVT97PowerStruggle_Layers/Brief_Separatist.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Gabe/PowerStruggle/TVT97PowerStruggle_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Gabe/TheHillsHaveEyes/TheHillsHaveEyes.ent": {
       "sourceResourceCount": 7,
@@ -7259,7 +7246,7 @@
           }
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 14,
       "frameworkEvents": {
         "worlds/Gabe/TheHillsHaveEyes/TheHillsHaveEyes_Layers/default.layer:224": {
           "gap": "depends on a mission flag"
@@ -7273,9 +7260,8 @@
           ]
         }
       },
-      "notificationModePreset": "worlds/Gabe/TheHillsHaveEyes/TheHillsHaveEyes_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Gabe/TheHillsHaveEyes/TheHillsHaveEyes_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Gabe/TheHillsHaveEyes/TheHillsHaveEyes_GC_Settings.et"
       ]
     },
     "worlds/Gabe/ZavarakSlums/TVT50ZavarakSlums.ent": {
@@ -7371,7 +7357,7 @@
           "gap": "mission-owned slot D1696C499D352CFB"
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 14,
       "frameworkEvents": {
         "worlds/Gabe/ZavarakSlums/TVT50ZavarakSlums_Layers/Default.layer:336": {
           "gap": "depends on a mission flag"
@@ -7383,9 +7369,9 @@
           "gap": "empty notification"
         }
       },
-      "briefingGaps": [
-        "worlds/Gabe/ZavarakSlums/TVT50ZavarakSlums_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Gabe/ZavarakSlums/TVT50ZavarakSlums_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/HelloCam3/worlds/COOP_StashedCache/COOP_StashedCache_v2.ent": {
       "sourceResourceCount": 25,
@@ -7754,7 +7740,7 @@
           }
         }
       },
-      "directBriefingsRead": 13,
+      "directBriefingsRead": 16,
       "respawn": {
         "factions": [
           {
@@ -7778,8 +7764,7 @@
         "remainingBehavior": [
           "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
           "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
-        ],
-        "ticketModePreset": "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_GC_Settings.et"
+        ]
       },
       "frameworkEvents": {
         "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/default.layer:529": {
@@ -7816,9 +7801,8 @@
           "gap": "instruction needs conversion: TILW_SetFlagInstruction"
         }
       },
-      "notificationModePreset": "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_GC_Settings.et",
       "briefingGaps": [
-        "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/CORE/All_Brief.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_GC_Settings.et"
       ]
     },
     "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol.ent": {
@@ -10608,7 +10592,7 @@
           }
         }
       },
-      "directBriefingsRead": 15,
+      "directBriefingsRead": 17,
       "frameworkEvents": {
         "worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/default.layer:602": {
           "gap": "depends on a mission flag"
@@ -10628,9 +10612,8 @@
           "gap": "message formatting or length needs review"
         }
       },
-      "notificationModePreset": "worlds/HitTheMan/Ruinous Defence/RuinousDefence_GC_Settings.et",
       "briefingGaps": [
-        "worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/CORE/All_Brief.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/HitTheMan/Ruinous Defence/RuinousDefence_GC_Settings.et"
       ]
     },
     "worlds/HitTheMan/Screening The Orb/ScreeningTheOrb.ent": {
@@ -12133,7 +12116,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 7,
       "frameworkEvents": {
         "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/framework.layer:117": {
           "gap": "depends on a mission flag"
@@ -12175,9 +12158,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase.ent": {
       "sourceResourceCount": 15,
@@ -12404,7 +12387,7 @@
           "placementLayer": "worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 5,
       "frameworkEvents": {
         "worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon_Layers/default.layer:148": {
           "gap": "multiple framework layers or event control instructions"
@@ -12453,7 +12436,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon_Layers/Briefings.layer:1 legacy audience needs independent unaffiliated visibility"
+        "worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon_Layers/Briefings.layer:1 custom description layout"
       ]
     },
     "worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete.ent": {
@@ -12522,7 +12505,7 @@
           }
         }
       },
-      "directBriefingsRead": 6,
+      "directBriefingsRead": 7,
       "frameworkEvents": {
         "worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete_Layers/default.layer:388": {
           "gap": "depends on a mission flag"
@@ -12537,9 +12520,9 @@
           "gap": "empty notification"
         }
       },
-      "briefingGaps": [
-        "worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete_Layers/Briefings.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers.ent": {
       "sourceResourceCount": 22,
@@ -12659,7 +12642,7 @@
           "placementLayer": "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 7,
       "respawn": {
         "factions": [
           {
@@ -12732,7 +12715,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/Bluefor/Briefings.layer:1 legacy audience needs independent unaffiliated visibility"
+        "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/Bluefor/Briefings.layer:1 custom description layout"
       ]
     },
     "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar.ent": {
@@ -12822,7 +12805,7 @@
           "placementLayer": "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 1,
+      "directBriefingsRead": 6,
       "respawn": {
         "factions": [
           {
@@ -12865,7 +12848,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/GreenFor/Briefings.layer:1 legacy audience needs independent unaffiliated visibility"
+        "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/GreenFor/Briefings.layer:1 custom description layout"
       ]
     },
     "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac.ent": {
@@ -12953,7 +12936,7 @@
           "placementLayer": "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 7,
       "frameworkEvents": {
         "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/default.layer:397": {
           "gap": "instruction needs conversion: TILW_ServiceVehiclesInstruction"
@@ -13008,7 +12991,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
+        "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/Briefing.layer:1 custom description layout"
       ]
     },
     "worlds/HotMic/VehicleInterdictionCOOPKunar/VehicleInterdictionCOOPKunar.ent": {
@@ -13155,7 +13138,7 @@
           "placementLayer": "worlds/Huska/MortonBay/MortonBay_Layers/Briefing_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 5,
       "frameworkEvents": {
         "worlds/Huska/MortonBay/MortonBay_Layers/default.layer:79": {
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
@@ -13170,9 +13153,9 @@
           "gap": "message formatting or length needs review"
         }
       },
-      "briefingGaps": [
-        "worlds/Huska/MortonBay/MortonBay_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Huska/MortonBay/MortonBay_GC_Settings.et",
+      "renumberedInSourceOrder": false,
+      "briefingGaps": []
     },
     "worlds/Huska/WindyGoat/WindyGoat.ent": {
       "sourceResourceCount": 13,
@@ -13293,10 +13276,10 @@
           "placementLayer": "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/briefing_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 11,
-      "briefingGaps": [
-        "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "directBriefingsRead": 12,
+      "briefingModePreset": "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/IronFunnelEvent/MSN2/ScoutsOut.ent": {
       "sourceResourceCount": 12,
@@ -13351,10 +13334,10 @@
           "placementLayer": "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/MissionCore/AOLimits_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 11,
-      "briefingGaps": [
-        "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/MissionCore/EMPTYFACBRIEF.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "directBriefingsRead": 12,
+      "briefingModePreset": "worlds/IronFunnelEvent/MSN2/ScoutsOut_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/IronFunnelEvent/MSN3/SovietLevies.ent": {
       "sourceResourceCount": 7,
@@ -13410,7 +13393,7 @@
           "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 13,
       "frameworkEvents": {
         "worlds/IronFunnelEvent/MSN3/SovietLevies_Layers/default.layer:223": {
           "gap": "depends on a mission flag"
@@ -13424,9 +13407,8 @@
           ]
         }
       },
-      "notificationModePreset": "worlds/IronFunnelEvent/MSN3/SovietLevies_GC_Settings.et",
       "briefingGaps": [
-        "worlds/IronFunnelEvent/MSN3/SovietLevies_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/IronFunnelEvent/MSN3/SovietLevies_GC_Settings.et"
       ]
     },
     "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs.ent": {
@@ -13599,7 +13581,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 13,
       "frameworkEvents": {
         "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney_Layers/default.layer:120": {
           "gap": "depends on a mission flag"
@@ -13611,9 +13593,9 @@
           "gap": "depends on a mission flag"
         }
       },
-      "briefingGaps": [
-        "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney_Layers/default.layer:27 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/James/IDidntStealThisConcept/IDidntStealThisConcept.ent": {
       "sourceResourceCount": 7,
@@ -13757,7 +13739,7 @@
           "placementLayer": "worlds/James/JavoryPrelude/JavoryPrelude_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 9,
+      "directBriefingsRead": 11,
       "frameworkEvents": {
         "worlds/James/JavoryPrelude/JavoryPrelude_Layers/default.layer:296": {
           "gap": "depends on a mission flag"
@@ -13775,9 +13757,8 @@
           ]
         }
       },
-      "notificationModePreset": "worlds/James/JavoryPrelude/JavoryPrelude_GC_Settings.et",
       "briefingGaps": [
-        "worlds/James/JavoryPrelude/JavoryPrelude_Layers/default.layer:61 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/James/JavoryPrelude/JavoryPrelude_GC_Settings.et"
       ]
     },
     "worlds/James/KhandarClearance/KhandarClearance.ent": {
@@ -14280,7 +14261,7 @@
           "placementLayer": "worlds/James/TorskeTussle/TorskeTussle_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 13,
       "frameworkEvents": {
         "worlds/James/TorskeTussle/TorskeTussle_Layers/default.layer:230": {
           "gap": "depends on a mission flag"
@@ -14297,9 +14278,8 @@
           "gap": "depends on a mission flag"
         }
       },
-      "notificationModePreset": "worlds/James/TorskeTussle/TorskeTussle_GC_Settings.et",
       "briefingGaps": [
-        "worlds/James/TorskeTussle/TorskeTussle_Layers/default.layer:25 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/James/TorskeTussle/TorskeTussle_GC_Settings.et"
       ]
     },
     "worlds/Jub/ALHADRA RUMBLE/ALHADRA RUMBLE.ent": {
@@ -14613,7 +14593,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 2,
       "frameworkEvents": {
         "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/default.layer:120": {
           "gap": "instruction needs conversion: TILW_SpawnGroupInstruction"
@@ -14647,7 +14627,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
+        "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/briefing.layer:1 unexpected grouped instance"
       ]
     },
     "worlds/Jub/Duck Hunt/Duck Hunt.ent": {
@@ -15030,7 +15010,7 @@
           }
         }
       },
-      "directBriefingsRead": 6,
+      "directBriefingsRead": 8,
       "frameworkEvents": {
         "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/default.layer:290": {
           "gap": "multiple framework layers or event control instructions"
@@ -15054,9 +15034,9 @@
           "gap": "multiple framework layers or event control instructions"
         }
       },
-      "briefingGaps": [
-        "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_GC_Settings.et",
+      "renumberedInSourceOrder": false,
+      "briefingGaps": []
     },
     "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass.ent": {
       "sourceResourceCount": 20,
@@ -15126,7 +15106,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 2,
       "respawn": {
         "factions": [
           {
@@ -15160,7 +15140,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
+        "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/briefing.layer:1 unexpected grouped instance"
       ]
     },
     "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles.ent": {
@@ -15219,7 +15199,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 2,
       "frameworkEvents": {
         "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles_Layers/default.layer:153": {
           "gap": "instruction needs conversion: TILW_SpawnGroupInstruction"
@@ -15241,7 +15221,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
+        "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles_Layers/briefing.layer:1 unexpected grouped instance"
       ]
     },
     "worlds/Jub/OperationJaws/OperationJaws.ent": {
@@ -16104,7 +16084,7 @@
           "gap": "group component needs review"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 1,
       "frameworkEvents": {
         "worlds/Reapzr/Deadlock/Deadlock_Layers/fw.layer:52": {
           "gap": "instruction needs conversion: TILW_DeleteEntitiesInstruction"
@@ -16132,7 +16112,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/Reapzr/Deadlock/Deadlock_Layers/Briefings.layer:1 legacy audience needs independent unaffiliated visibility",
+        "worlds/Reapzr/Deadlock/Deadlock_Layers/Briefings.layer:1 custom or duplicate field {",
         "worlds/Reapzr/Deadlock/Deadlock_Layers/Briefings.layer nested description"
       ]
     },
@@ -16217,7 +16197,7 @@
           "placementLayer": "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_Layers/System/AO_zones_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 16,
+      "directBriefingsRead": 19,
       "frameworkEvents": {
         "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_Layers/System/objectives.layer:19": {
           "notificationDelaysSeconds": [
@@ -16240,9 +16220,8 @@
           "gap": "instruction needs conversion: TILW_DeleteEntitiesInstruction"
         }
       },
-      "notificationModePreset": "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_GC_Settings.et",
       "briefingGaps": [
-        "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_Layers/Breifings/breif_opfor.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_GC_Settings.et"
       ]
     },
     "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen.ent": {
@@ -16438,7 +16417,7 @@
           "unitPrefabEntries": 38
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/MisssionTriggers.layer:60": {
           "gap": "depends on a mission flag"
@@ -16459,9 +16438,9 @@
           "gap": "instruction needs conversion: TILW_SetFlagInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/Briefings/BriefsALL.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/RedTheKnown/DownhillStryke/DownhillStryke_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid.ent": {
       "sourceResourceCount": 9,
@@ -16615,7 +16594,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 6,
       "frameworkEvents": {
         "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/default.layer:115": {
           "gap": "depends on a mission flag"
@@ -16629,9 +16608,8 @@
           "gap": "depends on a mission flag"
         }
       },
-      "notificationModePreset": "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_GC_Settings.et"
       ]
     },
     "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank.ent": {
@@ -16770,7 +16748,7 @@
           "gap": "group component needs review"
         }
       },
-      "directBriefingsRead": 9,
+      "directBriefingsRead": 11,
       "frameworkEvents": {
         "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_Layers/Logic.layer:83": {
           "gap": "depends on a mission flag"
@@ -16791,9 +16769,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/TemplateMission/TemplateMission.ent": {
       "sourceResourceCount": 50,
@@ -16812,10 +16790,10 @@
         "Missions/TemplateHeader.conf"
       ],
       "markerLayers": {},
-      "directBriefingsRead": 5,
-      "briefingGaps": [
-        "worlds/TemplateMission/TemplateMission_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "directBriefingsRead": 7,
+      "briefingModePreset": "worlds/TemplateMission/TemplateMission_GC_Settings.et",
+      "renumberedInSourceOrder": false,
+      "briefingGaps": []
     },
     "worlds/TheHoserDozer/StayingSober/StayingSober.ent": {
       "sourceResourceCount": 9,
@@ -16895,7 +16873,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 2,
       "respawn": {
         "factions": [
           {
@@ -16927,8 +16905,7 @@
       },
       "briefingGaps": [
         "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/CDFBrief.layer:1 custom or duplicate field components",
-        "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/RUBrief.layer:1 custom or duplicate field components",
-        "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/SplashBrief.layer:1 legacy audience needs independent unaffiliated visibility"
+        "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/RUBrief.layer:1 custom or duplicate field components"
       ]
     },
     "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers.ent": {
@@ -17003,7 +16980,7 @@
           }
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_Layers/default.layer:56": {
           "gap": "message formatting or length needs review"
@@ -17012,9 +16989,9 @@
           "gap": "message formatting or length needs review"
         }
       },
-      "briefingGaps": [
-        "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges.ent": {
       "sourceResourceCount": 64,
@@ -17234,7 +17211,7 @@
           "placements": 108
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 13,
       "frameworkEvents": {
         "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_Layers/default.layer:56": {
           "gap": "instruction needs conversion: TILW_SetFlagInstruction"
@@ -17294,9 +17271,9 @@
           "gap": "message formatting or length needs review"
         }
       },
-      "briefingGaps": [
-        "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_Layers/ALL_BRIEFS.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/TheLocalPub/BlockDefenders/BlockDefenders.ent": {
       "sourceResourceCount": 22,
@@ -17395,7 +17372,7 @@
           }
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 12,
       "respawn": {
         "factions": [
           {
@@ -17421,8 +17398,7 @@
           "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds",
           "Restore wave scheduling aligned to legacy world time",
           "Resolve the named destination at death and preserve original-slot fallback"
-        ],
-        "ticketModePreset": "worlds/TheLocalPub/BlockDefenders/BlockDefenders_GC_Settings.et"
+        ]
       },
       "frameworkEvents": {
         "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/default.layer:67": {
@@ -17442,7 +17418,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/TheLocalPub/BlockDefenders/BlockDefenders_GC_Settings.et"
       ]
     },
     "worlds/TheLocalPub/BugOut/BugOut.ent": {
@@ -17493,7 +17469,7 @@
           "placements": 5
         }
       },
-      "directBriefingsRead": 6,
+      "directBriefingsRead": 7,
       "frameworkEvents": {
         "worlds/TheLocalPub/BugOut/BugOut_Layers/default.layer:28": {
           "gap": "multiple framework layers or event control instructions"
@@ -17508,9 +17484,9 @@
           "gap": "multiple framework layers or event control instructions"
         }
       },
-      "briefingGaps": [
-        "worlds/TheLocalPub/BugOut/BugOut_Layers/SYSTEMS/ALL_BRIEFS.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/TheLocalPub/BugOut/BugOut_GC_Settings.et",
+      "renumberedInSourceOrder": false,
+      "briefingGaps": []
     },
     "worlds/TheLocalPub/CimicHouse/CimicHouse.ent": {
       "sourceResourceCount": 20,
@@ -17578,7 +17554,7 @@
           "gap": "legacy slot playability requires review 1AB3DC8EFD701A91"
         }
       },
-      "directBriefingsRead": 9,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/TheLocalPub/CimicHouse/CimicHouse_Layers/default.layer:39": {
           "gap": "multiple framework layers or event control instructions"
@@ -17587,9 +17563,9 @@
           "gap": "multiple framework layers or event control instructions"
         }
       },
-      "briefingGaps": [
-        "worlds/TheLocalPub/CimicHouse/CimicHouse_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/TheLocalPub/CimicHouse/CimicHouse_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/TheLocalPub/CleanHouse/CleanHouse.ent": {
       "sourceResourceCount": 25,
@@ -17659,7 +17635,7 @@
           "placementLayer": "worlds/TheLocalPub/CleanHouse/CleanHouse_Layers/SYSTEMS/Logics_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/TheLocalPub/CleanHouse/CleanHouse_Layers/PROPS/Cleanhouse.layer:745": {
           "gap": "multiple framework layers or event control instructions"
@@ -17680,9 +17656,9 @@
           "gap": "multiple framework layers or event control instructions"
         }
       },
-      "briefingGaps": [
-        "worlds/TheLocalPub/CleanHouse/CleanHouse_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/TheLocalPub/CleanHouse/CleanHouse_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint.ent": {
       "sourceResourceCount": 22,
@@ -17876,7 +17852,7 @@
           "placementLayer": "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_Layers/OPFOR/Markers_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 12,
       "respawn": {
         "factions": [
           {
@@ -17892,8 +17868,7 @@
         "remainingBehavior": [
           "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
           "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
-        ],
-        "ticketModePreset": "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_GC_Settings.et"
+        ]
       },
       "frameworkEvents": {
         "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_Layers/default.layer:47": {
@@ -17904,7 +17879,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_GC_Settings.et"
       ]
     },
     "worlds/TheLocalPub/Joutus/Joutus.ent": {
@@ -17972,7 +17947,7 @@
           "placementLayer": "worlds/TheLocalPub/Joutus/Joutus_Layers/SYSTEMS/AllMarkers_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 11,
       "frameworkEvents": {
         "worlds/TheLocalPub/Joutus/Joutus_Layers/default.layer:29": {
           "gap": "message formatting or length needs review"
@@ -17981,9 +17956,9 @@
           "gap": "message formatting or length needs review"
         }
       },
-      "briefingGaps": [
-        "worlds/TheLocalPub/Joutus/Joutus_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/TheLocalPub/Joutus/Joutus_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/TheLocalPub/LamentinLosers/LamentinLosers.ent": {
       "sourceResourceCount": 24,
@@ -18130,7 +18105,7 @@
           "placementLayer": "worlds/TheLocalPub/LongmoorLashings/LongmoorLashings_Layers/Markers_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/TheLocalPub/LongmoorLashings/LongmoorLashings_Layers/default.layer:66": {
           "gap": "instruction needs conversion: TILW_SpawnPrefabInstruction"
@@ -18154,9 +18129,9 @@
           "gap": "message formatting or length needs review"
         }
       },
-      "briefingGaps": [
-        "worlds/TheLocalPub/LongmoorLashings/LongmoorLashings_Layers/ALL_BRIEFS.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/TheLocalPub/LongmoorLashings/LongmoorLashings_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/TheLocalPub/OilRigRangos/OilRigRangos.ent": {
       "sourceResourceCount": 55,
@@ -18224,7 +18199,7 @@
           "placementLayer": "worlds/TheLocalPub/OilRigRangos/OilRigRangos_Layers/Systems/Core_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 13,
       "frameworkEvents": {
         "worlds/TheLocalPub/OilRigRangos/OilRigRangos_Layers/default.layer:32": {
           "gap": "multiple framework layers or event control instructions"
@@ -18257,9 +18232,9 @@
           "gap": "multiple framework layers or event control instructions"
         }
       },
-      "briefingGaps": [
-        "worlds/TheLocalPub/OilRigRangos/OilRigRangos_Layers/General/Brief.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/TheLocalPub/OilRigRangos/OilRigRangos_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/TheLocalPub/PublicEnemies/PublicEnemies.ent": {
       "sourceResourceCount": 57,
@@ -18338,7 +18313,7 @@
           "placementLayer": "worlds/TheLocalPub/PublicEnemies/PublicEnemies_Layers/Systems/MISC_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/TheLocalPub/PublicEnemies/PublicEnemies_Layers/default.layer:47": {
           "gap": "multiple framework layers or event control instructions"
@@ -18365,9 +18340,9 @@
           "gap": "multiple framework layers or event control instructions"
         }
       },
-      "briefingGaps": [
-        "worlds/TheLocalPub/PublicEnemies/PublicEnemies_Layers/Systems/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/TheLocalPub/PublicEnemies/PublicEnemies_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/TheLocalPub/QuickReaction/QuickReactions.ent": {
       "sourceResourceCount": 28,
@@ -18481,7 +18456,7 @@
           "placementLayer": "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/SYSTEMS/Triggers_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 19,
+      "directBriefingsRead": 21,
       "respawn": {
         "factions": [
           {
@@ -18497,8 +18472,7 @@
         "remainingBehavior": [
           "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
           "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
-        ],
-        "ticketModePreset": "worlds/TheLocalPub/QuickReaction/QuickReactions_GC_Settings.et"
+        ]
       },
       "frameworkEvents": {
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/default.layer:178": {
@@ -18530,7 +18504,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/TheLocalPub/QuickReaction/QuickReactions_GC_Settings.et"
       ]
     },
     "worlds/TheLocalPub/RailroadReactions/RailroadReactions.ent": {
@@ -18612,7 +18586,7 @@
           "placementLayer": "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/SYSTEMS/Logics_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 13,
       "frameworkEvents": {
         "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/default.layer:36": {
           "gap": "multiple framework layers or event control instructions"
@@ -18630,9 +18604,9 @@
           "gap": "multiple framework layers or event control instructions"
         }
       },
-      "briefingGaps": [
-        "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/TheLocalPub/RailroadReactions/RailroadReactions_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/TheLocalPub/RapidAttack/RapidAttack.ent": {
       "sourceResourceCount": 11,
@@ -18690,7 +18664,7 @@
           "placementLayer": "worlds/TheLocalPub/RapidAttack/RapidAttack_Layers/SYSTEMS/AllMarkers_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 6,
+      "directBriefingsRead": 7,
       "frameworkEvents": {
         "worlds/TheLocalPub/RapidAttack/RapidAttack_Layers/default.layer:31": {
           "gap": "message formatting or length needs review"
@@ -18704,9 +18678,8 @@
           ]
         }
       },
-      "notificationModePreset": "worlds/TheLocalPub/RapidAttack/RapidAttack_GC_Settings.et",
       "briefingGaps": [
-        "worlds/TheLocalPub/RapidAttack/RapidAttack_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/TheLocalPub/RapidAttack/RapidAttack_GC_Settings.et"
       ]
     },
     "worlds/TheLocalPub/RiverStandoff/RiverStandoff.ent": {
@@ -18791,7 +18764,7 @@
           "placementLayer": "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/SYSTEMS/AllMarkers_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 9,
+      "directBriefingsRead": 11,
       "frameworkEvents": {
         "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/default.layer:70": {
           "gap": "message formatting or length needs review"
@@ -18818,9 +18791,9 @@
           "gap": "depends on a mission flag"
         }
       },
-      "briefingGaps": [
-        "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/TheLocalPub/RiverStandoff/RiverStandoff_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos.ent": {
       "sourceResourceCount": 19,
@@ -18909,7 +18882,7 @@
           "placementLayer": "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Systems/Misc_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 13,
       "respawn": {
         "factions": [
           {
@@ -18925,8 +18898,7 @@
         "remainingBehavior": [
           "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
           "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
-        ],
-        "ticketModePreset": "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_GC_Settings.et"
+        ]
       },
       "frameworkEvents": {
         "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/default.layer:39": {
@@ -18961,7 +18933,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Systems/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_GC_Settings.et"
       ]
     },
     "worlds/TheLocalPub/TakingTrenches/TakingTrenches.ent": {
@@ -19042,7 +19014,7 @@
           "placementLayer": "worlds/TheLocalPub/TakingTrenches/TakingTrenches_Layers/SYSTEMS/AllMarkers_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/TheLocalPub/TakingTrenches/TakingTrenches_Layers/default.layer:28": {
           "gap": "multiple framework layers or event control instructions"
@@ -19054,9 +19026,9 @@
           "gap": "multiple framework layers or event control instructions"
         }
       },
-      "briefingGaps": [
-        "worlds/TheLocalPub/TakingTrenches/TakingTrenches_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/TheLocalPub/TakingTrenches/TakingTrenches_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/TheLocalPub/TopMaloHouse/TopMalohouse.ent": {
       "sourceResourceCount": 15,
@@ -19202,7 +19174,7 @@
           "placementLayer": "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress_Layers/SYSTEM/AOLimit_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 9,
+      "directBriefingsRead": 11,
       "frameworkEvents": {
         "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress_Layers/default.layer:39": {
           "gap": "message formatting or length needs review"
@@ -19211,9 +19183,9 @@
           "gap": "message formatting or length needs review"
         }
       },
-      "briefingGaps": [
-        "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress_Layers/SYSTEM/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/TheLocalPub/WetFeet/WetFeet.ent": {
       "sourceResourceCount": 18,
@@ -19286,7 +19258,7 @@
           "placementLayer": "worlds/TheLocalPub/WetFeet/WetFeet_Layers/SYSTEMS/AllMarkers_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 10,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/TheLocalPub/WetFeet/WetFeet_Layers/default.layer:28": {
           "gap": "multiple framework layers or event control instructions"
@@ -19298,9 +19270,9 @@
           "gap": "multiple framework layers or event control instructions"
         }
       },
-      "briefingGaps": [
-        "worlds/TheLocalPub/WetFeet/WetFeet_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/TheLocalPub/WetFeet/WetFeet_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/ALittleWhileLonger/ALittleWhileLonger.ent": {
       "sourceResourceCount": 8,
@@ -19374,7 +19346,7 @@
           }
         }
       },
-      "directBriefingsRead": 2,
+      "directBriefingsRead": 7,
       "respawn": {
         "factions": [
           {
@@ -19390,8 +19362,7 @@
         "remainingBehavior": [
           "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
           "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
-        ],
-        "ticketModePreset": "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_GC_Settings.et"
+        ]
       },
       "frameworkEvents": {
         "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/fw.layer:154": {
@@ -19411,7 +19382,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Til/ALittleWhileLonger/ALittleWhileLonger_GC_Settings.et"
       ]
     },
     "worlds/Til/AndresBeacon/AndresBeacon.ent": {
@@ -19467,7 +19438,7 @@
           "gap": "legacy slot playability requires review 283A06EF2B6E7E24"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 6,
       "frameworkEvents": {
         "worlds/Til/AndresBeacon/AndresBeacon_Layers/default.layer:141": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -19479,9 +19450,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/AndresBeacon/AndresBeacon_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/AndresBeacon/AndresBeacon_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack.ent": {
       "sourceResourceCount": 13,
@@ -19557,7 +19528,7 @@
           "placementLayer": "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_Layers/fw.layer:342": {
           "gap": "depends on a mission flag"
@@ -19601,9 +19572,8 @@
           "gap": "instruction needs conversion: TILW_DeleteEntitiesInstruction"
         }
       },
-      "notificationModePreset": "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_GC_Settings.et"
       ]
     },
     "worlds/Til/Countdown/Countdown.ent": {
@@ -19687,7 +19657,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 7,
       "frameworkEvents": {
         "worlds/Til/Countdown/Countdown_Layers/fw.layer:8": {
           "gap": "event field needs conversion: m_condition"
@@ -19702,9 +19672,9 @@
           "gap": "depends on a mission flag"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/Countdown/Countdown_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/Countdown/Countdown_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy.ent": {
       "sourceResourceCount": 11,
@@ -19772,7 +19742,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 17,
       "frameworkEvents": {
         "worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy_Layers/fw.layer:21": {
           "gap": "event field needs conversion: m_condition"
@@ -19811,9 +19781,9 @@
           "gap": "instruction needs conversion: TILW_DeleteEntitiesInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/DevilsDrive/DevilsDrive.ent": {
       "sourceResourceCount": 7,
@@ -19876,7 +19846,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 1,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/Til/DevilsDrive/DevilsDrive_Layers/fw.layer:49": {
           "gap": "event field needs conversion: m_condition"
@@ -19890,9 +19860,8 @@
           "gap": "depends on a mission flag"
         }
       },
-      "notificationModePreset": "worlds/Til/DevilsDrive/DevilsDrive_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Til/DevilsDrive/DevilsDrive_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Til/DevilsDrive/DevilsDrive_GC_Settings.et"
       ]
     },
     "worlds/Til/DieselPower/DieselPower.ent": {
@@ -19956,7 +19925,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 4,
       "frameworkEvents": {
         "worlds/Til/DieselPower/DieselPower_Layers/fw.layer:26": {
           "gap": "instruction needs conversion: TILW_SetFlagInstruction"
@@ -19977,9 +19946,9 @@
           "gap": "instruction needs conversion: TILW_SetFlagInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/DieselPower/DieselPower_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/DieselPower/DieselPower_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/FalconsFlight/FalconsFlight.ent": {
       "sourceResourceCount": 9,
@@ -20057,7 +20026,7 @@
           "gap": "mission-owned slot C893CAA5652F8C5D"
         }
       },
-      "directBriefingsRead": 1,
+      "directBriefingsRead": 12,
       "respawn": {
         "factions": [
           {
@@ -20088,9 +20057,8 @@
           "gap": "instruction needs conversion: TILW_EditRespawnTicketsInstruction"
         }
       },
-      "notificationModePreset": "worlds/Til/FalconsFlight/FalconsFlight_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Til/FalconsFlight/FalconsFlight_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Til/FalconsFlight/FalconsFlight_GC_Settings.et"
       ]
     },
     "worlds/Til/FarmDefense/FarmDefense.ent": {
@@ -20155,7 +20123,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 4,
       "respawn": {
         "factions": [
           {
@@ -20171,8 +20139,7 @@
         "remainingBehavior": [
           "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
           "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
-        ],
-        "ticketModePreset": "worlds/Til/FarmDefense/FarmDefense_GC_Settings.et"
+        ]
       },
       "frameworkEvents": {
         "worlds/Til/FarmDefense/FarmDefense_Layers/fw.layer:88": {
@@ -20184,9 +20151,8 @@
           ]
         }
       },
-      "notificationModePreset": "worlds/Til/FarmDefense/FarmDefense_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Til/FarmDefense/FarmDefense_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Til/FarmDefense/FarmDefense_GC_Settings.et"
       ]
     },
     "worlds/Til/GoreyRaid/GoreyRaid.ent": {
@@ -20247,7 +20213,7 @@
           "placementLayer": "worlds/Til/GoreyRaid/GoreyRaid_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 6,
       "frameworkEvents": {
         "worlds/Til/GoreyRaid/GoreyRaid_Layers/fw.layer:51": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -20265,9 +20231,9 @@
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/GoreyRaid/GoreyRaid_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/GoreyRaid/GoreyRaid_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/GreenScreen/GreenScreen.ent": {
       "sourceResourceCount": 6,
@@ -20327,7 +20293,7 @@
           "gap": "inherited slot roster differs"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 4,
       "frameworkEvents": {
         "worlds/Til/GreenScreen/GreenScreen_Layers/default.layer:291": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -20342,9 +20308,9 @@
           "gap": "event field needs conversion: m_condition"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/GreenScreen/GreenScreen_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/GreenScreen/GreenScreen_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/GullBayGuns/GullBayGuns.ent": {
       "sourceResourceCount": 9,
@@ -20398,7 +20364,7 @@
           "placementLayer": "worlds/Til/GullBayGuns/GullBayGuns_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 7,
       "frameworkEvents": {
         "worlds/Til/GullBayGuns/GullBayGuns_Layers/default.layer:66": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -20410,9 +20376,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/GullBayGuns/GullBayGuns_Layers/Description.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/GullBayGuns/GullBayGuns_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/HeatherBayHarbor/HeatherBayHarbor.ent": {
       "sourceResourceCount": 8,
@@ -20475,7 +20441,7 @@
           "placements": 7
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 4,
       "frameworkEvents": {
         "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_Layers/default.layer:41": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -20487,9 +20453,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_Layers/Description.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/HueyHill/HueyHill.ent": {
       "sourceResourceCount": 8,
@@ -20552,7 +20518,7 @@
           "placementLayer": "worlds/Til/HueyHill/HueyHill_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 7,
       "frameworkEvents": {
         "worlds/Til/HueyHill/HueyHill_Layers/default.layer:132": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -20573,9 +20539,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/HueyHill/HueyHill_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/HueyHill/HueyHill_GC_Settings.et",
+      "renumberedInSourceOrder": false,
+      "briefingGaps": []
     },
     "worlds/Til/JavoryHill/JavoryHill.ent": {
       "sourceResourceCount": 7,
@@ -20651,7 +20617,7 @@
           "placementLayer": "worlds/Til/JavoryHill/JavoryHill_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 2,
+      "directBriefingsRead": 4,
       "frameworkEvents": {
         "worlds/Til/JavoryHill/JavoryHill_Layers/fw.layer:74": {
           "gap": "event field needs conversion: m_condition"
@@ -20660,9 +20626,9 @@
           "gap": "depends on a mission flag"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/JavoryHill/JavoryHill_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/JavoryHill/JavoryHill_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/JunctionJab/JunctionJab.ent": {
       "sourceResourceCount": 7,
@@ -20724,7 +20690,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 4,
       "frameworkEvents": {
         "worlds/Til/JunctionJab/JunctionJab_Layers/default.layer:173": {
           "gap": "depends on a mission flag"
@@ -20738,9 +20704,8 @@
           "gap": "depends on a mission flag"
         }
       },
-      "notificationModePreset": "worlds/Til/JunctionJab/JunctionJab_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Til/JunctionJab/JunctionJab_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Til/JunctionJab/JunctionJab_GC_Settings.et"
       ]
     },
     "worlds/Til/JunctionJabXL/JunctionJabXL.ent": {
@@ -20800,7 +20765,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 4,
       "frameworkEvents": {
         "worlds/Til/JunctionJabXL/JunctionJabXL_Layers/default.layer:190": {
           "gap": "depends on a mission flag"
@@ -20814,9 +20779,8 @@
           "gap": "depends on a mission flag"
         }
       },
-      "notificationModePreset": "worlds/Til/JunctionJabXL/JunctionJabXL_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Til/JunctionJabXL/JunctionJabXL_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Til/JunctionJabXL/JunctionJabXL_GC_Settings.et"
       ]
     },
     "worlds/Til/KasselbergClamber/KasselbergClamber.ent": {
@@ -20899,7 +20863,7 @@
           "placements": 9
         }
       },
-      "directBriefingsRead": 3,
+      "directBriefingsRead": 6,
       "frameworkEvents": {
         "worlds/Til/KasselbergClamber/KasselbergClamber_Layers/fw.layer:151": {
           "gap": "multiple framework layers or event control instructions"
@@ -20917,9 +20881,9 @@
           "gap": "multiple framework layers or event control instructions"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/KasselbergClamber/KasselbergClamber_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/KasselbergClamber/KasselbergClamber_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing.ent": {
       "sourceResourceCount": 7,
@@ -20975,7 +20939,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 4,
       "frameworkEvents": {
         "worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing_Layers/fw.layer:24": {
           "gap": "depends on a mission flag"
@@ -20989,9 +20953,8 @@
           ]
         }
       },
-      "notificationModePreset": "worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing_GC_Settings.et",
       "briefingGaps": [
-        "worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing_GC_Settings.et"
       ]
     },
     "worlds/Til/MetalsMight/MetalsMight.ent": {
@@ -21046,7 +21009,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 1,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/Til/MetalsMight/MetalsMight_Layers/fw.layer:35": {
           "gap": "instruction needs conversion: TILW_SetFlagInstruction"
@@ -21055,9 +21018,9 @@
           "gap": "message formatting or length needs review"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/MetalsMight/MetalsMight_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/MetalsMight/MetalsMight_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/Metalwave/Metalwave.ent": {
       "sourceResourceCount": 9,
@@ -21128,7 +21091,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 6,
       "respawn": {
         "factions": [
           {
@@ -21144,8 +21107,7 @@
         "remainingBehavior": [
           "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
           "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
-        ],
-        "ticketModePreset": "worlds/Til/Metalwave/Metalwave_GC_Settings.et"
+        ]
       },
       "frameworkEvents": {
         "worlds/Til/Metalwave/Metalwave_Layers/default.layer:218": {
@@ -21159,7 +21121,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/Til/Metalwave/Metalwave_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Til/Metalwave/Metalwave_GC_Settings.et"
       ]
     },
     "worlds/Til/MetsalaAirfield/MetsalaAirfield.ent": {
@@ -21247,7 +21209,7 @@
           "placementLayer": "worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 12,
       "respawn": {
         "factions": [
           {
@@ -21271,8 +21233,7 @@
         "remainingBehavior": [
           "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
           "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
-        ],
-        "ticketModePreset": "worlds/Til/MetsalaAirfield/MetsalaAirfield_GC_Settings.et"
+        ]
       },
       "frameworkEvents": {
         "worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/fw.layer:14": {
@@ -21286,7 +21247,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/desc.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Til/MetsalaAirfield/MetsalaAirfield_GC_Settings.et"
       ]
     },
     "worlds/Til/OwlsPrey/OwlsPrey.ent": {
@@ -21352,7 +21313,7 @@
           "placementLayer": "worlds/Til/OwlsPrey/OwlsPrey_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/Til/OwlsPrey/OwlsPrey_Layers/default.layer:126": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -21382,9 +21343,9 @@
           "gap": "instruction needs conversion: TILW_DeleteEntitiesInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/OwlsPrey/OwlsPrey_Layers/desc.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/OwlsPrey/OwlsPrey_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/PerelleBayPeril/PerelleBayPeril.ent": {
       "sourceResourceCount": 8,
@@ -21449,7 +21410,7 @@
           "placementLayer": "worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 7,
       "frameworkEvents": {
         "worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/default.layer:100": {
           "gap": "depends on a mission flag"
@@ -21464,9 +21425,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/PerelleBayPeril/PerelleBayPeril_GC_Settings.et",
+      "renumberedInSourceOrder": false,
+      "briefingGaps": []
     },
     "worlds/Til/RoutePierre/RoutePierre.ent": {
       "sourceResourceCount": 12,
@@ -21564,7 +21525,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 7,
       "frameworkEvents": {
         "worlds/Til/RoutePierre/RoutePierre_Layers/default.layer:128": {
           "gap": "instruction needs conversion: TILW_SetFlagInstruction"
@@ -21588,9 +21549,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/RoutePierre/RoutePierre_Layers/Description.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/RoutePierre/RoutePierre_GC_Settings.et",
+      "renumberedInSourceOrder": false,
+      "briefingGaps": []
     },
     "worlds/Til/RouteRowan/RouteRowan.ent": {
       "sourceResourceCount": 8,
@@ -21664,7 +21625,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 4,
       "respawn": {
         "factions": [
           {
@@ -21680,8 +21641,7 @@
         "remainingBehavior": [
           "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
           "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
-        ],
-        "ticketModePreset": "worlds/Til/RouteRowan/RouteRowan_GC_Settings.et"
+        ]
       },
       "frameworkEvents": {
         "worlds/Til/RouteRowan/RouteRowan_Layers/fw.layer:35": {
@@ -21701,7 +21661,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/Til/RouteRowan/RouteRowan_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/Til/RouteRowan/RouteRowan_GC_Settings.et"
       ]
     },
     "worlds/Til/RouteTremaux/RouteTremaux.ent": {
@@ -21832,7 +21792,7 @@
           "placementLayer": "worlds/Til/SteelPastures/SteelPastures_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 8,
       "frameworkEvents": {
         "worlds/Til/SteelPastures/SteelPastures_Layers/default.layer:184": {
           "gap": "instruction needs conversion: TILW_SetFlagInstruction"
@@ -21850,9 +21810,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/SteelPastures/SteelPastures_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/SteelPastures/SteelPastures_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/TerminalTakeover/TerminalTakeover.ent": {
       "sourceResourceCount": 5,
@@ -21900,7 +21860,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 6,
       "frameworkEvents": {
         "worlds/Til/TerminalTakeover/TerminalTakeover_Layers/default.layer:148": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -21912,9 +21872,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/TerminalTakeover/TerminalTakeover_Layers/Description.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/TerminalTakeover/TerminalTakeover_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/TheAdjacentWave/TheAdjacentWave.ent": {
       "sourceResourceCount": 16,
@@ -21995,7 +21955,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 6,
       "frameworkEvents": {
         "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/default.layer:126": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -22007,9 +21967,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/TheAdjacentWave/TheAdjacentWave_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/TopolnikiTriangle/TopolnikiTriangle.ent": {
       "sourceResourceCount": 11,
@@ -22086,7 +22046,7 @@
           "placements": 8
         }
       },
-      "directBriefingsRead": 2,
+      "directBriefingsRead": 12,
       "frameworkEvents": {
         "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/default.layer:251": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -22101,9 +22061,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/desc.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/TrenchAssault/TrenchAssault.ent": {
       "sourceResourceCount": 8,
@@ -22169,7 +22129,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 4,
       "frameworkEvents": {
         "worlds/Til/TrenchAssault/TrenchAssault_Layers/default.layer:77": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -22178,9 +22138,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/Til/TrenchAssault/TrenchAssault_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Til/TrenchAssault/TrenchAssault_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Til/TyroneThrust/TyroneThrust.ent": {
       "sourceResourceCount": 8,
@@ -22316,7 +22276,7 @@
           }
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 13,
       "frameworkEvents": {
         "worlds/Wade/NightSeizure/NightSeizure_Layers/default.layer:94": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
@@ -22334,9 +22294,9 @@
           "gap": "depends on a mission flag"
         }
       },
-      "briefingGaps": [
-        "worlds/Wade/NightSeizure/NightSeizure_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/Wade/NightSeizure/NightSeizure_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/Wade/TheLocalFiles/TheLocalFiles.ent": {
       "sourceResourceCount": 33,
@@ -22403,7 +22363,7 @@
           "unitPrefabEntries": 25
         }
       },
-      "directBriefingsRead": 22,
+      "directBriefingsRead": 24,
       "frameworkEvents": {
         "worlds/Wade/TheLocalFiles/TheLocalFiles_Layers/default.layer:181": {
           "gap": "multiple framework layers or event control instructions"
@@ -22434,8 +22394,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/Wade/TheLocalFiles/TheLocalFiles_Layers/Briefing/BriefingAll.layer:1 legacy audience needs independent unaffiliated visibility",
-        "worlds/Wade/TheLocalFiles/TheLocalFiles_Layers/default.layer:153 legacy audience needs independent unaffiliated visibility"
+        "worlds/Wade/TheLocalFiles/TheLocalFiles_Layers/default.layer:153 inherited title or content"
       ]
     },
     "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout.ent": {
@@ -23203,7 +23162,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 5,
       "frameworkEvents": {
         "worlds/ac337/GravetteGamble/GravetteGamble_Layers/default.layer:49": {
           "gap": "depends on a mission flag"
@@ -23227,9 +23186,8 @@
           "gap": "depends on a mission flag"
         }
       },
-      "notificationModePreset": "worlds/ac337/GravetteGamble/GravetteGamble_GC_Settings.et",
       "briefingGaps": [
-        "worlds/ac337/GravetteGamble/GravetteGamble_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/ac337/GravetteGamble/GravetteGamble_GC_Settings.et"
       ]
     },
     "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers.ent": {
@@ -23460,7 +23418,7 @@
           }
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 1,
       "frameworkEvents": {
         "worlds/anteante101/Its all uphill from here/Its all uphill from here_Layers/default.layer:18": {
           "gap": "depends on a mission flag"
@@ -23479,7 +23437,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/anteante101/Its all uphill from here/Its all uphill from here_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility",
+        "worlds/anteante101/Its all uphill from here/Its all uphill from here_Layers/brief.layer:1 custom or duplicate field {",
         "worlds/anteante101/Its all uphill from here/Its all uphill from here_Layers/brief.layer nested description"
       ]
     },
@@ -23711,7 +23669,7 @@
           "unitPrefabEntries": 9
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 1,
       "frameworkEvents": {
         "worlds/anteante101/RoleReversal/RoleReversal_Layers/Framework.layer:86": {
           "gap": "depends on a mission flag"
@@ -23733,7 +23691,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/anteante101/RoleReversal/RoleReversal_Layers/Briefings.layer:1 legacy audience needs independent unaffiliated visibility",
+        "worlds/anteante101/RoleReversal/RoleReversal_Layers/Briefings.layer:1 custom or duplicate field {",
         "worlds/anteante101/RoleReversal/RoleReversal_Layers/Briefings.layer nested description"
       ]
     },
@@ -23797,7 +23755,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 1,
       "frameworkEvents": {
         "worlds/anteante101/South wind is blowing/South wind is blowing_Layers/default.layer:14": {
           "gap": "message formatting or length needs review"
@@ -23816,7 +23774,7 @@
         }
       },
       "briefingGaps": [
-        "worlds/anteante101/South wind is blowing/South wind is blowing_Layers/BRIEF.layer:1 legacy audience needs independent unaffiliated visibility",
+        "worlds/anteante101/South wind is blowing/South wind is blowing_Layers/BRIEF.layer:1 custom or duplicate field {",
         "worlds/anteante101/South wind is blowing/South wind is blowing_Layers/BRIEF.layer nested description"
       ]
     },
@@ -23881,7 +23839,7 @@
           }
         }
       },
-      "directBriefingsRead": 11,
+      "directBriefingsRead": 14,
       "frameworkEvents": {
         "worlds/arc/BarnBusters/BarnBusters_Layers/default.layer:124": {
           "gap": "instruction needs conversion: TILW_SpawnPrefabInstruction"
@@ -23905,9 +23863,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
-      "briefingGaps": [
-        "worlds/arc/BarnBusters/BarnBusters_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/arc/BarnBusters/BarnBusters_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/arc/BarnBustersXS/BarnBustersXS.ent": {
       "sourceResourceCount": 9,
@@ -28224,7 +28182,7 @@
           "gap": "legacy slot playability requires review B293010593985EF3"
         }
       },
-      "directBriefingsRead": 0,
+      "directBriefingsRead": 8,
       "frameworkEvents": {
         "worlds/arc/ZeroArcThirty/ZeroArcThirty_Layers/default.layer:163": {
           "gap": "depends on a mission flag"
@@ -28236,9 +28194,9 @@
           "gap": "depends on a mission flag"
         }
       },
-      "briefingGaps": [
-        "worlds/arc/ZeroArcThirty/ZeroArcThirty_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/arc/ZeroArcThirty/ZeroArcThirty_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/blackskimask/Deadly Crossing/DeadlyCrossing.ent": {
       "sourceResourceCount": 12,
@@ -28301,7 +28259,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 6,
+      "directBriefingsRead": 9,
       "frameworkEvents": {
         "worlds/blackskimask/Deadly Crossing/DeadlyCrossing_Layers/default.layer:99": {
           "gap": "depends on a mission flag"
@@ -28318,9 +28276,8 @@
           "gap": "depends on a mission flag"
         }
       },
-      "notificationModePreset": "worlds/blackskimask/Deadly Crossing/DeadlyCrossing_GC_Settings.et",
       "briefingGaps": [
-        "worlds/blackskimask/Deadly Crossing/DeadlyCrossing_Layers/brief_all.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/blackskimask/Deadly Crossing/DeadlyCrossing_GC_Settings.et"
       ]
     },
     "worlds/blackskimask/Plant Attack/PlantAttack.ent": {
@@ -28384,7 +28341,7 @@
           }
         }
       },
-      "directBriefingsRead": 6,
+      "directBriefingsRead": 8,
       "frameworkEvents": {
         "worlds/blackskimask/Plant Attack/PlantAttack_Layers/default.layer:128": {
           "gap": "depends on a mission flag"
@@ -28401,9 +28358,8 @@
           "gap": "depends on a mission flag"
         }
       },
-      "notificationModePreset": "worlds/blackskimask/Plant Attack/PlantAttack_GC_Settings.et",
       "briefingGaps": [
-        "worlds/blackskimask/Plant Attack/PlantAttack_Layers/briefing_all.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/blackskimask/Plant Attack/PlantAttack_GC_Settings.et"
       ]
     },
     "worlds/blackskimask/ZarichneFront/ZarichneFront.ent": {
@@ -28476,7 +28432,7 @@
           }
         }
       },
-      "directBriefingsRead": 7,
+      "directBriefingsRead": 10,
       "frameworkEvents": {
         "worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/default.layer:86": {
           "gap": "depends on a mission flag"
@@ -28502,9 +28458,8 @@
           "gap": "depends on a mission flag"
         }
       },
-      "notificationModePreset": "worlds/blackskimask/ZarichneFront/ZarichneFront_GC_Settings.et",
       "briefingGaps": [
-        "worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/brief_all.layer:1 legacy audience needs independent unaffiliated visibility"
+        "Dev already has differing worlds/blackskimask/ZarichneFront/ZarichneFront_GC_Settings.et"
       ]
     },
     "worlds/chllboy/Gigantomachia/Gigantomachia.ent": {
@@ -28571,7 +28526,7 @@
           "placementLayer": "worlds/chllboy/Gigantomachia/Gigantomachia_Layers/default_GC_Boundaries.layer"
         }
       },
-      "directBriefingsRead": 14,
+      "directBriefingsRead": 15,
       "frameworkEvents": {
         "worlds/chllboy/Gigantomachia/Gigantomachia_Layers/default.layer:127": {
           "gap": "depends on a mission flag"
@@ -28580,9 +28535,9 @@
           "gap": "depends on a mission flag"
         }
       },
-      "briefingGaps": [
-        "worlds/chllboy/Gigantomachia/Gigantomachia_Layers/Situation.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/chllboy/Gigantomachia/Gigantomachia_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/chllboy/Hephaestus Forge/Hephaestus Forge.ent": {
       "sourceResourceCount": 35,
@@ -28643,7 +28598,7 @@
           }
         }
       },
-      "directBriefingsRead": 18,
+      "directBriefingsRead": 19,
       "frameworkEvents": {
         "worlds/chllboy/Hephaestus Forge/Hephaestus Forge_Layers/MissionLogic.layer:20": {
           "gap": "depends on a mission flag"
@@ -28664,9 +28619,9 @@
           "gap": "event field needs conversion: m_condition"
         }
       },
-      "briefingGaps": [
-        "worlds/chllboy/Hephaestus Forge/Hephaestus Forge_Layers/Situation.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/chllboy/Hephaestus Forge/Hephaestus Forge_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/chllboy/Makeup/Makeup.ent": {
       "sourceResourceCount": 11,
@@ -28736,7 +28691,7 @@
           }
         }
       },
-      "directBriefingsRead": 14,
+      "directBriefingsRead": 15,
       "frameworkEvents": {
         "worlds/chllboy/Makeup/Makeup_Layers/MissionLogic.layer:27": {
           "gap": "depends on a mission flag"
@@ -28754,9 +28709,9 @@
           "gap": "depends on a mission flag"
         }
       },
-      "briefingGaps": [
-        "worlds/chllboy/Makeup/Makeup_Layers/Situation.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/chllboy/Makeup/Makeup_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     },
     "worlds/chllboy/Trifecta/Trifecta.ent": {
       "sourceResourceCount": 40,
@@ -28848,7 +28803,7 @@
           "gap": "mixed layer or custom group declaration"
         }
       },
-      "directBriefingsRead": 20,
+      "directBriefingsRead": 21,
       "frameworkEvents": {
         "worlds/chllboy/Trifecta/Trifecta_Layers/default.layer:44": {
           "gap": "multiple framework layers or event control instructions"
@@ -28995,9 +28950,9 @@
           "gap": "multiple framework layers or event control instructions"
         }
       },
-      "briefingGaps": [
-        "worlds/chllboy/Trifecta/Trifecta_Layers/BRIEFS/UNI_MARKERS.layer:1 legacy audience needs independent unaffiliated visibility"
-      ]
+      "briefingModePreset": "worlds/chllboy/Trifecta/Trifecta_GC_Settings.et",
+      "renumberedInSourceOrder": true,
+      "briefingGaps": []
     }
   },
   "baseResourceDatabaseSHA256": "d65ebb14b5c9b2baaef1dfafd9b653f51a6ce11f9815585cf8b5ada88dd4e58a",

@@ -1,3 +1,11 @@
+enum GC_EBriefingAudience
+{
+	DEFAULT,
+	LISTED_AND_UNASSIGNED,
+	ASSIGNED,
+	HIDDEN
+}
+
 //! Authored briefing definition and complete replicated runtime snapshot.
 //! Runtime changes must go through GC_LobbyManager so the authority can
 //! broadcast them and include the latest value in future JIP snapshots.
@@ -15,8 +23,11 @@ class GC_Briefing
 	[Attribute("", UIWidgets.EditBoxMultiline, "Plain or Reforger rich-text briefing body")]
 	protected string m_sContent;
 
-	[Attribute("", UIWidgets.Auto, "Authoritative base-game faction keys. Empty shows the briefing to everyone")]
+	[Attribute("", UIWidgets.Auto, "Authoritative base-game faction keys used by Default and Listed and Unassigned. Default with no keys shows the briefing to everyone.")]
 	protected ref array<FactionKey> m_aFactionKeys;
+
+	[Attribute("0", UIWidgets.ComboBox, "Briefing audience. Listed and Unassigned also allows viewers without a faction, even when the faction list is empty.", enumType: GC_EBriefingAudience)]
+	protected GC_EBriefingAudience m_eAudience;
 
 	[Attribute("0", UIWidgets.ComboBox, "Earliest game-mode phase from which this briefing is shown", enumType: SCR_EGameModeState)]
 	protected SCR_EGameModeState m_eShowAtGameModeState;
@@ -59,6 +70,16 @@ class GC_Briefing
 		return m_eShowAtGameModeState;
 	}
 
+	GC_EBriefingAudience GetAudience()
+	{
+		return m_eAudience;
+	}
+
+	static bool IsValidAudience(int audience)
+	{
+		return audience >= GC_EBriefingAudience.DEFAULT && audience <= GC_EBriefingAudience.HIDDEN;
+	}
+
 	bool IsGameModeStateInverted()
 	{
 		return m_bInvertGameModeState;
@@ -80,7 +101,7 @@ class GC_Briefing
 	}
 
 	//! Creates or replaces the editable payload before it is submitted to the authority.
-	void Set(int order, string title, string content, array<string> factionKeys = null, SCR_EGameModeState showAtGameModeState = SCR_EGameModeState.GAME, bool invertGameModeState = false, bool visible = true)
+	void Set(int order, string title, string content, array<string> factionKeys = null, SCR_EGameModeState showAtGameModeState = SCR_EGameModeState.GAME, bool invertGameModeState = false, bool visible = true, GC_EBriefingAudience audience = GC_EBriefingAudience.DEFAULT)
 	{
 		m_iOrder = order;
 		m_sTitle = title;
@@ -98,6 +119,7 @@ class GC_Briefing
 		m_eShowAtGameModeState = showAtGameModeState;
 		m_bInvertGameModeState = invertGameModeState;
 		m_bVisible = visible;
+		m_eAudience = audience;
 	}
 
 	bool IsVisibleToFaction(Faction faction, SCR_EGameModeState gameModeState)
@@ -109,12 +131,22 @@ class GC_Briefing
 		if (!m_bVisible || !stateMatches)
 			return false;
 
-		if (!m_aFactionKeys || m_aFactionKeys.IsEmpty())
-			return true;
-
 		FactionKey playerFactionKey;
 		if (faction)
 			playerFactionKey = faction.GetFactionKey();
+
+		switch (m_eAudience)
+		{
+			case GC_EBriefingAudience.ASSIGNED:
+				return !playerFactionKey.IsEmpty();
+			case GC_EBriefingAudience.HIDDEN:
+				return false;
+			case GC_EBriefingAudience.LISTED_AND_UNASSIGNED:
+				return playerFactionKey.IsEmpty() || (m_aFactionKeys && m_aFactionKeys.Contains(playerFactionKey));
+		}
+
+		if (!m_aFactionKeys || m_aFactionKeys.IsEmpty())
+			return true;
 
 		bool hasFactionRestriction;
 		foreach (string allowedFactionKey : m_aFactionKeys)
@@ -151,6 +183,7 @@ class GC_Briefing
 		m_eShowAtGameModeState = source.m_eShowAtGameModeState;
 		m_bInvertGameModeState = source.m_bInvertGameModeState;
 		m_bVisible = source.m_bVisible;
+		m_eAudience = source.m_eAudience;
 		m_iRevision = source.m_iRevision;
 	}
 
@@ -173,6 +206,7 @@ class GC_Briefing
 		writer.WriteInt(m_eShowAtGameModeState);
 		writer.WriteBool(m_bInvertGameModeState);
 		writer.WriteBool(m_bVisible);
+		writer.WriteInt(m_eAudience);
 		writer.WriteInt(m_iRevision);
 		return true;
 	}
@@ -210,6 +244,10 @@ class GC_Briefing
 			return false;
 		if (!reader.ReadBool(m_bVisible))
 			return false;
+		int audience;
+		if (!reader.ReadInt(audience) || !IsValidAudience(audience))
+			return false;
+		m_eAudience = audience;
 		if (!reader.ReadInt(m_iRevision))
 			return false;
 
@@ -237,6 +275,7 @@ class GC_Briefing
 		snapshot.SerializeInt(instance.m_eShowAtGameModeState);
 		snapshot.SerializeBool(instance.m_bInvertGameModeState);
 		snapshot.SerializeBool(instance.m_bVisible);
+		snapshot.SerializeInt(instance.m_eAudience);
 		snapshot.SerializeInt(instance.m_iRevision);
 		return true;
 	}
@@ -269,6 +308,11 @@ class GC_Briefing
 
 		snapshot.SerializeBool(instance.m_bInvertGameModeState);
 		snapshot.SerializeBool(instance.m_bVisible);
+		int audience;
+		snapshot.SerializeInt(audience);
+		if (!IsValidAudience(audience))
+			return false;
+		instance.m_eAudience = audience;
 		snapshot.SerializeInt(instance.m_iRevision);
 		return true;
 	}
@@ -286,6 +330,7 @@ class GC_Briefing
 		snapshot.EncodeBool(packet);
 		snapshot.EncodeBool(packet);
 		snapshot.EncodeInt(packet);
+		snapshot.EncodeInt(packet);
 	}
 
 	static bool Decode(ScriptBitSerializer packet, ScriptCtx ctx, SSnapSerializerBase snapshot)
@@ -300,6 +345,7 @@ class GC_Briefing
 		snapshot.DecodeInt(packet);
 		snapshot.DecodeBool(packet);
 		snapshot.DecodeBool(packet);
+		snapshot.DecodeInt(packet);
 		snapshot.DecodeInt(packet);
 		return true;
 	}
@@ -319,6 +365,7 @@ class GC_Briefing
 		}
 
 		return lhs.CompareSnapshots(rhs, 4)
+			&& lhs.CompareSnapshots(rhs, 4)
 			&& lhs.CompareSnapshots(rhs, 4)
 			&& lhs.CompareSnapshots(rhs, 4)
 			&& lhs.CompareSnapshots(rhs, 4);
@@ -348,6 +395,7 @@ class GC_Briefing
 		return snapshot.CompareInt(instance.m_eShowAtGameModeState)
 			&& snapshot.CompareBool(instance.m_bInvertGameModeState)
 			&& snapshot.CompareBool(instance.m_bVisible)
+			&& snapshot.CompareInt(instance.m_eAudience)
 			&& snapshot.CompareInt(instance.m_iRevision);
 	}
 }
