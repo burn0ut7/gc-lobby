@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "2593cc4849ba86b3064a9984a8c78fb11139a602",
+  "target": "fb125c6c1497b34d1a6b18bcd8503724d2ceae5b",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -3721,7 +3721,8 @@
     "worlds/Corax/Breach and clear/Breach_and_Clear.ent": {
       "sourceResourceCount": 11,
       "devPaths": {
-        "absent": 11
+        "absent": 6,
+        "changed": 5
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -3791,7 +3792,39 @@
       },
       "briefingModePreset": "worlds/Corax/Breach and clear/Breach_and_Clear_GC_Settings.et",
       "renumberedInSourceOrder": true,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "loadoutCandidates": {
+        "worlds/Corax/Breach and clear/No ETool/Character_RHS_RF_MSV_Flora_AAT_NoETool_P.et": {
+          "guid": "102484F7867867F9",
+          "unitsParent": "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/RHS Inherits/MSV/Flora/P/Character_RHS_RF_MSV_Flora_AAT_P.et",
+          "legacyPlayableWithGroupOverride": true
+        },
+        "worlds/Corax/Breach and clear/No ETool/Character_RHS_RF_MSV_Flora_AR_NoETool_P.et": {
+          "guid": "6533882FC7F234D1",
+          "unitsParent": "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/RHS Inherits/MSV/Flora/P/Character_RHS_RF_MSV_Flora_AR_P.et",
+          "legacyPlayableWithGroupOverride": true
+        },
+        "worlds/Corax/Breach and clear/No ETool/Character_RHS_RF_MSV_Flora_AT_NoETool_P.et": {
+          "guid": "925CC07038CC788F",
+          "unitsParent": "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/RHS Inherits/MSV/Flora/P/Character_RHS_RF_MSV_Flora_AT_P.et",
+          "legacyPlayableWithGroupOverride": true
+        },
+        "worlds/Corax/Breach and clear/No ETool/Character_RHS_RF_MSV_Flora_Rifleman_NoETool_P.et": {
+          "guid": "D182B7EC96F6D5EE",
+          "unitsParent": "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/RHS Inherits/MSV/Flora/P/Character_RHS_RF_MSV_Flora_Rifleman_P.et",
+          "legacyPlayableWithGroupOverride": true
+        },
+        "worlds/Corax/Breach and clear/No ETool/Character_RHS_RF_MSV_Flora_SL_NoETool_P.et": {
+          "guid": "FD3F68631205B9FE",
+          "unitsParent": "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/RHS Inherits/MSV/Flora/P/Character_RHS_RF_MSV_Flora_SL_P.et",
+          "legacyPlayableWithGroupOverride": true
+        },
+        "worlds/Corax/Breach and clear/No ETool/Character_RHS_RF_MSV_Flora_SR_NoETool_P.et": {
+          "guid": "10FC237FEBFC9F6D",
+          "unitsParent": "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/RHS Inherits/MSV/Flora/P/Character_RHS_RF_MSV_Flora_SR_P.et",
+          "legacyPlayableWithGroupOverride": false
+        }
+      }
     },
     "worlds/Corax/Green mountain/Greenmountain.ent": {
       "sourceResourceCount": 5,

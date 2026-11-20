@@ -7,6 +7,7 @@ import re
 from pathlib import Path, PurePosixPath
 
 from boundaries import convert_boundaries
+import breach
 from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
 from events import world_events
@@ -38,6 +39,7 @@ def main():
     parser.add_argument('--include-hnevice-candidate', action='store_true', help='stage the incomplete Hnevice playtest world externally')
     parser.add_argument('--include-gwotline-mode', action='store_true', help='stage the reviewed Gwotline Bling mode placement for assembly')
     parser.add_argument('--include-gwotline-candidate', action='store_true', help='assemble the incomplete Gwotline Bling playtest world externally')
+    parser.add_argument('--include-breach-loadouts', action='store_true', help='stage Breach and Clear mission-owned loadout variants')
     args = parser.parse_args()
     if args.include_gwotline_candidate:
         if not args.stage or not args.units or not args.base_database:
@@ -293,6 +295,15 @@ def main():
                                     for candidate_path, body in candidate.items()),
                 'remainingBehavior': gwotline.GAPS,
             }
+    if args.include_breach_loadouts:
+        if not args.stage or not args.units or not stock:
+            parser.error('Breach and Clear loadouts require --stage, --units and --base-database')
+        files, audit = breach.stage_loadouts(source, dev, source_units, dev_units, stock)
+        for path, body in files.items():
+            if path in dev.files and dev.read(path).strip() != body.strip():
+                parser.error(f'Dev already has differing {path}')
+            out[path] = body
+        report['worlds'][breach.WORLD]['loadoutCandidates'] = audit
     if args.stage:
         stage = args.stage.resolve()
         if any(stage.is_relative_to(root.resolve()) for root in ([args.missions, lobby] + ([args.units] if args.units else []))):
