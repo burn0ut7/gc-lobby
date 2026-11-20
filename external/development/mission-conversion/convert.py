@@ -8,6 +8,7 @@ from pathlib import Path, PurePosixPath
 
 from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
+from groups import group_layer
 from markers import convert_layer as convert_markers
 from scenery import StockPrefabs, placements
 from race_day import race_files, WORLD as RACE_WORLD
@@ -23,6 +24,9 @@ def main():
     parser.add_argument('--include-race-day', action='store_true', help='also generate the reviewed Kunar world recipe')
     parser.add_argument('--stage-marker-candidates', action='store_true', help='stage icon layers for visual and asset review')
     parser.add_argument('--base-database', type=Path, help='verify and stage unchanged stock scenery and waypoints using game data/resourceDatabase.rdb')
+    parser.add_argument('--units', type=Path, help='compare playable group placements against both Units revisions')
+    parser.add_argument('--units-source', default='origin/master')
+    parser.add_argument('--units-dev', default='origin/dev')
     args = parser.parse_args()
     source = Snapshot(args.missions, args.source)
     dev = Snapshot(args.missions, args.dev)
@@ -33,6 +37,11 @@ def main():
     report = {'source': source.commit, 'target': dev.commit, 'headers': {}, 'worlds': {}}
     if stock:
         report['baseResourceDatabaseSHA256'] = sha256(stock.data).hexdigest()
+    if args.units:
+        source_units = Snapshot(args.units, args.units_source)
+        dev_units = Snapshot(args.units, args.units_dev)
+        report['sourceUnits'] = source_units.commit
+        report['targetUnits'] = dev_units.commit
     out = {}
     headers_by_world = defaultdict(list)
     target_headers = set(dev.headers())
@@ -56,6 +65,17 @@ def main():
         row['markerLayers'] = {}
         for layer in source.layers[world.lower()]:
             text = source.read(layer)
+            if args.units:
+                try:
+                    groups = group_layer(text, source_units, dev_units, stock, locally_owned)
+                    if groups:
+                        body, count, slots = groups
+                        if layer in dev.files and dev.read(layer).strip() != body.strip():
+                            raise ValueError('Dev has different group placements')
+                        row.setdefault('groupLayers', {})[layer] = {'playableGroups': count, 'unitPrefabEntries': slots}
+                        out[layer] = body
+                except ValueError as exc:
+                    row.setdefault('groupLayers', {})[layer] = {'gap': str(exc)}
             if stock:
                 placement = placements(text, stock, locally_owned)
                 if placement:
@@ -124,7 +144,7 @@ def main():
             out[path] = data
     if args.stage:
         stage = args.stage.resolve()
-        if any(stage.is_relative_to(root.resolve()) for root in (args.missions, lobby)):
+        if any(stage.is_relative_to(root.resolve()) for root in ([args.missions, lobby] + ([args.units] if args.units else []))):
             parser.error('stage outside both addon trees')
         # Check the whole generation before writing. Never overlay stale outputs.
         if stage.exists():
