@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "d76d3e6df1bdbc9cb272820d2e13adaaf5995347",
+  "target": "ee444dbd2c2209f640e2e91796b1136ad5d21024",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -6504,7 +6504,7 @@
           }
         ],
         "remainingBehavior": [
-          "Preserve the mixed player and AI machine-gun group",
+          "Compare the two machine-gun support AI and the legacy linked-group command behavior",
           "Verify starting slot counts, callsigns, and issued equipment on both sides",
           "Compare the public AO outline and verify that the authored GC_MUC key has no members",
           "Compare both public start markers and the lantern and floodlight behavior in play",
@@ -6534,21 +6534,21 @@
           "unitPrefabEntries": 39,
           "remainingPlacements": {
             "129": "retained source placement requires separate review"
-          }
+          },
+          "supportAI": 0
         },
         "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/Opfor1/OPFOR_GC_Roster.layer": {
           "sourceLayer": "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/Opfor1/OPFOR.layer",
-          "groups": 2,
-          "unitPrefabEntries": 14,
-          "remainingPlacements": {
-            "20": "legacy slot playability requires review 328AFF9E8B3F3AE9"
-          }
+          "groups": 3,
+          "unitPrefabEntries": 18,
+          "remainingPlacements": {},
+          "supportAI": 2
         }
       },
       "playtestCandidate": {
         "presentOnDev": true,
         "remainingBehavior": [
-          "Preserve the mixed player and AI machine-gun group",
+          "Compare the two machine-gun support AI and the legacy linked-group command behavior",
           "Verify starting slot counts, callsigns, and issued equipment on both sides",
           "Compare the public AO outline and verify that the authored GC_MUC key has no members",
           "Compare both public start markers and the lantern and floodlight behavior in play",

@@ -271,7 +271,8 @@ def main():
             row['rosterCandidates'] = {}
             for path, body, roster in gwotline.stage_rosters(source, source_units, dev_units, stock, locally_owned):
                 if path in dev.files and dev.read(path).strip() != body.strip():
-                    parser.error(f'Dev already has differing {path}')
+                    if path != gwotline.OPFOR_ROSTER or dev.files[path] != gwotline.PRIOR_OPFOR_ROSTER:
+                        parser.error(f'Dev already has differing {path}')
                 out[path] = body
                 row['rosterCandidates'][path] = roster
         if args.include_gwotline_candidate:

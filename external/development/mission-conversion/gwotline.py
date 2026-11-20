@@ -3,7 +3,7 @@ from boundaries import convert_boundaries
 from briefings import block_end, guid
 from catalog import REF
 from events import peak_notifications
-from groups import ROOT, group_layer
+from groups import ROOT, group_layer, legacy_member, only_path
 from launchers import launcher
 from markers import DEST as MAP_MARKER, convert_layer as convert_markers
 
@@ -11,6 +11,8 @@ WORLD = 'worlds/Fruz/Gwotline Bling/Gwotline Bling.ent'
 HEADER = 'Missions/Fruz/Gwotline_Bling.conf'
 DEFAULT = WORLD[:-4] + '_Layers/default.layer'
 PRIOR_DEFAULT = 'f234b8de5f4bbf1614e31c77222471de5c60f0fc'
+PRIOR_OPFOR_ROSTER = 'fcfcd74524dba0ab3d2afe2ae3c988c75353afb9'
+OPFOR_ROSTER = DEFAULT.removesuffix('default.layer') + 'Opfor1/OPFOR_GC_Roster.layer'
 AO = DEFAULT.removesuffix('default.layer') + 'AO.layer'
 GROUPS = {
     'Blufor1/Blufor.layer': '15814895695ea27140f4d286b38cbe859be90430',
@@ -18,7 +20,7 @@ GROUPS = {
 }
 CALLSIGNS = frozenset({'6508C3582F634926', '68B37CEF862EBFE6', '6508C35869053D73'})
 GAPS = [
-    'Preserve the mixed player and AI machine-gun group',
+    'Compare the two machine-gun support AI and the legacy linked-group command behavior',
     'Verify starting slot counts, callsigns, and issued equipment on both sides',
     'Compare the public AO outline and verify that the authored GC_MUC key has no members',
     'Compare both public start markers and the lantern and floodlight behavior in play',
@@ -90,6 +92,7 @@ def stage_rosters(source, source_units, dev_units, stock, locally_owned):
             raise ValueError('Gwotline group source layer changed: ' + path)
         lines = source.read(path).splitlines()
         staged, exceptions = [], {}
+        support_ai = 0
         groups = slots = i = 0
         while i < len(lines):
             if not lines[i].strip():
@@ -105,11 +108,15 @@ def stage_rosters(source, source_units, dev_units, stock, locally_owned):
                         if placement[empty + 1] != ' }':
                             raise ValueError('Gwotline Ranger HQ empty slot is no longer trailing')
                         placement = placement[:empty] + placement[empty + 1:]
+                    ai = ''
+                    if relative == 'Opfor1/OPFOR.layer' and i == 19:
+                        placement, ai = split_machinegun_group(placement, source_units, dev_units)
                     body, count, members = group_layer('\n'.join(placement), source_units, dev_units,
                                                        stock, locally_owned, CALLSIGNS)
-                    staged.append(body)
+                    staged.append(body + ai)
                     groups += count
                     slots += members
+                    support_ai += 2 if ai else 0
                 except ValueError as exc:
                     exceptions[str(i + 1)] = str(exc)
             else:
@@ -119,7 +126,30 @@ def stage_rosters(source, source_units, dev_units, stock, locally_owned):
             raise ValueError('Gwotline roster generated no groups: ' + path)
         yield path.removesuffix('.layer') + '_GC_Roster.layer', ''.join(staged), {
             'sourceLayer': path, 'groups': groups, 'unitPrefabEntries': slots, 'remainingPlacements': exceptions,
+            'supportAI': support_ai,
         }
+
+
+def split_machinegun_group(lines, source_units, dev_units):
+    append = lines.index(' m_aUnitPrefabSlots +{')
+    end = block_end(lines, append)
+    characters = REF.findall('\n'.join(lines[append + 1:end]))
+    if [guid for guid, _ in characters] != ['328AFF9E8B3F3AE9', '6A2B87B94BFDCA65']:
+        raise ValueError('Gwotline support AI roster changed')
+    refs = []
+    for guid, _ in characters:
+        if legacy_member(source_units, guid, True):
+            raise ValueError('Gwotline support AI became playable in the source')
+        refs.append('  "{' + guid + '}' + only_path(dev_units, guid) + '"')
+    parent = '776A0E35AF7C62AE'
+    formation = lines.index('  AIFormationComponent "{507E9DC12F541FE6}" {')
+    transform = [line for line in lines if line.startswith((' coords ', ' angles '))]
+    ai_group = [
+        'SCR_AIGroup GC_GwotlineMGSupport : "{' + parent + '}' + only_path(dev_units, parent) + '" {',
+        ' components {', *lines[formation:block_end(lines, formation) + 1], ' }',
+        *transform, ' m_bPlayable 0', ' m_aUnitPrefabSlots {', *refs, ' }', '}', '',
+    ]
+    return lines[:append] + lines[end + 1:], '\n'.join(ai_group)
 
 
 def stage_scene(source, stock, locally_owned):
