@@ -87,7 +87,14 @@ def stage_rosters(source, source_units, dev_units, stock, locally_owned):
             end = block_end(lines, i)
             if ROOT.fullmatch(lines[i]):
                 try:
-                    body, count, members = group_layer('\n'.join(lines[i:end + 1]), source_units, dev_units,
+                    placement = lines[i:end + 1]
+                    if relative == 'Blufor1/Blufor.layer' and i == 0:
+                        # The HQ has a trailing empty slot, which legacy did not spawn.
+                        empty = placement.index('  ""')
+                        if placement[empty + 1] != ' }':
+                            raise ValueError('Gwotline Ranger HQ empty slot is no longer trailing')
+                        placement = placement[:empty] + placement[empty + 1:]
+                    body, count, members = group_layer('\n'.join(placement), source_units, dev_units,
                                                        stock, locally_owned, CALLSIGNS)
                     staged.append(body)
                     groups += count
@@ -146,5 +153,9 @@ def assemble(source, dev, mode):
     if not lines[0].startswith('SCR_AIWorld '):
         raise ValueError('missing Gwotline Bling AI world placement')
     files[WORLD] = source.read(WORLD)
-    files[DEFAULT] = '\n'.join(lines[:block_end(lines, 0) + 1]) + '\n' + mode
+    ai_world = '\n'.join(lines[:block_end(lines, 0) + 1])
+    # Resolve the obsolete legacy identity against the installed Kunar resource registry.
+    ai_world = ai_world.replace('{77C3151F7A6E588C}Prefabs/SCR_AIWorld_Kunar.et',
+                                '{E2A016456BBC697D}Prefabs/SCR_AIWorld_Kunar.et')
+    files[DEFAULT] = ai_world + '\n' + mode
     return files

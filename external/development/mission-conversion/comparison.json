@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "79bb4264f4b852c1b7e422d3db0ad9d61e2ccbc4",
+  "target": "e4f6bc890ec368db03e5bf87a970ac23fa18a6d3",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -385,7 +385,7 @@
         "worlds/Fruz/Gwotline Bling/Gwotline Bling.ent"
       ],
       "declaredPath": "worlds/Fruz/Gwotline Bling/Gwotline Bling.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{330E37F884C1CD84}worlds/Fruz/Gwotline Bling/Gwotline Bling.ent"
     },
     "Missions/Fruz/Korengal Vacation.conf": {
@@ -6407,7 +6407,9 @@
     "worlds/Fruz/Gwotline Bling/Gwotline Bling.ent": {
       "sourceResourceCount": 10,
       "devPaths": {
-        "absent": 10
+        "absent": 6,
+        "changed": 3,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -6544,7 +6546,7 @@
         }
       },
       "playtestCandidate": {
-        "presentOnDev": false,
+        "presentOnDev": true,
         "remainingBehavior": [
           "Preserve the mixed player and AI machine-gun group",
           "Verify starting slot counts, callsigns, and issued equipment on both sides",
