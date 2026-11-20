@@ -71,7 +71,7 @@ def assemble(source, dev, stock, preset, rules, staged):
 
     briefing = LAYERS + 'briefing.layer'
     text = source.read(briefing)
-    files[briefing], icons = convert_layer(text[text.index('$grp PS_ManualMarker '):])
+    files[briefing], icons = convert_layer(text[text.index('$grp PS_ManualMarker '):], dev)
     text = source.read(DEFAULT)
     files[BOUNDARIES], audit = boundaries(text)
     lines = text.splitlines()

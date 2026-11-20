@@ -21,6 +21,7 @@ import industrial
 import irish
 from launchers import launcher
 from markers import convert_layer as convert_markers
+from markers import relocate_images
 from outcomes import compile_outcomes
 from respawns import read_respawns, ticket_event
 from scenery import StockPrefabs, placements
@@ -205,10 +206,10 @@ def main():
                         out[layer] = source.blobs[source.files[layer]].decode('utf-8')
                     row.setdefault('stockPlacementLayers', {})[layer] = entry
             try:
-                markers = convert_markers(text)
+                markers = convert_markers(text, dev)
                 if markers:
                     body, count = markers
-                    if layer in dev.files and dev.read(layer).strip() != body.strip():
+                    if layer in dev.files and relocate_images(dev.read(layer), dev).strip() != body.strip():
                         raise ValueError('Dev has different layer content')
                     row['markerLayers'][layer] = {'candidateIcons': count}
                     if args.stage_marker_candidates:
@@ -506,7 +507,7 @@ def main():
         candidate, audit, icons = irish.assemble(source, dev, stock, row['briefingModePreset'],
                                                  out[outcome['stagedFragment']], out)
         for path, body in candidate.items():
-            if path in dev.files and dev.read(path).strip() != body.strip():
+            if path in dev.files and relocate_images(dev.read(path), dev).strip() != body.strip():
                 parser.error(f'Dev already has differing {path}')
             out[path] = body
         row['playtestCandidate'] = {
@@ -532,7 +533,7 @@ def main():
             out[outcome['stagedFragment']], arc_areas[world],
         )
         for path, body in candidate.items():
-            if path in dev.files and dev.read(path).strip() != body.strip():
+            if path in dev.files and relocate_images(dev.read(path), dev).strip() != body.strip():
                 boundary_path = world.removesuffix('.ent') + '_Layers/default_GC_Boundaries.layer'
                 prior_vehicles = legacy_vehicle_groups and path.endswith('/Vehicles.layer') and dev.files[path] == source.files[path]
                 prior_timing = (path.endswith('/default.layer')
@@ -588,7 +589,10 @@ def main():
             ],
         }
     if args.batch:
-        out = batch.plan(source, dev, report, out, batch_areas)
+        def convert_group_block(body):
+            return group_layer(body, source_units, dev_units, stock, locally_owned)
+
+        out = batch.plan(source, dev, report, out, batch_areas, convert_group_block)
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
                         for path, contents in out.items()}

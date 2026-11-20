@@ -23,7 +23,7 @@ Set the following paths from a GC Lobby checkout. Use a fresh staging directory 
     $base = 'C:/Program Files (x86)/Steam/steamapps/common/Arma Reforger/addons/data/resourceDatabase.rdb'
     $workshop = "$env:USERPROFILE/Documents/My Games/ArmaReforger/addons"
     python "$tools/convert.py" --missions $repo --dev HEAD --batch --units ../gc-reforger-units --units-dev HEAD --base-database $base --stage $stage --report $inventory
-    python "$tools/review.py" --missions $repo --dev HEAD --inventory $inventory --draft-stage $stage --dependency ../gc-reforger-units --report "$env:TEMP/gc-missions-review.json" --summary "$env:TEMP/gc-missions-review.md"
+    python "$tools/review.py" --missions $repo --dev HEAD --inventory $inventory --draft-stage $stage --dependency ../gc-reforger-units --base-database $base --report "$env:TEMP/gc-missions-review.json" --summary "$env:TEMP/gc-missions-review.md"
 
 The review reports unchanged, changed, source-only and Dev-only files. It locates source and Dev declarations for modes, briefings, rosters, markers and boundaries, respawns, events, weather and vehicles. It flags inconsistent launcher and mission-owned resource references. Use repeatable --mission arguments with exact launcher paths and --patch to produce a focused diff. Omit --draft-stage to compare the committed branches.
 
@@ -291,3 +291,11 @@ A second Play run verified the final 25-rule version. The first pursuit trigger 
 The Arc capture recipe preserves the Zarichne subscene, 72 slots, 11 briefing pages, four markers, one AO boundary, both 120-second staging zones, and all four outcomes. It retains the US and Russian faction callsign tables, two Ural trucks, two Tigrs, and the original night-vision inventory. The version of the legacy extraction script that this mission used counts US players inside the 50-metre sphere against all eligible living players across the mission. The port applies the authored 90 percent threshold and triggers on the next sample. It preserves the 15-second delay to the extraction result notice.
 
 Workbench session logs_2026-11-20_14-41-49 registered 72 slots, 11 groups, 11 briefing pages, four icons, one shape and 12 rules. The 4x4 cover-map quad loaded. The rule passed with nine of ten eligible players and rejected nine of eleven or an empty population. A local US player entered the sphere, received the original victory text and delayed result notice, and advanced to after-action report after both staging zones released. Occupied-side casualties, remote delivery and issued equipment remain open. Both extraction missions are committed to local Missions Dev in d9308b98.
+
+## Mixed layers and moved marker assets
+
+The batch converter now applies group conversion to each recognized block when a layer also contains other entity types. The report records the source line, group and slot totals for those blocks. It reports each roster failure at its placement and lists advertised launcher counts alongside the verified slots. Match-start notifications and outcome rules can share a framework when their source locations account for every event.
+
+Ravine Ruckus was generated and committed to Missions Dev in 493f395e. File comparison verified 20 CDF and 22 Russian slots, ten briefing pages, two 300-second capture spheres, five outcomes and 120-second staging. The original 44-player listing was retained. The migrated map reuses the converted AO and its inverted fill. The legacy TilW AO prefab leaves its optional cover component disabled. The source placement overrides its width without enabling it, while the separate map-shape component is explicitly enabled. Explicitly enabled cover components continue to require a separate rule. Capture, roster and map parity were reviewed from files and registered resources.
+
+The marker converter resolves moved image assets against a unique Dev GUID and matching resource metadata. Missions Dev commit 2545c429 fixes the stale cover-map paths in Foreign Exchange Students and Irish Checkpoint. The reviewer also accepts a dependency path alias when the game resource database explicitly registers the same GUID and path.

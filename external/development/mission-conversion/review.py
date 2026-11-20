@@ -12,6 +12,7 @@ import subprocess
 
 from catalog import REF, SOURCE_TEXT, Snapshot, TYPES
 from launchers import META_NAME, WORLD_REF, launcher
+from scenery import StockPrefabs
 
 LEGACY = re.compile(r'^(?:TILW|PS)_')
 AREAS = {
@@ -62,7 +63,7 @@ def inspect(snapshot, paths):
     return areas, declarations, references
 
 
-def compare_mission(source, target, header, notes, dependencies):
+def compare_mission(source, target, header, notes, dependencies, stock):
     issues = []
     try:
         world, resource, _ = launcher(source, target, header)
@@ -89,8 +90,11 @@ def compare_mission(source, target, header, notes, dependencies):
         issues.append('GC Lobby mode placement or native-mode exception needs review')
     local_refs = []
     for (guid, path), owners in sorted(refs.items()):
-        target_paths = target.resources.get(guid, dependencies.get(guid, []))
+        owned = target.resources.get(guid, [])
+        target_paths = owned or dependencies.get(guid, [])
         if (target_paths or guid in source.resources) and target_paths != [path]:
+            if not owned and stock and stock.contains(guid, path):
+                continue
             local_refs.append({'guid': guid, 'path': path, 'devPaths': target_paths, 'referencedBy': sorted(owners)})
     if local_refs:
         issues.append('Mission-owned resource identities or paths need review')
@@ -178,6 +182,7 @@ def main():
     parser.add_argument('--dev', default='origin/dev')
     parser.add_argument('--inventory', type=Path, help='optional convert.py comparison for the same commits')
     parser.add_argument('--dependency', action='append', type=Path, default=[], help='addon checkout at HEAD, such as Units')
+    parser.add_argument('--base-database', type=Path, help='check stock resource aliases before reporting dependency mismatches')
     parser.add_argument('--report', required=True, type=Path, help='JSON file with per-mission paths and line numbers')
     parser.add_argument('--summary', type=Path, help='optional Markdown table')
     parser.add_argument('--mission', action='append', help='exact legacy launcher path, repeat to select a batch')
@@ -209,7 +214,8 @@ def main():
     for addon in args.dependency:
         for resource, paths in Snapshot(addon, 'HEAD').resources.items():
             dependencies[resource].extend(path for path in paths if path not in dependencies[resource])
-    missions = {header: compare_mission(source, target, header, notes, dependencies) for header in sorted(selected)}
+    stock = StockPrefabs(args.base_database) if args.base_database else None
+    missions = {header: compare_mission(source, target, header, notes, dependencies, stock) for header in sorted(selected)}
     report = {'source': source.commit, 'target': target.commit, 'missions': missions}
     if args.draft_stage:
         report['includesDraft'] = True

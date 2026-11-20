@@ -73,6 +73,8 @@ def settings(lines):
         body = lines[i+1:end]
         if head[1] == 'TILW_AOLimitComponent':
             result = properties(body, ALLOWED)
+        # The standard legacy AO prefab disables both visual components.
+        # An instance can store style values without enabling either component.
         elif any(l.strip().startswith('Enabled ') and l.strip() != 'Enabled 0' for l in body):
             if head[1] != 'TILW_MapShapeComponent':
                 raise ValueError('active cover map needs separate conversion')

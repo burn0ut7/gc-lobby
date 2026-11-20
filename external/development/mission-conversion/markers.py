@@ -1,6 +1,7 @@
 """Port standalone legacy icon layers whose visual and audience fields are understood."""
 import re
 from briefings import block_end, properties
+from launchers import META_NAME
 
 BASE = 'CD85ADE9E0F54679'
 LEGACY = re.compile(r'^(?P<group>\$grp )?PS_ManualMarker(?: (?P<name>[\w.\-]+))? : "\{(?P<guid>[A-Fa-f0-9]{16})\}[^"]+" \{$')
@@ -68,7 +69,24 @@ def instance(lines, name, inherited=None):
     return '\n'.join(output + ['}'])
 
 
-def convert_layer(text):
+def relocate_images(text, dev):
+    pattern = re.compile(r'(?m)^(   m_s(?:ImageSetOrImage|HighlightImageSet) "\{)([\da-fA-F]{16})(\})([^"\n]+)(")$')
+
+    def resolve(match):
+        guid = match[2].upper()
+        paths = dev.resources.get(guid, [])
+        if len(paths) != 1 or paths[0] == match[4]:
+            return match[0]
+        path = paths[0]
+        identity = META_NAME.search(dev.read(path + '.meta'))
+        if not identity or identity[3] != path or not path.endswith(('.imageset', '.edds')):
+            return match[0]
+        return match[1] + match[2] + match[3] + path + match[5]
+
+    return pattern.sub(resolve, text)
+
+
+def convert_layer(text, dev=None):
     """Process complete icon-only layers. Mixed layers keep their original ordering for review."""
     if not re.search(r'^(?:\$grp )?PS_ManualMarker\b', text, re.M):
         return None
@@ -101,4 +119,5 @@ def convert_layer(text):
         except ValueError as exc:
             raise ValueError(f'line {i + 1 if match["group"] else start + 1} {exc}') from exc
         i = stop + 1
-    return '\n'.join(result) + '\n', len(result)
+    output = '\n'.join(result) + '\n'
+    return (relocate_images(output, dev) if dev else output), len(result)

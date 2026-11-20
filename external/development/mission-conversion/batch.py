@@ -11,6 +11,7 @@ from catalog import REF, SOURCE_TEXT
 from extraction import condition as extraction_condition
 from launchers import META_NAME, launcher
 from markers import convert_layer
+from outcomes import FRAMEWORK
 
 LEGACY = re.compile(r'\b(?:TILW|PS)_\w+')
 MODE = re.compile(r'^PS_GameModeCoop(?: [\w.-]+)? : "\{4CFD54745CD45673\}[^"]+" \{$')
@@ -230,7 +231,7 @@ def render_mode(world, root, preset, additional_rules, zones):
 '''
 
 
-def world_draft(source, dev, world, row, staged, area_placements):
+def world_draft(source, dev, world, row, staged, area_placements, convert_group_block):
     draft, blockers = {}, []
     if row.get('playtestCandidate') or row.get('raceConversion'):
         return {}, {'status': 'explicit recipe'}
@@ -245,8 +246,11 @@ def world_draft(source, dev, world, row, staged, area_placements):
         blockers.append({'rule': 'respawn', 'file': world})
     outcome = row.get('outcomeCandidate', {})
     rules = outcome.get('events', {})
-    framework_supported = (len(rules) == row['serializedTypes'].get('TILW_MissionEvent', 0)
-                           and not outcome.get('gap') and all('gap' not in event for event in rules.values()))
+    notices = {location for location, entry in row.get('frameworkEvents', {}).items()
+               if 'notificationDelaysSeconds' in entry}
+    represented = notices | {location for location, entry in rules.items() if 'gap' not in entry}
+    framework_supported = (len(represented) == row['serializedTypes'].get('TILW_MissionEvent', 0)
+                           and not outcome.get('gap'))
     rule_text = staged.get(outcome.get('stagedFragment'), '')
     used_flags = {event.get('flag') for event in rules.values() if 'gap' not in event}
     mode = None
@@ -255,6 +259,7 @@ def world_draft(source, dev, world, row, staged, area_placements):
     parts = {}
     boundaries = {}
     reused_layers = set()
+    group_blocks = []
     for layer in source.layers[world.lower()]:
         if layer in staged:
             parts[layer] = [staged[layer]]
@@ -273,19 +278,23 @@ def world_draft(source, dev, world, row, staged, area_placements):
                     result.append('')
                 elif kind == 'PS_MissionDescription' and preset and not row['briefingGaps']:
                     continue
-                elif kind == 'TILW_MissionFrameworkEntity' and framework_supported and rule_text:
+                elif FRAMEWORK.fullmatch(head) and framework_supported and represented:
                     roots = [field.strip().split()[0] for field in block[1:-1]
                              if field.startswith(' ') and not field.startswith('  ') and field.strip() != '}']
                     if set(roots) - {'coords', 'm_missionEvents', 'm_casualtyFlags', 'm_suppressGameEnd'}:
                         blockers.append({'rule': 'framework settings', 'file': layer, 'line': line, 'detail': roots})
+                elif kind == 'SCR_AIGroup':
+                    try:
+                        converted, count, slots = convert_group_block(body)
+                        result.append(converted)
+                        group_blocks.append({'file': layer, 'line': line, 'groups': count, 'slots': slots})
+                    except ValueError as exc:
+                        blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
                 elif (layer, line) in area_placements and area_placements[(layer, line)][0] <= used_flags:
                     result.append(area_placements[(layer, line)][1])
                 elif kind == 'PS_ManualMarker':
-                    result.append(convert_layer(body)[0])
+                    result.append(convert_layer(body, dev)[0])
                 elif 'TILW_AOLimit.et' in head or 'TILW_MapShape.et' in head:
-                    if 'TILW_CoverMapComponent' in body:
-                        blockers.append({'rule': 'cover-map overrides', 'file': layer, 'line': line})
-                        continue
                     converted, audit = convert_boundaries(body, allow_public_faction_color=True)
                     if not converted or any('gap' in item for item in audit.values()):
                         blockers.append({'rule': 'boundary or map shape', 'file': layer, 'line': line, 'detail': audit})
@@ -371,16 +380,24 @@ def world_draft(source, dev, world, row, staged, area_placements):
         data = dev.read_raw(path) if isinstance(text, bytes) else dev.read_raw(path).decode('utf-8-sig').replace('\r\n', '\n')
         if data.strip() != text.strip():
             blockers.append({'rule': 'existing Dev file differs', 'file': path})
+    complete_rosters = (entry.get('unitPrefabEntries', 0) for entry in row.get('groupLayers', {}).values())
+    slots = sum(complete_rosters) + sum(entry['slots'] for entry in group_blocks)
+    advertised = {}
+    for header in row['headers']:
+        count = re.search(r'^\s*m_iPlayerCount (\d+)\s*$', source.read(header), re.M)
+        if count:
+            advertised[header] = int(count[1])
     return ({} if blockers else draft), {
         'status': 'blocked by conversion rules' if blockers else 'generated for file review',
-        'blockers': blockers, 'files': sorted(draft),
+        'blockers': blockers, 'files': sorted(draft), 'mixedLayerGroups': group_blocks,
+        'verifiedPlayableSlots': slots, 'advertisedSlots': advertised,
     }
 
 
-def plan(source, dev, report, staged, area_placements):
+def plan(source, dev, report, staged, area_placements, convert_group_block):
     results, emitted, totals, families = {}, {}, Counter(), Counter()
     for world, row in report['worlds'].items():
-        draft, result = world_draft(source, dev, world, row, staged, area_placements.get(world, {}))
+        draft, result = world_draft(source, dev, world, row, staged, area_placements.get(world, {}), convert_group_block)
         results[world] = result
         totals[result['status']] += 1
         families.update({blocker['rule'] for blocker in result.get('blockers', [])})

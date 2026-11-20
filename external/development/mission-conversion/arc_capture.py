@@ -287,7 +287,7 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
                 files[path] = ''.join(kept)
         elif part.lower() == 'briefing.layer':
             text = source.read(path)
-            files[path], icons = convert_layer(text[text.index('$grp PS_ManualMarker '):])
+            files[path], icons = convert_layer(text[text.index('$grp PS_ManualMarker '):], dev)
 
     default = folder + 'default.layer'
     boundary_path = folder + 'default_GC_Boundaries.layer'

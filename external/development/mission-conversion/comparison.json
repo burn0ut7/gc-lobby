@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "d9308b9881c71e2a9654f9f8c459274c745cc902",
+  "target": "2545c4298c18c3b4c76fca2df16847a077108673",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -329,7 +329,7 @@
         "worlds/Elite/DesertHeat/DesertHeat.ent"
       ],
       "declaredPath": "worlds/Elite/DesertHeat/DesertHeat.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{532819E2983D700A}worlds/Elite/DesertHeat/DesertHeat.ent"
     },
     "Missions/Elite/PonderingThyOrb.conf": {
@@ -2017,7 +2017,7 @@
         "worlds/arc/RavineRuckus/RavineRuckus.ent"
       ],
       "declaredPath": "worlds/arc/RavineRuckus/RavineRuckus.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{761ACEFA85BA1C75}worlds/arc/RavineRuckus/RavineRuckus.ent"
     },
     "Missions/arc/Retribution.conf": {
@@ -5976,8 +5976,9 @@
     "worlds/Elite/DesertHeat/DesertHeat.ent": {
       "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 8,
-        "changed": 1
+        "absent": 1,
+        "changed": 6,
+        "identical": 2
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -6001,7 +6002,7 @@
       ],
       "markerLayers": {
         "worlds/Elite/DesertHeat/DesertHeat_Layers/Markers.layer": {
-          "gap": "line 24 custom or duplicate field m_bringToFront"
+          "candidateIcons": 3
         }
       },
       "groupLayers": {
@@ -6022,7 +6023,7 @@
               "lastLine": 57
             }
           },
-          "placementLayer": "worlds/Elite/DesertHeat/DesertHeat_Layers/default_GC_Boundaries.layer"
+          "gap": "Dev already contains the original layer path; review before adding boundary siblings"
         }
       },
       "directBriefingsRead": 10,
@@ -8478,10 +8479,10 @@
           "gap": "line 1 mixed or custom placement"
         },
         "worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_Layers/CORE/Markers_2nd.layer": {
-          "gap": "line 13 custom or duplicate field m_bringToFront"
+          "candidateIcons": 22
         },
         "worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_Layers/CORE/Markers_3rd.layer": {
-          "gap": "line 13 custom or duplicate field m_bringToFront"
+          "candidateIcons": 31
         }
       },
       "groupLayers": {
@@ -8620,10 +8621,10 @@
           "gap": "line 1 mixed or custom placement"
         },
         "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/CORE/Markers_2nd.layer": {
-          "gap": "line 13 custom or duplicate field m_bringToFront"
+          "candidateIcons": 23
         },
         "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/CORE/Markers_3rd.layer": {
-          "gap": "line 13 custom or duplicate field m_bringToFront"
+          "candidateIcons": 31
         }
       },
       "groupLayers": {
@@ -8802,10 +8803,10 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 14
         },
         "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -9070,13 +9071,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/BMP Incursion/BMPIncursion_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/BMP Incursion/BMPIncursion_Layers/CORE/All_Markers.layer": {
-          "gap": "line 1 custom or duplicate field m_bringToFront"
+          "gap": "line 1 separate unassigned audience"
         },
         "worlds/HitTheMan/BMP Incursion/BMPIncursion_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 4
         },
         "worlds/HitTheMan/BMP Incursion/BMPIncursion_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -9245,10 +9246,10 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/CORE/All_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 marker phase set needs review"
         },
         "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/Players_Soviets/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 16 custom or duplicate field m_iZOrder"
         },
         "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/Players_UK/UK_Markers.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -9361,10 +9362,10 @@
           "gap": "line 1 mixed or custom placement"
         },
         "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/TAK_Players/TAK_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 15
         },
         "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/US_Players/US_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 7
         },
         "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -9502,16 +9503,16 @@
           "gap": "line 1 mixed or custom placement"
         },
         "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/CORE/Pub_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/NVA_Players/NVA_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 10
         },
         "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/NVA_Players/NVA_Players.layer": {
           "gap": "line 1 mixed or custom placement"
         },
         "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/US_Players/US_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 3
         },
         "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -9631,13 +9632,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/CORE/Pub_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/NVA_Players/NVA_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 11
         },
         "worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/US_Players/US_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 5
         },
         "worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -9839,7 +9840,7 @@
           "gap": "line 1 mixed or custom placement"
         },
         "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 2
         },
         "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -10181,13 +10182,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Brambledeep Adventure/BrambledeepAdventure_Layers/CORE/All_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/Brambledeep Adventure/BrambledeepAdventure_Layers/Players_Soviets/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 7
         },
         "worlds/HitTheMan/Brambledeep Adventure/BrambledeepAdventure_Layers/Players_UK/UK_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 68 separate unassigned audience"
         }
       },
       "groupLayers": {
@@ -10279,13 +10280,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 18 separate unassigned audience"
         },
         "worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov_Layers/CORE/All_Markers.layer": {
-          "gap": "line 1 custom or duplicate field m_bringToFront"
+          "gap": "line 1 separate unassigned audience"
         },
         "worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 26
         }
       },
       "groupLayers": {
@@ -10375,13 +10376,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 marker phase set needs review"
         },
         "worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo_Layers/CORE/All_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 13 separate unassigned audience"
         },
         "worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 5
         }
       },
       "groupLayers": {
@@ -10482,13 +10483,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Clearing The Path/ClearingThePath_Layers/CORE/All_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/Clearing The Path/ClearingThePath_Layers/Players_Soviets/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 6
         },
         "worlds/HitTheMan/Clearing The Path/ClearingThePath_Layers/Players_UK/UK_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 2
         }
       },
       "groupLayers": {
@@ -10699,13 +10700,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Devils Crossing/DevilsCrossing_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 2
         },
         "worlds/HitTheMan/Devils Crossing/DevilsCrossing_Layers/CORE/All_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/Devils Crossing/DevilsCrossing_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 6
         }
       },
       "groupLayers": {
@@ -10920,7 +10921,7 @@
           "gap": "line 2 custom or duplicate field m_iZOrder"
         },
         "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon_Layers/US_Players/US_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -11018,16 +11019,16 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/CORE/Pub_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 marker phase set needs review"
         },
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/NVA_Players/NVA_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 7
         },
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/NVA_Players/NVA_Players.layer": {
           "gap": "line 1 mixed or custom placement"
         },
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/US_Players/US_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 142 marker phase set needs review"
         },
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -11142,13 +11143,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/CDF_Players/CDF_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 11
         },
         "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/CORE/Pub_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 marker phase set needs review"
         },
         "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/SEP_Players/SEP_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 44 marker phase set needs review"
         },
         "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -11272,10 +11273,10 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Green Hill Assault/GreenHillAssault_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/Green Hill Assault/GreenHillAssault_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 4
         }
       },
       "groupLayers": {
@@ -11360,10 +11361,10 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Hall Boss Mines/HallBossMines_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 16 separate unassigned audience"
         },
         "worlds/HitTheMan/Hall Boss Mines/HallBossMines_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 1 custom or duplicate field m_bringToFront"
+          "candidateIcons": 1
         }
       },
       "groupLayers": {
@@ -11446,10 +11447,10 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Hall Boss/HallBoss_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 16 separate unassigned audience"
         },
         "worlds/HitTheMan/Hall Boss/HallBoss_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 1 custom or duplicate field m_bringToFront"
+          "candidateIcons": 1
         }
       },
       "groupLayers": {
@@ -11869,13 +11870,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/CDF_Players/CDF_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 4
         },
         "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/CORE/Pub_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 marker phase set needs review"
         },
         "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/SEP_Players/SEP_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 16 marker phase set needs review"
         },
         "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -11968,13 +11969,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 2
         },
         "worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence_Layers/CORE/All_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 3
         }
       },
       "groupLayers": {
@@ -12090,13 +12091,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 2
         },
         "worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice_Layers/CORE/All_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 2
         }
       },
       "groupLayers": {
@@ -12329,13 +12330,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 3
         },
         "worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/CORE/All_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 7
         }
       },
       "groupLayers": {
@@ -12432,7 +12433,7 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/CORE/Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 27 custom or duplicate field m_iZOrder"
         }
       },
       "groupLayers": {
@@ -12631,13 +12632,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 2
         },
         "worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_Layers/CORE/All_Markers.layer": {
-          "gap": "line 1 custom or duplicate field m_bringToFront"
+          "gap": "line 1 separate unassigned audience"
         },
         "worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 120 custom or duplicate field {"
         }
       },
       "groupLayers": {
@@ -13052,7 +13053,7 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla_Layers/CORE/ObjMarkers.layer": {
           "gap": "line 2 custom or duplicate field m_iZOrder"
@@ -13064,7 +13065,7 @@
           "gap": "line 1 mixed or custom placement"
         },
         "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 8
         }
       },
       "groupLayers": {
@@ -13284,16 +13285,16 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_Layers/CORE/All_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_Layers/Players_Canadians/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 3
         },
         "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_Layers/Players_Soviets/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 3
         },
         "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_Layers/Players_UK/UK_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 3
         }
       },
       "groupLayers": {
@@ -13458,7 +13459,7 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 20 marker phase set needs review"
         },
         "worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -13577,7 +13578,7 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/CORE/All_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 marker phase set needs review"
         },
         "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/Players_Soviets/OPFOR_Markers.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -13707,13 +13708,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 18 separate unassigned audience"
         },
         "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/CORE/All_Markers.layer": {
-          "gap": "line 1 custom or duplicate field m_bringToFront"
+          "gap": "line 1 marker phase set needs review"
         },
         "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 14
         },
         "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -13799,10 +13800,10 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 18 separate unassigned audience"
         },
         "worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_Layers/OPFOR_Players/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 2 separate unassigned audience"
         },
         "worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -13910,13 +13911,13 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn_Layers/CORE/All_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "gap": "line 14 marker phase set needs review"
         },
         "worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn_Layers/Players_Soviets/OPFOR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 7
         },
         "worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn_Layers/Players_UK/UK_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 2
         }
       },
       "groupLayers": {
@@ -15713,7 +15714,7 @@
           "gap": "line 1 mixed or custom placement"
         },
         "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs_Layers/uk_markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 7
         },
         "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs_Layers/ussr_markers.layer": {
           "candidateIcons": 2
@@ -18418,7 +18419,7 @@
       ],
       "markerLayers": {
         "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/BLUFOR/BLUFOR_Markers.layer": {
-          "gap": "line 12 custom or duplicate field m_bringToFront"
+          "candidateIcons": 2
         },
         "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/CORE/ALL_Markers.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -18547,7 +18548,7 @@
           "gap": "line 1 mixed or custom placement"
         },
         "worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR_Layers/USSR/USSR_Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 6
         }
       },
       "groupLayers": {
@@ -18670,7 +18671,7 @@
       ],
       "markerLayers": {
         "worlds/Perfk/AbadDayinKunarUSTVT/AbadDayinKunarUSTVT_Layers/BLUFOR/BLUFOR_Markers.layer": {
-          "gap": "line 12 custom or duplicate field m_bringToFront"
+          "candidateIcons": 3
         },
         "worlds/Perfk/AbadDayinKunarUSTVT/AbadDayinKunarUSTVT_Layers/CORE/ALL_Markers.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -27458,7 +27459,7 @@
       ],
       "markerLayers": {
         "worlds/Wade/TheLocalFiles/TheLocalFiles_Layers/Markers.layer": {
-          "gap": "line 2 custom or duplicate field m_bringToFront"
+          "candidateIcons": 3
         }
       },
       "groupLayers": {
@@ -28650,7 +28651,7 @@
       ],
       "markerLayers": {
         "worlds/anteante101/Castle Crushers/CastleCrushers_Layers/marker.layer": {
-          "gap": "line 26 custom or duplicate field m_bringToFront"
+          "candidateIcons": 3
         }
       },
       "groupLayers": {
@@ -33667,8 +33668,9 @@
     "worlds/arc/RavineRuckus/RavineRuckus.ent": {
       "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 7,
-        "changed": 2
+        "absent": 2,
+        "changed": 6,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -33712,7 +33714,7 @@
               "lastLine": 83
             }
           },
-          "placementLayer": "worlds/arc/RavineRuckus/RavineRuckus_Layers/default_GC_Boundaries.layer"
+          "gap": "Dev already contains the original layer path; review before adding boundary siblings"
         }
       },
       "groupLayers": {
