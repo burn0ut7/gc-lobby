@@ -6446,15 +6446,20 @@
         "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/AO.layer": {
           "instances": {
             "2": {
-              "gap": "native polygon requires 3 to 128 points"
+              "vertices": 0,
+              "inert": "Legacy AO initialization returns before drawing or enforcement"
             },
             "5": {
-              "gap": "native polygon requires 3 to 128 points"
+              "vertices": 2,
+              "inert": "Legacy AO initialization returns before drawing or enforcement"
             },
             "16": {
-              "gap": "public outline colored by a restricted faction"
+              "vertices": 5,
+              "name": null,
+              "lastLine": 42
             }
-          }
+          },
+          "placementLayer": "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/AO_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -6499,7 +6504,7 @@
         "remainingBehavior": [
           "Preserve the mixed player and AI machine-gun group and the BLUFOR floodlights",
           "Verify starting slot counts, callsigns, and issued equipment on both sides",
-          "Resolve AO prefab defaults and preserve public faction color and map-only settings",
+          "Compare the public AO outline and verify that the authored GC_MUC key has no members",
           "Convert the markers in the ammunition layer and verify both map audiences",
           "Transfer the custom faction callsigns and verify both starting areas",
           "Compare the 3,900-second Time Limit event, which has no serialized condition",

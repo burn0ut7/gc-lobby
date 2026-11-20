@@ -1,10 +1,12 @@
 """Stage Gwotline Bling's reviewed GC Lobby game mode for world assembly."""
+from boundaries import convert_boundaries
 from briefings import block_end, guid
 from events import peak_notifications
 from groups import ROOT, group_layer
 
 WORLD = 'worlds/Fruz/Gwotline Bling/Gwotline Bling.ent'
 DEFAULT = WORLD[:-4] + '_Layers/default.layer'
+AO = DEFAULT.removesuffix('default.layer') + 'AO.layer'
 GROUPS = {
     'Blufor1/Blufor.layer': '15814895695ea27140f4d286b38cbe859be90430',
     'Opfor1/OPFOR.layer': '5659970f638434e7de5bb62625cd0f2429064b57',
@@ -13,12 +15,25 @@ CALLSIGNS = frozenset({'6508C3582F634926', '68B37CEF862EBFE6', '6508C35869053D73
 GAPS = [
     'Preserve the mixed player and AI machine-gun group and the BLUFOR floodlights',
     'Verify starting slot counts, callsigns, and issued equipment on both sides',
-    'Resolve AO prefab defaults and preserve public faction color and map-only settings',
+    'Compare the public AO outline and verify that the authored GC_MUC key has no members',
     'Convert the markers in the ammunition layer and verify both map audiences',
     'Transfer the custom faction callsigns and verify both starting areas',
     'Compare the 3,900-second Time Limit event, which has no serialized condition',
     'Verify vehicles, staging restrictions, weather and both casualty notifications in play',
 ]
+
+
+def stage_boundaries(source):
+    if source.files[AO] != '04b3bf78f1ba1b040bacea3649aef58a514014d2':
+        raise ValueError('Gwotline Bling source AO layer changed')
+    body, audit = convert_boundaries(source.read(AO), allow_public_faction_color=True)
+    if set(audit) != {'2', '5', '16'} or audit['16'].get('vertices') != 5:
+        raise ValueError('Gwotline Bling AO geometry changed')
+    for line, points in [('2', 0), ('5', 2)]:
+        if audit[line].get('gap') != 'native polygon requires 3 to 128 points':
+            raise ValueError('expected inert legacy AO placement at line ' + line)
+        audit[line] = {'vertices': points, 'inert': 'Legacy AO initialization returns before drawing or enforcement'}
+    return body, audit
 
 
 def stage_mode(source, preset):

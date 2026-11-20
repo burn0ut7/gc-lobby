@@ -81,7 +81,10 @@ def main():
         for layer in source.layers[world.lower()]:
             text = source.read(layer)
             if world not in (RACE_WORLD, RUHA_WORLD):
-                ao_body, instances = convert_boundaries(text)
+                if args.include_gwotline_mode and layer == gwotline.AO:
+                    ao_body, instances = gwotline.stage_boundaries(source)
+                else:
+                    ao_body, instances = convert_boundaries(text)
                 if instances:
                     audit = {'instances': instances}
                     row.setdefault('boundaryLayers', {})[layer] = audit

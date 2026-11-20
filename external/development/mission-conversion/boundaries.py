@@ -104,7 +104,7 @@ def convert_passive(name, placement, overlay):
     return '\n'.join([*lines, '  }', ' }', *placement, '}'])
 
 
-def convert_instance(lines, name, passive_only=False):
+def convert_instance(lines, name, passive_only=False, allow_public_faction_color=False):
     values, overlay = {}, {}
     placement = []
     vertices = []
@@ -175,7 +175,8 @@ def convert_instance(lines, name, passive_only=False):
             or not 0.1 <= float(grace) <= 3600 or not 1 <= float(width) <= 20
             or values.get('Enabled','1') != '1' or not all(0 <= x <= 1 for x in floats(color,4))):
         raise ValueError('unsupported boundary settings')
-    if keys and faction_color == '1' and visibility == 'ALL':
+    public_tint = bool(keys) and faction_color == '1' and visibility == 'ALL'
+    if public_tint and not allow_public_faction_color:
         raise ValueError('public outline colored by a restricted faction')
     visible = visibility == 'ALL' or (visibility == 'FACTION' and bool(keys))
     map_keys = keys if visibility == 'FACTION' else ''
@@ -205,6 +206,9 @@ def convert_instance(lines, name, passive_only=False):
         lines.extend(['   m_FillColor '+fill_color, '   m_bInvertFill '+invert])
     if map_keys:
         lines.extend(['   m_aFactionKeys {','    '+map_keys,'   }', '   m_bFactionColor '+use_color])
+    if public_tint:
+        first_key = re.search(r'"[\w.-]+"', keys)[0]
+        lines.extend(['   m_bFactionColor 1', '   m_sOutlineFactionKey ' + first_key])
     lines.extend(['  }',' }',' m_eBehavior SOFT_KILL',' m_fGraceSeconds '+grace])
     if keys:
         lines.extend([' m_aFactionKeys {','  '+keys,' }'])
@@ -213,7 +217,7 @@ def convert_instance(lines, name, passive_only=False):
     return '\n'.join([*lines,*placement,'}']), len(vertices)
 
 
-def convert_boundaries(text):
+def convert_boundaries(text, allow_public_faction_color=False):
     lines = text.splitlines()
     emitted, review = [], {}
     for i,line in enumerate(lines):
@@ -236,7 +240,8 @@ def convert_boundaries(text):
             instances.append((i,end,root['name']))
         for start, stop, name in instances:
             try:
-                body,count = convert_instance(lines[start+1:stop], ' '+name if name else '')
+                body,count = convert_instance(lines[start+1:stop], ' '+name if name else '',
+                                              allow_public_faction_color=allow_public_faction_color)
                 emitted.append(body)
                 review[str(start+1)] = {'vertices':count,'name':name,'lastLine':stop+1}
             except ValueError as error:

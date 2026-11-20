@@ -17,8 +17,10 @@ class GC_MapShapeComponent : ScriptComponent
 	protected ref Color m_LineColor;
 	[Attribute("3", UIWidgets.EditBox, "Line width in UI pixels, independent of map zoom.", params: "1 20", category: "Outline")]
 	protected float m_fLineWidth;
-	[Attribute("0", UIWidgets.CheckBox, "Use the first listed faction's color for the outline. No matching faction uses Outline Color.", category: "Outline")]
+	[Attribute("0", UIWidgets.CheckBox, "Use the outline faction color. No matching faction uses Outline Color.", category: "Outline")]
 	protected bool m_bFactionColor;
+	[Attribute("", UIWidgets.Auto, "Optional faction key for outline tint, independent of visibility. Empty uses the first listed visibility faction.", category: "Outline")]
+	protected FactionKey m_sOutlineFactionKey;
 	[Attribute("1", UIWidgets.CheckBox, "Draw a uniform solid fill. Disable for outline only.", category: "Fill")]
 	protected bool m_bFillEnabled;
 	[Attribute("0", UIWidgets.CheckBox, "Fill outside the polygon instead of inside. The interior remains clear.", category: "Fill")]
@@ -182,8 +184,8 @@ class GC_MapShapeComponent : ScriptComponent
 		Color lineColor = m_LineColor;
 		if (m_bFactionColor)
 		{
-			string key;
-			if (m_aFactionKeys && !m_aFactionKeys.IsEmpty())
+			string key = m_sOutlineFactionKey;
+			if (key.IsEmpty() && m_aFactionKeys && !m_aFactionKeys.IsEmpty())
 				key = m_aFactionKeys[0];
 			Faction colorFaction;
 			FactionManager factions = GetGame().GetFactionManager();
