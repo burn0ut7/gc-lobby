@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "2a334cc578b6ab16d09b9016b5efcd6eda4603b1",
+  "target": "b8615075c495cb0f355ea07b8de9290619a0bbd2",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1990,7 +1990,8 @@
     "worlds/Aurelas/Spearhead Air Support/SpearheadAirSupport.ent": {
       "sourceResourceCount": 17,
       "devPaths": {
-        "absent": 17
+        "absent": 16,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -2020,6 +2021,14 @@
       "markerLayers": {
         "worlds/Aurelas/Spearhead Air Support/SpearheadAirSupport_Layers/Map_Markers.layer": {
           "gap": "line 2 separate unassigned audience"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/Aurelas/Spearhead Air Support/SpearheadAirSupport_Layers/Beauregard_Waypoints.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 20
         }
       },
       "directBriefingsRead": 0,
@@ -2227,7 +2236,8 @@
     "worlds/Blue/Ruckusberg/RuckusBerg.ent": {
       "sourceResourceCount": 20,
       "devPaths": {
-        "absent": 20
+        "absent": 19,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -2267,6 +2277,14 @@
         },
         "worlds/Blue/Ruckusberg/RuckusBerg_Layers/USSR/MarkersRU.layer": {
           "gap": "line 1 inherited marker preset 60226647F08EF462"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/Blue/Ruckusberg/RuckusBerg_Layers/UK/CONVOY/WAYPOINTS.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 1
         }
       },
       "directBriefingsRead": 10,
@@ -2377,7 +2395,8 @@
     "worlds/Burger4606/Hush/Hush.ent": {
       "sourceResourceCount": 10,
       "devPaths": {
-        "absent": 10
+        "absent": 9,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -2403,6 +2422,14 @@
       "markerLayers": {
         "worlds/Burger4606/Hush/Hush_Layers/Markers.layer": {
           "gap": "line 2 separate unassigned audience"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/Burger4606/Hush/Hush_Layers/WAYPOINTS.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 22
         }
       },
       "directBriefingsRead": 0,
@@ -3366,7 +3393,8 @@
     "worlds/Cunnah/Local_Problems/Local_Problems.ent": {
       "sourceResourceCount": 29,
       "devPaths": {
-        "absent": 29
+        "absent": 28,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -3402,6 +3430,14 @@
       "markerLayers": {
         "worlds/Cunnah/Local_Problems/Local_Problems_Layers/Markers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/Cunnah/Local_Problems/Local_Problems_Layers/Props.layer": {
+          "types": [
+            "scenery"
+          ],
+          "placements": 29
         }
       },
       "directBriefingsRead": 10,
@@ -3588,7 +3624,8 @@
     "worlds/Elite/ConcreteJungle/ConcreteJungle.ent": {
       "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 9
+        "absent": 8,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -3613,6 +3650,14 @@
       "markerLayers": {
         "worlds/Elite/ConcreteJungle/ConcreteJungle_Layers/Markers.layer": {
           "candidateIcons": 10
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/Elite/ConcreteJungle/ConcreteJungle_Layers/Waypoints.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 6
         }
       },
       "directBriefingsRead": 1,
@@ -3942,7 +3987,8 @@
     "worlds/FloridaMan/worlds/AAC/AAC_ThroughTheValley/AAC_ThroughTheValley.ent": {
       "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 8
+        "absent": 7,
+        "identical": 1
       },
       "serializedTypes": {
         "GC_AASCounterattack": 7,
@@ -3962,6 +4008,14 @@
       "configurationOverrides": {},
       "headers": [],
       "markerLayers": {},
+      "stockPlacementLayers": {
+        "worlds/FloridaMan/worlds/AAC/AAC_ThroughTheValley/AAC_ThroughTheValley_Layers/Waypoints.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 1
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": []
     },
@@ -4294,7 +4348,8 @@
     "worlds/Fruz/Operation Tampa/Operation Tampa.ent": {
       "sourceResourceCount": 13,
       "devPaths": {
-        "absent": 13
+        "absent": 12,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -4328,6 +4383,14 @@
       "markerLayers": {
         "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/Briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/Waypoint.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 4
         }
       },
       "directBriefingsRead": 10,
@@ -5191,7 +5254,8 @@
     "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly.ent": {
       "sourceResourceCount": 24,
       "devPaths": {
-        "absent": 24
+        "absent": 22,
+        "identical": 2
       },
       "serializedTypes": {
         "PS_FactionRespawnCount": 2,
@@ -5269,6 +5333,20 @@
         },
         "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/CORE/Props.layer": {
+          "types": [
+            "scenery"
+          ],
+          "placements": 36
+        },
+        "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/CORE/Props_Lights.layer": {
+          "types": [
+            "scenery"
+          ],
+          "placements": 3
         }
       },
       "directBriefingsRead": 11,
@@ -5531,7 +5609,8 @@
     "worlds/HitTheMan/Damn The Dam/Damn the Dam.ent": {
       "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 8
+        "absent": 7,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -5563,6 +5642,14 @@
       "markerLayers": {
         "worlds/HitTheMan/Damn The Dam/Damn the Dam_Layers/Markers.layer": {
           "candidateIcons": 5
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/HitTheMan/Damn The Dam/Damn the Dam_Layers/Props.layer": {
+          "types": [
+            "scenery"
+          ],
+          "placements": 49
         }
       },
       "directBriefingsRead": 6,
@@ -6045,7 +6132,8 @@
     "worlds/HitTheMan/Mechanized Leaf/MechanizedLeaf.ent": {
       "sourceResourceCount": 10,
       "devPaths": {
-        "absent": 10
+        "absent": 9,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -6073,6 +6161,14 @@
       "markerLayers": {
         "worlds/HitTheMan/Mechanized Leaf/MechanizedLeaf_Layers/Markers.layer": {
           "candidateIcons": 6
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/HitTheMan/Mechanized Leaf/MechanizedLeaf_Layers/Props.layer": {
+          "types": [
+            "scenery"
+          ],
+          "placements": 16
         }
       },
       "directBriefingsRead": 9,
@@ -6958,7 +7054,8 @@
     "worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase.ent": {
       "sourceResourceCount": 15,
       "devPaths": {
-        "absent": 15
+        "absent": 14,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_FactionRespawnCount": 1,
@@ -7016,6 +7113,14 @@
       "markerLayers": {
         "worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase_Layers/Briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase_Layers/AIWaypoint.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 18
         }
       },
       "directBriefingsRead": 3,
@@ -7199,7 +7304,8 @@
     "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar.ent": {
       "sourceResourceCount": 13,
       "devPaths": {
-        "absent": 13
+        "absent": 12,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_FactionRespawnCount": 1,
@@ -7248,6 +7354,14 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "stockPlacementLayers": {
+        "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/CIVFor/Waypoints.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 4
+        }
+      },
       "directBriefingsRead": 1,
       "briefingGaps": [
         "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/GreenFor/Briefings.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -7256,7 +7370,8 @@
     "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac.ent": {
       "sourceResourceCount": 10,
       "devPaths": {
-        "absent": 10
+        "absent": 9,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -7293,6 +7408,14 @@
       "markerLayers": {
         "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/Briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/AIWaypoints.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 5
         }
       },
       "directBriefingsRead": 0,
@@ -8359,7 +8482,8 @@
     "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher.ent": {
       "sourceResourceCount": 56,
       "devPaths": {
-        "absent": 56
+        "absent": 55,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -8400,6 +8524,14 @@
       "markerLayers": {
         "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/SYSTEMS/AllMarkers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/INDFOR/AI/Waypoints.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 2
         }
       },
       "directBriefingsRead": 6,
@@ -9061,7 +9193,8 @@
     "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen.ent": {
       "sourceResourceCount": 45,
       "devPaths": {
-        "absent": 45
+        "absent": 44,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -9103,6 +9236,14 @@
           "candidateIcons": 4
         }
       },
+      "stockPlacementLayers": {
+        "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen_Layers/Props/RoadBlocks.layer": {
+          "types": [
+            "scenery"
+          ],
+          "placements": 37
+        }
+      },
       "directBriefingsRead": 14,
       "briefingModePreset": "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -9111,7 +9252,8 @@
     "worlds/RedTheKnown/DownhillStryke/DownhillStryke.ent": {
       "sourceResourceCount": 27,
       "devPaths": {
-        "absent": 27
+        "absent": 26,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -9159,6 +9301,14 @@
           "gap": "line 2 separate unassigned audience"
         }
       },
+      "stockPlacementLayers": {
+        "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/Props/rocks.layer": {
+          "types": [
+            "scenery"
+          ],
+          "placements": 12
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/Briefings/BriefsALL.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9167,7 +9317,8 @@
     "worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid.ent": {
       "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 9
+        "absent": 8,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -9197,6 +9348,14 @@
           "gap": "line 2 custom or duplicate field m_iZOrder"
         }
       },
+      "stockPlacementLayers": {
+        "worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid_layers/aiwp.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 7
+        }
+      },
       "directBriefingsRead": 4,
       "briefingModePreset": "worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -9205,7 +9364,8 @@
     "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms.ent": {
       "sourceResourceCount": 11,
       "devPaths": {
-        "absent": 11
+        "absent": 8,
+        "identical": 3
       },
       "serializedTypes": {
         "GC_M1151_armed_M2HB_MDO_OGPK_Cover_tan2": 1,
@@ -9233,6 +9393,26 @@
       "markerLayers": {
         "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/Markers.layer": {
           "candidateIcons": 4
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/WP_FOR_BASE.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 5
+        },
+        "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/WP_FOR_PERIMETER.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 22
+        },
+        "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/WP_OTHER.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 7
         }
       },
       "directBriefingsRead": 0,
@@ -9540,7 +9720,8 @@
     "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid.ent": {
       "sourceResourceCount": 42,
       "devPaths": {
-        "absent": 42
+        "absent": 41,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -9582,6 +9763,14 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "stockPlacementLayers": {
+        "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_Layers/OPFOR_WP.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 108
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_Layers/ALL_BRIEFS.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9590,7 +9779,8 @@
     "worlds/TheLocalPub/BlockDefenders/BlockDefenders.ent": {
       "sourceResourceCount": 22,
       "devPaths": {
-        "absent": 22
+        "absent": 21,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_FactionRespawnCount": 2,
@@ -9653,6 +9843,14 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "stockPlacementLayers": {
+        "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/IRAQ/AI_WP.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 2
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9661,7 +9859,8 @@
     "worlds/TheLocalPub/BugOut/BugOut.ent": {
       "sourceResourceCount": 13,
       "devPaths": {
-        "absent": 13
+        "absent": 12,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -9688,6 +9887,14 @@
       "markerLayers": {
         "worlds/TheLocalPub/BugOut/BugOut_Layers/BLUFOR/BLUFOR_MARKERS.layer": {
           "candidateIcons": 2
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/TheLocalPub/BugOut/BugOut_Layers/PROPS/Loose.layer": {
+          "types": [
+            "scenery"
+          ],
+          "placements": 5
         }
       },
       "directBriefingsRead": 6,
@@ -9958,7 +10165,8 @@
     "worlds/TheLocalPub/LamentinLosers/LamentinLosers.ent": {
       "sourceResourceCount": 24,
       "devPaths": {
-        "absent": 24
+        "absent": 23,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -9985,6 +10193,14 @@
       "markerLayers": {
         "worlds/TheLocalPub/LamentinLosers/LamentinLosers_Layers/MapMarkers.layer": {
           "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/TheLocalPub/LamentinLosers/LamentinLosers_Layers/BLUFOR_WPs.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 93
         }
       },
       "directBriefingsRead": 14,
@@ -10147,7 +10363,8 @@
     "worlds/TheLocalPub/QuickReaction/QuickReactions.ent": {
       "sourceResourceCount": 28,
       "devPaths": {
-        "absent": 28
+        "absent": 26,
+        "identical": 2
       },
       "serializedTypes": {
         "PS_FactionRespawnCount": 1,
@@ -10210,6 +10427,20 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "stockPlacementLayers": {
+        "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/INDFOR/AI_WP.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 11
+        },
+        "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/PROPS/Other.layer": {
+          "types": [
+            "scenery"
+          ],
+          "placements": 3
+        }
+      },
       "directBriefingsRead": 19,
       "briefingGaps": [
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10218,7 +10449,8 @@
     "worlds/TheLocalPub/RailroadReactions/RailroadReactions.ent": {
       "sourceResourceCount": 28,
       "devPaths": {
-        "absent": 28
+        "absent": 27,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -10261,6 +10493,14 @@
         },
         "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/SYSTEMS/AllMarkers.layer": {
           "gap": "line 13 custom or duplicate field m_aHideOnGameModeStates"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/AI/Waypoints.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 11
         }
       },
       "directBriefingsRead": 10,
@@ -10309,7 +10549,8 @@
     "worlds/TheLocalPub/RiverStandoff/RiverStandoff.ent": {
       "sourceResourceCount": 21,
       "devPaths": {
-        "absent": 21
+        "absent": 20,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -10350,6 +10591,14 @@
         },
         "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/SYSTEMS/AllMarkers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/PROPS/Decals.layer": {
+          "types": [
+            "scenery"
+          ],
+          "placements": 2
         }
       },
       "directBriefingsRead": 9,
@@ -10426,7 +10675,8 @@
     "worlds/TheLocalPub/TakingTrenches/TakingTrenches.ent": {
       "sourceResourceCount": 16,
       "devPaths": {
-        "absent": 16
+        "absent": 15,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -10455,6 +10705,14 @@
       "markerLayers": {
         "worlds/TheLocalPub/TakingTrenches/TakingTrenches_Layers/SYSTEMS/AllMarkers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/TheLocalPub/TakingTrenches/TakingTrenches_Layers/PROPS/Loose.layer": {
+          "types": [
+            "scenery"
+          ],
+          "placements": 1
         }
       },
       "directBriefingsRead": 10,
@@ -10555,7 +10813,8 @@
     "worlds/TheLocalPub/WetFeet/WetFeet.ent": {
       "sourceResourceCount": 18,
       "devPaths": {
-        "absent": 18
+        "absent": 17,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -10587,6 +10846,14 @@
         },
         "worlds/TheLocalPub/WetFeet/WetFeet_Layers/SYSTEMS/AllMarkers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/TheLocalPub/WetFeet/WetFeet_Layers/PROPS/BluSpawn.layer": {
+          "types": [
+            "scenery"
+          ],
+          "placements": 15
         }
       },
       "directBriefingsRead": 10,
@@ -10698,7 +10965,8 @@
     "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack.ent": {
       "sourceResourceCount": 13,
       "devPaths": {
-        "absent": 13
+        "absent": 12,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -10738,6 +11006,14 @@
       "markerLayers": {
         "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_Layers/markers.layer": {
           "gap": "line 2 custom or duplicate field {"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_Layers/aiwp_nva.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 38
         }
       },
       "directBriefingsRead": 0,
@@ -11172,7 +11448,8 @@
     "worlds/Til/HeatherBayHarbor/HeatherBayHarbor.ent": {
       "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 8
+        "absent": 7,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -11199,6 +11476,14 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "stockPlacementLayers": {
+        "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_Layers/Waypoints.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 7
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_Layers/Description.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -11207,7 +11492,8 @@
     "worlds/Til/HueyHill/HueyHill.ent": {
       "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 8
+        "absent": 7,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -11236,6 +11522,14 @@
           "gap": "line 1 inherited marker preset 63BCE30CF8B65BCE"
         }
       },
+      "stockPlacementLayers": {
+        "worlds/Til/HueyHill/HueyHill_Layers/aiwp.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 5
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/HueyHill/HueyHill_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -11244,7 +11538,8 @@
     "worlds/Til/JavoryHill/JavoryHill.ent": {
       "sourceResourceCount": 7,
       "devPaths": {
-        "absent": 7
+        "absent": 6,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -11284,6 +11579,14 @@
       "markerLayers": {
         "worlds/Til/JavoryHill/JavoryHill_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/Til/JavoryHill/JavoryHill_Layers/aiwp.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 8
         }
       },
       "directBriefingsRead": 2,
@@ -11378,7 +11681,8 @@
     "worlds/Til/KasselbergClamber/KasselbergClamber.ent": {
       "sourceResourceCount": 11,
       "devPaths": {
-        "absent": 11
+        "absent": 10,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -11418,6 +11722,14 @@
       "markerLayers": {
         "worlds/Til/KasselbergClamber/KasselbergClamber_Layers/markers.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/Til/KasselbergClamber/KasselbergClamber_Layers/nva_wp.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 9
         }
       },
       "directBriefingsRead": 3,
@@ -11682,7 +11994,8 @@
     "worlds/Til/PerelleBayPeril/PerelleBayPeril.ent": {
       "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 8
+        "absent": 7,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -11713,6 +12026,14 @@
           "gap": "line 1 mixed or custom placement"
         }
       },
+      "stockPlacementLayers": {
+        "worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/AIWP.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 14
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -11721,7 +12042,8 @@
     "worlds/Til/RoutePierre/RoutePierre.ent": {
       "sourceResourceCount": 12,
       "devPaths": {
-        "absent": 12
+        "absent": 11,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -11777,6 +12099,14 @@
       "markerLayers": {
         "worlds/Til/RoutePierre/RoutePierre_Layers/Markers.layer": {
           "gap": "line 1 inherited marker preset 63BCE30CF8B65BCE"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/Til/RoutePierre/RoutePierre_Layers/AIWP.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 23
         }
       },
       "directBriefingsRead": 0,
@@ -12011,7 +12341,8 @@
     "worlds/Til/TopolnikiTriangle/TopolnikiTriangle.ent": {
       "sourceResourceCount": 11,
       "devPaths": {
-        "absent": 11
+        "absent": 10,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -12052,6 +12383,14 @@
       "markerLayers": {
         "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/markers.layer": {
           "gap": "line 1 inherited marker preset 63BCE30CF8B65BCE"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/wp_us.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 8
         }
       },
       "directBriefingsRead": 2,
@@ -12148,7 +12487,8 @@
     "worlds/Wade/NightSeizure/NightSeizure.ent": {
       "sourceResourceCount": 15,
       "devPaths": {
-        "absent": 15
+        "absent": 14,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -12175,6 +12515,14 @@
       "markerLayers": {
         "worlds/Wade/NightSeizure/NightSeizure_Layers/Markers.layer": {
           "gap": "line 2 custom or duplicate field m_iZOrder"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/Wade/NightSeizure/NightSeizure_Layers/AI/Waypoints.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 31
         }
       },
       "directBriefingsRead": 11,
@@ -13047,7 +13395,8 @@
     "worlds/arc/BarnBustersXS/BarnBustersXS.ent": {
       "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 9
+        "absent": 8,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -13072,6 +13421,14 @@
       "markerLayers": {
         "worlds/arc/BarnBustersXS/BarnBustersXS_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/arc/BarnBustersXS/BarnBustersXS_Layers/waypoints.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 8
         }
       },
       "directBriefingsRead": 7,
@@ -13125,7 +13482,8 @@
     "worlds/arc/BunkerBusters/BunkerBusters.ent": {
       "sourceResourceCount": 11,
       "devPaths": {
-        "absent": 11
+        "absent": 10,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -13150,6 +13508,14 @@
       "markerLayers": {
         "worlds/arc/BunkerBusters/BunkerBusters_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/arc/BunkerBusters/BunkerBusters_Layers/waypoints.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 8
         }
       },
       "directBriefingsRead": 7,
@@ -13602,7 +13968,8 @@
     "worlds/arc/FactorySiegeRedux/FactorySiegeRedux.ent": {
       "sourceResourceCount": 11,
       "devPaths": {
-        "absent": 11
+        "absent": 10,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -13638,6 +14005,14 @@
       "markerLayers": {
         "worlds/arc/FactorySiegeRedux/FactorySiegeRedux_Layers/briefings.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/arc/FactorySiegeRedux/FactorySiegeRedux_Layers/props.layer": {
+          "types": [
+            "scenery"
+          ],
+          "placements": 3
         }
       },
       "directBriefingsRead": 12,
@@ -14433,7 +14808,8 @@
     "worlds/arc/QuickReaction/QuickReaction.ent": {
       "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 9
+        "absent": 8,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -14468,6 +14844,14 @@
       "markerLayers": {
         "worlds/arc/QuickReaction/QuickReaction_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/arc/QuickReaction/QuickReaction_Layers/waypoints_cdf.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 3
         }
       },
       "directBriefingsRead": 8,
@@ -14640,7 +15024,8 @@
     "worlds/arc/RocketScience/RocketScience.ent": {
       "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 8
+        "absent": 7,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_EditableMarkerComponent": 3,
@@ -14677,6 +15062,14 @@
       "markerLayers": {
         "worlds/arc/RocketScience/RocketScience_Layers/Briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/arc/RocketScience/RocketScience_Layers/Waypoints.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 8
         }
       },
       "directBriefingsRead": 6,
@@ -15051,7 +15444,8 @@
     "worlds/arc/TipOfTheSpear/TipOfTheSpear.ent": {
       "sourceResourceCount": 12,
       "devPaths": {
-        "absent": 12
+        "absent": 11,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -15091,6 +15485,14 @@
       "markerLayers": {
         "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/briefing.layer": {
           "gap": "line 1 mixed or custom placement"
+        }
+      },
+      "stockPlacementLayers": {
+        "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/waypoints.layer": {
+          "types": [
+            "waypoints"
+          ],
+          "placements": 7
         }
       },
       "directBriefingsRead": 12,
@@ -15662,6 +16064,7 @@
       ]
     }
   },
+  "baseResourceDatabaseSHA256": "d65ebb14b5c9b2baaef1dfafd9b653f51a6ce11f9815585cf8b5ada88dd4e58a",
   "devOnlyHeaders": [
     "Missions/0_LobbyHeader_Base.conf"
   ]

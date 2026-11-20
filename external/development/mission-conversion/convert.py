@@ -1,6 +1,7 @@
 """Generate the portfolio comparison and reusable mission-specific briefing presets."""
 import argparse
 from collections import defaultdict
+from hashlib import sha256
 import json
 import re
 from pathlib import Path, PurePosixPath
@@ -8,6 +9,7 @@ from pathlib import Path, PurePosixPath
 from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
 from markers import convert_layer as convert_markers
+from scenery import StockPrefabs, placements
 from race_day import race_files, WORLD as RACE_WORLD
 
 
@@ -20,12 +22,17 @@ def main():
     parser.add_argument('--stage', type=Path, help='empty or identical output folder outside either addon')
     parser.add_argument('--include-race-day', action='store_true', help='also generate the reviewed Kunar world recipe')
     parser.add_argument('--stage-marker-candidates', action='store_true', help='stage icon layers for visual and asset review')
+    parser.add_argument('--base-database', type=Path, help='verify and stage unchanged stock scenery and waypoints using game data/resourceDatabase.rdb')
     args = parser.parse_args()
     source = Snapshot(args.missions, args.source)
     dev = Snapshot(args.missions, args.dev)
+    stock = StockPrefabs(args.base_database) if args.base_database else None
+    locally_owned = set(source.resources) | set(dev.resources)
     lobby = Path(__file__).resolve().parents[3]
     template = (lobby / 'Prefabs/MP/Modes/GC_LobbyGameMode.et.meta').read_text(encoding='utf-8')
     report = {'source': source.commit, 'target': dev.commit, 'headers': {}, 'worlds': {}}
+    if stock:
+        report['baseResourceDatabaseSHA256'] = sha256(stock.data).hexdigest()
     out = {}
     headers_by_world = defaultdict(list)
     target_headers = set(dev.headers())
@@ -49,6 +56,16 @@ def main():
         row['markerLayers'] = {}
         for layer in source.layers[world.lower()]:
             text = source.read(layer)
+            if stock:
+                placement = placements(text, stock, locally_owned)
+                if placement:
+                    kinds, count = placement
+                    entry = {'types': kinds, 'placements': count}
+                    if layer in dev.files and dev.files[layer] != source.files[layer]:
+                        entry['gap'] = 'Dev layer differs from source'
+                    else:
+                        out[layer] = source.blobs[source.files[layer]].decode('utf-8')
+                    row.setdefault('stockPlacementLayers', {})[layer] = entry
             try:
                 markers = convert_markers(text)
                 if markers:
