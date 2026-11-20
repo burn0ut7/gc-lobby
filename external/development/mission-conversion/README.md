@@ -365,3 +365,12 @@ When an AO outline and its map fill target different viewers, the batch writes t
 With --workshop-addons the batch verifies the exact GUID and resource paths of six RHS Status Quo VKPO demi-season randomized roles and the matching crew prefab. This allowlist applies to AI-only groups with matching Units ancestry. Mission-owned and Units-owned overrides still need their normal checks. The inventory records the SHA-256 of the provider database used for these checks.
 
 Trench Assault is in local Missions Dev commit `69edea1f`. File comparison verified 18 playable slots, both six-member AI sections and their ordered waypoints, random starting weather and a 90-second staging release. The Russian and CDF outcomes retain their casualty thresholds and the five- and fifteen-second announcements. Its two enforcement polygons retain their original geometry and grace periods. The CDF-only outline and public inverted fill are separate native shapes. The draft passed the resource audit, and a second batch run reproduced its files and inventory byte for byte. Occupied-side casualty timing and map rendering remain open for shared verification.
+
+
+## Native event actions and staging countdowns
+
+Batch event conversion preserves named entity cleanup, supply quantities, repairs, clock changes, weather presets and briefing-marker visibility edits. It retains source action order and the individual delays. Fuel servicing still requires a verified root fuel manager because the legacy handler requires one before changing attached tanks. Map edits require unique converted marker targets. Description edits and attempts to hide one faction from a legacy public marker remain open.
+
+The catalog matched eight cleanup events against their exact source targets and delays. Pondering Thy Orb now has all authored framework events accounted for. Its 180-second display countdown is retained independently of the event that removes its staging boundaries. The same countdown rule cleared a mode blocker in one other world. Pondering Thy Orb still needs two missing character prefab identities and a reviewed inherited-roster conversion.
+
+The focused file checks covered clock, weather, marker audience, supply and repair mappings and unsupported inputs. Two batch runs reproduced the inventory byte for byte. All 982 prior explicit migration outputs remained byte-identical.

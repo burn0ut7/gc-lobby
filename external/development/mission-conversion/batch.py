@@ -93,6 +93,22 @@ def static_link_gaps(layers, named):
     return sorted(set(gaps))
 
 
+def marker_edit_gaps(named, edits):
+    gaps = set()
+    for edit in edits:
+        for name in edit['markers']:
+            placements = named.get(name, [])
+            if len(placements) != 1 or not any(line.lstrip().startswith('GC_BriefingMarkerComponent ')
+                                               for line in placements[0][1]):
+                gaps.add('expected one placed briefing marker named ' + name)
+                continue
+            restricted = any(line.strip() in ('m_aFactionKeys {', 'm_bRestrictToListedFactions 1')
+                             for line in placements[0][1])
+            if not restricted and not all(edit['factions'].values()):
+                gaps.add('legacy public marker cannot hide one assigned faction: ' + name)
+    return sorted(gaps)
+
+
 def passive_asset(source, path):
     suffix = PurePosixPath(path).suffix.lower()
     if suffix == '.edds':
@@ -294,7 +310,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None):
         else:
             raise ValueError('game mode field or child requires a conversion rule: ' + line.strip())
         index += 1
-    if bool(freeze) != bool(zones) or len(set(zones)) != len(zones):
+    if (zones and not freeze) or len(set(zones)) != len(zones):
         raise ValueError('staging duration requires uniquely named restriction zones')
     resource = guid(world + '/resource')
     settings = ''
@@ -309,13 +325,16 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None):
 '''
     if zones:
         key = world + '/release staging zones'
-        names = '\n'.join(f'        "{name}"' for name in zones)
         settings += f'''  SCR_PlayersRestrictionZoneManagerComponent "{{{guid(key + '/manager')}}}" {{
   }}
-  GC_LobbyFreezeComponent "{{E81E75BC287148D0}}" {{
+'''
+    if freeze:
+        settings += f'''  GC_LobbyFreezeComponent "{{E81E75BC287148D0}}" {{
    m_iAuthoredCountdownSeconds {freeze}
   }}
 '''
+    if zones:
+        names = '\n'.join(f'        "{name}"' for name in zones)
         additional_rules += f'''    GC_Event "{{{guid(key)}}}" {{
      m_sName "Release staging zones"
      m_aConditions {{
@@ -436,6 +455,12 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
     if mode is None:
         blockers.append({'rule': 'mode placement', 'file': world})
     elif preset:
+        mode_name = mode[0].split(' : ', 1)[0].removeprefix('PS_GameModeCoop').strip()
+        if mode_name and any(mode_name in action['entities'] for event in rules.values()
+                             for action in event.get('convertedActions', [])
+                             if action['instruction'] == 'TILW_DeleteEntitiesInstruction'):
+            blockers.append({'rule': 'mode settings', 'file': mode_index[0],
+                             'detail': 'legacy instruction deletes its own game mode'})
         try:
             layer, index = mode_index
             parts[layer][index] = render_mode(world, mode, preset, rule_text, zones, ai_faction)
@@ -445,13 +470,16 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
         if ''.join(blocks_in_layer).strip():
             draft[path] = ''.join(blocks_in_layer)
     assignments = [item for event in rules.values() for item in event.get('waypointAssignments', [])]
-    if not blockers and (assignments or any('m_aStatic' in body for body in draft.values())):
+    marker_edits = [item for event in rules.values() for item in event.get('convertedActions', []) if 'markers' in item]
+    if not blockers and (assignments or marker_edits or any('m_aStatic' in body for body in draft.values())):
         named = named_placements(draft.values())
         for gap in waypoint_gaps(named, assignments):
             blockers.append({'rule': 'waypoint assignments', 'file': world, 'detail': gap})
         for layer, field, target in static_link_gaps(draft, named):
             blockers.append({'rule': 'static group links', 'file': layer,
                              'detail': f'{field} requires a unique placed target named {target}'})
+        for gap in marker_edit_gaps(named, marker_edits):
+            blockers.append({'rule': 'marker visibility actions', 'file': world, 'detail': gap})
     for layer, converted in boundaries.items():
         sibling = layer.removesuffix('.layer') + '_GC_Boundaries.layer'
         if sibling not in dev.files:

@@ -4,6 +4,7 @@ from decimal import Decimal
 import re
 
 from briefings import block_end, guid, properties
+from event_actions import compile_action, recognized
 from events import EVENT, LITERAL, MESSAGE, message, peak_flags
 
 FRAMEWORK = re.compile(r'^TILW_MissionFrameworkEntity(?: [\w.-]+)? : "\{8F846D0FD5D6EA51\}[^"]+" \{$')
@@ -85,6 +86,7 @@ def read_event(fields, key, flags, captures, ai, compound):
     actions = defaultdict(list)
     notices = []
     assignments = []
+    converted_actions = []
     messages = 0
     seen = set()
     term = None
@@ -107,6 +109,7 @@ def read_event(fields, key, flags, captures, ai, compound):
                 notify_match = MESSAGE.fullmatch(fields[j])
                 end_match = ENDING.fullmatch(fields[j])
                 waypoint_match = WAYPOINTS.fullmatch(fields[j]) if compound else None
+                action_match = recognized(fields[j]) if compound else None
                 if notify_match:
                     delay, body = message(fields[j + 1:last], key + '/' + notify_match[1], multiline=True)
                     messages += 1
@@ -116,6 +119,9 @@ def read_event(fields, key, flags, captures, ai, compound):
                 elif waypoint_match:
                     delay, body, assignment = waypoint_action(fields[j + 1:last], key + '/' + waypoint_match[1])
                     assignments.append(assignment)
+                elif action_match:
+                    delay, body, details = compile_action(action_match, fields[j + 1:last], key)
+                    converted_actions.append(details)
                 else:
                     raise ValueError('unsupported outcome instruction ' + fields[j].strip().split(' ')[0])
                 actions[delay].extend(body)
@@ -124,11 +130,11 @@ def read_event(fields, key, flags, captures, ai, compound):
         elif not re.fullmatch(r'   m_name ' + (EVENT_LABEL if compound else KEY), line) and line != '   m_pregameEvent 0':
             raise ValueError('unsupported outcome event field ' + field)
         i += 1
-    if not term or not (notices or assignments or (compound and messages)):
+    if not term or not (notices or assignments or converted_actions or (compound and messages)):
         raise ValueError('missing condition or supported framework instruction')
     if assignments and term['trigger'] != 'Match start':
         raise ValueError('waypoint assignments after Match start require a separate rule')
-    return term, actions, notices, assignments, messages
+    return term, actions, notices, assignments, messages, converted_actions
 
 
 def leaves(term):
@@ -230,7 +236,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         loc = f'{path}:{i + base + 2}'
         if 'notificationDelaysSeconds' in notification_audit.get(loc, {}):
             continue
-        if not any(ENDING.fullmatch(item) or (compound and (WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item)))
+        if not any(ENDING.fullmatch(item) or (compound and (WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item)
+                                                           or recognized(item)))
                    for item in fields):
             continue
         name = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
@@ -238,7 +245,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             name = '"Outcome ' + event[1] + '"'
         name = name[1:-1]
         try:
-            term, actions, notices, assignments, messages = read_event(
+            term, actions, notices, assignments, messages, converted_actions = read_event(
                 fields, world + '/' + event[1], flags, captures, ai, compound)
             emitted_names = {f'{name} ({delay:f}s)' for delay in actions}
             if term['trigger'] != 'Match start':
@@ -250,7 +257,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                           'instructionDelaysSeconds': [f'{delay:f}' for delay in actions]}
             if assignments:
                 audit[loc]['waypointAssignments'] = assignments
-            if messages and not (notices or assignments):
+            if converted_actions:
+                audit[loc]['convertedActions'] = converted_actions
+            if messages and not (notices or assignments or converted_actions):
                 audit[loc]['notificationCount'] = messages
             names.update(emitted_names)
         except ValueError as exc:

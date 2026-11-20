@@ -13,6 +13,7 @@ import batch
 import bugout
 from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
+from event_actions import ACTIONS
 from events import world_events
 from groups import group_layer, rhs_ai_characters
 import gwotline
@@ -260,7 +261,7 @@ def main():
             row['frameworkEvents'] = review
         has_outcomes = row['serializedTypes'].get('TILW_EndGameInstruction')
         has_event_actions = args.batch and any(row['serializedTypes'].get(kind) for kind in
-                                              ('TILW_AssignWaypointsInstruction', 'TILW_SendMessageInstruction'))
+                                              ('TILW_AssignWaypointsInstruction', 'TILW_SendMessageInstruction', *ACTIONS))
         if args.include_outcomes and (has_outcomes or has_event_actions):
             try:
                 captures = {}
