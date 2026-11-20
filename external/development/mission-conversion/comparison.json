@@ -19332,6 +19332,31 @@
           "Assemble and verify the starting rosters, markers, scenery, vehicles and tree cleanup",
           "Verify faction-restricted notices and join-in-progress behavior on remote clients"
         ]
+      },
+      "rosterCandidates": {
+        "BLUFOR": {
+          "path": "worlds/TheLocalPub/WetFeet/WetFeet_Layers/BLUFOR/Players_GC_Roster.layer",
+          "groups": 4,
+          "slots": 31,
+          "equipmentBoxReferences": [
+            "0B24DD72DAF499F4",
+            "FDA92D590B9C633B",
+            "EF1E4AA6DCD2D982",
+            "E0CFA3FE78FC5190"
+          ]
+        },
+        "OPFOR": {
+          "path": "worlds/TheLocalPub/WetFeet/WetFeet_Layers/OPFOR/Players_GC_Roster.layer",
+          "groups": 4,
+          "slots": 25,
+          "equipmentBoxReferences": [
+            "0B24DD72DAF499F4",
+            "55C5BEE65087F7CD",
+            "EF1E4AA6DCD2D982",
+            "645C73791ECA1698",
+            "72F492BF47C08FA1"
+          ]
+        }
       }
     },
     "worlds/Til/ALittleWhileLonger/ALittleWhileLonger.ent": {

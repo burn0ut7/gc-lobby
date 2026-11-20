@@ -4,18 +4,88 @@ import re
 
 from briefings import block_end, guid, properties, QUOTED
 from events import EVENT, LITERAL, MESSAGE, PEAK_FLAG, message
+from catalog import REF
+from groups import ROOT, group_layer, inheritance, only_path, scalar
 
 WORLD = 'worlds/TheLocalPub/WetFeet/WetFeet.ent'
 LAYERS = WORLD.removesuffix('.ent') + '_Layers/'
 DEFAULT = LAYERS + 'default.layer'
 TRIGGER = LAYERS + 'SYSTEMS/MISC.layer'
 MODE = LAYERS + 'default_GC_Mode.layer'
+ROSTERS = {
+    'BLUFOR': ('a4f6ddf862d56f56c453a8f51ea3d55742ba42d8', 31),
+    'OPFOR': ('0a2607f45c6bc0da1a1f6323264bd6cf742ee42a', 25),
+}
 REVIEWED = {
     DEFAULT: 'eff30d4f5d74c183e1d0ed2ff93f1255a5ebb19c',
     TRIGGER: '2a15ac2fc36da9709bb5c73ed1331838588ebdf4',
 }
 DEACTIVATE = re.compile(r'^    TILW_DeactivateEventsInstruction "\{([\da-fA-F]{16})\}" \{$')
 IDENTIFIER = r'"[\w.-]+"'
+
+
+def stage_rosters(source, source_units, dev_units, stock, locally_owned):
+    files, audit = {}, {}
+    for side, (oid, expected_slots) in ROSTERS.items():
+        path = LAYERS + side + '/Players.layer'
+        if source.files.get(path) != oid:
+            raise ValueError('WetFeet roster source changed: ' + path)
+        lines = source.read(path).splitlines()
+        i = 0
+        placements, equipment = [], []
+        reviewed = {}
+        while i < len(lines):
+            end = block_end(lines, i)
+            group = ROOT.fullmatch(lines[i])
+            block = lines[i:end + 1]
+            if not group:
+                if not re.match(r'^GenericEntity (?:Blufor|Opfor)EquipmentBox ', lines[i]):
+                    raise ValueError('WetFeet roster contains an unexpected entity')
+                equipment.append('\n'.join(block))
+                i = end + 1
+                continue
+            # The placed faction label is redundant with the same editable
+            # component on the preserved native Separatist group parent.
+            clean = []
+            j = 0
+            while j < len(block):
+                if block[j].strip() == 'SCR_EditableGroupComponent "{50D291F6C83FA532}" {':
+                    last = block_end(block, j)
+                    label = [line.strip() for line in block[j:last + 1]]
+                    parent = [line.strip() for line in inheritance(dev_units, group['guid'])[0].splitlines()]
+                    offset = parent.index(label[0])
+                    if parent[offset:offset + len(label)] != label:
+                        raise ValueError('WetFeet faction label differs from the Dev group')
+                    j = last + 1
+                    continue
+                clean.append(block[j])
+                j += 1
+            overrides = 'm_bSetPlayable 1' in (item.strip() for item in clean)
+            if overrides or scalar(inheritance(source_units, group['guid']), 'm_bSetPlayable') == 1:
+                for member, member_path in REF.findall('\n'.join(clean[1:])):
+                    if not member_path.startswith('Prefabs/Characters/'):
+                        continue
+                    chain = inheritance(source_units, member)
+                    terminal = REF.search(chain[-1].splitlines()[0]) if chain else None
+                    expected_base = '542CBB6908CA71D8' if side == 'BLUFOR' else '37578B1666981FCE'
+                    # British Forces' installed parent leads to Character_Base,
+                    # where the legacy GC Lobby adds PS_PlayableComponent.
+                    # The forced groups enable it on their spawned members.
+                    if not terminal or terminal[1].upper() != expected_base:
+                        raise ValueError('WetFeet character ancestry changed: ' + member)
+                    reviewed[member] = only_path(dev_units, member)
+            placements.extend(clean)
+            i = end + 1
+        result, groups, slots = group_layer('\n'.join(placements), source_units, dev_units, stock, locally_owned,
+                                           reviewed_callsigns={'68E715598B5F3FB5', '68E7155981A0C53D'},
+                                           reviewed_members=reviewed)
+        if (groups, slots, len(equipment)) != (4, expected_slots, 1):
+            raise ValueError('WetFeet roster or equipment box count changed')
+        dest = path.removesuffix('.layer') + '_GC_Roster.layer'
+        files[dest] = result
+        audit[side] = {'path': dest, 'groups': groups, 'slots': slots,
+                       'equipmentBoxReferences': [guid for guid, _ in REF.findall(equipment[0])]}
+    return files, audit
 
 
 def capture(source):

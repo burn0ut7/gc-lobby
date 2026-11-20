@@ -43,6 +43,7 @@ def main():
     parser.add_argument('--include-breach-loadouts', action='store_true', help='stage Breach and Clear mission-owned loadouts and roster')
     parser.add_argument('--include-breach-candidate', action='store_true', help='assemble the incomplete Breach and Clear playtest world externally')
     parser.add_argument('--include-wetfeet-mode', action='store_true', help='stage the WetFeet capture and outcome logic externally')
+    parser.add_argument('--include-wetfeet-rosters', action='store_true', help='stage both reviewed WetFeet rosters externally')
     args = parser.parse_args()
     if args.include_breach_candidate:
         args.include_breach_loadouts = True
@@ -347,6 +348,15 @@ def main():
             'Assemble and verify the starting rosters, markers, scenery, vehicles and tree cleanup',
             'Verify faction-restricted notices and join-in-progress behavior on remote clients',
         ]}
+    if args.include_wetfeet_rosters:
+        if not args.stage or not args.units:
+            parser.error('the WetFeet rosters require --stage and --units')
+        files, audit = wetfeet.stage_rosters(source, source_units, dev_units, stock, locally_owned)
+        for path, body in files.items():
+            if path in dev.files and dev.read(path).strip() != body.strip():
+                parser.error(f'Dev already has differing {path}')
+            out[path] = body
+        report['worlds'][wetfeet.WORLD]['rosterCandidates'] = audit
     if args.stage:
         stage = args.stage.resolve()
         if any(stage.is_relative_to(root.resolve()) for root in ([args.missions, lobby] + ([args.units] if args.units else []))):
