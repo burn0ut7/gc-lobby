@@ -433,7 +433,7 @@ The roster converter recognizes a duplicate legacy callsign component when the f
 
 The installer can apply this repair to an existing Dev layer when removing the redundant numeric triplets reproduces the generated layer. Use `--replace-reviewed` after reviewing the reported paths. The installer checks the original file hash and requires the target layer to be unmodified in Git. Two Checkpoints is in Missions Dev commit `1a38c897`. The file review matched its 73 slots, both squad labels and the conditional capture and casualty notices. Resource checks passed. Live display and notification timing remain shared runtime checks.
 
-The asset converter also carries over simple mesh material overrides on destructible scenery and follows the referenced material by its registered GUID. Farm now generates all 73 slots and resolves the authored HESCO prefab and material. The draft remains held on the unregistered collision-specific willow prefab `23C0BE9D80929DBD`. Preserve its collision behavior when restoring that asset.
+The asset converter also carries over simple mesh material overrides on destructible scenery and follows the referenced material by its registered GUID. Farm now generates all 73 slots and resolves the authored HESCO prefab and material. The installed base-game database registers willow prefab `23C0BE9D80929DBD` at a new path. The batch preserves the GUID and placement and uses the current path.
 
 ## Inherited interaction replication and faction labels
 
@@ -494,3 +494,12 @@ Across all 277 launchers, the pass cleared 31 world mode blockers and 60 AI-grou
 The batch converts an empty legacy navmesh regeneration component under a native placement's component list. It preserves the component identity, parent prefab, transform and other placement data. Custom component fields remain in the blocker report. GC Lobby requests Reforger's native entity and child navigation rebuild after initialization on the server. The component is opt-in, tied to the active GC Lobby mode and cancels its deferred call if the owner is deleted. The reference implementation was reviewed in the published TilW package. The GC Lobby component calls the base game's AI World directly.
 
 Provins Approach Redux is in local Missions Dev commit `46cd612b`. File review confirmed 68 slots against its launcher, all four checkpoint compositions at their original transforms, the 180-second staging release, and the 120-second Obj. Apollo capture. Resource validation passed. A clean Workbench script reload completed with zero errors in session `logs_2026-11-20_18-00-36`. AI routing around the compositions still needs a shared gameplay check.
+
+
+## Inherited mission loadouts and resource paths
+
+Mission-owned character prefabs can inherit playability through another mission prefab or through Units. The batch compares the Units ancestry against Dev after removing the exact legacy playability marker. It keeps the native character fields, slot order and prefab GUIDs. Changed native ancestor fields, unresolved parents and unrecognized playability overrides still hold a draft. The review cleared 23 mission-owned slot blockers across the 277-launcher catalog without changing the output for any previously approved character prefab.
+
+Farm is in local Missions Dev commit `58f66cad`. File review matched 73 slots, the two 90 percent casualty checks and their delayed notices, and the original willow placement. Its HESCO material and all referenced resources passed validation. The base game supplies the willow under the same resource GUID. The historical asset was unavailable for a live collision comparison.
+
+Gigantomachia now generates all 54 slots. The draft preserves the custom recon drone operator and commander prefab ancestry. The installed registries confirm the original FPV drone and buckshot GUIDs at their current paths. The installed M870 has a different GUID from the mission's Remington 870 prefab, so the shotgun reference still holds the draft.

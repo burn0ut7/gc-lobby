@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "46cd612bec124b7a616ed7a17613ddd1ec1b50dd",
+  "target": "58f66cada66945b58e8a9c4230785956c27bb32f",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -87,7 +87,7 @@
         "worlds/Burn0ut7/Farm/Farm.ent"
       ],
       "declaredPath": "worlds/Burn0ut7/Farm/Farm.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{A9E5675A967E8F1A}worlds/Burn0ut7/Farm/Farm.ent"
     },
     "Missions/Burn0ut7/KillZone.conf": {
@@ -3229,7 +3229,8 @@
     "worlds/Burn0ut7/Farm/Farm.ent": {
       "sourceResourceCount": 7,
       "devPaths": {
-        "absent": 7
+        "changed": 5,
+        "identical": 2
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -3273,7 +3274,7 @@
               "lastLine": 746
             }
           },
-          "placementLayer": "worlds/Burn0ut7/Farm/Farm_Layers/Opfor_GC_Boundaries.layer"
+          "gap": "Dev already contains the original layer path; review before adding boundary siblings"
         }
       },
       "groupLayers": {

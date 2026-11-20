@@ -49,7 +49,16 @@ DUPLICATE_CALLSIGNS = re.compile(
 AI_WORLD_ALIASES = {
     '33A5B976E41B0A4C': ('Prefabs/AI/SCR_AIWorld_BadOrb.et', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et'),
 }
+STOCK_RESOURCE_ALIASES = {
+    ('23C0BE9D80929DBD', 'Prefabs/Vegetation/Bush/b_salix_cinerea_1w_collision.et'):
+        'Prefabs/Vegetation/Bush/b_salix_cinerea_1w.et',
+}
 WORKSHOP_RESOURCE_ALIASES = {
+    ('77CA4803A4A2B8E3', 'Prefabs/Drones/FPVBase/FPVRPG.et'): (
+        'RealisticCombatDrones_65AD60E204191D37', '77CA4803A4A2B8E3', 'Prefabs/Drones/FPVBase/FPVRpg.et'),
+    ('B0DFDF7AAA9C5D39', 'Prefabs/Weapons/Magazines/BC_Shell_12ga_Buckshot.et'): (
+        'ChungusShotguns_620E584B1D2C96A4', 'B0DFDF7AAA9C5D39',
+        'Prefabs/Weapons/Magazines/Buckshot 00/BC_Shell_12ga_Buckshot_00.et'),
     ('6B7CD408BDFB94F5', 'Prefabs/Vehicles/Wheeled/TIGR/GAZ_TIGR_v2_PKM_Green.et'): (
         'TacticalFlava-TIGR_DEADC0DE00000003', '6B7CD408BDFB94F5',
         'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM_Green.et'),
@@ -288,8 +297,10 @@ def spawn_resource(source, dev, source_units, dev_units, stock, guid, path):
     return path if stock.contains(guid, path) else None
 
 
-def resource_aliases(workshop, units):
-    aliases, databases = {}, {}
+def resource_aliases(workshop, units, stock):
+    aliases = {(guid, old): (guid, new) for (guid, old), new in STOCK_RESOURCE_ALIASES.items()
+               if stock and stock.contains(guid, new)}
+    databases = {}
     if workshop:
         for original, (provider, guid, path) in WORKSHOP_RESOURCE_ALIASES.items():
             if provider not in databases:
