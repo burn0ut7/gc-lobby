@@ -15,6 +15,7 @@ from groups import group_layer
 import gwotline
 import hnevice
 import industrial
+import irish
 from launchers import launcher
 from markers import convert_layer as convert_markers
 from outcomes import compile_outcomes
@@ -51,10 +52,15 @@ def main():
     parser.add_argument('--workshop-addons', type=Path, help='installed Workshop addon directory for provider resource checks')
     parser.add_argument('--include-outcomes', action='store_true', help='audit and stage supported legacy outcome rule fragments')
     parser.add_argument('--include-industrial-candidate', action='store_true', help='assemble the Industrial Metal playtest world')
+    parser.add_argument('--include-irish-candidate', action='store_true', help='assemble the Irish Checkpoint playtest world')
     args = parser.parse_args()
     if args.include_industrial_candidate:
         if not args.stage or not args.units or not args.workshop_addons or not args.base_database:
             parser.error('Industrial Metal requires --stage, --units, --workshop-addons and --base-database')
+        args.include_outcomes = True
+    if args.include_irish_candidate:
+        if not args.stage or not args.units or not args.base_database:
+            parser.error('Irish Checkpoint requires --stage, --units and --base-database')
         args.include_outcomes = True
     if args.include_wetfeet_candidate:
         args.include_wetfeet_scene = args.include_wetfeet_rosters = True
@@ -107,10 +113,12 @@ def main():
         for layer in source.layers[world.lower()]:
             text = source.read(layer)
             if world not in (RACE_WORLD, RUHA_WORLD):
+                reviewed_tint = args.include_industrial_candidate and layer == industrial.DEFAULT
                 if args.include_gwotline_mode and layer == gwotline.AO:
                     ao_body, instances = gwotline.stage_boundaries(source)
+                elif args.include_irish_candidate and layer == irish.DEFAULT:
+                    ao_body, instances = irish.boundaries(text)
                 else:
-                    reviewed_tint = args.include_industrial_candidate and layer == industrial.DEFAULT
                     ao_body, instances = convert_boundaries(text, allow_public_faction_color=reviewed_tint)
                 if instances:
                     audit = {'instances': instances}
@@ -130,6 +138,8 @@ def main():
                             and layer == wetfeet.PUBLIC_MARKERS
                         ) or (
                             args.include_industrial_candidate and layer == industrial.DEFAULT
+                        ) or (
+                            args.include_irish_candidate and layer == irish.DEFAULT
                         )
                         if layer in dev.files and not reviewed_candidate:
                             audit['gap'] = 'Dev already contains the original layer path; review before adding boundary siblings'
@@ -449,6 +459,28 @@ def main():
                 'Compare live casualty thresholds, timeout notices and delivery to remote clients',
                 'Compare both boundary audiences, the staging-zone restriction and release',
                 'Check vehicle handling, loadout contents and original callsign labels',
+            ],
+        }
+    if args.include_irish_candidate:
+        row = report['worlds'][irish.WORLD]
+        outcome = row['outcomeCandidate']
+        if len(outcome.get('events', {})) != 3 or any('gap' in event for event in outcome['events'].values()):
+            parser.error('Irish Checkpoint needs all three reviewed source outcome events')
+        candidate, audit, icons = irish.assemble(source, dev, stock, row['briefingModePreset'],
+                                                 out[outcome['stagedFragment']], out)
+        for path, body in candidate.items():
+            if path in dev.files and dev.read(path).strip() != body.strip():
+                parser.error(f'Dev already has differing {path}')
+            out[path] = body
+        row['playtestCandidate'] = {
+            'presentOnDev': all(path in dev.files and dev.read(path).strip() == body.strip()
+                                for path, body in candidate.items()),
+            'boundaries': audit, 'icons': icons,
+            'remainingBehavior': [
+                'Compare live casualty thresholds, timeout notices and remote-client delivery',
+                'Compare boundary enforcement within five centimetres of the IRA polygon crossing',
+                'Compare staging-zone enforcement and release timing',
+                'Compare issued equipment, vehicle handling and original callsigns',
             ],
         }
     if args.stage:

@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "f793b765f34f9cc4c06177ada21e9d34098f6fd1",
+  "target": "0b3b69772af38396f3ffe519ad8a48ea20c1ee37",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1937,7 +1937,7 @@
         "worlds/arc/IrishCheckpoint/IrishCheckpoint.ent"
       ],
       "declaredPath": "worlds/arc/IrishCheckpoint/IrishCheckpoint.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{44537F34D942EF40}worlds/arc/IrishCheckpoint/IrishCheckpoint.ent"
     },
     "Missions/arc/JEFRMCWAC.conf": {
@@ -28470,8 +28470,9 @@
     "worlds/arc/IrishCheckpoint/IrishCheckpoint.ent": {
       "sourceResourceCount": 7,
       "devPaths": {
-        "absent": 6,
-        "changed": 1
+        "absent": 1,
+        "changed": 3,
+        "identical": 3
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -28508,12 +28509,17 @@
         "worlds/arc/IrishCheckpoint/IrishCheckpoint_Layers/default.layer": {
           "instances": {
             "71": {
-              "gap": "public outline colored by a restricted faction"
+              "vertices": 5,
+              "name": null,
+              "lastLine": 97
             },
             "98": {
-              "gap": "crossing or touching polygon edges"
+              "vertices": 9,
+              "name": null,
+              "lastLine": 136
             }
-          }
+          },
+          "placementLayer": "worlds/arc/IrishCheckpoint/IrishCheckpoint_Layers/default_GC_Boundaries.layer"
         }
       },
       "groupLayers": {
@@ -28592,7 +28598,29 @@
       },
       "briefingModePreset": "worlds/arc/IrishCheckpoint/IrishCheckpoint_GC_Settings.et",
       "renumberedInSourceOrder": true,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "playtestCandidate": {
+        "presentOnDev": true,
+        "boundaries": {
+          "71": {
+            "vertices": 5,
+            "name": null,
+            "lastLine": 97
+          },
+          "98": {
+            "vertices": 9,
+            "name": null,
+            "lastLine": 136
+          }
+        },
+        "icons": 7,
+        "remainingBehavior": [
+          "Compare live casualty thresholds, timeout notices and remote-client delivery",
+          "Compare boundary enforcement within five centimetres of the IRA polygon crossing",
+          "Compare staging-zone enforcement and release timing",
+          "Compare issued equipment, vehicle handling and original callsigns"
+        ]
+      }
     },
     "worlds/arc/JEFRMCWAC/JEFRMCWAC.ent": {
       "sourceResourceCount": 7,

@@ -1,4 +1,6 @@
 """Assemble the reviewed Industrial Metal world with compiled outcome rules."""
+import re
+
 from boundaries import convert_boundaries
 from briefings import block_end, guid
 from catalog import REF
@@ -50,43 +52,61 @@ def assemble(source, dev, stock, workshop, preset, rules, staged):
     files[BOUNDARIES], review = convert_boundaries(text, allow_public_faction_color=True)
     if len(review) != 2 or any(value.get('vertices') != 4 for value in review.values()):
         raise ValueError('Industrial Metal boundaries need review')
+    files[DEFAULT] = outcome_mode(WORLD, 'GC_IndustrialMode', preset, text, stock, rules, 'GC_IndustrialStartingZone')
+    return files, review
+
+
+def outcome_mode(world, name, preset, text, stock, rules, zone_name, children=''):
     lines = text.splitlines()
     start = next(i for i, line in enumerate(lines) if line.startswith('PS_GameModeCoop '))
     prelude = '\n'.join(lines[:start])
     for resource, path in REF.findall(prelude):
         if not stock.contains(resource, path):
-            raise ValueError('Industrial Metal default prefab changed: ' + path)
+            raise ValueError('default prefab changed: ' + path)
     weather = '\n'.join(lines[start + 2:block_end(lines, start + 1)]).replace('5EE3229927D4D2F5', '6B71E9A8B1A8C501')
-    zone = text[text.index('SCR_EditorRestrictionZoneEntity :'):].replace(
-        'SCR_EditorRestrictionZoneEntity :', 'SCR_EditorRestrictionZoneEntity GC_IndustrialStartingZone :', 1)
-    key = WORLD + '/release'
-    files[DEFAULT] = prelude + f'''
+    old_mode = '\n'.join(lines[start:block_end(lines, start)])
+    coords = re.search(r'^ coords (.+)$', old_mode, re.M)[1]
+    millis = int(re.search(r'^ m_iFreezeTime (\d+)$', old_mode, re.M)[1])
+    if millis % 1000:
+        raise ValueError('staging time needs whole seconds')
+    seconds = millis // 1000
+    first = next(i for i, line in enumerate(lines) if line.startswith('SCR_EditorRestrictionZoneEntity :'))
+    zone = '\n'.join(lines[first:block_end(lines, first) + 1])
+    if text.endswith('\n') or block_end(lines, first) < len(lines) - 1:
+        zone += '\n'
+    zone = zone.replace('SCR_EditorRestrictionZoneEntity :', f'SCR_EditorRestrictionZoneEntity {zone_name} :', 1)
+    for resource, path in REF.findall(zone):
+        if not stock.contains(resource, path):
+            raise ValueError('restriction zone prefab changed: ' + path)
+    key = world + '/release'
+    event_name = 'Release Industrial Metal staging zone' if world == WORLD else 'Release staging zone'
+    return prelude + f'''
 SCR_MapEntity MapEntity1 : "{{731564B66F91B107}}Prefabs/World/Game/MapEntity.et" {{
- coords 7778.027 0 3997.521
+ coords {coords}
 }}
-GC_LobbyGameMode GC_IndustrialMode : "{{{guid(WORLD + '/resource')}}}{preset}" {{
+GC_LobbyGameMode {name} : "{{{guid(world + '/resource')}}}{preset}" {{
  components {{
 {weather}
   SCR_PlayersRestrictionZoneManagerComponent "{{{guid(WORLD + '/zone-manager')}}}" {{
   }}
   GC_LobbyFreezeComponent "{{E81E75BC287148D0}}" {{
-   m_iAuthoredCountdownSeconds 180
+   m_iAuthoredCountdownSeconds {seconds}
   }}
-  GC_PeakFactionPopulationComponent "{{{guid(WORLD + '/population')}}}" {{
+  GC_PeakFactionPopulationComponent "{{{guid(world + '/population')}}}" {{
   }}
   GC_LobbyManager "{{6A137A39106A4973}}" {{
    m_aMissionEvents + {{
 {rules}    GC_Event "{{{guid(key)}}}" {{
-     m_sName "Release Industrial Metal staging zone"
+     m_sName "{event_name}"
      m_aConditions {{
       GC_TimerCondition "{{{guid(key + '/timer')}}}" {{
-       m_fSeconds 180
+       m_fSeconds {seconds}
       }}
      }}
      m_aActions {{
       GC_DeleteEntitiesAction "{{{guid(key + '/delete')}}}" {{
        m_aEntities {{
-        "GC_IndustrialStartingZone"
+        "{zone_name}"
        }}
       }}
      }}
@@ -94,7 +114,6 @@ GC_LobbyGameMode GC_IndustrialMode : "{{{guid(WORLD + '/resource')}}}{preset}" {
    }}
   }}
  }}
- coords 7778.027 0 3997.521
-}}
+ coords {coords}
+{children}}}
 ''' + zone
-    return files, review
