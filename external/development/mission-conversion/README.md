@@ -442,3 +442,11 @@ The batch now converts unnamed objective placements when their root replication 
 Legacy faction manager overrides may be unnamed. The converter still requires the known inherited manager ID and preserves the authoritative faction record. It keeps the presentation overrides on that record in GC Lobby. The playable roster pass now also recognizes the reviewed base FIA character ancestry.
 
 We Hate Stairs Express is in local Missions Dev commit `47b2a66b`. The file review matched all 31 ordered slots, the Angry Miners faction label, the 10-second countdown, the time and date and the two casualty notices. The draft passed the installed resource audit. Live faction labels and casualty timings still need shared runtime coverage.
+
+## Radius capture settings
+
+The shared radius capture rule now uses the legacy defaults of a 25-metre radius and zero hold when those fields are omitted. It carries over both ratio directions, ignored factions, discovery policy, elapsed hold time, and the six optional status messages with their original audience. Authored names and placement transforms survive the conversion. Unknown comparison modes, duplicate area names, and capture scripts that can fire outside gameplay still require review. The source contracts are TilW Mission Framework's faction trigger, base trigger and published faction trigger prefab.
+
+The catalog pass cleared faction-trigger blockers in 51 worlds and framework-event blockers in 45. Nested polygon triggers and custom trigger-side effects remain open. Live discovery, loss and status-message timing still need shared multiplayer coverage.
+
+Crash Party and Ridge Rumble are in local Missions Dev commit `0abd5519`. The comparison matched 75 and 68 ordered slots respectively, both 25-metre capture areas, both 180-second holds, casualty thresholds and authored timeout notices. Ridge Rumble's original launcher advertises 66 and retains that value. Crash Party's world reference was normalized to the verified path with its original GUID. Both drafts passed the installed resource audit.

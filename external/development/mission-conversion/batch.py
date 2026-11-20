@@ -293,12 +293,12 @@ def migrate_assets(source, dev, draft, asset_aliases=None):
             for owner, path, reason in sorted(blockers)]
 
 
-TRIGGER = re.compile(r'(?P<group>\$grp )?TILW_(?P<kind>Extraction|Faction)TriggerEntity(?: [\w.-]+)?'
+TRIGGER = re.compile(r'(?P<group>\$grp )?TILW_(?P<kind>Extraction|Faction)TriggerEntity(?: (?P<name>[\w.-]+))?'
                      r' : "\{(?P<guid>192ABD6B9232E064|8C576D46F6579229)\}[^"\n]+" \{')
 
 
 def area_rules(source, world):
-    conditions, placements = {}, {}
+    conditions, placements, audit = {}, {}, {}
     for layer in source.layers[world.lower()]:
         text = source.read(layer)
         if 'TILW_ExtractionTriggerEntity' not in text and 'TILW_FactionTriggerEntity' not in text:
@@ -307,19 +307,20 @@ def area_rules(source, world):
             match = TRIGGER.fullmatch(block[0])
             if not match:
                 continue
-            members = [block[1:-1]]
+            members = [(match['name'], block[1:-1])]
             if match['group']:
                 members = []
                 index = 1
                 while index < len(block) - 1:
-                    if not re.fullmatch(r' (?:(?:[\w.-]+) )?\{', block[index]):
+                    member = re.fullmatch(r' (?:([\w.-]+) )?\{', block[index])
+                    if not member:
                         raise ValueError('unsupported grouped area placement')
                     end = block_end(block, index)
-                    members.append(block[index + 1:end])
+                    members.append((member[1], block[index + 1:end]))
                     index = end + 1
-            result, areas = {}, []
+            result, areas, capture_details = {}, [], {}
             try:
-                for fields in members:
+                for name, fields in members:
                     flag_field = next(value.strip() for value in fields if value.strip().startswith('m_flagName '))
                     flag = flag_field.removeprefix('m_flagName ')
                     if not re.fullmatch(r'"\w+"', flag) or flag in conditions or flag in result:
@@ -328,9 +329,9 @@ def area_rules(source, world):
                     if match['kind'] == 'Extraction' and match['guid'] == '192ABD6B9232E064':
                         rule, area = extraction_rule(world, area_name, flag, fields)
                     elif match['kind'] == 'Faction' and match['guid'] == '8C576D46F6579229':
+                        area_name = name or area_name
                         built, area, details = capture_instance(world, area_name, fields)
-                        if not (0 < details['radiusMeters'] < float('inf') and 0.1 <= details['seconds'] <= 86400):
-                            raise ValueError('invalid faction capture settings')
+                        capture_details[flag[1:-1]] = {'area': area_name, **details}
                         rule = built[flag]
                     else:
                         raise ValueError('inconsistent trigger identity')
@@ -340,7 +341,9 @@ def area_rules(source, world):
                 continue
             conditions.update(result)
             placements[(layer, line)] = ({flag[1:-1] for flag in result}, ''.join(areas))
-    return conditions, placements
+            if capture_details:
+                audit[f'{layer}:{line}'] = capture_details
+    return conditions, placements, audit
 
 
 def extraction_rule(world, area_name, flag, fields):
@@ -536,6 +539,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     boundaries = {}
     reused_layers = set()
     group_blocks = []
+    area_names = []
     objective_flags, interaction_placements = interactions
     event_flags = {action['setsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
                    if 'setsFlag' in action}
@@ -580,7 +584,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     except ValueError as exc:
                         blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
                 elif (layer, line) in area_placements and area_placements[(layer, line)][0] <= used_flags:
-                    result.append(area_placements[(layer, line)][1])
+                    areas = area_placements[(layer, line)][1]
+                    area_names.extend(re.findall(r'^GC_RadiusAreaEntity ([\w.-]+) :', areas, re.M))
+                    result.append(areas)
                 elif (layer, line) in interaction_placements:
                     result.append(interaction_placements[(layer, line)])
                 elif kind == 'PS_ManualMarker':
@@ -635,9 +641,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 or any(flag_uses[flag[1:-1]] != 1 for flag in delayed.conditions)):
             blockers.append({'rule': 'delayed extraction', 'file': world,
                              'detail': 'extraction needs all spawns and one positive consumer per flag'})
-    if not blockers and (assignments or marker_edits or extraction_spawns
+    if not blockers and (assignments or marker_edits or extraction_spawns or area_names
                          or any('m_aStatic' in body for body in draft.values())):
         named = named_placements(draft.values())
+        for name in sorted(set(area_names)):
+            if len(named.get(name, [])) != 1:
+                blockers.append({'rule': 'area name', 'file': world, 'detail': 'ambiguous area named ' + name})
         for spawn in extraction_spawns:
             if len(named.get(spawn['anchor'], [])) != 1 or spawn['area'] in named:
                 blockers.append({'rule': 'delayed extraction', 'file': world,

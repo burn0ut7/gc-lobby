@@ -10,7 +10,7 @@ from industrial import outcome_mode
 from groups import group_layer
 from launchers import launcher
 from markers import convert_layer
-from scenery import StockPrefabs
+from scenery import FIELD, NUMBER, StockPrefabs
 
 RECIPES = {
     'FightingRetreat': {
@@ -154,66 +154,119 @@ def capture(source, world):
     return conditions, ''.join(areas), audit
 
 
+CAPTURE_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ', 'scale'}
+CAPTURE_TEXT = {
+    'm_sCaptured': '"The %1 has taken control of %2."',
+    'm_sCapturing': '"The %1 is taking control of %2."',
+    'm_sCaptureInterrupted': '"The %1 is no longer taking control of %2."',
+    'm_sLost': '"The %1 has lost control of %2."',
+    'm_sLosing': '"The %1 is losing control of %2."',
+    'm_sLossInterrupted': '"The %1 is no longer losing control of %2."',
+}
+
+
+def faction_keys(value):
+    keys = value.split()
+    if len(keys) > 256 or len(set(keys)) != len(keys) or any(not re.fullmatch(r'"[\w.-]+"', key) for key in keys):
+        raise ValueError('invalid capture faction list')
+    return keys
+
+
 def capture_instance(world, area_name, lines):
     data = properties(lines, {
-        'coords', 'm_queryRadius', 'm_captureTime', 'm_sendStatusMessages', 'm_locationName',
+        'm_queryRadius', 'm_captureTime', 'm_sendStatusMessages', 'm_locationName',
         'm_flagName', 'm_stopAfterFirstChange', 'm_playersOnly', 'm_ownerFactionKey', 'm_ratioThreshold',
-    })
+        'm_comparisonMode', 'm_ignoredFactions', 'm_displayTo', 'm_statusMessages',
+        'm_skipFirstQuery', 'm_eventsOnlyDuringGame',
+    } | CAPTURE_TRANSFORM)
     players_only = data.get('m_playersOnly', '0')
     stops = data.get('m_stopAfterFirstChange', '0')
     status = data.get('m_sendStatusMessages', '0')
-    if any(value not in ('0', '1') for value in (status, players_only, stops)):
-        raise ValueError('Arc capture options changed')
+    skip = data.get('m_skipFirstQuery', '0')
+    comparison = data.get('m_comparisonMode', 'EQUAL_OR_MORE')
+    if (any(value not in ('0', '1') for value in (status, players_only, stops, skip))
+            or comparison not in ('EQUAL_OR_MORE', 'EQUAL_OR_LESS', '1', '0')
+            or data.get('m_eventsOnlyDuringGame', '1') != '1'):
+        raise ValueError('unsupported capture options')
+    at_most = comparison in ('EQUAL_OR_LESS', '0')
     location = data.get('m_locationName', '"the location"')
+    owner = data['m_ownerFactionKey']
     ratio = data.get('m_ratioThreshold', '1')
-    if not re.fullmatch(QUOTED, location) or not Decimal(0) <= Decimal(ratio) <= Decimal(1):
-        raise ValueError('Arc capture location name changed')
+    radius = data.get('m_queryRadius', '25')
+    hold = data.get('m_captureTime', '0')
+    transform = {key: value for key, value in data.items() if key in CAPTURE_TRANSFORM}
+    if ('coords' not in transform or any(not FIELD.fullmatch(f'{key} {value}') for key, value in transform.items())
+            or not re.fullmatch(r'"[\w.-]+"', owner)
+            or any(not re.fullmatch(NUMBER, value) for value in (ratio, radius, hold))
+            or not (0 <= Decimal(ratio) <= 1 and 0 < Decimal(radius) <= 100000 and 0 <= Decimal(hold) <= 86400)
+            or not re.fullmatch(QUOTED, location) or len(location.encode()) - 2 > 80
+            or '<' in location or '>' in location):
+        raise ValueError('invalid capture location, threshold or timing')
+    ignored = faction_keys(data.get('m_ignoredFactions', ''))
+    recipients = faction_keys(data.get('m_displayTo', ''))
+    if owner in ignored:
+        raise ValueError('capturing faction cannot also be ignored')
     key = world + '/capture/' + data['m_flagName']
     who = '' if players_only == '1' else '        m_iWho 2\n'
     stop = '        m_bStopAfterFirstChange 1\n' if stops == '1' else ''
+    discovery = '        m_bSkipDiscovery 1\n' if skip == '1' else ''
+    share = '        m_bAtMost 1\n' if at_most else ''
+    if ignored:
+        share += '        m_aIgnoredFactions {\n         ' + ' '.join(ignored) + '\n        }\n'
     messages = ''
     if status == '1':
+        texts = list(CAPTURE_TEXT.values())
+        if 'm_statusMessages' in data:
+            value = data['m_statusMessages']
+            texts = re.findall(QUOTED, value)
+            if (len(texts) != 6 or not re.fullmatch(rf'(?:{QUOTED}\s*)+', value)
+                    or any(len(text.encode()) - 2 > 256 or '<' in text or '>' in text for text in texts)):
+                raise ValueError('unsupported custom capture status messages')
+        fields = ''.join(f'         {field} {text}\n' for field, text in zip(CAPTURE_TEXT, texts))
+        audience = '         m_aFactions {\n          ' + ' '.join(recipients) + '\n         }\n' if recipients else ''
         messages = f'''        m_Messages GC_CaptureMessages "{{{guid(key + '/messages')}}}" {{
          m_sLocation {location}
-         m_sCaptured "The %1 has taken control of %2."
-         m_sCapturing "The %1 is taking control of %2."
-         m_sCaptureInterrupted "The %1 is no longer taking control of %2."
-         m_sLost "The %1 has lost control of %2."
-         m_sLosing "The %1 is losing control of %2."
-         m_sLossInterrupted "The %1 is no longer losing control of %2."
-        }}
+{audience}{fields}        }}
 '''
     condition = f'''      GC_AreaCondition "{{{guid(key)}}}" {{
        m_sArea "{area_name}"
        m_Targets GC_CharacterAreaTargets "{{{guid(key + '/players')}}}" {{
 {who}        m_aFactions {{
-         {data['m_ownerFactionKey']}
+         {owner}
         }}
        }}
        m_Requirement GC_LocalFactionShare "{{{guid(key + '/share')}}}" {{
         m_fRequiredShare {ratio}
-       }}
+{share}       }}
        m_Capture GC_AreaCaptureOptions "{{{guid(key + '/timer')}}}" {{
-        m_fSeconds {data['m_captureTime']}
+        m_fSeconds {hold}
         m_bUseElapsedTime 1
         m_iInterruption 3
-{stop}{messages}       }}
+{stop}{discovery}{messages}       }}
       }}'''
+    position = ''.join(f' {field} {value}\n' for field, value in transform.items())
     area = f'''GC_RadiusAreaEntity {area_name} : "{{2C4447C53A1E450B}}Prefabs/Logic/Mission/RadiusArea.et" {{
- coords {data['coords']}
- m_fRadius {data['m_queryRadius']}
+{position} m_fRadius {radius}
 }}
 '''
     audit = {
-        'faction': data['m_ownerFactionKey'][1:-1],
+        'faction': owner[1:-1],
         'location': location[1:-1],
-        'seconds': int(data['m_captureTime']),
-        'radiusMeters': float(data['m_queryRadius']) if '.' in data['m_queryRadius'] else int(data['m_queryRadius']),
+        'seconds': int(Decimal(hold)) if Decimal(hold) == Decimal(hold).to_integral_value() else float(hold),
+        'radiusMeters': float(radius) if '.' in radius or 'e' in radius.lower() else int(radius),
         'requiredLocalShare': float(ratio) if ratio != '1' else 1,
         'timing': 'elapsed mission seconds',
         'population': 'players' if players_only == '1' else 'players and AI',
         'stopsAfterFirstChange': stops == '1',
     }
+    if at_most:
+        audit['comparison'] = 'at most'
+    if ignored:
+        audit['ignoredFactions'] = [key[1:-1] for key in ignored]
+    if recipients and status == '1':
+        audit['statusRecipients'] = [key[1:-1] for key in recipients]
+    if skip == '1':
+        audit['skipDiscovery'] = True
     return {data['m_flagName']: condition.splitlines()}, area, audit
 
 

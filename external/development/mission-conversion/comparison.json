@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "47b2a66b6b86f4c70637ff00e18d20a14de94815",
+  "target": "0abd5519dd6bdcd078055207b71e881a8184726c",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1801,7 +1801,7 @@
         "worlds/arc/CrashParty/CrashParty.ent"
       ],
       "declaredPath": "worlds/arc/Crash Party/CrashParty.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{9BCB932E357801CB}worlds/arc/CrashParty/CrashParty.ent"
     },
     "Missions/arc/DustyDrive.conf": {
@@ -2041,7 +2041,7 @@
         "worlds/arc/RidgeRumble/RidgeRumble.ent"
       ],
       "declaredPath": "worlds/arc/RidgeRumble/RidgeRumble.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{938E6065DBC93383}worlds/arc/RidgeRumble/RidgeRumble.ent"
     },
     "Missions/arc/RocketScience.conf": {
@@ -16925,7 +16925,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Jub/ALHADRA RUMBLE/ALHADRA RUMBLE_Layers/players_usmc.layer": {
-          "gap": "legacy slot playability requires review 4150D73759B80C84"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "directBriefingsRead": 14,
@@ -17284,7 +17284,8 @@
           "gap": "group field needs review: m_bDeleteIfNoPlayer"
         },
         "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/players.layer": {
-          "gap": "legacy slot playability requires review A59EA43640B5DE47"
+          "playableGroups": 5,
+          "unitPrefabEntries": 40
         }
       },
       "boundaryLayers": {
@@ -17476,7 +17477,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Jub/LightArmoredRecon/LightArmoredRecon_Layers/players_usmc.layer": {
-          "gap": "legacy slot playability requires review F4A5D8E2672E8D2B"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "boundaryLayers": {
@@ -17620,7 +17621,8 @@
           "unitPrefabEntries": 49
         },
         "worlds/Jub/MissionWithAssets/MissionWithAssets_Layers/players_usmc.layer": {
-          "gap": "legacy slot playability requires review DC4E422BC996164F"
+          "playableGroups": 5,
+          "unitPrefabEntries": 29
         }
       },
       "directBriefingsRead": 10,
@@ -17935,7 +17937,8 @@
       },
       "groupLayers": {
         "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/BLUFOR/Players.layer": {
-          "gap": "legacy slot playability requires review 7BB0A58F40CB2528"
+          "playableGroups": 5,
+          "unitPrefabEntries": 28
         },
         "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/INDFOR/AI/Prespawned.layer": {
           "playableGroups": 0,
@@ -18197,7 +18200,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles_Layers/players.layer": {
-          "gap": "legacy slot playability requires review 6E2E128D68393FDF"
+          "playableGroups": 5,
+          "unitPrefabEntries": 26
         }
       },
       "boundaryLayers": {
@@ -18338,7 +18342,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Jub/OperationJaws/OperationJaws_Layers/players_usmc.layer": {
-          "gap": "legacy slot playability requires review 7153E67D0072703C"
+          "playableGroups": 8,
+          "unitPrefabEntries": 67
         }
       },
       "boundaryLayers": {
@@ -18451,7 +18456,7 @@
       },
       "groupLayers": {
         "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/BLUFOR/BLUFOR_Players.layer": {
-          "gap": "legacy slot playability requires review 54AA8E6E06148F39"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/OPFOR/OPFOR_Players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -22162,7 +22167,8 @@
       },
       "groupLayers": {
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/BLUFOR/Players.layer": {
-          "gap": "legacy slot playability requires review 7BB0A58F40CB2528"
+          "playableGroups": 4,
+          "unitPrefabEntries": 24
         },
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/CIVFOR/Players.layer": {
           "gap": "group component needs review"
@@ -29522,7 +29528,7 @@
           "unitPrefabEntries": 27
         },
         "worlds/arc/BrambledeepBypass/BrambledeepBypass_Layers/players_us.layer": {
-          "gap": "legacy slot playability requires review 3367BFA2568E9046"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "directBriefingsRead": 11,
@@ -30154,8 +30160,9 @@
     "worlds/arc/CrashParty/CrashParty.ent": {
       "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 8,
-        "changed": 1
+        "absent": 2,
+        "changed": 6,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -30195,7 +30202,8 @@
           "unitPrefabEntries": 50
         },
         "worlds/arc/CrashParty/CrashParty_Layers/USPlayers.layer": {
-          "gap": "legacy slot playability requires review 88B61981BD94BAE1"
+          "playableGroups": 3,
+          "unitPrefabEntries": 25
         }
       },
       "boundaryLayers": {
@@ -31072,7 +31080,7 @@
           "unitPrefabEntries": 20
         },
         "worlds/arc/FactorySiegeRedux/FactorySiegeRedux_Layers/players_us.layer": {
-          "gap": "legacy slot playability requires review 96BC236C0E598201"
+          "gap": "unresolved character prefab EDBFF03A830C2966"
         }
       },
       "boundaryLayers": {
@@ -32977,7 +32985,8 @@
           "unitPrefabEntries": 22
         },
         "worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux_Layers/players_us.layer": {
-          "gap": "legacy slot playability requires review 96BC236C0E598201"
+          "playableGroups": 5,
+          "unitPrefabEntries": 40
         }
       },
       "boundaryLayers": {
@@ -33545,7 +33554,8 @@
           "unitPrefabEntries": 18
         },
         "worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux_Layers/players_us.layer": {
-          "gap": "legacy slot playability requires review 3367BFA2568E9046"
+          "playableGroups": 5,
+          "unitPrefabEntries": 50
         }
       },
       "boundaryLayers": {
@@ -34142,8 +34152,9 @@
     "worlds/arc/RidgeRumble/RidgeRumble.ent": {
       "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 7,
-        "changed": 1
+        "absent": 2,
+        "changed": 5,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -34183,7 +34194,8 @@
           "unitPrefabEntries": 22
         },
         "worlds/arc/RidgeRumble/RidgeRumble_Layers/Players_US.layer": {
-          "gap": "legacy slot playability requires review DC4E422BC996164F"
+          "playableGroups": 4,
+          "unitPrefabEntries": 46
         }
       },
       "boundaryLayers": {
@@ -34195,7 +34207,7 @@
               "lastLine": 90
             }
           },
-          "placementLayer": "worlds/arc/RidgeRumble/RidgeRumble_Layers/default_GC_Boundaries.layer"
+          "gap": "Dev already contains the original layer path; review before adding boundary siblings"
         }
       },
       "directBriefingsRead": 10,
@@ -35031,7 +35043,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/arc/SunnyWAC/SunnyWAC_Layers/players.layer": {
-          "gap": "legacy slot playability requires review 88B61981BD94BAE1"
+          "playableGroups": 3,
+          "unitPrefabEntries": 22
         }
       },
       "directBriefingsRead": 9,
