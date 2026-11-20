@@ -62,9 +62,16 @@ WORKSHOP_RESOURCE_ALIASES = {
     ('BF5F2D022EA8CB36', 'Worlds/Bystrany/Bystrany_Map_v02.topo'): (
         'Bystrany_6626CB89B6B9C913', '0C931F860C09AC4C', 'Worlds/Bystrany/Bystrany.topo'),
 }
-UNITS_VEHICLE_ALIASES = {
-    'F503F71C08BE3F7D': ('48F288F5BFF10D8B', 'Prefabs/Vehicles/Helicopters/AUS_MH60/AUS_UH60_armed.et',
-                         '67ea7fa93be8a84811d12f1be66ae2bce2b58f0a881dbd4375e0a89cbeeee5cd'),
+UNITS_PREFAB_ALIASES = {
+    ('F503F71C08BE3F7D', 'Prefabs/Vehicles/Helicopters/AUS_MH60/AUS_UH60_armed.et'): (
+        '48F288F5BFF10D8B', 'Prefabs/Vehicles/Helicopters/AUS_MH60/AUS_UH60_armed.et',
+        '67ea7fa93be8a84811d12f1be66ae2bce2b58f0a881dbd4375e0a89cbeeee5cd'),
+    ('B343AB76B0725657', 'Prefabs/Items/Equipment/Radios/Radio_R187P1_OLD_Separatist.et'): (
+        'B343AB76B0725657', 'Prefabs/Items/Equipment/Radios/RU/Radio_R187P1_OLD.et',
+        '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
+    ('B343AB76B0725657', 'Prefabs/Items/Equipment/Radios/Radio_R187P1_OLD_Single_Separatist.et'): (
+        'B343AB76B0725657', 'Prefabs/Items/Equipment/Radios/RU/Radio_R187P1_OLD.et',
+        '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 
 
@@ -244,17 +251,17 @@ def resource_aliases(workshop, units):
             database = databases[provider]
             if database and database.contains(guid, path):
                 aliases[original] = (guid, path)
-    for old, (current, path, digest) in UNITS_VEHICLE_ALIASES.items():
-        if (old not in units.resources and units.resources.get(current) == [path]
+    for original, (current, path, digest) in UNITS_PREFAB_ALIASES.items():
+        old, _ = original
+        if ((old == current or old not in units.resources) and units.resources.get(current) == [path]
                 and sha256(units.read(path).strip().encode()).hexdigest() == digest):
-            aliases[(old, path)] = (current, path)
+            aliases[original] = (current, path)
     return aliases
 
 
-def migrate_assets(source, dev, draft, asset_aliases=None):
+def migrate_assets(source, dev, draft, asset_aliases, local_loadouts):
     files = list(draft)
     blockers = set()
-    asset_aliases = asset_aliases or {}
     for owner in files:
         if PurePosixPath(owner).suffix.lower() not in SOURCE_TEXT:
             continue
@@ -287,7 +294,8 @@ def migrate_assets(source, dev, draft, asset_aliases=None):
                 if any(other != canonical for other in dev.resources.get(resource, [])):
                     raise ValueError('Dev resource identity collision')
                 if canonical not in draft:
-                    draft[canonical] = passive_asset(source, canonical)
+                    approved = local_loadouts.get(resource)
+                    draft[canonical] = approved[1] if approved else passive_asset(source, canonical)
                     draft[meta] = replace_reference(source.read(meta), META_NAME, identity[2], canonical)
                     files.append(canonical)
                 return f'"{{{ref[1]}}}{canonical}"'
@@ -515,7 +523,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
 
 
 def world_draft(source, dev, world, row, staged, area_placements, interactions, convert_group_block, asset_aliases,
-                delayed=None):
+                local_loadouts, delayed=None):
     draft, blockers = {}, []
     reviewed_replacements = {}
     if row.get('playtestCandidate') or row.get('raceConversion'):
@@ -701,7 +709,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'launcher', 'file': header, 'detail': str(exc)})
     if delayed:
         draft.update(delayed.assets)
-    blockers.extend(migrate_assets(source, dev, draft, asset_aliases))
+    blockers.extend(migrate_assets(source, dev, draft, asset_aliases, local_loadouts))
     for path, text in draft.items():
         if path not in dev.files:
             continue
@@ -740,12 +748,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
 
 
 def plan(source, dev, report, staged, area_placements, interactions, convert_group_block, asset_aliases,
-         delayed_extractions):
+         local_loadouts, delayed_extractions):
     results, emitted, totals, families = {}, {}, Counter(), Counter()
     for world, row in report['worlds'].items():
         draft, result = world_draft(source, dev, world, row, staged, area_placements.get(world, {}),
                                     interactions.get(world, ((), {})), convert_group_block, asset_aliases,
-                                    delayed_extractions.get(world))
+                                    local_loadouts, delayed_extractions.get(world))
         results[world] = result
         totals[result['status']] += 1
         families.update({blocker['rule'] for blocker in result.get('blockers', [])})

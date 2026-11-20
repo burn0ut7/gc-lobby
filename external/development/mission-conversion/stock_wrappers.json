@@ -1051,6 +1051,40 @@
         ]
       ]
     },
+    "E3545CFEDD312D54": {
+      "parent": [
+        "E552DABF3636C2AD",
+        "Prefabs/Groups/OPFOR/Group_USSR_RifleSquad.et"
+      ],
+      "path": "Prefabs/Groups/OPFOR/Group_USSR_RifleSquad_p.et",
+      "sha256": "396399f3c91fe8d33616da255f19032701490e06e37b69eff1dd5438cc605cf1",
+      "slots": [
+        [
+          "A5F4D7FEBDB57182",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL_P.et"
+        ],
+        [
+          "00716F7369F3C5E8",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AR_P.et"
+        ],
+        [
+          "BDA13DF416E8D9F6",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT_P.et"
+        ],
+        [
+          "F9C5F4700B5D87FB",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT_P.et"
+        ],
+        [
+          "6A840CB36D1670C2",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SR_P.et"
+        ],
+        [
+          "47B0BA658525301A",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman_P.et"
+        ]
+      ]
+    },
     "E98CEB8BE757C8A5": {
       "parent": [
         "A2F75E45C66B1C0A",

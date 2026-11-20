@@ -370,7 +370,7 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     return out + metadata, len(roster)
 
 
-def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_owned):
+def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_owned, reviewed_members):
     roster = list(spec['slots'])
     placement = []
     depth = min((len(line) - len(line.lstrip()) for line in lines if line.strip()), default=1)
@@ -394,7 +394,8 @@ def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_
     verified = {}
     rendered = []
     for guid, path in roster:
-        parent = stock_character(guid, path, stock)
+        canonical = (reviewed_members or {}).get(guid.upper())
+        parent = (guid.upper(), canonical) if canonical == path else stock_character(guid, path, stock)
         if not parent:
             raise ValueError('unverified stock wrapper character ' + guid)
         resource, asset = parent
@@ -428,7 +429,7 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
                 raise ValueError('unverified stock wrapper group ' + guid)
             resource, dest = spec['parent']
             convert = partial(convert_stock_instance, spec=spec, source_units=source_units, dev_units=dev_units,
-                              stock=stock, locally_owned=locally_owned)
+                              stock=stock, locally_owned=locally_owned, reviewed_members=reviewed_members)
         else:
             _, old = prefab(source_units, guid)
             dest, new = prefab(dev_units, guid)

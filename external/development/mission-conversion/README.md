@@ -464,3 +464,11 @@ The batch converts a supported legacy cover into a native inverted map fill. The
 A disabled enforcement component with an active map fill now converts to a native visual-only polygon. The pass can reuse an existing Dev boundary layer and place only the missing shape in a separate layer.
 
 Blackhawk Brawl and Heely Co Peter Raid Part 1 are in local Missions Dev commit `2c9c295a`. The file audits matched 77 and 30 slots respectively and validated the authored capture checks. Blackhawk preserves the passive US/USSR fill and uses the current Bystrany topology referenced by the provider's own Map Entity. The historic contour binary was unavailable for comparison. Heely retains the authored 1.1 cover ratio and uses the same verified Kunar AI World registration already used by the Gwotline port. Both drafts passed the resource audit. The shared shape pass reduced boundary blockers from 122 to 114 worlds before the terrain aliases were applied.
+
+## Mission-owned player loadouts
+
+The converter retains mission-owned playable character prefabs under their original GUIDs and paths. It removes the standard Reforger Lobby playability marker after verifying the root character and supported parent ancestry. A native playable group registers the slots. The authored equipment, character presentation and faction affiliation remain on the character prefab. Parent and equipment paths change only where the existing asset identity is verified. Unknown inheritance, custom legacy components and differing Dev resources still stop the draft.
+
+The stock wrapper ledger now includes the archived Soviet rifle squad wrapper, verified through the published GC Lobby package. Its native group can retain explicitly authored mission-owned slots. The legacy FIA base overlay from published Core also matches the Units Dev copy byte for byte. This allows the Syrian Checkpoint HTS and SAA character prefabs to keep their authored gear while selecting the canonical Units parents and radio.
+
+Syrian Checkpoint now stages all 17 custom characters and all 60 ordered roster slots. The resource audit still holds the draft on the legacy jacket, trousers and baseball cap GUIDs `F102F28DCAC86628`, `5C8C69E719F68617` and `5DF4933859A5CF08`. The archived index and installed registries did not resolve these assets. Live equipment and faction presentation remain open.
