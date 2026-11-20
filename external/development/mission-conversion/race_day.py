@@ -23,7 +23,6 @@ def race_files(source):
         '{BF38869730F83577}Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized_P.et',
         '{22E43956740A6794}Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized.et')
     original = files[core]
-    mode = str(PurePosixPath(WORLD).with_suffix('')) + '_GC_Settings.et'
     fences = re.findall(r'^\s*"(fence_\d+)"$', original, re.M)
     if len(fences) != 44 or len(set(fences)) != 44:
         raise ValueError('start gate has unexpected entity names')
@@ -32,15 +31,21 @@ def race_files(source):
     ai = original[:original.index('PerceptionManager')]
     zone = original[original.index('SCR_EditorRestrictionZoneEntity'):]
     zone = zone.replace('SCR_EditorRestrictionZoneEntity :', 'SCR_EditorRestrictionZoneEntity GC_RaceStartingZone :', 1)
-    mode_body = """GC_LobbyGameMode GC_RaceMode : "@MODE@" {
+    files[core] = ai + race_mode(WORLD, names, '3080.505 10.036 3056.896', '2719.005 10 3160.181', '   m_iStartingHours 9') + zone
+    return files
+
+
+def race_mode(world, names, coords, finish, weather, extra_event=''):
+    mode = str(PurePosixPath(world).with_suffix('')) + '_GC_Settings.et'
+    body = """GC_LobbyGameMode GC_RaceMode : "@MODE@" {
  components {
   SCR_TimeAndWeatherHandlerComponent "{6B71E9A8B1A8C501}" {
-   m_iStartingHours 9
+@WEATHER@
   }
   GC_LobbyManager "{6A137A39106A4973}" {
    m_bSlotsStartLocked 0
    m_aMissionEvents {
-    GC_Event "{6664B56611AE97FF}" {
+@EXTRA@    GC_Event "{6664B56611AE97FF}" {
      m_sName "RemoveFence"
      m_aConditions {
       GC_TimerCondition "{D944E3DF2B010001}" {
@@ -101,13 +106,14 @@ def race_files(source):
    }
   }
  }
- coords 3080.505 10.036 3056.896
+ coords @MODE_COORDS@
  m_eJipMode DISABLED
 }
 GC_RadiusAreaEntity GC_RaceFinish : "{2C4447C53A1E450B}Prefabs/Logic/Mission/RadiusArea.et" {
- coords 2719.005 10 3160.181
+ coords @FINISH@
  m_fRadius 25
 }
 """
-    files[core] = ai + mode_body.replace('@MODE@', '{' + guid(WORLD + '/resource') + '}' + mode).replace('@NAMES@', names) + zone
-    return files
+    return (body.replace('@MODE@', '{' + guid(world + '/resource') + '}' + mode)
+            .replace('@NAMES@', names).replace('@MODE_COORDS@', coords).replace('@FINISH@', finish)
+            .replace('@WEATHER@', weather).replace('@EXTRA@', extra_event))

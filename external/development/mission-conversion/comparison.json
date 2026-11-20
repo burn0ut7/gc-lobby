@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "5e571911b33f85facef1f21cc62872d1a7e323de",
+  "target": "a817ab024101b38bcc78726c3f5346b668afefa7",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -940,7 +940,7 @@
         "worlds/Perfk/RaceDayRuha/RaceDayRuha.ent"
       ],
       "declaredPath": "worlds/Perfk/RaceDayRuha/RaceDayRuha.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": true
     },
     "Missions/Reapzr/Deadlock.conf": {
       "worlds": [
@@ -10646,12 +10646,22 @@
       "directBriefingsRead": 1,
       "briefingModePreset": "worlds/Perfk/RaceDayKunar/RaceDayKunar_GC_Settings.et",
       "renumberedInSourceOrder": false,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "raceConversion": {
+        "generatedFiles": 11,
+        "presentOnDev": true,
+        "remainingBehavior": [
+          "Verify a driven finish with the race motorbike",
+          "Compare legacy staging countdown, JIP and remote clients"
+        ]
+      }
     },
     "worlds/Perfk/RaceDayRuha/RaceDayRuha.ent": {
       "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 9
+        "absent": 1,
+        "changed": 5,
+        "identical": 3
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -10692,7 +10702,17 @@
       "directBriefingsRead": 1,
       "briefingModePreset": "worlds/Perfk/RaceDayRuha/RaceDayRuha_GC_Settings.et",
       "renumberedInSourceOrder": false,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "raceConversion": {
+        "generatedFiles": 11,
+        "presentOnDev": true,
+        "remainingBehavior": [
+          "Verify a driven finish with the race motorbike",
+          "Compare legacy staging countdown, JIP and remote clients",
+          "Compare transfer action reach, map rendering and roadblock cleanup in play",
+          "Check boundary at the five-centimetre crossover adjustment"
+        ]
+      }
     },
     "worlds/Reapzr/Deadlock/Deadlock.ent": {
       "sourceResourceCount": 11,

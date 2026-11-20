@@ -12,6 +12,7 @@ from groups import group_layer
 from markers import convert_layer as convert_markers
 from respawns import read_respawns, ticket_event
 from scenery import StockPrefabs, placements
+from race_ruha import ruha_files, WORLD as RUHA_WORLD
 from race_day import race_files, WORLD as RACE_WORLD
 
 
@@ -28,6 +29,7 @@ def main():
     parser.add_argument('--units', type=Path, help='compare playable group placements against both Units revisions')
     parser.add_argument('--units-source', default='origin/master')
     parser.add_argument('--units-dev', default='origin/dev')
+    parser.add_argument('--include-ruha', action='store_true', help='generate the reviewed Ruha race world')
     args = parser.parse_args()
     source = Snapshot(args.missions, args.source)
     dev = Snapshot(args.missions, args.dev)
@@ -158,14 +160,29 @@ def main():
                 gaps.append(str(exc))
         row['briefingGaps'] = gaps
     report['devOnlyHeaders'] = sorted(target_headers - set(report['headers']))
-    if args.include_race_day:
-        race = report['worlds'][RACE_WORLD]
-        if 'briefingModePreset' not in race:
-            parser.error('Kunar world needs a verified generated briefing preset')
-        for path, data in race_files(source).items():
+    for enabled, world, recipe in [(args.include_race_day, RACE_WORLD, race_files), (args.include_ruha, RUHA_WORLD, ruha_files)]:
+        if not enabled:
+            continue
+        if 'briefingModePreset' not in report['worlds'][world]:
+            parser.error(f'{world} needs a verified generated briefing preset')
+        generated = recipe(source)
+        for path, data in generated.items():
             if path in dev.files and dev.read(path).strip() != data.strip():
                 parser.error(f'Dev already has differing {path}')
             out[path] = data
+        report['worlds'][world]['raceConversion'] = {
+            'generatedFiles': len(generated),
+            'presentOnDev': all(path in dev.files for path in generated),
+            'remainingBehavior': [
+                'Verify a driven finish with the race motorbike',
+                'Compare legacy staging countdown, JIP and remote clients',
+            ],
+        }
+        if world == RUHA_WORLD:
+            report['worlds'][world]['raceConversion']['remainingBehavior'].extend([
+                'Compare transfer action reach, map rendering and roadblock cleanup in play',
+                'Check boundary at the five-centimetre crossover adjustment',
+            ])
     if args.stage:
         stage = args.stage.resolve()
         if any(stage.is_relative_to(root.resolve()) for root in ([args.missions, lobby] + ([args.units] if args.units else []))):
