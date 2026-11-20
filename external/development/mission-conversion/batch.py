@@ -14,7 +14,7 @@ from interactions import convert_block as convert_interaction_block
 from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer
 from outcomes import FRAMEWORK, leaves
-from scenery import StockPrefabs, WAYPOINT_CLASS
+from scenery import FIELD, StockPrefabs, WAYPOINT_CLASS
 
 LEGACY = re.compile(r'\b(?:TILW|PS)_\w+')
 MODE = re.compile(r'^PS_GameModeCoop(?: [\w.-]+)? : "\{4CFD54745CD45673\}[^"]+" \{$')
@@ -29,6 +29,18 @@ LIGHT_COMPONENT = [
 ]
 LIGHT_FIELDS = {'ID', 'coords', 'Color', 'LV', 'ClipEV', 'Radius', 'NearPlane', 'SpotAngle',
                 'SpotAngleAttenuation', 'DistanceAttenuation', 'LensFlareType', 'LensFlareScale'}
+SERIALIZED_ID = '"\\{[0-9a-fA-F]{16}\\}"'
+MATERIAL_OVERRIDE = re.compile(
+    rf'SCR_DestructibleBuildingEntity : "\{{[\da-fA-F]{{16}}\}}Prefabs/Structures/[^"\n]+\.et" \{{\n'
+    rf' ID "[\da-fA-F]{{16}}"\n components \{{\n  MeshObject {SERIALIZED_ID} \{{\n   Materials \{{\n'
+    rf'(?:    MaterialAssignClass {SERIALIZED_ID} \{{\n     SourceMaterial "[^"\n]+"\n'
+    r'     AssignedMaterial "\{[\da-fA-F]{16}\}[^"\n]+\.emat"\n    \}\n)+'
+    r'   \}\n  \}\n \}\n(?P<transform>(?: [^\n]+\n)*)\}'
+)
+CALLSIGN_TRIPLET = (r'm_iGC_CallsignCompany "\d+"\n(?P=indent)m_iGC_CallsignPlatoon "\d+"\n'
+                    r'(?P=indent)m_iGC_CallsignSquad "\d+"\n')
+DUPLICATE_CALLSIGNS = re.compile(
+    rf'^(?P<first>(?P<indent> +){CALLSIGN_TRIPLET})(?P=indent){CALLSIGN_TRIPLET}', re.M)
 AI_WORLD_ALIASES = {
     '33A5B976E41B0A4C': ('Prefabs/AI/SCR_AIWorld_BadOrb.et', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et'),
 }
@@ -205,6 +217,9 @@ def passive_asset(source, path):
     if suffix == '.et':
         body = source.read(path)
         lines = body.splitlines()
+        material = MATERIAL_OVERRIDE.fullmatch(body.rstrip('\n'))
+        if material and all(FIELD.fullmatch(line.strip()) for line in material['transform'].splitlines()):
+            return body
         if (len(lines) > 8 and lines[0] == LIGHT and lines[2:7] == LIGHT_COMPONENT and lines[-1] == '}'
                 and all(line.startswith(' ') and line.strip().partition(' ')[0] in LIGHT_FIELDS
                         and '{' not in line and '}' not in line for line in [lines[1], *lines[7:-1]])):
@@ -256,7 +271,11 @@ def migrate_assets(source, dev, draft, asset_aliases=None):
                 canonical = paths[0]
                 meta = canonical + '.meta'
                 identity = META_NAME.search(source.read(meta))
-                if not identity or (path != canonical and identity[3] not in (path, canonical)):
+                moved_material = (identity and canonical.endswith('.emat')
+                                  and PurePosixPath(path).name == PurePosixPath(canonical).name
+                                  == PurePosixPath(identity[3]).name)
+                if (not identity or identity[2].upper() != resource
+                        or (path != canonical and identity[3] not in (path, canonical) and not moved_material)):
                     raise ValueError('resource path disagrees with metadata')
                 if any(other != canonical for other in dev.resources.get(resource, [])):
                     raise ValueError('Dev resource identity collision')
@@ -487,6 +506,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
 def world_draft(source, dev, world, row, staged, area_placements, interactions, convert_group_block, asset_aliases,
                 delayed=None):
     draft, blockers = {}, []
+    reviewed_replacements = {}
     if row.get('playtestCandidate') or row.get('raceConversion'):
         return {}, {'status': 'explicit recipe'}
     if not row['headers']:
@@ -668,7 +688,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             continue
         data = dev.read_raw(path) if isinstance(text, bytes) else dev.read_raw(path).decode('utf-8-sig').replace('\r\n', '\n')
         if data.strip() != text.strip():
-            blockers.append({'rule': 'existing Dev file differs', 'file': path})
+            if (path.endswith('.layer') and isinstance(data, str) and DUPLICATE_CALLSIGNS.search(data)
+                    and DUPLICATE_CALLSIGNS.sub(r'\g<first>', data).strip() == text.strip()):
+                reviewed_replacements[path] = sha256(data.encode()).hexdigest()
+            else:
+                blockers.append({'rule': 'existing Dev file differs', 'file': path})
     complete_rosters = (entry.get('unitPrefabEntries', 0) for entry in row.get('groupLayers', {}).values())
     slots = sum(complete_rosters) + sum(entry['slots'] for entry in group_blocks)
     advertised = {}
@@ -688,6 +712,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         'status': 'blocked by conversion rules' if blockers else 'generated for file review',
         'blockers': blockers, 'files': sorted(draft), 'mixedLayerGroups': group_blocks,
         'verifiedPlayableSlots': slots, 'advertisedSlots': advertised,
+        **({'reviewedReplacements': reviewed_replacements} if reviewed_replacements else {}),
         **({'unusedRandomFlags': unused_flags} if unused_flags else {}),
         **({'remainingBehavior': remaining} if remaining else {}),
     }

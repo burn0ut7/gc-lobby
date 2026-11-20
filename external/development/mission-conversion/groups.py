@@ -26,6 +26,7 @@ LEGACY_PLAYABLE_PARENTS = {
     ('5346CF7E39A65A6B', 'Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Base.et'),
     ('B889387E9A33D667',
      'Prefabs/Characters/Factions/BLUFOR/RHS_USAF/RHS_USAF_Army/Character_RHS_USA_BaseLoadout.et'),
+    ('EDCFF009262F881C', 'Prefabs/Characters/Factions/OPFOR/RHS_AFRF/Character_RHS_AFRF_Base.et'),
 }
 RHS_AI_ROLES = {
     '1701B425406974A0': 'SL', '234A37EC8608DFAC': 'Rifleman', '727CB9BA48D9407A': 'SR_GL',
@@ -272,14 +273,22 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             end = block_end(lines, i)
             j = i + 1
             components = []
-            assigned = False
+            assigned = None
             while j < end:
                 last = block_end(lines, j)
                 match = CALL.fullmatch(lines[j])
                 if match and (match[1].upper() == STANDARD_CALLSIGN or match[1].upper() in reviewed_callsigns):
-                    if assigned and not reviewed_callsigns:
-                        raise ValueError('ambiguous duplicate callsign component')
                     placed = callsign(lines[j+1:last])
+                    if assigned is not None:
+                        # A unification pass reused the same ID for the retained numeric
+                        # override and the old disabled default. Enabled has no bearing on
+                        # the numeric reads made by the legacy playable manager.
+                        if not reviewed_callsigns and not (
+                                assigned[0] == match[1].upper() and set(assigned[1]) & INDEX.keys()
+                                and placed == {'Enabled': 0}):
+                            raise ValueError('ambiguous duplicate callsign component')
+                        j = last + 1
+                        continue
                     # PS_PlayableManager reads the component even when Enabled is zero.
                     # Unspecified attributes inherit through the Units prefab chain, then
                     # use the three zero defaults of PS_GroupCallsignAssigner.
@@ -291,9 +300,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                             if inherited_call and inherited_call[1].upper() == match[1].upper():
                                 effective.update(callsign(source_lines[pos+1:block_end(source_lines, pos)]))
                     effective.update(placed)
-                    if not assigned:
-                        metadata.extend(indent + f'{dest} "{effective[k]}"' for k, dest in INDEX.items())
-                    assigned = True
+                    metadata.extend(indent + f'{dest} "{effective[k]}"' for k, dest in INDEX.items())
+                    assigned = (match[1].upper(), placed)
                 elif FORMATION.fullmatch(lines[j].strip()):
                     components.extend(lines[j:last+1])
                 else:

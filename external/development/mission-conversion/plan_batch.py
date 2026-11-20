@@ -37,6 +37,8 @@ def summarize(inventory, review, limit):
                               f"{draft['verifiedPlayableSlots']} converted")
         record = {'world': world, 'launchers': sorted(headers),
                   'behaviorGaps': draft.get('remainingBehavior', [])}
+        if draft.get('reviewedReplacements'):
+            record['reviewedReplacements'] = sorted(draft['reviewedReplacements'])
         if issues:
             held.append({**record, 'issues': sorted(set(issues))})
         else:
@@ -75,6 +77,8 @@ def markdown(plan):
         for entry in selected:
             lines.append(f"- `{entry['world']}`")
             lines.extend(f'  - `{header}`' for header in entry['launchers'])
+            lines.extend(f'  - Existing Dev layer repair in `{path}`'
+                         for path in entry.get('reviewedReplacements', []))
             lines.extend(f'  - {gap}' for gap in entry['behaviorGaps'])
     else:
         lines.append('No drafts cleared the file checks.')

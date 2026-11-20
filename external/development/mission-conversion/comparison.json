@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "0a74ec5432ea3cfcee4d5fe1f04e47902341759f",
+  "target": "1a38c897ecb0fc98efd92eb1b6d4e9284d334f6e",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -2129,7 +2129,7 @@
         "worlds/arc/TwoCheckpoints/TwoCheckpoints.ent"
       ],
       "declaredPath": "worlds/arc/TwoCheckpoints/TwoCheckpoints.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{60918A35896FC8F7}worlds/arc/TwoCheckpoints/TwoCheckpoints.ent"
     },
     "Missions/arc/UrbanTroubles.conf": {
@@ -5795,7 +5795,7 @@
           "gap": "unresolved or duplicate Units prefab 1701B425406974A0"
         },
         "worlds/Delfer/Topdown/Topdown_Layers/redfor_players.layer": {
-          "gap": "legacy slot playability requires review 3CABD69DABD06AED"
+          "gap": "group field needs review: {"
         }
       },
       "boundaryLayers": {
@@ -7629,7 +7629,7 @@
       },
       "groupLayers": {
         "worlds/Gabe/BlocParty/BlocParty_Layers/Players_AFRF.layer": {
-          "gap": "legacy slot playability requires review 15CDD8ADC00E4B45"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Gabe/BlocParty/BlocParty_Layers/Players_INSURGENTS.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -16920,7 +16920,7 @@
       },
       "groupLayers": {
         "worlds/Jub/ALHADRA RUMBLE/ALHADRA RUMBLE_Layers/players_RU.layer": {
-          "gap": "legacy slot playability requires review 7EB863C903D1846D"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Jub/ALHADRA RUMBLE/ALHADRA RUMBLE_Layers/players_usmc.layer": {
           "gap": "legacy slot playability requires review 4150D73759B80C84"
@@ -17614,7 +17614,8 @@
       },
       "groupLayers": {
         "worlds/Jub/MissionWithAssets/MissionWithAssets_Layers/players_RU.layer": {
-          "gap": "legacy slot playability requires review 0590BC959DBAE400"
+          "playableGroups": 7,
+          "unitPrefabEntries": 49
         },
         "worlds/Jub/MissionWithAssets/MissionWithAssets_Layers/players_usmc.layer": {
           "gap": "legacy slot playability requires review DC4E422BC996164F"
@@ -22365,7 +22366,8 @@
           "unitPrefabEntries": 39
         },
         "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/OPFOR/Players.layer": {
-          "gap": "legacy slot playability requires review 7B3956EFB4BC6008"
+          "playableGroups": 4,
+          "unitPrefabEntries": 24
         }
       },
       "boundaryLayers": {
@@ -28624,7 +28626,8 @@
       },
       "groupLayers": {
         "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/B4_heart_OP4.layer": {
-          "gap": "legacy slot playability requires review 95A1F97572D8C9DA"
+          "playableGroups": 2,
+          "unitPrefabEntries": 18
         },
         "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/Howlers.layer": {
           "gap": "legacy slot playability requires review 63892DDB3954C8A5"
@@ -29511,7 +29514,8 @@
       },
       "groupLayers": {
         "worlds/arc/BrambledeepBypass/BrambledeepBypass_Layers/players_ru.layer": {
-          "gap": "legacy slot playability requires review 725760D740B6846E"
+          "playableGroups": 5,
+          "unitPrefabEntries": 27
         },
         "worlds/arc/BrambledeepBypass/BrambledeepBypass_Layers/players_us.layer": {
           "gap": "legacy slot playability requires review 3367BFA2568E9046"
@@ -31060,7 +31064,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/arc/FactorySiegeRedux/FactorySiegeRedux_Layers/players_ru.layer": {
-          "gap": "legacy slot playability requires review E227EF76A95B5198"
+          "playableGroups": 4,
+          "unitPrefabEntries": 20
         },
         "worlds/arc/FactorySiegeRedux/FactorySiegeRedux_Layers/players_us.layer": {
           "gap": "legacy slot playability requires review 96BC236C0E598201"
@@ -32964,7 +32969,8 @@
           "unitPrefabEntries": 0
         },
         "worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux_Layers/players_ru.layer": {
-          "gap": "legacy slot playability requires review E227EF76A95B5198"
+          "playableGroups": 4,
+          "unitPrefabEntries": 22
         },
         "worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux_Layers/players_us.layer": {
           "gap": "legacy slot playability requires review 96BC236C0E598201"
@@ -33531,7 +33537,8 @@
           "unitPrefabEntries": 0
         },
         "worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux_Layers/players_ru.layer": {
-          "gap": "legacy slot playability requires review 725760D740B6846E"
+          "playableGroups": 3,
+          "unitPrefabEntries": 18
         },
         "worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux_Layers/players_us.layer": {
           "gap": "legacy slot playability requires review 3367BFA2568E9046"
@@ -35694,8 +35701,9 @@
     "worlds/arc/TwoCheckpoints/TwoCheckpoints.ent": {
       "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 7,
-        "changed": 2
+        "absent": 2,
+        "changed": 6,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -35744,12 +35752,13 @@
               "lastLine": 135
             }
           },
-          "placementLayer": "worlds/arc/TwoCheckpoints/TwoCheckpoints_Layers/default_GC_Boundaries.layer"
+          "gap": "Dev already contains the original layer path; review before adding boundary siblings"
         }
       },
       "groupLayers": {
         "worlds/arc/TwoCheckpoints/TwoCheckpoints_Layers/players_cdf.layer": {
-          "gap": "ambiguous duplicate callsign component"
+          "playableGroups": 5,
+          "unitPrefabEntries": 27
         },
         "worlds/arc/TwoCheckpoints/TwoCheckpoints_Layers/players_ru.layer": {
           "playableGroups": 9,
@@ -36023,7 +36032,8 @@
           "unitPrefabEntries": 25
         },
         "worlds/arc/VilleneufPunchupRedux/VilleneufPunchupRedux_Layers/players_ru.layer": {
-          "gap": "legacy slot playability requires review 8BEC67677F23304C"
+          "playableGroups": 10,
+          "unitPrefabEntries": 51
         }
       },
       "directBriefingsRead": 11,
@@ -36556,7 +36566,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/players_ru.layer": {
-          "gap": "legacy slot playability requires review 742F15CA6FD6286A"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/players_uk.layer": {
           "gap": "mixed layer or custom group declaration"

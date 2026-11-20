@@ -2,8 +2,10 @@
 import argparse
 from hashlib import sha256
 import json
+from os import replace
 from pathlib import Path, PurePosixPath
 import subprocess
+from tempfile import NamedTemporaryFile
 
 from catalog import REF, SOURCE_TEXT, Snapshot
 from launchers import META_NAME
@@ -45,6 +47,20 @@ def resource_databases(base, addons):
     return [base, *(sorted(addons.glob('*/resourceDatabase.rdb')) if addons else [])]
 
 
+def replace_layer(path, before, after):
+    if path.read_bytes() != before:
+        raise OSError('layer changed during installation: ' + str(path))
+    temporary = None
+    try:
+        with NamedTemporaryFile(dir=path.parent, delete=False) as stream:
+            temporary = Path(stream.name)
+            stream.write(after)
+        replace(temporary, path)
+    finally:
+        if temporary:
+            temporary.unlink(missing_ok=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--missions', required=True, type=Path)
@@ -54,6 +70,8 @@ def main():
     parser.add_argument('--dependency', action='append', type=Path, default=[], help='addon checkout at HEAD for resource checks')
     parser.add_argument('--base-database', type=Path, help='verify draft resource references before installing')
     parser.add_argument('--workshop-addons', type=Path, help='include installed provider databases in resource checks')
+    parser.add_argument('--replace-reviewed', action='store_true',
+                        help='install reviewed repairs to existing, unmodified Dev layers')
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
 
@@ -83,7 +101,9 @@ def main():
         if not candidates:
             raise ValueError('the inventory has no complete drafts')
 
-        writes, files = {}, {}
+        repairs = {path: digest for row in candidates.values()
+                   for path, digest in row.get('reviewedReplacements', {}).items()}
+        writes, replacements, files = {}, {}, {}
         for relative in sorted({path for entry in candidates.values() for path in entry['files']}):
             origin, target = (stage / relative).resolve(), (root / relative).resolve()
             if not origin.is_relative_to(stage) or not target.is_relative_to(root):
@@ -93,12 +113,23 @@ def main():
                 raise ValueError('draft changed since generation: ' + relative)
             files[relative] = body
             if target.exists():
-                if target.read_bytes() == body:
+                original = target.read_bytes()
+                if original == body:
                     continue
                 # A Git checkout may use CRLF for authored text.
-                if target.suffix.lower() != '.edds' and target.read_bytes().replace(b'\r\n', b'\n') == body:
+                normalized = original.replace(b'\r\n', b'\n')
+                if target.suffix.lower() != '.edds' and normalized == body:
                     continue
-                raise ValueError('would overwrite different contents: ' + relative)
+                if (target.suffix != '.layer' or sha256(normalized.removeprefix(b'\xef\xbb\xbf')).hexdigest()
+                        != repairs.get(relative)
+                        or git('--literal-pathspecs', 'status', '--porcelain', '--', relative)):
+                    raise ValueError('would overwrite different contents: ' + relative)
+                if not args.replace_reviewed:
+                    raise ValueError('review the existing layer repair and use --replace-reviewed: ' + relative)
+                replacements[target] = (original, body)
+                continue
+            if relative in repairs:
+                raise ValueError('reviewed Dev layer is missing: ' + relative)
             writes[target] = body
         if args.base_database:
             databases = resource_databases(args.base_database, args.workshop_addons)
@@ -106,20 +137,27 @@ def main():
             if missing:
                 raise ValueError('unresolved references: ' + ', '.join(f'{{{guid}}}{path}' for guid, path in sorted(missing)))
         if not args.dry_run:
-            created = []
+            created, repaired = [], []
             try:
                 for path, body in writes.items():
                     path.parent.mkdir(parents=True, exist_ok=True)
                     with path.open('xb') as stream:
                         created.append(path)
                         stream.write(body)
+                for path, (original, body) in replacements.items():
+                    replace_layer(path, original, body)
+                    repaired.append(path)
             except OSError:
+                for path in reversed(repaired):
+                    original, body = replacements[path]
+                    replace_layer(path, body, original)
                 for path in created:
                     if path.is_file() and writes[path].startswith(path.read_bytes()):
                         path.unlink()
                 raise
         action = 'Checked' if args.dry_run else 'Installed'
-        print(f'{action} {len(candidates)} mission drafts with {len(writes)} new files')
+        repaired_count = f' and {len(replacements)} reviewed layer repairs' if replacements else ''
+        print(f'{action} {len(candidates)} mission drafts with {len(writes)} new files{repaired_count}')
     except (KeyError, OSError, ValueError, subprocess.CalledProcessError) as exc:
         parser.error(str(exc))
 
