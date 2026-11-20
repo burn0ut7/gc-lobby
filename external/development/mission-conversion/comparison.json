@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "074137c157003b8919da8120bf4f1ee7f91bf7ae",
+  "target": "abdcf8b26a57c40c0886a447be79039f0463c0e2",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -15491,8 +15491,8 @@
       "sourceResourceCount": 9,
       "devPaths": {
         "absent": 1,
-        "changed": 3,
-        "identical": 5
+        "changed": 4,
+        "identical": 4
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -15532,7 +15532,8 @@
         "presentOnDev": true,
         "remainingBehavior": [
           "Verify a driven finish with the race motorbike",
-          "Compare legacy staging countdown, JIP and remote clients"
+          "Compare legacy staging countdown, JIP and remote clients",
+          "Check both course gates and adjacent objects before and after match-start cleanup"
         ]
       }
     },

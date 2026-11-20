@@ -7,15 +7,52 @@ from briefings import guid
 WORLD = 'worlds/Perfk/RaceDayKunar/RaceDayKunar.ent'
 HEADER = 'Missions/Perfk/RaceDayKunar.conf'
 BIKE = 'Prefabs/Vehicles/Wheeled/Motorbike/motorbike_green_low_ejection_chance.et'
+FOLDER = str(PurePosixPath(WORLD).with_suffix('')) + '_Layers/'
+PRIOR_KUNAR_LAYERS = {
+    FOLDER + 'Blufor/arrows.layer': 'f8eaa071ff5eec2b994128e2e4f0f73cbde957e2',
+    FOLDER + 'default.layer': 'c41562ebe06f74158062fdf1d44581c9e4842e83',
+}
+
+
+def course_gates(layer):
+    start = layer.index('$grp PK_EntityDeleter {')
+    end = layer.index('\n}\n', start) + 3
+    gates = re.findall(r'  coords ([^\n]+)\n  m_fRadius (\d+)\n  m_prefabFilterList \{\n   "([^"]+)"\n  \}', layer[start:end])
+    if len(gates) != 2:
+        raise ValueError('expected two filtered Kunar course gates')
+    centers, actions = [], []
+    for name, (coords, radius, prefab) in zip(('GC_RaceMetalGate', 'GC_RaceBarGate'), gates):
+        centers.append(f'GenericEntity {name} {{\n coords {coords}\n}}\n')
+        actions.append(f'''      GC_DeleteEntitiesAction "{{{guid(WORLD + name + '/action')}}}" {{
+       m_Radius GC_RadiusDeletion "{{{guid(WORLD + name + '/radius')}}}" {{
+        m_sCenter "{name}"
+        m_fRadius {radius}
+        m_aWhitelist {{
+         "{prefab}"
+        }}
+       }}
+      }}
+''')
+    event = f'''    GC_Event "{{{guid(WORLD + '/course-gates')}}}" {{
+     m_sName "Clear course gates"
+     m_aActions {{
+{''.join(actions)}     }}
+    }}
+'''
+    return layer[:start] + ''.join(centers) + layer[end:], event
 
 
 def race_files(source):
-    folder = str(PurePosixPath(WORLD).with_suffix('')) + '_Layers/'
+    folder = FOLDER
     core = folder + 'default.layer'
     if source.files[core] != 'e42f5269711b7813bbd790e444327f2965d872a2':
         raise ValueError('Race Day Kunar source rules changed; review the world recipe')
     paths = [HEADER, HEADER + '.meta', WORLD, WORLD + '.meta', *source.layers[WORLD.lower()]]
     files = {p: source.read(p) for p in paths}
+    arrows = folder + 'Blufor/arrows.layer'
+    if source.files[arrows] != PRIOR_KUNAR_LAYERS[arrows]:
+        raise ValueError('Kunar course changed; review its gate cleanup')
+    files[arrows], cleanup = course_gates(files[arrows])
     bikes = folder + 'Blufor/Bikes.layer'
     files[bikes] = files[bikes].replace('}worlds/Perfk/' + BIKE, '}' + BIKE)
     players = folder + 'Blufor/Players.layer'
@@ -31,7 +68,7 @@ def race_files(source):
     ai = original[:original.index('PerceptionManager')]
     zone = original[original.index('SCR_EditorRestrictionZoneEntity'):]
     zone = zone.replace('SCR_EditorRestrictionZoneEntity :', 'SCR_EditorRestrictionZoneEntity GC_RaceStartingZone :', 1)
-    files[core] = ai + race_mode(WORLD, names, '3080.505 10.036 3056.896', '2719.005 10 3160.181', '   m_iStartingHours 9') + zone
+    files[core] = ai + race_mode(WORLD, names, '3080.505 10.036 3056.896', '2719.005 10 3160.181', '   m_iStartingHours 9', cleanup) + zone
     return files
 
 

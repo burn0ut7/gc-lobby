@@ -15,7 +15,7 @@ from markers import convert_layer as convert_markers
 from respawns import read_respawns, ticket_event
 from scenery import StockPrefabs, placements
 from race_ruha import ruha_files, WORLD as RUHA_WORLD
-from race_day import race_files, WORLD as RACE_WORLD
+from race_day import PRIOR_KUNAR_LAYERS, race_files, WORLD as RACE_WORLD
 
 
 def main():
@@ -197,16 +197,21 @@ def main():
         generated = recipe(source)
         for path, data in generated.items():
             if path in dev.files and dev.read(path).strip() != data.strip():
-                parser.error(f'Dev already has differing {path}')
+                if world != RACE_WORLD or dev.files[path] != PRIOR_KUNAR_LAYERS.get(path):
+                    parser.error(f'Dev already has differing {path}')
             out[path] = data
         report['worlds'][world]['raceConversion'] = {
             'generatedFiles': len(generated),
-            'presentOnDev': all(path in dev.files for path in generated),
+            'presentOnDev': all(path in dev.files and dev.read(path).strip() == data.strip()
+                                for path, data in generated.items()),
             'remainingBehavior': [
                 'Verify a driven finish with the race motorbike',
                 'Compare legacy staging countdown, JIP and remote clients',
             ],
         }
+        if world == RACE_WORLD:
+            report['worlds'][world]['raceConversion']['remainingBehavior'].append(
+                'Check both course gates and adjacent objects before and after match-start cleanup')
         if world == RUHA_WORLD:
             report['worlds'][world]['raceConversion']['remainingBehavior'].extend([
                 'Compare transfer action reach, map rendering and roadblock cleanup in play',
