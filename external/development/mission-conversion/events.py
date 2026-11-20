@@ -122,16 +122,20 @@ def world_events(source, world):
 
 
 def peak_event(key, faction, ratio, delay, action):
+    condition = f'''       m_Script GC_PeakFactionPopulationCheck "{{{guid(key + '/check')}}}" {{
+        m_sFaction "{faction}"
+        m_fRatio {ratio}
+       }}'''
+    return latched_script_event(key, f'{faction} reached casualty threshold', condition, delay, action)
+
+
+def latched_script_event(key, name, condition, delay, action):
     action_text = '\n'.join(action)
-    name = f'{faction} reached casualty threshold'
     return f'''    GC_Event "{{{guid(key + '/trigger')}}}" {{
      m_sName "{name}"
      m_aConditions {{
       GC_CustomScriptCondition "{{{guid(key + '/condition')}}}" {{
-       m_Script GC_PeakFactionPopulationCheck "{{{guid(key + '/check')}}}" {{
-        m_sFaction "{faction}"
-        m_fRatio {ratio}
-       }}
+{condition}
       }}
      }}
      m_aActions {{

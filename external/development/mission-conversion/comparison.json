@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "ce3dc8a15029f7f49813c19569baa10530e94fb8",
+  "target": "f721dfd81364a522928e901a01a7ded88ff07f28",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -3840,9 +3840,16 @@
           "delaySeconds": 10,
           "winner": "RHS_USAF"
         },
+        "aiLossAnnouncement": {
+          "sourceEvent": "6508D983AB010064",
+          "lossFaction": "RHS_USAF",
+          "ratio": 0.9,
+          "delaySeconds": 10,
+          "winner": "RHS_AFRF"
+        },
         "remainingBehavior": [
           "Compare an occupied RHS_AFRF side losing its players and verify remote announcement delivery",
-          "Port the RHS_USAF AI-loss announcement with the legacy dynamic AI denominator",
+          "Compare dynamic RHS_USAF AI-loss behavior against the legacy session and verify remote delivery",
           "Compare restriction-zone boundary behavior and the legacy warning HUD for both sides",
           "Verify inherited vehicles, weather, scenery, faction marker audiences and issued equipment",
           "Compare Senior Rifleman formation offsets and linked player and AI orders"

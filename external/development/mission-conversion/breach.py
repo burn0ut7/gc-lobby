@@ -1,7 +1,7 @@
 """Restore the Breach and Clear mission-owned loadout variants."""
 from catalog import REF
 from briefings import block_end, guid
-from events import peak_event
+from events import latched_script_event, peak_event
 from groups import ROOT, group_layer, inheritance, legacy_member, only_path, scalar
 from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer as convert_markers
@@ -11,7 +11,7 @@ FOLDER = 'worlds/Corax/Breach and clear/No ETool/'
 PLAYERS = WORLD.removesuffix('.ent') + '_Layers/Players.layer'
 LAYERS = WORLD.removesuffix('.ent') + '_Layers/'
 HEADER = 'Missions/Corax/Breachandclear/BreachAndClear.conf'
-PRIOR_DEFAULT = '616ce0fa54649b84d58f7a3130eac943efed526d'
+PRIOR_DEFAULT = '41152cb3ef5fac5ec5b0efacb6b2060c6c30c9d9'
 SMOKE = 'worlds/Corax/Breach and clear/Building_Explosion_Smoke.ptc'
 WORLD_INPUTS = {
     WORLD: 'c69a1a6413d4e2ef2c218b62f35eba72947189b9',
@@ -22,7 +22,7 @@ WORLD_INPUTS = {
 }
 GAPS = [
     'Compare an occupied RHS_AFRF side losing its players and verify remote announcement delivery',
-    'Port the RHS_USAF AI-loss announcement with the legacy dynamic AI denominator',
+    'Compare dynamic RHS_USAF AI-loss behavior against the legacy session and verify remote delivery',
     'Compare restriction-zone boundary behavior and the legacy warning HUD for both sides',
     'Verify inherited vehicles, weather, scenery, faction marker audiences and issued equipment',
     'Compare Senior Rifleman formation offsets and linked player and AI orders',
@@ -138,6 +138,17 @@ def assemble(source, dev, preset):
         '       "U.S. Armed Forces victory."',
         '      }',
     ])
+    key = WORLD + '/casualty/6508D983AB010064'
+    ai_check = f'''       m_Script GC_LivingAndDeadAICheck "{{{guid(key + '/check')}}}" {{
+        m_fRatio 0.9
+       }}'''
+    announcement += latched_script_event(key, 'RHS_USAF reached AI casualty threshold', ai_check, 10, [
+        f'      GC_MessageAction "{{{guid(key + "/notice")}}}" {{',
+        '       m_sTitle "MISSION END"',
+        '       m_sMessage "End conditions have been met:"\\',
+        '       "Armed Forces of the Russian Federation victory."',
+        '      }',
+    ])
     mode = f'''GC_LobbyGameMode GC_BreachMode : "{{{guid(WORLD + '/resource')}}}{preset}" {{
  components {{
 {weather}
@@ -147,6 +158,9 @@ def assemble(source, dev, preset):
    m_iAuthoredCountdownSeconds 60
   }}
   GC_PeakFactionPopulationComponent "{{{guid(WORLD + '/population')}}}" {{
+  }}
+  GC_LivingAndDeadAIComponent "{{{guid(WORLD + '/ai-population')}}}" {{
+   m_sFaction "RHS_USAF"
   }}
   GC_LobbyManager "{{6A137A39106A4973}}" {{
    m_aMissionEvents + {{

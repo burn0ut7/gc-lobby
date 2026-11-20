@@ -326,6 +326,8 @@ def main():
                 'icons': icons,
                 'playerLossAnnouncement': {'sourceEvent': '6508D983AB223731', 'lossFaction': 'RHS_AFRF',
                                            'ratio': 1, 'delaySeconds': 10, 'winner': 'RHS_USAF'},
+                'aiLossAnnouncement': {'sourceEvent': '6508D983AB010064', 'lossFaction': 'RHS_USAF',
+                                       'ratio': 0.9, 'delaySeconds': 10, 'winner': 'RHS_AFRF'},
                 'remainingBehavior': breach.GAPS,
             }
     if args.stage:
