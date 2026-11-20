@@ -11,14 +11,17 @@ LITERAL = re.compile(r'^   m_condition TILW_LiteralTerm "\{[\da-fA-F]{16}\}" \{$
 FIELDS = {'m_messageTitle', 'm_messageBody', 'm_factionKeys', 'm_adminOnly', 'm_executionDelay'}
 
 
-def message(lines, key):
+def message(lines, key, *, multiline=False):
     data = properties(lines, FIELDS)
     title = data.get('m_messageTitle', '""')
     body = data.get('m_messageBody', '""')
-    for text, limit in ((title, 80), (body, 512)):
-        if not re.fullmatch(QUOTED, text) or len(text.encode()) - 2 > limit or '<' in text or '>' in text:
-            raise ValueError('message formatting or length needs review')
-    if not body[1:-1].strip():
+    parts = body.split('\\\n') if multiline else [body]
+    if (not re.fullmatch(QUOTED, title) or len(title.encode()) - 2 > 80
+            or not all(re.fullmatch(QUOTED, part) for part in parts)
+            or sum(len(part.encode()) - 2 for part in parts) + len(parts) - 1 > 512
+            or any(c in title or c in body for c in '<>')):
+        raise ValueError('message formatting or length needs review')
+    if not any(part[1:-1].strip() for part in parts):
         raise ValueError('empty notification')
     factions = data.get('m_factionKeys', '')
     admin = data.get('m_adminOnly', '0')
@@ -30,7 +33,7 @@ def message(lines, key):
     if not re.fullmatch(r'\d+(\.\d+)?', seconds) or Decimal(seconds) > 86400:
         raise ValueError('instruction delay outside native range')
     action = [f'      GC_MessageAction "{{{guid(key)}}}" {{', '       m_sTitle ' + title,
-              '       m_sMessage ' + body]
+              '       m_sMessage ' + body.replace('\n', '\n       ')]
     if admin == '1':
         action.append('       m_iDelivery 1')
     if factions:

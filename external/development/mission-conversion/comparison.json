@@ -19272,7 +19272,67 @@
       },
       "briefingModePreset": "worlds/TheLocalPub/WetFeet/WetFeet_GC_Settings.et",
       "renumberedInSourceOrder": true,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "modeCandidate": {
+        "placementLayer": "worlds/TheLocalPub/WetFeet/WetFeet_Layers/default_GC_Mode.layer",
+        "capture": {
+          "name": "CAPZone",
+          "radiusMeters": "93.2",
+          "seconds": "360",
+          "ownerFaction": "UK",
+          "requiredLocalShare": 1
+        },
+        "casualties": {
+          "BritDead": {
+            "faction": "UK",
+            "ratio": "0.8"
+          },
+          "SepDead": {
+            "faction": "GC_SEPARATIST",
+            "ratio": "0.9"
+          }
+        },
+        "outcomes": {
+          "HamletSecuredWin": {
+            "sourceEvent": "68FD145EA85F46AA",
+            "flag": "AreaCaptured",
+            "deactivates": [
+              "SepDead",
+              "BritDead"
+            ],
+            "instructionDelaysSeconds": [
+              "5"
+            ]
+          },
+          "SepDead": {
+            "sourceEvent": "68FD145F5F4CE710",
+            "flag": "SepDead",
+            "deactivates": [
+              "HamletSecuredWin",
+              "BritDead"
+            ],
+            "instructionDelaysSeconds": [
+              "5"
+            ]
+          },
+          "BritDead": {
+            "sourceEvent": "68FD145FF13F00E1",
+            "flag": "BritDead",
+            "deactivates": [
+              "HamletSecuredWin",
+              "SepDead"
+            ],
+            "instructionDelaysSeconds": [
+              "5"
+            ]
+          }
+        },
+        "remainingBehavior": [
+          "Compare match-start discovery, interrupted capture and concurrent outcome timing with the legacy session",
+          "Assemble and verify the starting rosters, markers, scenery, vehicles and tree cleanup",
+          "Verify faction-restricted notices and join-in-progress behavior on remote clients"
+        ]
+      }
     },
     "worlds/Til/ALittleWhileLonger/ALittleWhileLonger.ent": {
       "sourceResourceCount": 8,

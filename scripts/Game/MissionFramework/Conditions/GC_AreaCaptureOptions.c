@@ -5,7 +5,7 @@ class GC_AreaCaptureOptions
 	float m_fSeconds;
 	[Attribute("1", UIWidgets.EditBox, "Seconds between capture checks, in whole seconds. Uses the existing area sampler. No catch-up ticks are invented after a delayed server update.", "1 3600 1")]
 	int m_iCheckInterval;
-	[Attribute("0", UIWidgets.ComboBox, "When the requirement returns to the current captured state before a change completes: Roll back removes progress over time, Hold keeps it, Reset clears it. The same rule applies to interrupted capture and interrupted loss.", enums: {ParamEnum("Roll back", "0"), ParamEnum("Hold", "1"), ParamEnum("Reset", "2")})]
+	[Attribute("0", UIWidgets.ComboBox, "When the requirement returns to the current captured state before a change completes: Roll back removes progress over time, Hold keeps it, Reset clears it, and Roll back once removes one check interval. The same rule applies to interrupted capture and interrupted loss.", enums: {ParamEnum("Roll back", "0"), ParamEnum("Hold", "1"), ParamEnum("Reset", "2"), ParamEnum("Roll back once", "3")})]
 	int m_iInterruption;
 	[Attribute("0", UIWidgets.CheckBox, "Unchecked: first valid Match observation establishes the initial result immediately and silently, like TilW discovery. Checked: start uncaptured and require the full capture time.")]
 	bool m_bSkipDiscovery;
@@ -18,7 +18,7 @@ class GC_AreaCaptureOptions
 	bool IsValid()
 	{
 		return m_fSeconds >= 0 && m_fSeconds <= 86400 && m_iCheckInterval >= 1 && m_iCheckInterval <= 3600
-			&& m_iInterruption >= 0 && m_iInterruption <= 2 && (!m_Messages || m_Messages.IsValid());
+			&& m_iInterruption >= 0 && m_iInterruption <= 3 && (!m_Messages || m_Messages.IsValid());
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -114,7 +114,7 @@ class GC_AreaCaptureState
 			return ChangeStatus(direction + 1);
 		}
 		bool interrupted = m_fProgress > 0 || m_iStatus == direction + 1;
-		if (options.m_iInterruption == 0)
+		if (options.m_iInterruption == 0 || (options.m_iInterruption == 3 && m_iStatus == direction + 1))
 			m_fProgress = Math.Max(0, m_fProgress - delta);
 		else if (options.m_iInterruption == 2)
 			m_fProgress = 0;

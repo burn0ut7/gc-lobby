@@ -20,6 +20,7 @@ from respawns import read_respawns, ticket_event
 from scenery import StockPrefabs, placements
 from race_ruha import ruha_files, WORLD as RUHA_WORLD
 from race_day import PRIOR_KUNAR_LAYERS, race_files, WORLD as RACE_WORLD
+import wetfeet
 
 
 def main():
@@ -41,6 +42,7 @@ def main():
     parser.add_argument('--include-gwotline-candidate', action='store_true', help='assemble the incomplete Gwotline Bling playtest world externally')
     parser.add_argument('--include-breach-loadouts', action='store_true', help='stage Breach and Clear mission-owned loadouts and roster')
     parser.add_argument('--include-breach-candidate', action='store_true', help='assemble the incomplete Breach and Clear playtest world externally')
+    parser.add_argument('--include-wetfeet-mode', action='store_true', help='stage the WetFeet capture and outcome logic externally')
     args = parser.parse_args()
     if args.include_breach_candidate:
         args.include_breach_loadouts = True
@@ -330,6 +332,21 @@ def main():
                                        'ratio': 0.9, 'delaySeconds': 10, 'winner': 'RHS_AFRF'},
                 'remainingBehavior': breach.GAPS,
             }
+    if args.include_wetfeet_mode:
+        if not args.stage:
+            parser.error('the WetFeet mode placement requires --stage')
+        row = report['worlds'][wetfeet.WORLD]
+        if 'briefingModePreset' not in row:
+            parser.error('the WetFeet mode placement requires the generated briefing preset')
+        body, audit = wetfeet.stage_mode(source, row['briefingModePreset'])
+        if wetfeet.MODE in dev.files and dev.read(wetfeet.MODE).strip() != body.strip():
+            parser.error(f'Dev already has differing {wetfeet.MODE}')
+        out[wetfeet.MODE] = body
+        row['modeCandidate'] = {'placementLayer': wetfeet.MODE, **audit, 'remainingBehavior': [
+            'Compare match-start discovery, interrupted capture and concurrent outcome timing with the legacy session',
+            'Assemble and verify the starting rosters, markers, scenery, vehicles and tree cleanup',
+            'Verify faction-restricted notices and join-in-progress behavior on remote clients',
+        ]}
     if args.stage:
         stage = args.stage.resolve()
         if any(stage.is_relative_to(root.resolve()) for root in ([args.missions, lobby] + ([args.units] if args.units else []))):
