@@ -44,7 +44,12 @@ def main():
     parser.add_argument('--include-breach-candidate', action='store_true', help='assemble the incomplete Breach and Clear playtest world externally')
     parser.add_argument('--include-wetfeet-mode', action='store_true', help='stage the WetFeet capture and outcome logic externally')
     parser.add_argument('--include-wetfeet-rosters', action='store_true', help='stage both reviewed WetFeet rosters externally')
+    parser.add_argument('--include-wetfeet-scene', action='store_true', help='stage WetFeet scenery, equipment and cleanup')
+    parser.add_argument('--include-wetfeet-candidate', action='store_true', help='assemble the WetFeet playtest world externally')
+    parser.add_argument('--workshop-addons', type=Path, help='installed Workshop addon directory for provider resource checks')
     args = parser.parse_args()
+    if args.include_wetfeet_candidate:
+        args.include_wetfeet_scene = args.include_wetfeet_rosters = True
     if args.include_breach_candidate:
         args.include_breach_loadouts = True
     if args.include_gwotline_candidate:
@@ -111,6 +116,9 @@ def main():
                         ) or (
                             args.include_breach_candidate and world == breach.WORLD
                             and layer == breach.LAYERS + 'default.layer'
+                        ) or (
+                            args.include_wetfeet_candidate and world == wetfeet.WORLD
+                            and layer == wetfeet.PUBLIC_MARKERS
                         )
                         if layer in dev.files and not reviewed_candidate:
                             audit['gap'] = 'Dev already contains the original layer path; review before adding boundary siblings'
@@ -333,13 +341,24 @@ def main():
                                        'ratio': 0.9, 'delaySeconds': 10, 'winner': 'RHS_AFRF'},
                 'remainingBehavior': breach.GAPS,
             }
+    wetfeet_cleanup = ''
+    if args.include_wetfeet_scene:
+        if not args.stage or not stock or not args.workshop_addons:
+            parser.error('the WetFeet scene requires --stage, --base-database and --workshop-addons')
+        args.include_wetfeet_mode = True
+        scene, wetfeet_cleanup, scene_audit = wetfeet.stage_scene(source, dev, stock, args.workshop_addons)
+        for path, body in scene.items():
+            if path in dev.files and dev.read(path).strip() != body.strip():
+                parser.error(f'Dev already has differing {path}')
+            out[path] = body
+        report['worlds'][wetfeet.WORLD]['sceneCandidate'] = scene_audit
     if args.include_wetfeet_mode:
         if not args.stage:
             parser.error('the WetFeet mode placement requires --stage')
         row = report['worlds'][wetfeet.WORLD]
         if 'briefingModePreset' not in row:
             parser.error('the WetFeet mode placement requires the generated briefing preset')
-        body, audit = wetfeet.stage_mode(source, row['briefingModePreset'])
+        body, audit = wetfeet.stage_mode(source, row['briefingModePreset'], wetfeet_cleanup)
         if wetfeet.MODE in dev.files and dev.read(wetfeet.MODE).strip() != body.strip():
             parser.error(f'Dev already has differing {wetfeet.MODE}')
         out[wetfeet.MODE] = body
@@ -357,6 +376,30 @@ def main():
                 parser.error(f'Dev already has differing {path}')
             out[path] = body
         report['worlds'][wetfeet.WORLD]['rosterCandidates'] = audit
+    if args.include_wetfeet_candidate:
+        row = report['worlds'][wetfeet.WORLD]
+        files, audit = wetfeet.assemble(source, dev, stock, out, out.pop(wetfeet.MODE))
+        for path, body in files.items():
+            if path in dev.files and dev.read(path).strip() != body.strip():
+                parser.error(f'Dev already has differing {path}')
+            out[path] = body
+        row['modeCandidate']['placementLayer'] = wetfeet.DEFAULT
+        row['playtestCandidate'] = {
+            **audit,
+            'presentOnDev': all(
+                path in dev.files and dev.read(path).strip() == out[path].strip()
+                for path in (set(files) | set(scene) | {row['briefingModePreset'], row['briefingModePreset'] + '.meta'}
+                             | {path for path in out if path.startswith(wetfeet.LAYERS)})
+            ),
+            'remainingBehavior': [
+                'Compare live contested capture, multiplayer casualty outcomes and notification audiences',
+                'Compare AO, icon visibility and British overlay with each faction and before assignment',
+                'Compare equipment inventory and vehicle behavior',
+                'Restore the legacy BRDM preview and locked-vehicle removal for BRDMCrew',
+                'Compare match-start tree cleanup with the legacy world-initialization deletion',
+                'Compare zoom-dependent legacy outline to the native three-pixel overlay',
+            ],
+        }
     if args.stage:
         stage = args.stage.resolve()
         if any(stage.is_relative_to(root.resolve()) for root in ([args.missions, lobby] + ([args.units] if args.units else []))):

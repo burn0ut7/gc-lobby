@@ -12,7 +12,7 @@ FIELDS = {
     'm_sDescription': 'm_sDescription',
 }
 TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ', 'scale'}
-AUDIENCE = {'m_aVisibleForFactions', 'm_bVisibleForEmptyFaction', 'm_bShowForAnyFaction'}
+AUDIENCE = {'m_aVisibleForFactions', 'm_bVisibleForEmptyFaction', 'm_bShowForAnyFaction', 'm_aHideOnGameModeStates'}
 ALLOWED = TRANSFORM | AUDIENCE | set(FIELDS)
 DEFAULTS = {
     'coords': '1060.328 39.01 2682.178', 'angleY': '90',
@@ -30,6 +30,11 @@ def instance(lines, name, inherited=None):
     unassigned = values.get('m_bVisibleForEmptyFaction', '0')
     factions = values.get('m_aVisibleForFactions', '')
     keys = re.findall(r'"([^"]+)"', factions)
+    hidden = set(values.get('m_aHideOnGameModeStates', '').split())
+    before_briefing = {'PREGAME', 'SLOTSELECTION'}
+    from_briefing = {'BRIEFING', 'GAME', 'POSTGAME', 'CUTSCENE', 'DEBRIEFING'}
+    if hidden and hidden not in (before_briefing, from_briefing):
+        raise ValueError('marker phase set needs review')
     if any_side not in ('0', '1') or unassigned not in ('0', '1') or (any_side == '0' and (unassigned == '1' or not keys)):
         raise ValueError('separate unassigned audience')
     if factions and (not re.fullmatch(r'(?:\s*"[^"]+"\s*)+', factions)
@@ -52,6 +57,10 @@ def instance(lines, name, inherited=None):
         output.extend(['   m_aFactionKeys {', '    ' + factions, '   }'])
     elif unassigned == '0':
         output.append('   m_bHideWithoutFaction 1')
+    if hidden:
+        output.append('   m_eShowAtGameModeState BRIEFING')
+        if hidden == from_briefing:
+            output.append('   m_bInvertGameModeState 1')
     output.extend(['  }', ' }'])
     output.extend(f' {k} {v}' for k, v in merged.items() if k in TRANSFORM)
     return '\n'.join(output + ['}'])
