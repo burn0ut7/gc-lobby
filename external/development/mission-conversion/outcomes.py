@@ -130,7 +130,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0)
 
 
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
-               resolve_spawn, resolve_crew):
+               resolve_spawn, resolve_crew, startup_flags, hidden_briefings):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -139,6 +139,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
     messages = 0
     seen = set()
     term = None
+    pregame = False
     i = 0
     while i < len(fields):
         line = fields[i]
@@ -148,7 +149,12 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         seen.add(field)
         if LITERAL.fullmatch(line) or (compound and field == 'm_condition' and TERM.fullmatch(line)):
             end = block_end(fields, i)
-            term = read_term(fields[i:end + 1], flags, captures, ai, objective_flags, event_flags)
+            literal = LITERAL.fullmatch(line)
+            literal_flag = fields[i + 1].strip().removeprefix('m_flagName ') if literal and end == i + 2 else ''
+            if literal_flag in startup_flags:
+                term = {'trigger': 'startup choice', 'flag': literal_flag[1:-1]}
+            else:
+                term = read_term(fields[i:end + 1], flags, captures, ai, objective_flags, event_flags)
             i = end
         elif line == '   m_instructions {':
             end = block_end(fields, i)
@@ -171,7 +177,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                     delay, body, assignment = waypoint_action(fields[j + 1:last], key + '/' + waypoint_match[1])
                     assignments.append(assignment)
                 elif action_match:
-                    delay, body, details = compile_action(action_match, fields[j + 1:last], key)
+                    delay, body, details = compile_action(action_match, fields[j + 1:last], key, hidden_briefings)
                     if 'setsFlag' in details and details['setsFlag'] not in event_flags:
                         raise ValueError('flag has another producer, an inverted check or an unsupported use: '
                                          + details['setsFlag'])
@@ -192,11 +198,19 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 actions[delay].extend(body)
                 j = last + 1
             i = end
+        elif line == '   m_pregameEvent 1':
+            pregame = True
         elif not re.fullmatch(r'   m_name ' + (EVENT_LABEL if compound else KEY), line) and line != '   m_pregameEvent 0':
             raise ValueError('unsupported outcome event field ' + field)
         i += 1
     if not term or not (notices or assignments or converted_actions or delayed_areas or (compound and messages)):
         raise ValueError('missing condition or supported framework instruction')
+    if pregame != (term['trigger'] == 'startup choice'):
+        raise ValueError('pregame event requires a reviewed startup selection')
+    if pregame and (notices or assignments or delayed_areas or messages
+                    or any(action['instruction'] not in ('TILW_SpawnPrefabInstruction', 'TILW_EditMapItemInstruction')
+                           for action in converted_actions)):
+        raise ValueError('unsupported pregame action')
     if assignments and term['trigger'] != 'Match start':
         raise ValueError('waypoint assignments after Match start require a separate rule')
     audit = {'announcements': notices, 'instructionDelaysSeconds': [f'{delay:f}' for delay in actions]}
@@ -261,8 +275,10 @@ def render_check(term, key, captures, capture_messages, tracked_areas):
 
 def render(key, name, term, actions, captures, capture_messages, tracked_areas):
     condition = term['trigger'] != 'Match start'
+    startup = term['trigger'] == 'startup choice'
+    latch = 'GC_MigrationChoice_' + term['flag'] if startup else name
     result = []
-    if condition:
+    if condition and not startup:
         if term['trigger'] == 'area capture' and capture_messages is None and term['flag'] not in tracked_areas:
             check = captures['"' + term['flag'] + '"']
         else:
@@ -278,7 +294,7 @@ def render(key, name, term, actions, captures, capture_messages, tracked_areas):
         result.extend([f'    GC_Event "{{{guid(delivery)}}}" {{', f'     m_sName "{name} ({delay:f}s)"'])
         if condition:
             result.extend(['     m_aConditions {', f'      GC_MissionEventCondition "{{{guid(delivery + "/latch")}}}" {{',
-                           f'       m_sEventName "{name}"', '      }', '     }'])
+                           f'       m_sEventName "{latch}"', '      }', '     }'])
         if delay:
             result.extend([f'     m_Advanced GC_EventOptions "{{{guid(delivery + "/delay")}}}" {{',
                            f'      m_fDelay {delay:f}', '     }'])
@@ -297,6 +313,54 @@ def render_capture_trackers(world, tracked_areas, captures, capture_messages):
                       f'       m_sMessage "{name}"', '       m_iDelivery 2',
                       '      }', '     }', '    }'])
     return lines
+
+
+def startup_flags(source, world, owner, body, scripts):
+    """Allow one uniform draw whose flags are each consumed by one pregame event."""
+    roots = [i for i, line in enumerate(body) if line == ' m_randomFlags {']
+    if len(roots) != 1:
+        return ()
+    try:
+        index = roots[0] + 1
+        stop = block_end(body, index)
+        if (not re.fullmatch(r'  TILW_FlagSampling "\{[0-9A-Fa-f]{16}\}" \{', body[index])
+                or stop + 1 != block_end(body, roots[0])):
+            return ()
+        data = properties(body[index + 1:stop], {'m_flagNames', 'm_k', 'm_withReplacement'})
+        flags = data.get('m_flagNames', '').split()
+        if (data.get('m_k', '1') != '1' or data.get('m_withReplacement', '0') != '0'
+                or not 2 <= len(flags) <= 32 or len(set(flags)) != len(flags)
+                or any(not re.fullmatch(KEY, flag) for flag in flags)):
+            return ()
+    except (IndexError, ValueError):
+        return ()
+    framework = '\n'.join(body)
+    outside = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                        if path != owner and path.lower().endswith(('.ent', '.layer', '.et')))
+    if 'GetFlagSetCopy' in scripts or 'm_flagSet' in scripts:
+        return ()
+    if any(framework.count(flag) != 2 or source.read(owner).count(flag) != 2
+           or flag in outside or flag[1:-1] in scripts for flag in flags):
+        return ()
+    return tuple(flags)
+
+
+def render_startup_selection(world, flags):
+    key = world + '/startup selection'
+    lines = [f'    GC_RandomEventGroup "{{{guid(key)}}}" {{',
+             '     m_sName "GC_MigrationStartupSelection"', '     m_iPickCount 1',
+             '     m_aConditions {', f'      GC_ConditionGroup "{{{guid(key + "/phases")}}}" {{',
+             '       m_iMatch 1', '       m_aConditions {']
+    for phase in ('0', '1787356801', '1787356802'):
+        lines.extend([f'        GC_GameModeStateCondition "{{{guid(key + "/" + phase)}}}" {{',
+                      '         m_eGameModeState ' + phase, '        }'])
+    lines.extend(['       }', '      }', '     }', '     m_aEvents {'])
+    for flag in flags:
+        name = 'GC_MigrationChoice_' + flag[1:-1]
+        lines.extend([f'      GC_Event "{{{guid(key + "/" + name)}}}" {{', f'       m_sName "{name}"',
+                      '       m_aActions {', f'        GC_MessageAction "{{{guid(key + "/" + name + "/log")}}}" {{',
+                      f'         m_sMessage "{name}"', '         m_iDelivery 2', '        }', '       }', '      }'])
+    return [*lines, '     }', '    }']
 
 
 def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
@@ -320,7 +384,7 @@ def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
 
 
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
-                     extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None):
+                     extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None):
     captures = captures or {}
     notification_audit = notification_audit or {}
     extraction_spawns = extraction_spawns or {}
@@ -348,6 +412,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     if set(objective_flags) & {key[1:-1] for key in (*flags, *ai, *captures)}:
         return [], {}, 'ambiguous interaction flag producer'
     event_flags = instruction_flags(source, world, path, body, scripts) if scripts is not None else ()
+    startup = startup_flags(source, world, path, body, scripts or '') if compound and resolve_spawn else ()
     parsed, audit = [], {}
     names = set()
     capture_messages = set() if compound else None
@@ -374,9 +439,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         try:
             term, actions, details = read_event(
                 fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns,
-                resolve_spawn, resolve_crew)
+                resolve_spawn, resolve_crew, startup, hidden_briefings)
             emitted_names = {f'{name} ({delay:f}s)' for delay in actions}
-            if term['trigger'] != 'Match start':
+            if term['trigger'] not in ('Match start', 'startup choice'):
                 emitted_names.add(name)
             if emitted_names & names:
                 raise ValueError('duplicate generated event name')
@@ -389,11 +454,18 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 spawns_for_review = review_prefab_spawns(fields, world + '/' + event[1], resolve_spawn, resolve_crew)
                 if spawns_for_review:
                     audit[loc]['prefabSpawnCandidates'] = spawns_for_review
+    used_choices = [f'"{term["flag"]}"' for _, _, term, _ in parsed if term['trigger'] == 'startup choice']
+    if used_choices and (len(used_choices) != len(startup) or set(used_choices) != set(startup)):
+        return [], audit, 'startup draw does not have one converted event per option'
+    startup_names = {'GC_MigrationChoice_' + flag[1:-1] for flag in startup}
+    if used_choices and (startup_names | {'GC_MigrationStartupSelection'}) & names:
+        return [], audit, 'generated startup selection name collides with a mission event'
     tracked = {item['flag'] for _, _, term, _ in parsed for item in leaves(term) if item.get('inverted')}
     tracked_areas = {flag: 'GC_MigrationCapture_' + flag for flag in sorted(tracked)}
     if set(tracked_areas.values()) & names:
         return [], audit, 'generated capture tracker name collides with a mission event'
-    compiled = render_capture_trackers(world, tracked_areas, captures, capture_messages)
+    compiled = render_startup_selection(world, startup) if used_choices else []
+    compiled.extend(render_capture_trackers(world, tracked_areas, captures, capture_messages))
     for identity, name, term, actions in parsed:
         compiled.extend(render(world + '/' + identity, name, term, actions, captures, capture_messages, tracked_areas))
     return compiled, audit, None

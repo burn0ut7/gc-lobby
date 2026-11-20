@@ -1,5 +1,5 @@
 """Apply common migration rules to legacy missions and report unsupported authoring."""
-from collections import Counter
+from collections import Counter, defaultdict
 from functools import lru_cache
 from hashlib import sha256
 from pathlib import PurePosixPath
@@ -9,6 +9,7 @@ from arc_capture import CAPTURE_EDITOR_FIELDS, capture_instance
 from boundaries import convert_boundaries
 from briefings import block_end, guid, properties
 from catalog import REF, SOURCE_TEXT
+from event_actions import SPAWN, SPAWN_FIELDS
 from extraction import condition as extraction_condition
 from interactions import convert_block as convert_interaction_block
 from launchers import META_NAME, launcher, replace_reference
@@ -295,13 +296,47 @@ def passive_asset(source, path):
     raise ValueError('requires a resource conversion rule')
 
 
-def spawn_resource(source, dev, source_units, dev_units, stock, guid, path):
+def spawned_objectives(source, dev, world, stock, local_resources):
+    """Identify mission-owned interaction prefabs referenced by a standard spawn."""
+    reviewed = {}
+    for layer in source.layers[world.lower()]:
+        lines = source.read(layer).splitlines()
+        for index, line in enumerate(lines):
+            if not SPAWN.fullmatch(line):
+                continue
+            try:
+                values = properties(lines[index + 1:block_end(lines, index)], SPAWN_FIELDS)
+                prefab = REF.fullmatch(values.get('m_prefab', ''))
+                if not prefab:
+                    continue
+                resource, path = prefab[1].upper(), prefab[2]
+                if (resource in reviewed or source.resources.get(resource) != [path]
+                        or dev.resources.get(resource) not in (None, [path]) or not path.lower().endswith('.et')):
+                    continue
+                text = source.read(path)
+                if 'TILW_BaseInteraction' not in text:
+                    continue
+                (_, block), = blocks(text)
+                native, objectives = convert_interaction_block(block, path, stock, local_resources)
+                if (len(objectives) != 1 or LEGACY.search(native)
+                        or (path in dev.files and native.strip() != dev.read(path).strip())):
+                    continue
+            except ValueError:
+                continue
+            reviewed[resource] = {'path': path, 'body': native, 'flag': objectives[0]['flag'],
+                                  'singleUse': objectives[0]['singleUse']}
+    return reviewed
+
+
+def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, objectives):
     if not path.lower().endswith('.et') or path.lower().startswith('prefabs/groups/'):
         return None
     owned = source.resources.get(guid)
     if owned:
         if owned != [path] or dev.resources.get(guid) not in (None, [path]):
             return None
+        if guid in objectives and objectives[guid]['path'] == path:
+            return path
         try:
             body = passive_asset(source, path)
         except ValueError:
@@ -363,7 +398,7 @@ def repair_registered_paths(source, dev, world, aliases):
     return repairs, original_hashes
 
 
-def migrate_assets(source, dev, draft, asset_aliases, local_loadouts):
+def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets):
     files = list(draft)
     blockers = set()
     for owner in files:
@@ -399,7 +434,11 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts):
                     raise ValueError('Dev resource identity collision')
                 if canonical not in draft:
                     approved = local_loadouts.get(resource)
-                    draft[canonical] = approved[1] if approved else passive_asset(source, canonical)
+                    objective = spawned_assets.get(resource)
+                    if objective:
+                        draft[canonical] = objective['body']
+                    else:
+                        draft[canonical] = approved[1] if approved else passive_asset(source, canonical)
                     draft[meta] = replace_reference(source.read(meta), META_NAME, identity[2], canonical)
                     files.append(canonical)
                 return f'"{{{ref[1]}}}{canonical}"'
@@ -636,7 +675,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
 
 
 def world_draft(source, dev, world, row, staged, area_placements, interactions, convert_group_block, asset_aliases,
-                local_loadouts, convert_crew, delayed=None):
+                local_loadouts, spawned_assets, convert_crew, delayed=None):
     draft, blockers = {}, []
     reviewed_replacements = {}
     if row.get('playtestCandidate') or row.get('raceConversion'):
@@ -707,9 +746,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                              if field.startswith(' ') and not field.startswith('  ') and field.strip() != '}']
                     unsupported = set(roots) - {'coords', 'm_missionEvents', 'm_casualtyFlags', 'm_suppressGameEnd'}
                     if unsupported == {'m_randomFlags'} and roots.count('m_randomFlags') == 1:
-                        unused_flags = unused_flag_sampling(source, world, layer, line, block)
-                        if unused_flags:
+                        if any(term['trigger'] == 'startup choice' for term in terms):
                             unsupported.clear()
+                        else:
+                            unused_flags = unused_flag_sampling(source, world, layer, line, block)
+                            if unused_flags:
+                                unsupported.clear()
                     if unsupported:
                         blockers.append({'rule': 'framework settings', 'file': layer, 'line': line, 'detail': roots})
                 elif kind == 'SCR_AIGroup':
@@ -779,7 +821,18 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             draft[path] = ''.join(blocks_in_layer)
     assignments = [item for event in rules.values() for item in event.get('waypointAssignments', [])]
     marker_edits = [item for event in rules.values() for item in event.get('convertedActions', []) if 'markers' in item]
-    prefab_spawns = [item for event in rules.values() for item in event.get('convertedActions', []) if 'spawnAnchor' in item]
+    briefing_edits = Counter(order for edit in marker_edits for order in edit.get('briefingOrders', []))
+    for order, count in sorted(briefing_edits.items()):
+        if count > 1:
+            blockers.append({'rule': 'briefing visibility actions', 'file': world,
+                             'detail': f'briefing {order} has multiple reveal actions'})
+    prefab_spawns = [{**item, 'startupChoice': event['flag'] if event['trigger'] == 'startup choice' else None}
+                     for event in rules.values() for item in event.get('convertedActions', []) if 'spawnAnchor' in item]
+    spawn_guids = {REF.fullmatch(item['prefab'])[1].upper() for item in prefab_spawns}
+    for resource, asset in sorted(spawned_assets.items()):
+        if asset['flag'] in used_flags and resource not in spawn_guids:
+            blockers.append({'rule': 'spawned objective', 'file': asset['path'],
+                             'detail': 'objective flag has no converted prefab spawn'})
     extraction_spawns = [item for event in rules.values() for item in event.get('extractionSpawns', [])]
     if delayed:
         flag_uses = Counter(term.get('flag') for term in terms if term['trigger'] == 'area capture')
@@ -801,11 +854,16 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             if len(named.get(spawn['anchor'], [])) != 1 or spawn['area'] in named:
                 blockers.append({'rule': 'delayed extraction', 'file': world,
                                  'detail': 'missing or ambiguous placement for ' + spawn['anchor']})
-        spawned_names = Counter(item['spawnName'] for item in prefab_spawns if item['spawnName'])
+        spawned_names = defaultdict(list)
+        for item in prefab_spawns:
+            if item['spawnName']:
+                spawned_names[item['spawnName']].append(item['startupChoice'])
         for spawn in prefab_spawns:
             anchor, name = spawn['spawnAnchor'], spawn['spawnName']
+            choices = spawned_names[name]
+            mutually_exclusive = None not in choices and len(set(choices)) == len(choices)
             if (len(named.get(anchor, [])) != 1
-                    or (name and (spawned_names[name] != 1 or name in named))):
+                    or (name and ((len(choices) > 1 and not mutually_exclusive) or name in named))):
                 blockers.append({'rule': 'prefab spawn', 'file': world,
                                  'detail': 'missing anchor or conflicting spawn name for ' + anchor})
             for waypoint in spawn.get('crewWaypoints', ()):
@@ -853,7 +911,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'launcher', 'file': header, 'detail': str(exc)})
     if delayed:
         draft.update(delayed.assets)
-    blockers.extend(migrate_assets(source, dev, draft, asset_aliases, local_loadouts))
+    blockers.extend(migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets))
     for path, text in draft.items():
         if path not in dev.files:
             continue
@@ -881,7 +939,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare timing of simultaneous flag changes and their dependent event chains.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Auxiliary outlines use screen width instead of metres.')
-    if prefab_spawns:
+    if any(spawn['startupChoice'] for spawn in prefab_spawns):
+        remaining.append('Compare pregame selection, spawn timing and faction-specific briefing and map updates.')
+    if any(not spawn['startupChoice'] for spawn in prefab_spawns):
         remaining.append('Compare spawn placement and timing in Match, including concurrent actions.')
     return ({} if blockers else draft), {
         'status': 'blocked by conversion rules' if blockers else 'generated for file review',
@@ -894,12 +954,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
 
 
 def plan(source, dev, report, staged, area_placements, interactions, convert_group_block, asset_aliases,
-         local_loadouts, convert_crew, delayed_extractions):
+         local_loadouts, spawned_assets, convert_crew, delayed_extractions):
     results, emitted, totals, families = {}, {}, Counter(), Counter()
     for world, row in report['worlds'].items():
         draft, result = world_draft(source, dev, world, row, staged, area_placements.get(world, {}),
                                     interactions.get(world, ((), {})), convert_group_block, asset_aliases,
-                                    local_loadouts, convert_crew, delayed_extractions.get(world))
+                                    local_loadouts, spawned_assets.get(world, {}), convert_crew,
+                                    delayed_extractions.get(world))
         results[world] = result
         totals[result['status']] += 1
         families.update({blocker['rule'] for blocker in result.get('blockers', [])})

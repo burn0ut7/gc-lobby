@@ -34,6 +34,7 @@ class Page:
     factions: str
     source: str
     audience: BriefingAudience = BriefingAudience.DEFAULT
+    name: str = ''
 
 
 def block_end(lines, start):
@@ -69,7 +70,7 @@ def properties(lines, allowed):
     return values
 
 
-def page(lines, origin):
+def page(lines, origin, name=''):
     values = properties(lines, ALLOWED)
     if 'm_sDescriptionLayout' in values and not values['m_sDescriptionLayout'].startswith('"' + LAYOUT):
         raise ValueError('custom description layout')
@@ -99,7 +100,7 @@ def page(lines, origin):
         raise ValueError('unsupported serialized briefing string')
     if len(title.encode()) - 2 > 128 or len(body.encode()) - 2 > 16384:
         raise ValueError('briefing exceeds GC Lobby string limit')
-    return Page(int(values.get('m_iOrder', 0)), title, body, '' if any_side else factions, origin, audience)
+    return Page(int(values.get('m_iOrder', 0)), title, body, '' if any_side else factions, origin, audience, name)
 
 
 def read_pages(text, path):
@@ -119,10 +120,12 @@ def read_pages(text, path):
                     if not re.fullmatch(r'\s+(?:[^{}"]+\s+)?\{\s*', lines[i]):
                         raise ValueError('unexpected grouped instance')
                     end = block_end(lines, i)
-                    result.append(page(lines[i + 1:end], f'{path}:{i + 1}'))
+                    member = re.fullmatch(r'\s+([\w.-]+)\s+\{\s*', lines[i])
+                    result.append(page(lines[i + 1:end], f'{path}:{i + 1}', member[1] if member else ''))
                     i = end + 1
             else:
-                result.append(page(lines[start + 1:stop], loc))
+                name = re.match(r'\s*([\w.-]+)\s*(?=:|$)', match['head'])
+                result.append(page(lines[start + 1:stop], loc, name[1] if name else ''))
         except ValueError as exc:
             gaps.append(f'{loc} {exc}')
     # Nested descriptions need parent transforms/lifecycle and possible runtime updates.
@@ -131,18 +134,22 @@ def read_pages(text, path):
     return result, gaps
 
 
-def render(world, pages, event=()):
+def indexed_pages(pages):
     pages = sorted(pages, key=lambda p: p.order)
     if len(pages) > 32:
         raise ValueError('more than 32 briefing entries')
     orders = [p.order for p in pages]
     compact = bool(orders) and (len(set(orders)) != len(orders) or min(orders) < 0 or max(orders) > 32)
+    return [(index if compact else p.order, p) for index, p in enumerate(pages)], compact
+
+
+def render(world, pages, event=()):
+    pages, compact = indexed_pages(pages)
     lines = [f'GC_LobbyGameMode : "{MODE}" {{', f' ID "{guid(world + "/entity")}"',
              ' components {', '  GC_LobbyManager "{6A137A39106A4973}" {', *event]
     if pages:
         lines.append('   m_aBriefings {')
-    for index, p in enumerate(pages):
-        order = index if compact else p.order
+    for order, p in pages:
         lines.extend([f'    GC_Briefing "{{{guid(p.source)}}}" {{', f'     m_iOrder {order}',
                       f'     m_sTitle {p.title}', '     m_sContent ' + p.body.replace('\n', '\n     ')])
         if p.factions:

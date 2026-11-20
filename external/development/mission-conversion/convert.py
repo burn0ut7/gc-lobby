@@ -1,6 +1,7 @@
 """Generate the portfolio comparison and reusable mission-specific briefing presets."""
 import argparse
-from collections import defaultdict
+from collections import Counter, defaultdict
+from functools import partial
 from hashlib import sha256
 import json
 import re
@@ -13,7 +14,7 @@ import batch
 import local_loadouts
 import vehicle_crew
 import bugout
-from briefings import guid, read_pages, render
+from briefings import BriefingAudience, guid, indexed_pages, read_pages, render
 from catalog import Snapshot, WORLD, compare
 from delayed_extraction import collect as collect_delayed_extraction
 from event_actions import ACTIONS
@@ -118,8 +119,8 @@ def main():
         report['sourceUnits'] = source_units.commit
         report['targetUnits'] = dev_units.commit
 
-    def resolve_spawn(resource, path):
-        return batch.spawn_resource(source, dev, source_units, dev_units, stock, resource, path)
+    def resolve_spawn(objectives, resource, path):
+        return batch.spawn_resource(source, dev, source_units, dev_units, stock, resource, path, objectives)
 
     def resolve_crew(resource, path):
         return vehicle_crew.character_reference(resource, path, source_units, dev_units, stock, locally_owned)
@@ -128,6 +129,7 @@ def main():
     arc_areas = {}
     batch_areas = {}
     batch_interactions = {}
+    spawned_assets = {}
     delayed_extractions = {}
     headers_by_world = defaultdict(list)
     target_headers = set(dev.headers())
@@ -273,6 +275,7 @@ def main():
         if review:
             row['frameworkEvents'] = review
         objective_flags = ()
+        interaction_placements = {}
         if args.batch and any(row['serializedTypes'].get(kind)
                               for kind in ('TILW_BaseInteraction', 'TILW_TeleportInteraction')):
             try:
@@ -283,7 +286,22 @@ def main():
                 row['interactionCandidate'] = {'gap': str(exc)}
         has_outcomes = row['serializedTypes'].get('TILW_EndGameInstruction')
         delayed = None
+        objectives = {}
         if args.batch and row['serializedTypes'].get('TILW_SpawnPrefabInstruction'):
+            objectives = batch.spawned_objectives(source, dev, world, stock, locally_owned)
+            if objectives:
+                asset_flags = [item['flag'] for item in objectives.values()]
+                if len(asset_flags) != len(set(asset_flags)) or set(asset_flags) & set(objective_flags):
+                    row.setdefault('interactionCandidate', {})['spawnedObjectives'] = {
+                        'gap': 'duplicate objective flag producers'}
+                    objectives = {}
+                else:
+                    objective_flags = set(objective_flags) | set(asset_flags)
+                    batch_interactions[world] = (objective_flags, interaction_placements)
+                    spawned_assets[world] = objectives
+                    row.setdefault('interactionCandidate', {})['spawnedObjectives'] = {
+                        'prefabs': {guid: {key: item[key] for key in ('path', 'flag', 'singleUse')}
+                                    for guid, item in objectives.items()}}
             try:
                 delayed = collect_delayed_extraction(source, world)
                 if delayed.conditions:
@@ -311,12 +329,19 @@ def main():
                     if captures.keys() & delayed.conditions.keys():
                         raise ValueError('dynamic extraction flag also has a placed area producer')
                     captures.update(delayed.conditions)
+                hidden_briefings = {}
+                if args.batch and len(pages) <= 32 and row['serializedTypes'].get('TILW_EditMapItemInstruction'):
+                    names = Counter(page.name for page in pages if page.name)
+                    indexed, _ = indexed_pages(pages)
+                    hidden_briefings = {page.name: order for order, page in indexed
+                                        if names[page.name] == 1 and page.audience == BriefingAudience.HIDDEN}
                 rules, outcome_audit, gap = compile_outcomes(
                     source, world, captures, compound=args.batch, notification_audit=review,
                     objective_flags=objective_flags, extraction_spawns=delayed.spawns if delayed else None,
-                    scripts=batch.script_text(source) if args.batch and
-                    row['serializedTypes'].get('TILW_SetFlagInstruction') else None,
-                    resolve_spawn=resolve_spawn if args.batch else None, resolve_crew=resolve_crew if args.batch else None)
+                    scripts=batch.script_text(source) if args.batch and any(row['serializedTypes'].get(kind)
+                    for kind in ('TILW_SetFlagInstruction', 'TILW_FlagSampling')) else None,
+                    resolve_spawn=partial(resolve_spawn, objectives) if args.batch else None,
+                    resolve_crew=resolve_crew if args.batch else None, hidden_briefings=hidden_briefings)
                 outcome = {'events': outcome_audit}
                 if gap:
                     outcome['gap'] = gap
@@ -668,7 +693,7 @@ def main():
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
-                         asset_aliases, loadouts, convert_crew, delayed_extractions)
+                         asset_aliases, loadouts, spawned_assets, convert_crew, delayed_extractions)
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
                         for path, contents in out.items()}

@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "35c3c7039406638f9699a02b32710fb929678ef0",
+  "target": "0fd4483a6ffb03265ea8f7643bf375ec5b3f5119",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1737,7 +1737,7 @@
         "worlds/arc/BarnBusters/BarnBusters.ent"
       ],
       "declaredPath": "worlds/arc/BarnBusters/BarnBusters.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{494EEAF2298F287B}worlds/arc/BarnBusters/BarnBusters.ent"
     },
     "Missions/arc/BarnBustersXS.conf": {
@@ -29214,8 +29214,9 @@
     "worlds/arc/BarnBusters/BarnBusters.ent": {
       "sourceResourceCount": 10,
       "devPaths": {
-        "absent": 8,
-        "changed": 2
+        "absent": 2,
+        "changed": 7,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,

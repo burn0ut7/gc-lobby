@@ -227,7 +227,7 @@ def recognized(line):
     return match if match and match[1] in ACTIONS else None
 
 
-def compile_action(match, lines, event_key):
+def compile_action(match, lines, event_key, hidden_briefings=None):
     legacy, instruction = match.groups()
     native, convert, allowed = ACTIONS[legacy]
     data = properties(lines, allowed | {'m_executionDelay'})
@@ -237,6 +237,39 @@ def compile_action(match, lines, event_key):
     key = event_key + '/' + instruction
     fields, details = convert(data, key)
     identity = guid(key)
-    return Decimal(delay), [f'      {native} "{{{identity}}}" {{', *fields, '      }'], {
+    briefing_orders = []
+    actions = []
+    if legacy == 'TILW_EditMapItemInstruction' and hidden_briefings:
+        names = details['markers']
+        reveal = [name for name in names if name in hidden_briefings]
+        if reveal:
+            factions = details['factions']
+            unassigned = details['visibleWithoutFaction']
+            if not all(factions.values()) or not (factions or unassigned):
+                raise ValueError('unsupported hidden briefing audience edit')
+            names = [name for name in names if name not in hidden_briefings]
+            for name in reveal:
+                target = key + '/briefing/' + name
+                order = hidden_briefings[name]
+                briefing_orders.append(order)
+                actions.extend([f'      GC_CustomScriptAction "{{{guid(target)}}}" {{',
+                                f'       m_Script GC_RevealBriefingScript "{{{guid(target + "/script")}}}" {{',
+                                f'        m_iBriefingOrder {order}'])
+                if factions:
+                    actions.extend(['        m_aFactions {', *(f'         "{faction}"' for faction in factions),
+                                    '        }'])
+                if unassigned:
+                    actions.append('        m_bVisibleWithoutFaction 1')
+                actions.extend(['       }', '      }'])
+            if names:
+                fields, details = convert({**data, 'm_itemNames': ' '.join(f'"{name}"' for name in names)}, key)
+            else:
+                fields = []
+                details = {**details, 'markers': []}
+    if fields:
+        actions.extend([f'      {native} "{{{identity}}}" {{', *fields, '      }'])
+    if briefing_orders:
+        details['briefingOrders'] = briefing_orders
+    return Decimal(delay), actions, {
         'instruction': legacy, 'instructionId': instruction, 'delaySeconds': delay, **details,
     }
