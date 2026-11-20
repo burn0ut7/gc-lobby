@@ -43,7 +43,7 @@ def blocks(text):
         index = end + 1
 
 
-def waypoint_gaps(layers, assignments):
+def named_placements(layers):
     named = {}
     for text in layers:
         for _, block in blocks(text):
@@ -60,6 +60,10 @@ def waypoint_gaps(layers, assignments):
                 if member:
                     placement = block[index:block_end(block, index) + 1]
                     named.setdefault(member[1], []).append((head['kind'], placement))
+    return named
+
+
+def waypoint_gaps(named, assignments):
     gaps = set()
     for action in assignments:
         group = action['group']
@@ -75,6 +79,18 @@ def waypoint_gaps(layers, assignments):
             elif action['replaceExisting'] and f'"{name}"' in group_fields:
                 gaps.add(f'replacement waypoint {name} may already belong to {group}')
     return sorted(gaps)
+
+
+def static_link_gaps(layers, named):
+    fields = {'m_aStaticWaypoints': WAYPOINT_CLASS, 'm_aStaticVehicles': 'Vehicle'}
+    gaps = []
+    for layer, text in layers.items():
+        for field, targets in re.findall(r'(?m)^ +(?P<field>m_aStatic(?:Waypoints|Vehicles)) \{\n((?: +"[^\n]*\n)*)', text):
+            for target in set(re.findall(r'"([\w.-]+)"', targets)):
+                matches = named.get(target, [])
+                if len(matches) != 1 or not re.fullmatch(fields[field], matches[0][0]):
+                    gaps.append((layer, field, target))
+    return sorted(set(gaps))
 
 
 def passive_asset(source, path):
@@ -249,7 +265,7 @@ def faction_overrides(lines):
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
-    weather, coords, freeze, children = '', None, 0, ''
+    weather, coords, freeze, children = '', ' coords 0 0 0', 0, ''
     index = 1
     while index < len(root) - 1:
         line = root[index]
@@ -278,8 +294,6 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None):
         else:
             raise ValueError('game mode field or child requires a conversion rule: ' + line.strip())
         index += 1
-    if not coords:
-        raise ValueError('missing authored game mode position')
     if bool(freeze) != bool(zones) or len(set(zones)) != len(zones):
         raise ValueError('staging duration requires uniquely named restriction zones')
     resource = guid(world + '/resource')
@@ -404,7 +418,8 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
                         blockers.append({'rule': 'boundary or map shape', 'file': layer, 'line': line, 'detail': audit})
                     else:
                         boundaries.setdefault(layer, []).append(converted)
-                elif PERCEPTION.fullmatch(head) and len(block) == 3 and block[1].startswith(' coords '):
+                elif PERCEPTION.fullmatch(head) and (len(block) == 2 or
+                                                     (len(block) == 3 and block[1].startswith(' coords '))):
                     continue
                 elif kind == 'SCR_EditorRestrictionZoneEntity' and not LEGACY.search(body):
                     names, converted = restriction_zones(block, len(zones) + 1)
@@ -430,9 +445,13 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
         if ''.join(blocks_in_layer).strip():
             draft[path] = ''.join(blocks_in_layer)
     assignments = [item for event in rules.values() for item in event.get('waypointAssignments', [])]
-    if assignments and not blockers:
-        for gap in waypoint_gaps(draft.values(), assignments):
+    if not blockers and (assignments or any('m_aStatic' in body for body in draft.values())):
+        named = named_placements(draft.values())
+        for gap in waypoint_gaps(named, assignments):
             blockers.append({'rule': 'waypoint assignments', 'file': world, 'detail': gap})
+        for layer, field, target in static_link_gaps(draft, named):
+            blockers.append({'rule': 'static group links', 'file': layer,
+                             'detail': f'{field} requires a unique placed target named {target}'})
     for layer, converted in boundaries.items():
         sibling = layer.removesuffix('.layer') + '_GC_Boundaries.layer'
         if sibling not in dev.files:

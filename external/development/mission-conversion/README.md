@@ -338,3 +338,12 @@ The batch event compiler retains legacy labels containing spaces and punctuation
 The resource pass follows uniquely identified materials, compiled textures, image sets and the supported native light prefab format. It preserves the asset GUID and resolves stale paths to the canonical repository file when the placement or metadata establishes the identity. Resource references in materials and image sets are also included in the comparison and installation audits. Unknown prefab behavior and ambiguous GUIDs remain in the blocker report.
 
 The latest inventory translated 240 previously unhandled notifications across 236 events and cleared the framework event blocker for 19 worlds. The remaining roster, boundary, mode and resource checks still gate those worlds. For example, Two Checkpoints has all four source framework events accounted for, including its three conditional notices, but the CDF roster contains duplicate serialized callsign fields with conflicting authored values. The batch still requires a reviewed resolution for those placements.
+
+
+## Native group and mode placements
+
+Group conversion carries over authored faction, radio frequency, static waypoints and static vehicle names. It also preserves an AI-only group's native formation override. These are base-game `SCR_AIGroup` fields and components. The batch checks that static links name unique placed vehicles or waypoints and preserves the original order of those lists. Other component overrides and links with dynamic or inherited targets still require review.
+
+When the known GC legacy mode prefab has no placed coordinates, the converter uses its inherited origin. The published `PS_GameMode_Lobby.et` sets that origin to zero. Authored coordinates still take precedence. A default standalone Perception Manager without overrides is handled by the same native manager already provided by the Lobby mode prefab. Custom light curves and rotated manager placements still require review.
+
+File comparison cleared 42 group placement blockers across 29 worlds, 15 omitted mode origins, and 30 default Perception Manager placements. The full staged regression reproduced all 974 prior files byte for byte and produced eight additional group layers. Tip of the Spear now retains its three NTA formations. Its placed vehicle crews and navmesh regeneration remain separate conversion gaps.

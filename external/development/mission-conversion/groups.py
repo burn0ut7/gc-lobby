@@ -13,6 +13,9 @@ STANDARD_CALLSIGN = '63616C6C7369676E'
 INDEX = {'m_iCompanyCallsign': 'm_iGC_CallsignCompany', 'm_iPlatoonCallsign': 'm_iGC_CallsignPlatoon',
          'm_iSquadCallsign': 'm_iGC_CallsignSquad'}
 SLOTS = re.compile(r'^ m_aUnitPrefabSlots \{\n(.*?)^ \}', re.M | re.S)
+NATIVE_GROUP_FIELD = re.compile(r'm_faction "[\w.-]+"|m_iGroupRadioFrequency \d+')
+STATIC_LINK_FIELDS = {'m_aStaticWaypoints {', 'm_aStaticVehicles {'}
+FORMATION = re.compile(r'AIFormationComponent "\{[\da-fA-F]{16}\}" \{')
 WRAPPERS = json.loads(Path(__file__).with_name('stock_wrappers.json').read_text(encoding='utf-8'))
 
 
@@ -118,6 +121,20 @@ def compare_ai_parents(source_units, dev_units, guid):
     return old
 
 
+def native_group_field_end(lines, index):
+    field = lines[index].strip()
+    if NATIVE_GROUP_FIELD.fullmatch(field):
+        return index
+    if field in STATIC_LINK_FIELDS:
+        end = block_end(lines, index)
+        # An empty vehicle name is a serialized placeholder. All nonempty names remain in order.
+        name = r'[\w.-]*' if field == 'm_aStaticVehicles {' else r'[\w.-]+'
+        if any(not re.fullmatch(rf'\s*(?:"{name}"\s*)+', entry) for entry in lines[index + 1:end]):
+            raise ValueError('unsupported static group link')
+        return end
+    return None
+
+
 def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned):
     old_chain = compare_ai_parents(source_units, dev_units, guid)
     checked = set()
@@ -148,10 +165,14 @@ def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned):
                 raise ValueError('unsupported AI slot list')
             result.extend([line, *(REF.sub(member, entry) for entry in lines[index + 1:end]), lines[end]])
             index = end
-        elif token == 'm_aStaticWaypoints {':
+        elif (end := native_group_field_end(lines, index)) is not None:
+            result.extend(lines[index:end + 1])
+            index = end
+        elif token == 'components {':
             end = block_end(lines, index)
-            if any(not re.fullmatch(r'\s*(?:"[\w.-]+"\s*)+', entry) for entry in lines[index + 1:end]):
-                raise ValueError('unsupported AI waypoint name')
+            if (end < index + 3 or not FORMATION.fullmatch(lines[index + 1].strip())
+                    or block_end(lines, index + 1) != end - 1):
+                raise ValueError('AI group components need a conversion rule')
             result.extend(lines[index:end + 1])
             index = end
         elif token.startswith(('coords ', 'angles ', 'angleX ', 'angleY ', 'angleZ ', 'scale ', 'm_bSnapToTerrain ')):
@@ -215,7 +236,7 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                     if not assigned:
                         metadata.extend(indent + f'{dest} "{effective[k]}"' for k, dest in INDEX.items())
                     assigned = True
-                elif re.fullmatch(r'AIFormationComponent "\{[\da-fA-F]{16}\}" \{', lines[j].strip()):
+                elif FORMATION.fullmatch(lines[j].strip()):
                     components.extend(lines[j:last+1])
                 else:
                     raise ValueError('group component needs review')
@@ -253,6 +274,9 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                     raise ValueError('unsupported slot list')
                 out.append(REF.sub(slot, item))
             out.append(lines[end])
+            i = end
+        elif (end := native_group_field_end(lines, i)) is not None:
+            out.extend(lines[i:end + 1])
             i = end
         elif token.startswith('m_sCustomNameSet '):
             metadata.append(line.replace('m_sCustomNameSet ', 'm_sGC_Description ', 1))

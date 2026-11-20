@@ -2472,7 +2472,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Insurgents/Insurgent_AI.layer": {
-          "gap": "AI group field needs review: components"
+          "gap": "AI group components need a conversion rule"
         },
         "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Insurgents/Insurgent_Players.layer": {
           "gap": "mission-owned slot 4677203BEDF7D1A9"
@@ -4286,7 +4286,7 @@
       },
       "groupLayers": {
         "worlds/Corax/IntercectingForces/IntersectingForces_Layers/Blufor.layer": {
-          "gap": "group field needs review: m_aStaticVehicles"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "boundaryLayers": {
@@ -5374,7 +5374,7 @@
       },
       "groupLayers": {
         "worlds/Cunnah/Local_Problems/Local_Problems_Layers/Garrison.layer": {
-          "gap": "group field needs review: m_faction"
+          "gap": "mission-owned slot D1DB41AAA4F08E5F"
         },
         "worlds/Cunnah/Local_Problems/Local_Problems_Layers/INDFOR_AI.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -5676,7 +5676,7 @@
           "gap": "unresolved or duplicate Units prefab FFB42452E9AD5FFC"
         },
         "worlds/Delfer/Morning_Routine/Morning_Routine_Layers/blufor_players.layer": {
-          "gap": "group field needs review: m_iGroupRadioFrequency"
+          "gap": "group field needs review: {"
         },
         "worlds/Delfer/Morning_Routine/Morning_Routine_Layers/redfor_players.layer": {
           "gap": "group field needs review: {"
@@ -5785,7 +5785,7 @@
       },
       "groupLayers": {
         "worlds/Delfer/Topdown/Topdown_Layers/blufor_AI.layer": {
-          "gap": "AI group field needs review: components"
+          "gap": "AI group components need a conversion rule"
         },
         "worlds/Delfer/Topdown/Topdown_Layers/blufor_players.layer": {
           "gap": "group field needs review: {"
@@ -6984,7 +6984,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/FloridaMan/worlds/LostAndFound/LostAndFound_Layers/REDFOR.layer": {
-          "gap": "group field needs review: m_aStaticVehicles"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "directBriefingsRead": 9,
@@ -7346,7 +7346,8 @@
       },
       "groupLayers": {
         "worlds/Fruz/Korengal Vacation/Korengal Vacation_Layers/Blufor_Units.layer": {
-          "gap": "group field needs review: m_iGroupRadioFrequency"
+          "playableGroups": 4,
+          "unitPrefabEntries": 30
         },
         "worlds/Fruz/Korengal Vacation/Korengal Vacation_Layers/Opfor_Units.layer": {
           "playableGroups": 7,
@@ -7470,7 +7471,7 @@
           "gap": "unresolved or duplicate Units prefab 22E43956740A6794"
         },
         "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/Blufor.layer": {
-          "gap": "group field needs review: m_iGroupRadioFrequency"
+          "gap": "group field needs review: m_bDeleteIfNoPlayer"
         },
         "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/Opfor.layer": {
           "gap": "group field needs review: m_bDeleteIfNoPlayer"
@@ -8001,7 +8002,7 @@
       },
       "groupLayers": {
         "worlds/Gabe/PowerStruggle/TVT97PowerStruggle_Layers/Players.layer": {
-          "gap": "group field needs review: m_faction"
+          "gap": "mission-owned slot F515233278E6EF99"
         }
       },
       "directBriefingsRead": 10,
@@ -8954,7 +8955,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol_Layers/INS/Village_Defenders.layer": {
-          "gap": "AI group field needs review: components"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol_Layers/Players/Players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -9849,10 +9850,10 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/AI_Defenders/AI_Defenders_Apartment.layer": {
-          "gap": "AI group field needs review: components"
+          "gap": "unresolved or duplicate Units prefab 5436629450D8387A"
         },
         "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/AI_Defenders/AI_Defenders_Infantry_Buildings.layer": {
-          "gap": "AI group field needs review: components"
+          "gap": "AI group field needs review: {"
         },
         "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/BLUFOR_Players/BLUFOR_Players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -10802,7 +10803,7 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Encircled NVA/EncircledNVA_Layers/NVA_Players/NVA_Players.layer": {
-          "gap": "group field needs review: m_faction"
+          "gap": "AI group components need a conversion rule"
         },
         "worlds/HitTheMan/Encircled NVA/EncircledNVA_Layers/US_Players/US_Players.layer": {
           "gap": "group field needs review: DangerEventRange"
@@ -11040,7 +11041,7 @@
           "gap": "ambiguous duplicate callsign component"
         },
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/US_Players/US_Players.layer": {
-          "gap": "group field needs review: m_faction"
+          "gap": "mission-owned slot BE7363C3200222E3"
         }
       },
       "boundaryLayers": {
@@ -11161,7 +11162,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/SEP_Players/SEP_Players.layer": {
-          "gap": "group field needs review: m_faction"
+          "gap": "mission-owned slot BE7363C3200222E3"
         }
       },
       "boundaryLayers": {
@@ -11885,10 +11886,11 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/CDF_Players/CDF_Players.layer": {
-          "gap": "group field needs review: m_faction"
+          "gap": "legacy slot playability requires review ECB5E6520057FF89"
         },
         "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/SEP_Players/SEP_Players.layer": {
-          "gap": "group field needs review: m_faction"
+          "playableGroups": 3,
+          "unitPrefabEntries": 24
         }
       },
       "boundaryLayers": {
@@ -13596,7 +13598,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/Players_UK/UK_Players.layer": {
-          "gap": "group field needs review: m_faction"
+          "gap": "legacy slot playability requires review 5E4D30EAE4DDA13A"
         }
       },
       "boundaryLayers": {
@@ -14043,7 +14045,7 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack_Layers/NVA_Players/NVA_Players.layer": {
-          "gap": "group field needs review: m_faction"
+          "gap": "group field needs review: m_aUnitPrefabColorTeams"
         },
         "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack_Layers/US_Players/US_Players.layer": {
           "gap": "mission-owned slot 4BE122E83008AA87"
@@ -14595,7 +14597,8 @@
           "unitPrefabEntries": 19
         },
         "worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete_Layers/Redfor/RedTeam.layer": {
-          "gap": "group field needs review: m_aStaticVehicles"
+          "playableGroups": 5,
+          "unitPrefabEntries": 38
         }
       },
       "boundaryLayers": {
@@ -14901,10 +14904,10 @@
       },
       "groupLayers": {
         "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/BrownFor/Market1.layer": {
-          "gap": "AI group field needs review: components"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/BrownFor/Market2.layer": {
-          "gap": "AI group field needs review: components"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/CIVFor/Groups.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -16303,10 +16306,11 @@
       },
       "groupLayers": {
         "worlds/James/LacourtManor/LacourtManor_Layers/blu_players.layer": {
-          "gap": "group field needs review: m_iGroupRadioFrequency"
+          "playableGroups": 3,
+          "unitPrefabEntries": 20
         },
         "worlds/James/LacourtManor/LacourtManor_Layers/red_players.layer": {
-          "gap": "group field needs review: m_iGroupRadioFrequency"
+          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
       "boundaryLayers": {
@@ -17117,7 +17121,7 @@
       },
       "groupLayers": {
         "worlds/Jub/CobrasBite/Cobras_bite_Layers/friendlyAi.layer": {
-          "gap": "group field needs review: m_aStaticWaypoints"
+          "gap": "legacy slot playability requires review 4150D73759B80C84"
         },
         "worlds/Jub/CobrasBite/Cobras_bite_Layers/players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -17265,7 +17269,7 @@
       },
       "groupLayers": {
         "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/AI/BluAI.layer": {
-          "gap": "group field needs review: m_faction"
+          "gap": "group field needs review: m_bDeleteIfNoPlayer"
         },
         "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/players.layer": {
           "gap": "legacy slot playability requires review A59EA43640B5DE47"
@@ -18992,7 +18996,7 @@
       },
       "groupLayers": {
         "worlds/Perfk/PowerPlay/PowerPlay_Layers/BLUFOR/Modern/Players.layer": {
-          "gap": "group field needs review: m_iGroupRadioFrequency"
+          "gap": "group field needs review: m_vRespawnPosition"
         },
         "worlds/Perfk/PowerPlay/PowerPlay_Layers/OPFOR/AI/Roaming.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -20270,7 +20274,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/PlayersRU.layer": {
-          "gap": "group field needs review: m_iGroupRadioFrequency"
+          "playableGroups": 7,
+          "unitPrefabEntries": 43
         }
       },
       "boundaryLayers": {
@@ -21571,7 +21576,8 @@
           "gap": "legacy slot playability requires review F1802349655D63BC"
         },
         "worlds/TheLocalPub/Joutus/Joutus_Layers/FIA/AI.layer": {
-          "gap": "AI group field needs review: components"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/TheLocalPub/Joutus/Joutus_Layers/FIA/Players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -22716,10 +22722,11 @@
           "gap": "AI slots require character playability review 2DFC92038A21BA8A"
         },
         "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Indfor/Players.layer": {
-          "gap": "group field needs review: m_aStaticVehicles"
+          "playableGroups": 5,
+          "unitPrefabEntries": 29
         },
         "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Opfor/Players.layer": {
-          "gap": "AI group field needs review: components"
+          "gap": "AI group components need a conversion rule"
         }
       },
       "boundaryLayers": {
@@ -23396,7 +23403,7 @@
       },
       "groupLayers": {
         "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/cdf.layer": {
-          "gap": "AI group field needs review: components"
+          "gap": "AI group components need a conversion rule"
         },
         "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/ru.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -23675,7 +23682,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_Layers/nva.layer": {
-          "gap": "AI group field needs review: components"
+          "gap": "AI group components need a conversion rule"
         }
       },
       "stockPlacementLayers": {
@@ -24152,7 +24159,7 @@
       },
       "groupLayers": {
         "worlds/Til/DevilsDrive/DevilsDrive_Layers/nva.layer": {
-          "gap": "AI group field needs review: components"
+          "gap": "AI group components need a conversion rule"
         },
         "worlds/Til/DevilsDrive/DevilsDrive_Layers/us.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -25899,7 +25906,7 @@
       },
       "groupLayers": {
         "worlds/Til/Metalwave/Metalwave_Layers/ai.layer": {
-          "gap": "AI group field needs review: components"
+          "gap": "AI group components need a conversion rule"
         },
         "worlds/Til/Metalwave/Metalwave_Layers/players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -28501,7 +28508,7 @@
       },
       "groupLayers": {
         "worlds/ac337/GravetteGamble/GravetteGamble_Layers/garrisoned_AI/ai_in_House.layer": {
-          "gap": "AI group field needs review: components"
+          "gap": "unresolved or duplicate Units prefab 5436629450D8387A"
         },
         "worlds/ac337/GravetteGamble/GravetteGamble_Layers/players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -29546,7 +29553,7 @@
       },
       "groupLayers": {
         "worlds/arc/BunkerBusters/BunkerBusters_Layers/ai.layer": {
-          "gap": "AI group field needs review: components"
+          "gap": "unresolved or duplicate Units prefab 579B964CFC5A3291"
         },
         "worlds/arc/BunkerBusters/BunkerBusters_Layers/players.layer": {
           "playableGroups": 5,
@@ -30395,7 +30402,7 @@
           "unitPrefabEntries": 0
         },
         "worlds/arc/DustyDrive95/DustyDrive95_Layers/players.layer": {
-          "gap": "group field needs review: m_faction"
+          "gap": "legacy slot playability requires review E9601333852C637F"
         }
       },
       "directBriefingsRead": 8,
@@ -35553,7 +35560,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/ai_nta.layer": {
-          "gap": "AI group field needs review: components"
+          "playableGroups": 0,
+          "unitPrefabEntries": 0
         },
         "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/players_ins.layer": {
           "playableGroups": 3,
