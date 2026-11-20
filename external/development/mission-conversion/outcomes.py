@@ -1,4 +1,4 @@
-"""Stage independently scheduled notices for legacy outcome events."""
+"""Stage independently scheduled actions for supported legacy framework events."""
 from collections import defaultdict
 from decimal import Decimal
 import re
@@ -8,6 +8,7 @@ from events import EVENT, LITERAL, MESSAGE, message, peak_flags
 
 FRAMEWORK = re.compile(r'^TILW_MissionFrameworkEntity(?: [\w.-]+)? : "\{8F846D0FD5D6EA51\}[^"]+" \{$')
 ENDING = re.compile(r'^    TILW_EndGameInstruction "\{([\da-fA-F]{16})\}" \{$')
+WAYPOINTS = re.compile(r'^    TILW_AssignWaypointsInstruction "\{([\da-fA-F]{16})\}" \{$')
 KEY = r'"[\w.-]+"'
 RESULT = {'EDITOR_FACTION_VICTORY': 1, 'EDITOR_FACTION_DEFEAT': 2, 'EDITOR_FACTION_DRAW': 3}
 TERM = re.compile(r'\s*(?:m_condition )?TILW_(Literal|Conjunction|Disjunction)Term "\{[\da-fA-F]{16}\}" \{')
@@ -26,6 +27,26 @@ def end_action(lines, key):
         f'      GC_EndMissionAction "{{{guid(key)}}}" {{', f'       m_iResult {RESULT[kind]}',
         '       m_bAnnounceOnly 1', '       m_aWinningFactions {', f'        {faction}', '       }', '      }',
     ], {'faction': faction[1:-1], 'result': kind, 'delaySeconds': delay}
+
+
+def waypoint_action(lines, key):
+    data = properties(lines, {'m_groupName', 'm_waypointNames', 'm_clearExisting', 'm_executionDelay'})
+    group = data.get('m_groupName', '')
+    names = data.get('m_waypointNames', '').split()
+    replace = data.get('m_clearExisting', '0')
+    delay = data.get('m_executionDelay', '5')
+    if (not re.fullmatch(KEY, group) or not all(re.fullmatch(KEY, name) for name in names)
+            or len(names) > 128 or replace not in ('0', '1') or (not names and replace == '0')
+            or not re.fullmatch(r'\d+(?:\.\d+)?', delay) or Decimal(delay) > 86400):
+        raise ValueError('unsupported waypoint assignment')
+    body = [f'      GC_AssignWaypointsAction "{{{guid(key)}}}" {{', f'       m_sGroupName {group}']
+    if replace == '1':
+        body.append('       m_bReplaceExisting 1')
+    if names:
+        body.extend(['       m_aWaypoints {', *(f'        {name}' for name in names), '       }'])
+    details = {'group': group[1:-1], 'waypoints': [name[1:-1] for name in names],
+               'replaceExisting': replace == '1', 'delaySeconds': delay}
+    return Decimal(delay), [*body, '      }'], details
 
 
 def read_term(lines, flags, captures, ai, depth=0):
@@ -62,6 +83,7 @@ def read_term(lines, flags, captures, ai, depth=0):
 def read_event(fields, key, flags, captures, ai, compound):
     actions = defaultdict(list)
     notices = []
+    assignments = []
     seen = set()
     term = None
     i = 0
@@ -82,11 +104,15 @@ def read_event(fields, key, flags, captures, ai, compound):
                 last = block_end(fields, j)
                 notify_match = MESSAGE.fullmatch(fields[j])
                 end_match = ENDING.fullmatch(fields[j])
+                waypoint_match = WAYPOINTS.fullmatch(fields[j]) if compound else None
                 if notify_match:
                     delay, body = message(fields[j + 1:last], key + '/' + notify_match[1], multiline=True)
                 elif end_match:
                     delay, body, notice = end_action(fields[j + 1:last], key + '/' + end_match[1])
                     notices.append(notice)
+                elif waypoint_match:
+                    delay, body, assignment = waypoint_action(fields[j + 1:last], key + '/' + waypoint_match[1])
+                    assignments.append(assignment)
                 else:
                     raise ValueError('unsupported outcome instruction ' + fields[j].strip().split(' ')[0])
                 actions[delay].extend(body)
@@ -95,9 +121,11 @@ def read_event(fields, key, flags, captures, ai, compound):
         elif not re.fullmatch(r'   m_name ' + KEY, line) and line != '   m_pregameEvent 0':
             raise ValueError('unsupported outcome event field ' + field)
         i += 1
-    if not term or not notices:
-        raise ValueError('missing literal condition or end instruction')
-    return term, actions, notices
+    if not term or not (notices or assignments):
+        raise ValueError('missing condition or supported framework instruction')
+    if assignments and term['trigger'] != 'Match start':
+        raise ValueError('waypoint assignments after Match start require a separate rule')
+    return term, actions, notices, assignments
 
 
 def leaves(term):
@@ -185,7 +213,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False):
         if not event:
             continue
         fields = body[i + 1:block_end(body, i)]
-        if not any(ENDING.fullmatch(item) for item in fields):
+        if not any(ENDING.fullmatch(item) or (compound and WAYPOINTS.fullmatch(item)) for item in fields):
             continue
         name = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
         if not re.fullmatch(KEY, name):
@@ -195,10 +223,12 @@ def compile_outcomes(source, world, captures=None, *, compound=False):
         try:
             if name in names:
                 raise ValueError('duplicate outcome name')
-            term, actions, notices = read_event(fields, world + '/' + event[1], flags, captures, ai, compound)
+            term, actions, notices, assignments = read_event(fields, world + '/' + event[1], flags, captures, ai, compound)
             compiled.extend(render(world + '/' + event[1], name, term, actions, captures))
             audit[loc] = {**term, 'name': name, 'announcements': notices,
                           'instructionDelaysSeconds': [f'{delay:f}' for delay in actions]}
+            if assignments:
+                audit[loc]['waypointAssignments'] = assignments
             names.add(name)
         except ValueError as exc:
             audit[loc] = {'name': name, 'gap': str(exc)}

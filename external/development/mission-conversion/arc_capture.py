@@ -161,7 +161,8 @@ def capture_instance(world, area_name, lines):
     })
     players_only = data.get('m_playersOnly', '0')
     stops = data.get('m_stopAfterFirstChange', '0')
-    if data.get('m_sendStatusMessages') != '1' or players_only not in ('0', '1') or stops not in ('0', '1'):
+    status = data.get('m_sendStatusMessages', '0')
+    if any(value not in ('0', '1') for value in (status, players_only, stops)):
         raise ValueError('Arc capture options changed')
     location = data.get('m_locationName', '"the location"')
     ratio = data.get('m_ratioThreshold', '1')
@@ -170,6 +171,18 @@ def capture_instance(world, area_name, lines):
     key = world + '/capture/' + data['m_flagName']
     who = '' if players_only == '1' else '        m_iWho 2\n'
     stop = '        m_bStopAfterFirstChange 1\n' if stops == '1' else ''
+    messages = ''
+    if status == '1':
+        messages = f'''        m_Messages GC_CaptureMessages "{{{guid(key + '/messages')}}}" {{
+         m_sLocation {location}
+         m_sCaptured "The %1 has taken control of %2."
+         m_sCapturing "The %1 is taking control of %2."
+         m_sCaptureInterrupted "The %1 is no longer taking control of %2."
+         m_sLost "The %1 has lost control of %2."
+         m_sLosing "The %1 is losing control of %2."
+         m_sLossInterrupted "The %1 is no longer losing control of %2."
+        }}
+'''
     condition = f'''      GC_AreaCondition "{{{guid(key)}}}" {{
        m_sArea "{area_name}"
        m_Targets GC_CharacterAreaTargets "{{{guid(key + '/players')}}}" {{
@@ -184,16 +197,7 @@ def capture_instance(world, area_name, lines):
         m_fSeconds {data['m_captureTime']}
         m_bUseElapsedTime 1
         m_iInterruption 3
-{stop}        m_Messages GC_CaptureMessages "{{{guid(key + '/messages')}}}" {{
-         m_sLocation {location}
-         m_sCaptured "The %1 has taken control of %2."
-         m_sCapturing "The %1 is taking control of %2."
-         m_sCaptureInterrupted "The %1 is no longer taking control of %2."
-         m_sLost "The %1 has lost control of %2."
-         m_sLosing "The %1 is losing control of %2."
-         m_sLossInterrupted "The %1 is no longer losing control of %2."
-        }}
-       }}
+{stop}{messages}       }}
       }}'''
     area = f'''GC_RadiusAreaEntity {area_name} : "{{2C4447C53A1E450B}}Prefabs/Logic/Mission/RadiusArea.et" {{
  coords {data['coords']}

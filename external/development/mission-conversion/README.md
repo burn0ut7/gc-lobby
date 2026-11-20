@@ -23,9 +23,9 @@ Set the following paths from a GC Lobby checkout. Use a fresh staging directory 
     $base = 'C:/Program Files (x86)/Steam/steamapps/common/Arma Reforger/addons/data/resourceDatabase.rdb'
     $workshop = "$env:USERPROFILE/Documents/My Games/ArmaReforger/addons"
     python "$tools/convert.py" --missions $repo --dev HEAD --batch --units ../gc-reforger-units --units-dev HEAD --base-database $base --stage $stage --report $inventory
-    python "$tools/review.py" --missions $repo --dev HEAD --inventory $inventory --draft-stage $stage --dependency ../gc-reforger-units --base-database $base --report "$env:TEMP/gc-missions-review.json" --summary "$env:TEMP/gc-missions-review.md"
+    python "$tools/review.py" --missions $repo --dev HEAD --inventory $inventory --draft-stage $stage --dependency . --dependency ../gc-reforger-units --dependency ../gc-reforger-core --base-database $base --workshop-addons $workshop --report "$env:TEMP/gc-missions-review.json" --summary "$env:TEMP/gc-missions-review.md"
 
-The review reports unchanged, changed, source-only and Dev-only files. It locates source and Dev declarations for modes, briefings, rosters, markers and boundaries, respawns, events, weather and vehicles. It flags inconsistent launcher and mission-owned resource references. Use repeatable --mission arguments with exact launcher paths and --patch to produce a focused diff. Omit --draft-stage to compare the committed branches.
+The review reports unchanged, changed, source-only and Dev-only files. It locates source and Dev declarations for modes, briefings, rosters, markers and boundaries, respawns, events, weather and vehicles. It flags inconsistent launcher and mission-owned resource references. With --workshop-addons it also names unresolved resource references and the files that use them, using the same installed databases as the installer. Use repeatable --mission arguments with exact launcher paths and --patch to produce a focused diff. Omit --draft-stage to compare the committed branches.
 
 Install supported drafts into the Dev checkout after file review. Use --dry-run first to validate paths, hashes, collisions and resource references against the selected addon snapshots and installed databases. Repeat without --dry-run to install. Use --mission to select a subset or omit it to install all complete drafts in that inventory.
 
@@ -315,3 +315,17 @@ Batch outcome conversion now supports nested conjunctions and disjunctions over 
 Concrete Jungle is committed to Missions Dev in 3235061c. The file review matched its 60 playable slots, all eight CDF AI groups and their authored waypoint assignments. Russian victory retains both checks, complete British player loss and at least 80 percent CDF AI loss. The warnings and announcements at 4,800, 5,400 and 5,410 seconds are preserved. The draft passed the configured resource audit.
 
 This pass removed 124 AI group placement blockers across 59 other worlds. The generated draft and report reproduced byte-for-byte, and previously staged conversions still match.
+
+
+## Initial AI orders and silent captures
+
+Batch conversion translates Match-start waypoint assignments into native actions. It preserves the named group, ordered waypoints, append or replace setting, and delay. The legacy default is five seconds. Each target must resolve to a unique placed group or waypoint in the draft. Flag-gated orders and replacements that reference a waypoint already assigned on the group placement stay open. The source contracts are TilW Mission Framework's `TILW_AssignWaypointsInstruction` and `TILW_BaseInstruction` in `TILW_Instructions.c`.
+
+The faction capture rule now preserves disabled status messages. `TILW_BaseTriggerEntity` defaults those messages to off. A silent capture still updates the objective flag after the authored hold and sends any message authored in the outcome event.
+
+Pirate Radio is in Missions Dev commit `0357b05c`. File comparison verified 24 playable slots, seven appended AI waypoint assignments five seconds into Match, the 180-second staging release, two silent 60-second CDF captures and the three legacy outcome paths. Both captures must succeed for the objective victory notice. The draft passed the resource audit. AI execution and capture timing in this world have file-review coverage.
+
+Privateering's draft also preserves 24 playable slots, six replacement waypoint assignments and both 180-second UK captures. The draft remains staged because the source's two RHIB transport placements and one RHIB gunboat placement reference missing prefab registrations. Restore verified equivalents for `90FB4A19890F9E5C` and `DDE009B6A29873EE` before publishing the world. Other worlds reference the same legacy boats and can reuse that asset rule.
+
+
+The installed-provider audit now accepts registered resources in both v6 and v7 databases. It resolves the Irish Checkpoint tactical graphics through its installed v6 provider. The audit still flags six previously installed launchers. Bug Out and both Foreign Exchange Students missions used the configured Longmoor terrain in earlier Workbench runs, while the installed Longmoor 3.2.1 database marks the referenced subscene path as unregistered. The two races and Breach and Clear also have unresolved authored resource references. The file review lists each path and its owner for follow-up.

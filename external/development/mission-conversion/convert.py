@@ -250,7 +250,9 @@ def main():
         messages, review = ([], {}) if world in (RACE_WORLD, RUHA_WORLD) else world_events(source, world)
         if review:
             row['frameworkEvents'] = review
-        if args.include_outcomes and row['serializedTypes'].get('TILW_EndGameInstruction'):
+        has_outcomes = row['serializedTypes'].get('TILW_EndGameInstruction')
+        has_waypoints = args.batch and row['serializedTypes'].get('TILW_AssignWaypointsInstruction')
+        if args.include_outcomes and (has_outcomes or has_waypoints):
             try:
                 captures = {}
                 if world in arc_worlds:

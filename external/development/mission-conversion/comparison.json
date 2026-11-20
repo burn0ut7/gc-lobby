@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "3235061c8b978ed3ac0e9327ff47c770632e2c59",
+  "target": "0357b05c975c3b5fcd2bca2f722c80f8e7801b92",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1985,7 +1985,7 @@
         "worlds/arc/PirateRadio/PirateRadio.ent"
       ],
       "declaredPath": "worlds/arc/PirateRadio/PirateRadio.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{D533486CF69739FD}worlds/arc/PirateRadio/PirateRadio.ent"
     },
     "Missions/arc/Privateering.conf": {
@@ -33206,8 +33206,9 @@
     "worlds/arc/PirateRadio/PirateRadio.ent": {
       "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 8,
-        "changed": 1
+        "absent": 2,
+        "changed": 6,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -33262,7 +33263,7 @@
               "lastLine": 52
             }
           },
-          "placementLayer": "worlds/arc/PirateRadio/PirateRadio_Layers/default_GC_Boundaries.layer"
+          "gap": "Dev already contains the original layer path; review before adding boundary siblings"
         }
       },
       "directBriefingsRead": 12,

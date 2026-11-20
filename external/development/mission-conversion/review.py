@@ -11,6 +11,7 @@ import re
 import subprocess
 
 from catalog import REF, SOURCE_TEXT, Snapshot, TYPES
+from install_batch import resource_databases, unregistered_references
 from launchers import META_NAME, WORLD_REF, launcher
 from scenery import StockPrefabs
 
@@ -37,7 +38,10 @@ def closure(snapshot, world, header):
 
 @lru_cache(maxsize=16384)
 def facts(snapshot, path):
-    if PurePosixPath(path).suffix.lower() not in SOURCE_TEXT:
+    suffix = PurePosixPath(path).suffix.lower()
+    if suffix == '.imageset':
+        return {}, [], REF.findall(snapshot.read_raw(path).decode('utf-8-sig'))
+    if suffix not in SOURCE_TEXT:
         return {}, [], []
     text = snapshot.read(path)
     categories = {}
@@ -63,7 +67,7 @@ def inspect(snapshot, paths):
     return areas, declarations, references
 
 
-def compare_mission(source, target, header, notes, dependencies, stock):
+def compare_mission(source, target, header, notes, dependencies, stock, unresolved=None):
     issues = []
     try:
         world, resource, _ = launcher(source, target, header)
@@ -89,15 +93,21 @@ def compare_mission(source, target, header, notes, dependencies, stock):
     if world in target.files and not any(k.startswith('GC_') and 'Mode' in k for k in kinds):
         issues.append('GC Lobby mode placement or native-mode exception needs review')
     local_refs = []
+    missing = []
     for (guid, path), owners in sorted(refs.items()):
         owned = target.resources.get(guid, [])
         target_paths = owned or dependencies.get(guid, [])
         if (target_paths or guid in source.resources) and target_paths != [path]:
-            if not owned and stock and stock.contains(guid, path):
+            if not owned and ((unresolved is not None and (guid, path) not in unresolved)
+                              or (stock and stock.contains(guid, path))):
                 continue
             local_refs.append({'guid': guid, 'path': path, 'devPaths': target_paths, 'referencedBy': sorted(owners)})
+        elif unresolved is not None and (guid, path) in unresolved:
+            missing.append({'guid': guid, 'path': path, 'referencedBy': sorted(owners)})
     if local_refs:
         issues.append('Mission-owned resource identities or paths need review')
+    if missing:
+        issues.append('Unresolved external resource references')
     shared = incoming & outgoing
     files = {
         'same': sorted(p for p in shared if source.files[p] == target.files[p]),
@@ -109,6 +119,7 @@ def compare_mission(source, target, header, notes, dependencies, stock):
         'world': world,
         'status': 'missing' if header not in target.files or world not in target.files else 'review' if issues else 'compare',
         'issues': issues, 'files': files, 'legacyDeclarations': legacy, 'missionResourceReferences': local_refs,
+        'unresolvedExternalReferences': missing,
         'areas': {area: {'source': before.get(area, {}), 'dev': after.get(area, {})}
                   for area in AREAS if area in before or area in after},
         'documentedGaps': notes.get(world, {}).get('playtestCandidate', {}).get('remainingBehavior', []),
@@ -183,6 +194,7 @@ def main():
     parser.add_argument('--inventory', type=Path, help='optional convert.py comparison for the same commits')
     parser.add_argument('--dependency', action='append', type=Path, default=[], help='addon checkout at HEAD, such as Units')
     parser.add_argument('--base-database', type=Path, help='check stock resource aliases before reporting dependency mismatches')
+    parser.add_argument('--workshop-addons', type=Path, help='report missing refs against the same provider databases as the installer')
     parser.add_argument('--report', required=True, type=Path, help='JSON file with per-mission paths and line numbers')
     parser.add_argument('--summary', type=Path, help='optional Markdown table')
     parser.add_argument('--mission', action='append', help='exact legacy launcher path, repeat to select a batch')
@@ -193,6 +205,8 @@ def main():
         parser.error('--patch requires at least one --mission')
     if args.draft_stage and not args.inventory:
         parser.error('--draft-stage requires the batch --inventory')
+    if args.workshop_addons and not args.base_database:
+        parser.error('--workshop-addons requires --base-database')
     source = Snapshot(args.missions, args.source)
     target = Snapshot(args.missions, args.dev)
     notes = {}
@@ -215,7 +229,26 @@ def main():
         for resource, paths in Snapshot(addon, 'HEAD').resources.items():
             dependencies[resource].extend(path for path in paths if path not in dependencies[resource])
     stock = StockPrefabs(args.base_database) if args.base_database else None
-    missions = {header: compare_mission(source, target, header, notes, dependencies, stock) for header in sorted(selected)}
+    unresolved = None
+    if args.workshop_addons:
+        try:
+            databases = resource_databases(args.base_database, args.workshop_addons)
+            references = set()
+            for header in selected:
+                try:
+                    world, _, _ = launcher(source, target, header)
+                except ValueError:
+                    continue
+                if header in target.files and world in target.files:
+                    for path in closure(target, world, header):
+                        references.update((guid.upper(), name) for guid, name in facts(target, path)[2])
+            unresolved = unregistered_references(
+                {(guid, path) for guid, path in references
+                 if path not in (target.resources.get(guid) or dependencies.get(guid, []))}, databases)
+        except (OSError, ValueError) as exc:
+            parser.error(str(exc))
+    missions = {header: compare_mission(source, target, header, notes, dependencies, stock, unresolved)
+                for header in sorted(selected)}
     report = {'source': source.commit, 'target': target.commit, 'missions': missions}
     if args.draft_stage:
         report['includesDraft'] = True

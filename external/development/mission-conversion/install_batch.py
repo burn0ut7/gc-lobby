@@ -22,16 +22,27 @@ def unresolved_resources(files, addons, databases):
                 available.add((meta[2].upper(), meta[3]))
         elif PurePosixPath(path).suffix.lower() in SOURCE_TEXT | {'.imageset'}:
             refs.update((guid.upper(), ref) for guid, ref in REF.findall(body.decode('utf-8-sig')))
-    missing = refs - available
+    return unregistered_references(refs - available, databases)
+
+
+def unregistered_references(refs, databases):
     for path in databases:
-        if not missing:
+        if not refs:
             break
         try:
             database = StockPrefabs(path)
         except ValueError:
             continue
-        missing = {ref for ref in missing if not database.contains(*ref)}
-    return missing
+        refs = {ref for ref in refs if not database.contains(*ref)}
+    return refs
+
+
+def resource_databases(base, addons):
+    if not base.is_file():
+        raise ValueError('base resource database does not exist')
+    if addons and not addons.is_dir():
+        raise ValueError('Workshop addon directory does not exist')
+    return [base, *(sorted(addons.glob('*/resourceDatabase.rdb')) if addons else [])]
 
 
 def main():
@@ -90,13 +101,7 @@ def main():
                 raise ValueError('would overwrite different contents: ' + relative)
             writes[target] = body
         if args.base_database:
-            if not args.base_database.is_file():
-                raise ValueError('base resource database does not exist')
-            databases = [args.base_database]
-            if args.workshop_addons:
-                if not args.workshop_addons.is_dir():
-                    raise ValueError('Workshop addon directory does not exist')
-                databases.extend(sorted(args.workshop_addons.glob('*/resourceDatabase.rdb')))
+            databases = resource_databases(args.base_database, args.workshop_addons)
             missing = unresolved_resources(files, [root, *args.dependency], databases)
             if missing:
                 raise ValueError('unresolved references: ' + ', '.join(f'{{{guid}}}{path}' for guid, path in sorted(missing)))

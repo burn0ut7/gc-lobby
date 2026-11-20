@@ -2,13 +2,13 @@
 import re
 from struct import pack
 
-# Enfusion RDBC v7 serializes each prefab path with its NUL-inclusive length,
+# Enfusion RDBC v6 and v7 serialize resource paths with their NUL-inclusive length,
 # followed by file flags and the resource GUID in little-endian order.
 class StockPrefabs:
     def __init__(self, database):
         self.data = database.read_bytes()
-        if self.data[:4] != b'FORM' or self.data[8:16] != b'RDBC\x07\0\0\0':
-            raise ValueError('expected a Reforger v7 resource database')
+        if self.data[:4] != b'FORM' or self.data[8:16] not in (b'RDBC\x06\0\0\0', b'RDBC\x07\0\0\0'):
+            raise ValueError('expected a Reforger v6 or v7 resource database')
         self.known = {}
 
     def contains(self, guid, path):

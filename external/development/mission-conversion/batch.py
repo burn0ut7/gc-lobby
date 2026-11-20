@@ -12,6 +12,7 @@ from extraction import condition as extraction_condition
 from launchers import META_NAME, launcher
 from markers import convert_layer
 from outcomes import FRAMEWORK, leaves
+from scenery import WAYPOINT_CLASS
 
 LEGACY = re.compile(r'\b(?:TILW|PS)_\w+')
 MODE = re.compile(r'^PS_GameModeCoop(?: [\w.-]+)? : "\{4CFD54745CD45673\}[^"]+" \{$')
@@ -34,6 +35,40 @@ def blocks(text):
         end = block_end(lines, index)
         yield index + 1, lines[index:end + 1]
         index = end + 1
+
+
+def waypoint_gaps(layers, assignments):
+    named = {}
+    for text in layers:
+        for _, block in blocks(text):
+            head = re.fullmatch(r'(?P<group>\$grp )?(?P<kind>\w+)(?: (?P<name>[\w.-]+))?(?: : "[^"]+")? \{',
+                                block[0])
+            if not head:
+                continue
+            if head['name']:
+                named.setdefault(head['name'], []).append((head['kind'], block))
+            if not head['group']:
+                continue
+            for index, line in enumerate(block[1:-1], 1):
+                member = re.fullmatch(r' ([\w.-]+) \{', line)
+                if member:
+                    placement = block[index:block_end(block, index) + 1]
+                    named.setdefault(member[1], []).append((head['kind'], placement))
+    gaps = set()
+    for action in assignments:
+        group = action['group']
+        placements = named.get(group, [])
+        if len(placements) != 1 or placements[0][0] != 'SCR_AIGroup':
+            gaps.add('expected one placed AI group named ' + group)
+            continue
+        group_fields = '\n'.join(placements[0][1])
+        for name in action['waypoints']:
+            waypoints = named.get(name, [])
+            if len(waypoints) != 1 or not re.fullmatch(WAYPOINT_CLASS, waypoints[0][0]):
+                gaps.add('expected one placed AI waypoint named ' + name)
+            elif action['replaceExisting'] and f'"{name}"' in group_fields:
+                gaps.add(f'replacement waypoint {name} may already belong to {group}')
+    return sorted(gaps)
 
 
 TRIGGER = re.compile(r'(?P<group>\$grp )?TILW_(?P<kind>Extraction|Faction)TriggerEntity(?: [\w.-]+)?'
@@ -332,6 +367,10 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
     for path, blocks_in_layer in parts.items():
         if ''.join(blocks_in_layer).strip():
             draft[path] = ''.join(blocks_in_layer)
+    assignments = [item for event in rules.values() for item in event.get('waypointAssignments', [])]
+    if assignments and not blockers:
+        for gap in waypoint_gaps(draft.values(), assignments):
+            blockers.append({'rule': 'waypoint assignments', 'file': world, 'detail': gap})
     for layer, converted in boundaries.items():
         sibling = layer.removesuffix('.layer') + '_GC_Boundaries.layer'
         if sibling not in dev.files:
