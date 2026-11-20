@@ -73,6 +73,20 @@ def outcome_mode(world, name, preset, text, stock, rules, zone_name, children=''
     seconds = millis // 1000
     zones, names = [], []
     for i, line in enumerate(lines):
+        grouped = re.fullmatch(r'\$grp (SCR_EditorRestrictionZoneEntity) : ("[^"]+") \{', line)
+        if grouped:
+            instance = i + 1
+            stop = block_end(lines, i)
+            while instance < stop:
+                if lines[instance] != ' {':
+                    raise ValueError('unexpected grouped restriction-zone declaration')
+                end = block_end(lines, instance)
+                label = zone_name if not names else zone_name + str(len(names) + 1)
+                names.append(label)
+                fields = '\n'.join(field[1:] for field in lines[instance + 1:end])
+                zones.append(f'{grouped[1]} {label} : {grouped[2]} {{\n{fields}\n}}\n')
+                instance = end + 1
+            continue
         if not line.startswith('SCR_EditorRestrictionZoneEntity :'):
             continue
         label = zone_name if not names else zone_name + str(len(names) + 1)

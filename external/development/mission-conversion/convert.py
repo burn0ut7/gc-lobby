@@ -170,7 +170,7 @@ def main():
             ticket_gaps.extend(issues)
             if args.units:
                 try:
-                    if arc_worlds.get(world) == 'ForeignExchangeStudents' and layer.endswith('/players.layer'):
+                    if (arc_worlds.get(world), PurePosixPath(layer).name) in arc_capture.FOREIGN_ROLE_LAYERS:
                         groups = arc_capture.foreign_roster(source, source_units, dev_units, stock, locally_owned, layer)
                     else:
                         groups = group_layer(text, source_units, dev_units, stock, locally_owned)
@@ -509,8 +509,10 @@ def main():
     for world in arc_worlds:
         row = report['worlds'][world]
         outcome = row['outcomeCandidate']
-        if len(outcome.get('events', {})) != 4 or any('gap' in event for event in outcome['events'].values()):
-            parser.error(f'{world} needs all four reviewed source outcome events')
+        name = arc_worlds[world]
+        expected_events = 5 if name == 'ForeignExchangeStudentsII' else 4
+        if len(outcome.get('events', {})) != expected_events or any('gap' in event for event in outcome['events'].values()):
+            parser.error(f'{world} needs all {expected_events} reviewed source outcome events')
         candidate, audit, icons, legacy_vehicle_groups = arc_capture.assemble(
             source, dev, stock, args.workshop_addons, world, row, out,
             out[outcome['stagedFragment']], arc_areas[world],
@@ -534,17 +536,27 @@ def main():
                 'Compare callsign labels, issued equipment and vehicle handling',
             ],
         }
-        if arc_capture.WORLDS[world] == 'ForeignExchangeStudents':
+        if name in ('ForeignExchangeStudents', 'ForeignExchangeStudentsII'):
             row['playtestCandidate']['terrainParent'] = {
                 'legacy': arc_capture.LONGMOOR_LEGACY_PARENT,
                 'dev': arc_capture.LONGMOOR_CURRENT_PARENT,
                 'terrainAddon': '61BD1072371B5470',
             }
             row['playtestCandidate']['remainingBehavior'].append('Compare authored placements against historical Longmoor Extended')
+        if name == 'ForeignExchangeStudentsII':
+            asset_files = arc_capture.covermap_assets(source)
+            for path, contents in asset_files.items():
+                if path in dev.files and dev.read_raw(path) != contents:
+                    parser.error(f'Dev already has differing {path}')
+                out[path] = contents
+            row['playtestCandidate']['sharedMapAssets'] = list(asset_files)
+            row['playtestCandidate']['presentOnDev'] &= all(path in dev.files for path in asset_files)
         if legacy_vehicle_groups:
             row['playtestCandidate']['legacyVehicleGroups'] = legacy_vehicle_groups
             row['playtestCandidate']['remainingBehavior'].append('Restore legacy vehicle previews and locked-vehicle removal')
     if args.stage:
+        staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
+                        for path, contents in out.items()}
         stage = args.stage.resolve()
         if any(stage.is_relative_to(root.resolve()) for root in ([args.missions, lobby] + ([args.units] if args.units else []))):
             parser.error('stage outside both addon trees')
@@ -552,12 +564,12 @@ def main():
         if stage.exists():
             existing = {p.relative_to(stage).as_posix(): p for p in stage.rglob('*') if p.is_file()}
             for path, file in existing.items():
-                if path not in out or file.read_bytes() != out[path].encode():
+                if path not in staged_bytes or file.read_bytes() != staged_bytes[path]:
                     parser.error(f'staging directory contains differing file {path}')
-        for path, contents in out.items():
+        for path, contents in staged_bytes.items():
             target = stage / path
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(contents.encode())
+            target.write_bytes(contents)
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_bytes((json.dumps(report, indent=2, ensure_ascii=False) + '\n').encode())
     presets = sum('briefingModePreset' in row for row in report['worlds'].values())

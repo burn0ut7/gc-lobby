@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "9afc5539d47642e574f999c0bc46074283f370db",
+  "target": "9027ee2de31e1f518a42b21d0f5cfa94b91bc0c2",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1889,7 +1889,7 @@
         "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII.ent"
       ],
       "declaredPath": "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{F189FF4D5FA1DC9C}worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII.ent"
     },
     "Missions/arc/HappyCampers.conf": {
@@ -31380,8 +31380,9 @@
     "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII.ent": {
       "sourceResourceCount": 7,
       "devPaths": {
-        "absent": 6,
-        "changed": 1
+        "absent": 1,
+        "changed": 5,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -31420,7 +31421,8 @@
           "unitPrefabEntries": 29
         },
         "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/USplayers.layer": {
-          "gap": "unresolved character prefab DBC177C261C93B9D"
+          "playableGroups": 4,
+          "unitPrefabEntries": 28
         }
       },
       "boundaryLayers": {
@@ -31453,6 +31455,28 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "captureCandidate": {
+        "US_CAP": {
+          "faction": "US",
+          "location": "the crash site",
+          "seconds": 180,
+          "radiusMeters": 12.5,
+          "requiredLocalShare": 1,
+          "timing": "elapsed mission seconds",
+          "population": "players and AI",
+          "stopsAfterFirstChange": true
+        },
+        "UK_CAP": {
+          "faction": "UK",
+          "location": "the crash site",
+          "seconds": 180,
+          "radiusMeters": 12.5,
+          "requiredLocalShare": 1,
+          "timing": "elapsed mission seconds",
+          "population": "players and AI",
+          "stopsAfterFirstChange": true
+        }
+      },
       "outcomeCandidate": {
         "events": {
           "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/default.layer:103": {
@@ -31474,8 +31498,20 @@
             ]
           },
           "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/default.layer:119": {
+            "trigger": "area capture",
+            "flag": "US_CAP",
             "name": "US_CAP",
-            "gap": "unresolved or unsupported outcome flag \"US_CAP\""
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
           },
           "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/default.layer:135": {
             "trigger": "peak player loss",
@@ -31496,8 +31532,20 @@
             ]
           },
           "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/default.layer:151": {
+            "trigger": "area capture",
+            "flag": "UK_CAP",
             "name": "UK_CAP",
-            "gap": "unresolved or unsupported outcome flag \"UK_CAP\""
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
           },
           "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/default.layer:167": {
             "trigger": "Match start",
@@ -31519,7 +31567,36 @@
       },
       "briefingModePreset": "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_GC_Settings.et",
       "renumberedInSourceOrder": true,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "playtestCandidate": {
+        "presentOnDev": true,
+        "boundaries": {
+          "55": {
+            "vertices": 6,
+            "name": null,
+            "lastLine": 77
+          }
+        },
+        "icons": 4,
+        "remainingBehavior": [
+          "Compare live capture, interrupted and contested capture, and remote notifications",
+          "Compare staging-zone enforcement, release and long timeout notices",
+          "Compare callsign labels, issued equipment and vehicle handling",
+          "Compare authored placements against historical Longmoor Extended"
+        ],
+        "terrainParent": {
+          "legacy": "{2E5C56A432F72F88}Worlds/Longmoor Extended/Longmoor Extended.ent",
+          "dev": "{E90C30D273FF302E}Worlds/LongmoorTrainingArea/LongmoorTrainingArea.ent",
+          "terrainAddon": "61BD1072371B5470"
+        },
+        "sharedMapAssets": [
+          "worlds/TheLocalPub/TopMaloHouse/Covermap/UCAMF_CoverMap-198_atlas.edds",
+          "worlds/TheLocalPub/TopMaloHouse/Covermap/UCAMF_CoverMap-198_atlas.edds.meta",
+          "worlds/TheLocalPub/TopMaloHouse/Covermap/UCAMF_CoverMap-198_atlas.tga",
+          "worlds/TheLocalPub/TopMaloHouse/Covermap/UCAMF_CoverMap.imageset",
+          "worlds/TheLocalPub/TopMaloHouse/Covermap/UCAMF_CoverMap.imageset.meta"
+        ]
+      }
     },
     "worlds/arc/HappyCampers/HappyCampers.ent": {
       "sourceResourceCount": 11,

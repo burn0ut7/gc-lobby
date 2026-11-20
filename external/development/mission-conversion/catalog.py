@@ -52,6 +52,12 @@ class Snapshot:
     def read(self, path):
         return self.blobs[self.files[path]].decode('utf-8-sig').replace('\r\n', '\n')
 
+    def read_raw(self, path):
+        oid = self.files[path]
+        if oid in self.blobs:
+            return self.blobs[oid]
+        return subprocess.check_output(['git', '-C', str(self.repo), 'cat-file', 'blob', oid])
+
     @cached_property
     def layers(self):
         result = defaultdict(list)

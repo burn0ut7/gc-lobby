@@ -1,4 +1,4 @@
-"""Assembly recipes for Arc missions with a standalone faction capture."""
+"""Assembly recipes for Arc missions with faction captures."""
 import re
 from decimal import Decimal
 
@@ -12,6 +12,12 @@ from markers import convert_layer
 from scenery import StockPrefabs
 
 RECIPES = {
+    'ForeignExchangeStudentsII': {
+        'world': '0a102de61ea639b9ec5e070426ab77e100c693dc',
+        'default.layer': 'a0d1ba960261082dae380644b627871bf48132f7',
+        'briefing.layer': 'a0de00d1969315279a27bb3a9dc58f6265f2cd9b',
+        'props.layer': 'd24610e87f29aecc31352991cf6f08610e05ebf9',
+    },
     'ForeignExchangeStudents': {
         'world': '0a102de61ea639b9ec5e070426ab77e100c693dc',
         'default.layer': 'bfe7703eb4110838c80e3ff38bcb31d097098e4e',
@@ -42,21 +48,54 @@ PROVIDERS = {
     '447CFE8D73F95C3E': 'RHS-StatusQuo_595F2BF2F44836FB',
     '62F304402A707F68': 'ACETacticalLadderDev_65AD7CB89F219E38',
     '7BC76F92B882889D': 'TacticalFlava-TIGR_DEADC0DE00000003',
+    '8A08A0B2463F5137': 'ArmaTerrainCore_60B524F7A5AE96A8',
     'FA6820A9A52CD05B': 'RHS-StatusQuo_595F2BF2F44836FB',
 }
 STOCK_US_ROLES = {
     '094747C4F8BE9F9F': ('E398E44759DA1A43', 'TL'),
+    '501777EB151D644B': ('4FBA24F7BB43E17D', 'Sergeant'),
     '547BA14003A67C04': ('C9E4FEAF5AAC8D8C', 'Medic'),
     '64AD55FF89C97DF9': ('26A9756790131354', 'Rifleman'),
     '7E44CF4FB58F8FF7': ('5B1996C05B1E51A4', 'AR'),
     'A47EB499090D69B9': ('84029128FA6F6BB9', 'GL'),
     'C262DC827577226C': ('27BF1FF235DD6036', 'LAT'),
     'CA2EB3A73FABC625': ('6058AB54781A0C52', 'AMG'),
+    'D164278FD7D9C81A': ('0B3167BB0FB68110', 'PL'),
     'DBC177C261C93B9D': ('E45F1E163F5CA080', 'SL'),
     'EB2904CE98753A6E': ('1623EA3AEFACA0E4', 'MG'),
 }
 LONGMOOR_LEGACY_PARENT = '{2E5C56A432F72F88}Worlds/Longmoor Extended/Longmoor Extended.ent'
 LONGMOOR_CURRENT_PARENT = '{E90C30D273FF302E}Worlds/LongmoorTrainingArea/LongmoorTrainingArea.ent'
+FOREIGN_ROSTERS = {
+    '8e4ccdaf6f0a8ff7e84c15be167e432a379da4b6': 9,
+    'd959b465b819c949cf98e3647b6bd05c93758378': 9,
+}
+FOREIGN_ROLE_LAYERS = {('ForeignExchangeStudents', 'players.layer'), ('ForeignExchangeStudentsII', 'USplayers.layer')}
+COVERMAP = 'worlds/TheLocalPub/TopMaloHouse/Covermap/'
+
+
+def covermap_assets(source):
+    reviewed = {
+        'UCAMF_CoverMap-198_atlas.edds': 'e8dde44ba7bc8a2d94cdcfb6fa0bbf666c98e5b2',
+        'UCAMF_CoverMap-198_atlas.edds.meta': '3e1cfcd1ac817167ddc26739ba81806ae723f542',
+        'UCAMF_CoverMap-198_atlas.tga': '067882a9153592f7239c967d8ca23c13ff2b5298',
+        'UCAMF_CoverMap.imageset': '5769ea8cdba356004e6e45e5c2edf4f1f7f5a71b',
+        'UCAMF_CoverMap.imageset.meta': '43ed061c121d01e87b79b54ae5a824bf0c1ed905',
+    }
+    files = {}
+    for name, oid in reviewed.items():
+        path = 'Covermap/' + name
+        if source.files.get(path) != oid:
+            raise ValueError('legacy covermap asset changed: ' + path)
+        contents = source.read_raw(path)
+        if name.endswith(('.imageset', '.meta')):
+            # Match the marker's authored path and the atlas metadata to their placement.
+            contents = contents.replace(
+                b'UI/Textures/Icons/UCAMF_CoverMap.imageset', (COVERMAP + 'UCAMF_CoverMap.imageset').encode(),
+            )
+            contents = contents.replace(b'}Covermap/', ('}' + COVERMAP).encode())
+        files[COVERMAP + name] = contents
+    return files
 
 
 def capture(source, world):
@@ -64,8 +103,31 @@ def capture(source, world):
     if source.files.get(layer) != RECIPES[WORLDS[world]]['default.layer']:
         raise ValueError('Arc capture source changed: ' + layer)
     lines = source.read(layer).splitlines()
-    index = lines.index('TILW_FactionTriggerEntity : "{8C576D46F6579229}Prefabs/Logic/Triggers/TILW_FactionTrigger.et" {')
-    data = properties(lines[index + 1:block_end(lines, index)], {
+    trigger = 'TILW_FactionTriggerEntity : "{8C576D46F6579229}Prefabs/Logic/Triggers/TILW_FactionTrigger.et" {'
+    if WORLDS[world] != 'ForeignExchangeStudentsII':
+        index = lines.index(trigger)
+        return capture_instance(world, 'GC_ArcCapture', lines[index + 1:block_end(lines, index)])
+
+    start = lines.index('$grp ' + trigger.replace('Logic/Triggers/', 'Logic/'))
+    end = block_end(lines, start)
+    conditions, areas, audit = {}, [], {}
+    index = start + 1
+    while index < end:
+        if lines[index] != ' {':
+            raise ValueError('unexpected grouped Arc capture declaration')
+        stop = block_end(lines, index)
+        parsed, area, details = capture_instance(world, f'GC_ArcCapture{len(areas) + 1}', lines[index + 1:stop])
+        conditions.update(parsed)
+        audit.update({name[1:-1]: details for name in parsed})
+        areas.append(area)
+        index = stop + 1
+    if len(areas) != 2 or set(audit) != {'US_CAP', 'UK_CAP'}:
+        raise ValueError('Foreign Exchange Students II capture flags changed')
+    return conditions, ''.join(areas), audit
+
+
+def capture_instance(world, area_name, lines):
+    data = properties(lines, {
         'coords', 'm_queryRadius', 'm_captureTime', 'm_sendStatusMessages', 'm_locationName',
         'm_flagName', 'm_stopAfterFirstChange', 'm_playersOnly', 'm_ownerFactionKey', 'm_ratioThreshold',
     })
@@ -81,7 +143,7 @@ def capture(source, world):
     who = '' if players_only == '1' else '        m_iWho 2\n'
     stop = '        m_bStopAfterFirstChange 1\n' if stops == '1' else ''
     condition = f'''      GC_AreaCondition "{{{guid(key)}}}" {{
-       m_sArea "GC_ArcCapture"
+       m_sArea "{area_name}"
        m_Targets GC_CharacterAreaTargets "{{{guid(key + '/players')}}}" {{
 {who}        m_aFactions {{
          {data['m_ownerFactionKey']}
@@ -105,7 +167,7 @@ def capture(source, world):
         }}
        }}
       }}'''
-    area = f'''GC_RadiusAreaEntity GC_ArcCapture : "{{2C4447C53A1E450B}}Prefabs/Logic/Mission/RadiusArea.et" {{
+    area = f'''GC_RadiusAreaEntity {area_name} : "{{2C4447C53A1E450B}}Prefabs/Logic/Mission/RadiusArea.et" {{
  coords {data['coords']}
  m_fRadius {data['m_queryRadius']}
 }}
@@ -114,7 +176,7 @@ def capture(source, world):
         'faction': data['m_ownerFactionKey'][1:-1],
         'location': location[1:-1],
         'seconds': int(data['m_captureTime']),
-        'radiusMeters': int(data['m_queryRadius']),
+        'radiusMeters': float(data['m_queryRadius']) if '.' in data['m_queryRadius'] else int(data['m_queryRadius']),
         'requiredLocalShare': float(ratio) if ratio != '1' else 1,
         'timing': 'elapsed mission seconds',
         'population': 'players' if players_only == '1' else 'players and AI',
@@ -124,7 +186,8 @@ def capture(source, world):
 
 
 def foreign_roster(source, source_units, dev_units, stock, locally_owned, path):
-    if source.files.get(path) != '8e4ccdaf6f0a8ff7e84c15be167e432a379da4b6':
+    expected = FOREIGN_ROSTERS.get(source.files.get(path))
+    if expected is None:
         raise ValueError('Foreign Exchange Students roster source changed')
     root = 'Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_'
     stock_members = {}
@@ -141,7 +204,7 @@ def foreign_roster(source, source_units, dev_units, stock, locally_owned, path):
         return f'"{{{parent}}}{stock_path}"'
 
     text = REF.sub(relocate, source.read(path))
-    if len(stock_members) != len(STOCK_US_ROLES):
+    if len(stock_members) != expected:
         raise ValueError('Foreign Exchange Students role conversions changed')
     return group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_members=stock_members)
 
@@ -160,23 +223,23 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
         raise ValueError(name + ' launcher resolves to a different world')
     files[world] = source.read(world)
     rosters = row.get('groupLayers', {})
-    slots = 46 if name == 'ForeignExchangeStudents' else 60
+    slots = {'ForeignExchangeStudents': 46, 'ForeignExchangeStudentsII': 57}.get(name, 60)
     if sum(info.get('unitPrefabEntries', 0) for info in rosters.values()) != slots or any(path not in staged for path in rosters):
         raise ValueError(f'{name} needs the complete {slots}-slot roster')
     files.update((path, staged[path]) for path in rosters)
     legacy_vehicle_groups = {}
     for part in RECIPES[name]:
         path = folder + part
-        if part.lower() == 'vehicles.layer':
+        if part.lower() in ('vehicles.layer', 'props.layer'):
             files[path] = source.read(path)
             for resource, ref_path in set(REF.findall(files[path])):
                 database = stock
                 if resource in PROVIDERS:
                     if not workshop:
-                        raise ValueError(name + ' needs the installed Workshop vehicle databases')
+                        raise ValueError(name + ' needs the installed Workshop asset databases')
                     database = StockPrefabs(workshop / PROVIDERS[resource] / 'resourceDatabase.rdb')
                 if not database.contains(resource, ref_path):
-                    raise ValueError(name + ' vehicle dependency changed: ' + ref_path)
+                    raise ValueError(name + ' asset dependency changed: ' + ref_path)
             if name in ('WateryGrave', 'EFPStragglers'):
                 vehicle_name = ''
                 kept = []
@@ -202,7 +265,7 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
     boundary_path = folder + 'default_GC_Boundaries.layer'
     text = source.read(default)
     files[boundary_path], audit = convert_boundaries(text, allow_public_faction_color=True)
-    boundaries = {'EFPStragglers': 1, 'ForeignExchangeStudents': 0}.get(name, 2)
+    boundaries = {'EFPStragglers': 1, 'ForeignExchangeStudents': 0, 'ForeignExchangeStudentsII': 1}.get(name, 2)
     if len(audit) != boundaries or any('gap' in entry for entry in audit.values()):
         raise ValueError(name + ' AO polygons need review')
     if not boundaries:
@@ -240,8 +303,10 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
  }}
 '''
         files[header] = files[header].replace('m_iPlayerCount 45', 'm_iPlayerCount 60')
-    if name == 'ForeignExchangeStudents':
-        files[header] = files[header].replace('(24-45)', '(24-46)').replace('m_iPlayerCount 45', 'm_iPlayerCount 46')
+    longmoor = name in ('ForeignExchangeStudents', 'ForeignExchangeStudentsII')
+    if longmoor:
+        old_title, new_title = ('(24-45)', '(24-46)') if slots == 46 else ('(30-56)', '(30-57)')
+        files[header] = files[header].replace(old_title, new_title).replace(f'm_iPlayerCount {slots - 1}', f'm_iPlayerCount {slots}')
         files[world] = files[world].replace(LONGMOOR_LEGACY_PARENT, LONGMOOR_CURRENT_PARENT)
         lines = text.splitlines()
         # The current terrain includes its own AI world, map and weather manager.
@@ -264,6 +329,6 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
 '''
     body = outcome_mode(world, 'GC_' + name + 'Mode', row['briefingModePreset'], text, stock, rules,
                         'GC_ArcStartingZone', children, terrain, environment,
-                        include_map=name != 'ForeignExchangeStudents')
+                        include_map=not longmoor)
     files[default] = body.rstrip() + '\n' + area
     return files, audit, icons, legacy_vehicle_groups
