@@ -37,7 +37,12 @@ def main():
     parser.add_argument('--include-ruha', action='store_true', help='generate the reviewed Ruha race world')
     parser.add_argument('--include-hnevice-candidate', action='store_true', help='stage the incomplete Hnevice playtest world externally')
     parser.add_argument('--include-gwotline-mode', action='store_true', help='stage the reviewed Gwotline Bling mode placement for assembly')
+    parser.add_argument('--include-gwotline-candidate', action='store_true', help='assemble the incomplete Gwotline Bling playtest world externally')
     args = parser.parse_args()
+    if args.include_gwotline_candidate:
+        if not args.stage or not args.units or not args.base_database:
+            parser.error('the Gwotline playtest candidate requires --stage, --units and --base-database')
+        args.include_gwotline_mode = True
     source = Snapshot(args.missions, args.source)
     dev = Snapshot(args.missions, args.dev)
     stock = StockPrefabs(args.base_database) if args.base_database else None
@@ -255,6 +260,13 @@ def main():
         out[path] = mode
         row['modeCandidate'] = {'placementLayer': path, 'casualtyNotifications': audit,
                                 'remainingBehavior': gwotline.GAPS}
+        if stock:
+            row['sceneCandidates'] = {}
+            for path, (body, placement_count, icons) in gwotline.stage_scene(source, stock, locally_owned).items():
+                if path in dev.files and dev.read(path).strip() != body.strip():
+                    parser.error(f'Dev already has differing {path}')
+                out[path] = body
+                row['sceneCandidates'][path] = {'stockPlacements': placement_count, 'icons': icons}
         if args.units:
             row['rosterCandidates'] = {}
             for path, body, roster in gwotline.stage_rosters(source, source_units, dev_units, stock, locally_owned):
@@ -262,6 +274,18 @@ def main():
                     parser.error(f'Dev already has differing {path}')
                 out[path] = body
                 row['rosterCandidates'][path] = roster
+        if args.include_gwotline_candidate:
+            candidate = gwotline.assemble(source, dev, mode)
+            for candidate_path, body in candidate.items():
+                if candidate_path in dev.files and dev.read(candidate_path).strip() != body.strip():
+                    parser.error(f'Dev already has differing {candidate_path}')
+                out[candidate_path] = body
+            del out[row['modeCandidate']['placementLayer']]
+            row['modeCandidate']['placementLayer'] = gwotline.DEFAULT
+            row['playtestCandidate'] = {
+                'presentOnDev': all(candidate_path in dev.files for candidate_path in candidate),
+                'remainingBehavior': gwotline.GAPS,
+            }
     if args.stage:
         stage = args.stage.resolve()
         if any(stage.is_relative_to(root.resolve()) for root in ([args.missions, lobby] + ([args.units] if args.units else []))):

@@ -1,10 +1,14 @@
 """Stage Gwotline Bling's reviewed GC Lobby game mode for world assembly."""
 from boundaries import convert_boundaries
 from briefings import block_end, guid
+from catalog import REF
 from events import peak_notifications
 from groups import ROOT, group_layer
+from launchers import launcher
+from markers import DEST as MAP_MARKER, convert_layer as convert_markers
 
 WORLD = 'worlds/Fruz/Gwotline Bling/Gwotline Bling.ent'
+HEADER = 'Missions/Fruz/Gwotline_Bling.conf'
 DEFAULT = WORLD[:-4] + '_Layers/default.layer'
 AO = DEFAULT.removesuffix('default.layer') + 'AO.layer'
 GROUPS = {
@@ -13,10 +17,10 @@ GROUPS = {
 }
 CALLSIGNS = frozenset({'6508C3582F634926', '68B37CEF862EBFE6', '6508C35869053D73'})
 GAPS = [
-    'Preserve the mixed player and AI machine-gun group and the BLUFOR floodlights',
+    'Preserve the mixed player and AI machine-gun group',
     'Verify starting slot counts, callsigns, and issued equipment on both sides',
     'Compare the public AO outline and verify that the authored GC_MUC key has no members',
-    'Convert the markers in the ammunition layer and verify both map audiences',
+    'Compare both public start markers and the lantern and floodlight behavior in play',
     'Transfer the custom faction callsigns and verify both starting areas',
     'Compare the 3,900-second Time Limit event, which has no serialized condition',
     'Verify vehicles, staging restrictions, weather and both casualty notifications in play',
@@ -98,3 +102,49 @@ def stage_rosters(source, source_units, dev_units, stock, locally_owned):
         yield path.removesuffix('.layer') + '_GC_Roster.layer', ''.join(staged), {
             'sourceLayer': path, 'groups': groups, 'unitPrefabEntries': slots, 'remainingPlacements': exceptions,
         }
+
+
+def stage_scene(source, stock, locally_owned):
+    folder = DEFAULT.removesuffix('default.layer')
+    ammo = folder + 'Opfor1/Ammo_crates.layer'
+    marker = folder + 'markers.layer'
+    blufor = folder + 'Blufor1/Blufor.layer'
+    reviewed = {
+        ammo: '99628ca964e4f9fd6d075ce96a3a7b0d592c4ba4',
+        marker: '268461edb5fc571ba410a9bf84c3f29b11cb9ad9',
+        blufor: GROUPS['Blufor1/Blufor.layer'],
+    }
+    for path, oid in reviewed.items():
+        if source.files[path] != oid:
+            raise ValueError('Gwotline scenery source layer changed: ' + path)
+    props, icon = source.read(ammo).split('PS_ManualMarker ', 1)
+    floodlights = source.read(blufor).split('$grp GenericEntity ', 1)[1]
+    lights = '$grp GenericEntity ' + floodlights
+    ammo_icon, ammo_count = convert_markers('PS_ManualMarker ' + icon)
+    start_icon, start_count = convert_markers(source.read(marker))
+    if ammo_count != 1 or start_count != 1:
+        raise ValueError('expected one start marker for each side')
+    for guid, path in REF.findall(props + lights + ammo_icon + start_icon):
+        if '{' + guid + '}' + path == MAP_MARKER:
+            continue
+        if guid.upper() in locally_owned or not stock.contains(guid, path):
+            raise ValueError('Gwotline scenery resource needs review: ' + path)
+    return {
+        ammo: (props + ammo_icon, props.count('\n  coords ') + props.count('\n coords '), 1),
+        marker: (start_icon, 0, 1),
+        folder + 'Blufor1/Blufor_GC_Scenery.layer': (lights, lights.count('\n  coords '), 0),
+    }
+
+
+def assemble(source, dev, mode):
+    if source.files[WORLD] != 'e17645f838b8fcf6a185bafb93421b378505630d':
+        raise ValueError('Gwotline Bling terrain parent changed')
+    world, _, files = launcher(source, dev, HEADER)
+    if world != WORLD:
+        raise ValueError('Gwotline Bling launcher resolves to a different world')
+    lines = source.read(DEFAULT).splitlines()
+    if not lines[0].startswith('SCR_AIWorld '):
+        raise ValueError('missing Gwotline Bling AI world placement')
+    files[WORLD] = source.read(WORLD)
+    files[DEFAULT] = '\n'.join(lines[:block_end(lines, 0) + 1]) + '\n' + mode
+    return files

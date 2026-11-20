@@ -6486,7 +6486,7 @@
       "renumberedInSourceOrder": true,
       "briefingGaps": [],
       "modeCandidate": {
-        "placementLayer": "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/default_GC_Mode.layer",
+        "placementLayer": "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/default.layer",
         "casualtyNotifications": [
           {
             "sourceLine": 95,
@@ -6502,14 +6502,28 @@
           }
         ],
         "remainingBehavior": [
-          "Preserve the mixed player and AI machine-gun group and the BLUFOR floodlights",
+          "Preserve the mixed player and AI machine-gun group",
           "Verify starting slot counts, callsigns, and issued equipment on both sides",
           "Compare the public AO outline and verify that the authored GC_MUC key has no members",
-          "Convert the markers in the ammunition layer and verify both map audiences",
+          "Compare both public start markers and the lantern and floodlight behavior in play",
           "Transfer the custom faction callsigns and verify both starting areas",
           "Compare the 3,900-second Time Limit event, which has no serialized condition",
           "Verify vehicles, staging restrictions, weather and both casualty notifications in play"
         ]
+      },
+      "sceneCandidates": {
+        "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/Opfor1/Ammo_crates.layer": {
+          "stockPlacements": 60,
+          "icons": 1
+        },
+        "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/markers.layer": {
+          "stockPlacements": 0,
+          "icons": 1
+        },
+        "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/Blufor1/Blufor_GC_Scenery.layer": {
+          "stockPlacements": 2,
+          "icons": 0
+        }
       },
       "rosterCandidates": {
         "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/Blufor1/Blufor_GC_Roster.layer": {
@@ -6528,6 +6542,18 @@
             "20": "legacy slot playability requires review 328AFF9E8B3F3AE9"
           }
         }
+      },
+      "playtestCandidate": {
+        "presentOnDev": false,
+        "remainingBehavior": [
+          "Preserve the mixed player and AI machine-gun group",
+          "Verify starting slot counts, callsigns, and issued equipment on both sides",
+          "Compare the public AO outline and verify that the authored GC_MUC key has no members",
+          "Compare both public start markers and the lantern and floodlight behavior in play",
+          "Transfer the custom faction callsigns and verify both starting areas",
+          "Compare the 3,900-second Time Limit event, which has no serialized condition",
+          "Verify vehicles, staging restrictions, weather and both casualty notifications in play"
+        ]
       }
     },
     "worlds/Fruz/Korengal Vacation/Korengal Vacation.ent": {
