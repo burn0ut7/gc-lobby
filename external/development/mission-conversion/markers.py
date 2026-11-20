@@ -26,6 +26,25 @@ DEFAULTS = {
     'm_sQuadName': '"circle-2"', 'm_fWorldSize': '20', 'm_bUseWorldScale': '1',
     'm_MarkerColor': '1 1 1 1', 'm_sDescription': '""'
 }
+PHASES = ('PREGAME', 'SLOTTING', 'BRIEFING', 'GAME', 'POSTGAME')
+LEGACY_STATES = {'SLOTSELECTION': 'SLOTTING', '1': 'GAME'}
+UNUSED_STATES = {'CUTSCENE', 'DEBRIEFING', 'NULL'}
+
+
+def phase_fields(value):
+    """Project legacy visibility onto the corresponding Lobby phases."""
+    hidden = {LEGACY_STATES.get(state, state) for state in value.split()} - UNUSED_STATES
+    if not hidden:
+        return []
+    if hidden == set(PHASES):
+        # Invert the first phase threshold, so the marker is never shown.
+        return ['   m_eShowAtGameModeState PREGAME', '   m_bInvertGameModeState 1']
+    for index, phase in enumerate(PHASES[1:], 1):
+        if hidden == set(PHASES[:index]):
+            return ['   m_eShowAtGameModeState ' + phase]
+        if hidden == set(PHASES[index:]):
+            return ['   m_eShowAtGameModeState ' + phase, '   m_bInvertGameModeState 1']
+    raise ValueError('marker phase set needs review')
 
 
 def instance(lines, name, inherited=None):
@@ -37,11 +56,7 @@ def instance(lines, name, inherited=None):
     unassigned = values.get('m_bVisibleForEmptyFaction', '0')
     factions = values.get('m_aVisibleForFactions', '')
     keys = re.findall(r'"([^"]+)"', factions)
-    hidden = set(values.get('m_aHideOnGameModeStates', '').split())
-    before_briefing = {'PREGAME', 'SLOTSELECTION'}
-    from_briefing = {'BRIEFING', 'GAME', 'POSTGAME', 'CUTSCENE', 'DEBRIEFING'}
-    if hidden and hidden not in (before_briefing, from_briefing):
-        raise ValueError('marker phase set needs review')
+    phase = phase_fields(values.get('m_aHideOnGameModeStates', ''))
     if any_side not in ('0', '1') or unassigned not in ('0', '1'):
         raise ValueError('invalid marker audience')
     if factions and (not re.fullmatch(r'(?:\s*"[^"]+"\s*)+', factions)
@@ -67,10 +82,7 @@ def instance(lines, name, inherited=None):
         output.append('   m_bRestrictToListedFactions 1')
     if unassigned == '0' and (any_side == '1' or explicit_list):
         output.append('   m_bHideWithoutFaction 1')
-    if hidden:
-        output.append('   m_eShowAtGameModeState BRIEFING')
-        if hidden == from_briefing:
-            output.append('   m_bInvertGameModeState 1')
+    output.extend(phase)
     output.extend(['  }', ' }'])
     output.extend(f' {k} {v}' for k, v in merged.items() if k in TRANSFORM)
     return '\n'.join(output + ['}'])

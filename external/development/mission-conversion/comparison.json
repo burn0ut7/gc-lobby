@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "9fc57ad48636e196a8328d2e67eefc0645db8c6b",
+  "target": "0a74ec5432ea3cfcee4d5fe1f04e47902341759f",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -280,7 +280,7 @@
         "worlds/Cunnah/Rocky_Start/Rocky_Start.ent"
       ],
       "declaredPath": "worlds/Cunnah/Rocky_Start/Rocky_Start.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{A7A4EC50FBE859AA}worlds/Cunnah/Rocky_Start/Rocky_Start.ent"
     },
     "Missions/Cunnah/coastal_cappers.conf": {
@@ -2161,7 +2161,7 @@
         "worlds/arc/ZeroArcThirty/ZeroArcThirty.ent"
       ],
       "declaredPath": "worlds/arc/ZeroArcThirty/ZeroArcThirty.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{C3D9F74EB07CCDA9}worlds/arc/ZeroArcThirty/ZeroArcThirty.ent"
     },
     "Missions/blackskimask/DeadlyCrossing.conf": {
@@ -2968,7 +2968,7 @@
           "gap": "group component needs review"
         },
         "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/OPFOR/OPFORPlayer.layer": {
-          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "boundaryLayers": {
@@ -3094,7 +3094,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/OPFOR.layer": {
-          "gap": "legacy slot playability requires review 8558FB262DBF1D64"
+          "gap": "legacy slot playability requires review FFE45AFCB29CD014"
         },
         "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/OPFORAI.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -4748,7 +4748,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/OPFOR.layer": {
-          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "directBriefingsRead": 13,
@@ -4856,7 +4856,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/OPFOR.layer": {
-          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "boundaryLayers": {
@@ -5440,8 +5440,9 @@
     "worlds/Cunnah/Rocky_Start/Rocky_Start.ent": {
       "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 8,
-        "changed": 1
+        "absent": 2,
+        "changed": 6,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -5489,7 +5490,7 @@
               "lastLine": 266
             }
           },
-          "placementLayer": "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/AO_GC_Boundaries.layer"
+          "gap": "Dev already contains the original layer path; review before adding boundary siblings"
         }
       },
       "groupLayers": {
@@ -5498,7 +5499,7 @@
           "unitPrefabEntries": 28
         },
         "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/_OPFOR.layer": {
-          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "directBriefingsRead": 12,
@@ -6504,7 +6505,7 @@
       },
       "groupLayers": {
         "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache_Layers/Players.layer": {
-          "gap": "legacy slot playability requires review 6B8232E5A8ED3EBA"
+          "gap": "mission-owned group BB49EA4063459740"
         }
       },
       "directBriefingsRead": 14,
@@ -7113,10 +7114,12 @@
       },
       "groupLayers": {
         "worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals_Layers/CAF.layer": {
-          "gap": "legacy slot playability requires review 6B8232E5A8ED3EBA"
+          "playableGroups": 9,
+          "unitPrefabEntries": 61
         },
         "worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals_Layers/Separatist.layer": {
-          "gap": "legacy slot playability requires review E1CF84BB8F21BBB5"
+          "playableGroups": 5,
+          "unitPrefabEntries": 25
         }
       },
       "directBriefingsRead": 10,
@@ -11379,7 +11382,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Hall Boss Mines/HallBossMines_Layers/OPFOR_Players/OPFOR_Players.layer": {
-          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
+          "playableGroups": 1,
+          "unitPrefabEntries": 9
         }
       },
       "boundaryLayers": {
@@ -11465,7 +11469,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Hall Boss/HallBoss_Layers/OPFOR_Players/OPFOR_Players.layer": {
-          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
+          "playableGroups": 1,
+          "unitPrefabEntries": 9
         }
       },
       "boundaryLayers": {
@@ -11661,7 +11666,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Leaf and Two Bridges/Leaf and Two Bridges_Layers/OPF_Players.layer": {
-          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "boundaryLayers": {
@@ -11891,7 +11896,7 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/CDF_Players/CDF_Players.layer": {
-          "gap": "legacy slot playability requires review ECB5E6520057FF89"
+          "gap": "ambiguous duplicate callsign component"
         },
         "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/SEP_Players/SEP_Players.layer": {
           "playableGroups": 3,
@@ -12241,7 +12246,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/River Crossing Leaf/River Crossing Leaf_Layers/OPF_Players.layer": {
-          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "boundaryLayers": {
@@ -13310,7 +13315,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_Layers/Players_Soviets/OPFOR_Players.layer": {
-          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
+          "gap": "unresolved character prefab D1BA3D1164545A8D"
         },
         "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_Layers/Players_UK/UK_Players.layer": {
           "gap": "mission-owned slot CFEF5849657BF84D"
@@ -15567,7 +15572,7 @@
           "gap": "legacy slot playability requires review 283A06EF2B6E7E24"
         },
         "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/OPFOR/PlayerOPFOR.layer": {
-          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
+          "gap": "unresolved character prefab D1BA3D1164545A8D"
         }
       },
       "boundaryLayers": {
@@ -15659,7 +15664,7 @@
           "gap": "legacy slot playability requires review 5E4D30EAE4DDA13A"
         },
         "worlds/IronFunnelEvent/MSN3/SovietLevies_Layers/players_ussr.layer": {
-          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "directBriefingsRead": 13,
@@ -15752,7 +15757,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs_Layers/ussr.layer": {
-          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
+          "gap": "mission-owned slot 83B790D1347823FF"
         }
       },
       "directBriefingsRead": 13,
@@ -16315,7 +16320,7 @@
           "unitPrefabEntries": 20
         },
         "worlds/James/LacourtManor/LacourtManor_Layers/red_players.layer": {
-          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
+          "gap": "group component needs review"
         }
       },
       "boundaryLayers": {
@@ -16414,7 +16419,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/James/LehtoTussle/LehtoTussle_Layers/red_players.layer": {
-          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
+          "gap": "unresolved character prefab D1BA3D1164545A8D"
         }
       },
       "boundaryLayers": {
@@ -19700,7 +19705,7 @@
       ],
       "markerLayers": {
         "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/Markers/MarksALL.layer": {
-          "gap": "line 15 marker phase set needs review"
+          "candidateIcons": 3
         },
         "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/Markers/MarksSEP.layer": {
           "candidateIcons": 19
@@ -20899,7 +20904,8 @@
       },
       "groupLayers": {
         "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/IRAQ/Players.layer": {
-          "gap": "legacy slot playability requires review 0F40B7C9697E9742"
+          "playableGroups": 5,
+          "unitPrefabEntries": 26
         },
         "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/UK/Players.layer": {
           "playableGroups": 6,
@@ -21216,7 +21222,8 @@
           "unitPrefabEntries": 30
         },
         "worlds/TheLocalPub/CimicHouse/CimicHouse_Layers/OPFOR/Players.layer": {
-          "gap": "legacy slot playability requires review 1AB3DC8EFD701A91"
+          "playableGroups": 1,
+          "unitPrefabEntries": 6
         }
       },
       "directBriefingsRead": 12,
@@ -21375,7 +21382,7 @@
       ],
       "markerLayers": {
         "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint_Layers/INDFOR/Markers.layer": {
-          "gap": "line 17 marker phase set needs review"
+          "candidateIcons": 2
         },
         "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint_Layers/OPFOR/Markers.layer": {
           "candidateIcons": 16
@@ -21390,7 +21397,8 @@
           "unitPrefabEntries": 50
         },
         "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint_Layers/OPFOR/Players.layer": {
-          "gap": "legacy slot playability requires review 255BA49B817E33AD"
+          "playableGroups": 5,
+          "unitPrefabEntries": 27
         }
       },
       "boundaryLayers": {
@@ -21487,7 +21495,7 @@
       ],
       "markerLayers": {
         "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_Layers/INDFOR/Markers.layer": {
-          "gap": "line 17 marker phase set needs review"
+          "candidateIcons": 2
         },
         "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_Layers/OPFOR/Markers.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -21502,7 +21510,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_Layers/OPFOR/Players.layer": {
-          "gap": "legacy slot playability requires review 255BA49B817E33AD"
+          "playableGroups": 4,
+          "unitPrefabEntries": 18
         }
       },
       "boundaryLayers": {
@@ -21581,7 +21590,8 @@
       },
       "groupLayers": {
         "worlds/TheLocalPub/Joutus/Joutus_Layers/CAF/Players.layer": {
-          "gap": "legacy slot playability requires review F1802349655D63BC"
+          "playableGroups": 4,
+          "unitPrefabEntries": 32
         },
         "worlds/TheLocalPub/Joutus/Joutus_Layers/FIA/AI.layer": {
           "playableGroups": 0,
@@ -22158,7 +22168,8 @@
           "gap": "AI group field needs review: m_sCustomNameSet"
         },
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/INDFOR/Players.layer": {
-          "gap": "legacy slot playability requires review 255BA49B817E33AD"
+          "playableGroups": 4,
+          "unitPrefabEntries": 19
         },
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/OPFOR/Players.layer": {
           "playableGroups": 10,
@@ -22426,7 +22437,8 @@
       },
       "groupLayers": {
         "worlds/TheLocalPub/RapidAttack/RapidAttack_Layers/CAF/Players.layer": {
-          "gap": "legacy slot playability requires review F29C8B7CB50A0F2A"
+          "playableGroups": 4,
+          "unitPrefabEntries": 26
         },
         "worlds/TheLocalPub/RapidAttack/RapidAttack_Layers/FIA/AI.layer": {
           "playableGroups": 0,
@@ -22507,7 +22519,7 @@
       ],
       "markerLayers": {
         "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/OPFOR/Markers.layer": {
-          "gap": "line 2 marker phase set needs review"
+          "candidateIcons": 4
         },
         "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/SYSTEMS/AllMarkers.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -22523,7 +22535,8 @@
           "unitPrefabEntries": 1
         },
         "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/OPFOR/Players.layer": {
-          "gap": "legacy slot playability requires review ECB5E6520057FF89"
+          "playableGroups": 5,
+          "unitPrefabEntries": 25
         }
       },
       "stockPlacementLayers": {
@@ -23838,7 +23851,8 @@
           "gap": "legacy slot playability requires review 22E43956740A6794"
         },
         "worlds/Til/Countdown/Countdown_Layers/players_sep.layer": {
-          "gap": "legacy slot playability requires review 7F16C773F44030E6"
+          "playableGroups": 5,
+          "unitPrefabEntries": 13
         },
         "worlds/Til/Countdown/Countdown_Layers/players_us.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -25230,7 +25244,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/JunctionJab/JunctionJab_Layers/players_caf.layer": {
-          "gap": "legacy slot playability requires review FC5B6E3946BB6F48"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/JunctionJab/JunctionJab_Layers/players_nva.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -25371,7 +25385,7 @@
       },
       "groupLayers": {
         "worlds/Til/JunctionJabXL/JunctionJabXL_Layers/players_caf.layer": {
-          "gap": "legacy slot playability requires review FC5B6E3946BB6F48"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/JunctionJabXL/JunctionJabXL_Layers/players_nva.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -27634,7 +27648,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/players_ussr.layer": {
-          "gap": "legacy slot playability requires review 8558FB262DBF1D64"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "boundaryLayers": {
@@ -28610,7 +28624,7 @@
       },
       "groupLayers": {
         "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/B4_heart_OP4.layer": {
-          "gap": "legacy slot playability requires review 880C5D691FD13F6E"
+          "gap": "legacy slot playability requires review 95A1F97572D8C9DA"
         },
         "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/Howlers.layer": {
           "gap": "legacy slot playability requires review 63892DDB3954C8A5"
@@ -30523,7 +30537,8 @@
           "gap": "unresolved or duplicate Units prefab 1701B425406974A0"
         },
         "worlds/arc/EFPLumberjacks/EFPLumberjacks_Layers/players.layer": {
-          "gap": "legacy slot playability requires review F29C8B7CB50A0F2A"
+          "playableGroups": 11,
+          "unitPrefabEntries": 80
         }
       },
       "boundaryLayers": {
@@ -33633,7 +33648,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/arc/QuickReaction/QuickReaction_Layers/players.layer": {
-          "gap": "legacy slot playability requires review BB329B7033788B7B"
+          "playableGroups": 13,
+          "unitPrefabEntries": 71
         }
       },
       "boundaryLayers": {
@@ -36003,7 +36019,8 @@
       },
       "groupLayers": {
         "worlds/arc/VilleneufPunchupRedux/VilleneufPunchupRedux_Layers/players_caf.layer": {
-          "gap": "legacy slot playability requires review F1802349655D63BC"
+          "playableGroups": 3,
+          "unitPrefabEntries": 25
         },
         "worlds/arc/VilleneufPunchupRedux/VilleneufPunchupRedux_Layers/players_ru.layer": {
           "gap": "legacy slot playability requires review 8BEC67677F23304C"
@@ -36260,7 +36277,9 @@
     "worlds/arc/ZeroArcThirty/ZeroArcThirty.ent": {
       "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 8
+        "absent": 2,
+        "changed": 5,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -36305,7 +36324,8 @@
       },
       "groupLayers": {
         "worlds/arc/ZeroArcThirty/ZeroArcThirty_Layers/players.layer": {
-          "gap": "legacy slot playability requires review B293010593985EF3"
+          "playableGroups": 7,
+          "unitPrefabEntries": 40
         }
       },
       "directBriefingsRead": 8,

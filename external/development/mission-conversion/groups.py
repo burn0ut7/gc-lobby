@@ -18,6 +18,15 @@ NATIVE_GROUP_FIELD = re.compile(r'm_faction "[\w.-]+"|m_iGroupRadioFrequency \d+
 STATIC_LINK_FIELDS = {'m_aStaticWaypoints {', 'm_aStaticVehicles {'}
 FORMATION = re.compile(r'AIFormationComponent "\{[\da-fA-F]{16}\}" \{')
 WRAPPERS = json.loads(Path(__file__).with_name('stock_wrappers.json').read_text(encoding='utf-8'))
+BASE_CHARACTER = ('37578B1666981FCE', 'Prefabs/Characters/Core/Character_Base.et')
+# These external parents were verified against the published Core/RHS prefabs.
+# Both inherit Character_Base, which the legacy GC Lobby package overlays.
+LEGACY_PLAYABLE_PARENTS = {
+    BASE_CHARACTER,
+    ('5346CF7E39A65A6B', 'Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Base.et'),
+    ('B889387E9A33D667',
+     'Prefabs/Characters/Factions/BLUFOR/RHS_USAF/RHS_USAF_Army/Character_RHS_USA_BaseLoadout.et'),
+}
 RHS_AI_ROLES = {
     '1701B425406974A0': 'SL', '234A37EC8608DFAC': 'Rifleman', '727CB9BA48D9407A': 'SR_GL',
     'A5548567111B86FD': 'AR', 'AFF07941936347BB': 'AAT', 'F11CCA20FCC74AA3': 'AT',
@@ -98,6 +107,16 @@ def legacy_member(snapshot, guid, force):
             if active:
                 return active[1] == '1'
     return False
+
+
+def inherits_legacy_playable_base(snapshot, guid, stock):
+    chain = inheritance(snapshot, guid)
+    if not chain or not stock or not stock.contains(*BASE_CHARACTER):
+        return False
+    if any(not body.startswith('SCR_ChimeraCharacter ') or 'PS_PlayableComponent' in body for body in chain):
+        return False
+    parent = REF.search(chain[-1].splitlines()[0])
+    return parent is not None and (parent[1].upper(), parent[2]) in LEGACY_PLAYABLE_PARENTS
 
 
 def stock_character(guid, path, stock):
@@ -331,7 +350,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     for member in roster:
         if member.upper() in reviewed_members or member.upper() in converted_wrappers:
             continue
-        if not legacy_member(source_units, member, force):
+        if not (legacy_member(source_units, member, force)
+                or (force and inherits_legacy_playable_base(source_units, member, stock))):
             raise ValueError('legacy slot playability requires review ' + member)
         only_path(dev_units, member)
     if not native_playable:
