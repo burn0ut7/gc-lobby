@@ -273,9 +273,10 @@ def main():
         if review:
             row['frameworkEvents'] = review
         objective_flags = ()
-        if args.batch and row['serializedTypes'].get('TILW_BaseInteraction'):
+        if args.batch and any(row['serializedTypes'].get(kind)
+                              for kind in ('TILW_BaseInteraction', 'TILW_TeleportInteraction')):
             try:
-                objective_flags, interaction_placements, audit = batch.interaction_rules(source, world, stock)
+                objective_flags, interaction_placements, audit = batch.interaction_rules(source, world, stock, locally_owned)
                 batch_interactions[world] = (objective_flags, interaction_placements)
                 row['interactionCandidate'] = audit
             except ValueError as exc:

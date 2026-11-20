@@ -15,6 +15,7 @@ from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer
 from outcomes import FRAMEWORK, leaves
 import polygon_capture
+import teleports
 from scenery import FIELD, StockPrefabs, WAYPOINT_CLASS
 
 LEGACY = re.compile(r'\b(?:TILW|PS)_\w+')
@@ -134,19 +135,27 @@ def native_placement(block):
     return None if LEGACY.search(text) else text
 
 
-def interaction_rules(source, world, stock):
+def interaction_rules(source, world, stock, local_resources):
     placements, audit = {}, {}
     names, flags = set(), set()
     for path in source.layers[world.lower()]:
         text = source.read(path)
-        if 'TILW_BaseInteraction' not in text:
+        if 'TILW_BaseInteraction' not in text and 'TILW_TeleportInteraction' not in text:
             continue
         for line, block in blocks(text):
-            if not any('TILW_BaseInteraction' in item for item in block):
+            has_teleport = any(teleports.is_teleport(item) for item in block)
+            if not has_teleport and not any('TILW_BaseInteraction' in item for item in block):
                 continue
             location = f'{path}:{line}'
             try:
-                native, details = convert_interaction_block(block, location, stock, source.resources)
+                if has_teleport:
+                    native, destinations = teleports.convert(block, location, stock, local_resources)
+                    if LEGACY.search(native):
+                        raise ValueError('unconverted teleport component or side effect')
+                    placements[(path, line)] = native
+                    audit[location] = {'teleportDestinations': destinations}
+                    continue
+                native, details = convert_interaction_block(block, location, stock, local_resources)
                 if not details or LEGACY.search(native):
                     raise ValueError('unconverted interaction component or side effect')
                 objectives = [record['flag'] for record in details]
@@ -666,6 +675,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     group_blocks = []
     area_names = []
     objective_flags, interaction_placements = interactions
+    teleport_targets = {target for record in row.get('interactionCandidate', {}).values() if isinstance(record, dict)
+                        for target in record.get('teleportDestinations', [])}
     event_flags = {action['setsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
                    if 'setsFlag' in action}
     unresolved_event_flags = {term['flag'] for term in terms if term['trigger'] == 'event flag'} - event_flags
@@ -776,9 +787,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 or any(flag_uses[flag[1:-1]] != 1 for flag in delayed.conditions)):
             blockers.append({'rule': 'delayed extraction', 'file': world,
                              'detail': 'extraction needs all spawns and one positive consumer per flag'})
-    if not blockers and (assignments or marker_edits or prefab_spawns or extraction_spawns or area_names
+    if not blockers and (assignments or marker_edits or prefab_spawns or extraction_spawns or area_names or teleport_targets
                          or any('m_aStatic' in body for body in draft.values())):
         named = named_placements(draft.values())
+        for target in sorted(teleport_targets):
+            if len(named.get(target, [])) != 1:
+                blockers.append({'rule': 'teleport destination', 'file': world,
+                                 'detail': 'expected one placed entity named ' + target})
         for name in sorted(set(area_names)):
             if len(named.get(name, [])) != 1:
                 blockers.append({'rule': 'area name', 'file': world, 'detail': 'ambiguous area named ' + name})
