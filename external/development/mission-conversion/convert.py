@@ -40,7 +40,10 @@ def main():
     parser.add_argument('--include-gwotline-mode', action='store_true', help='stage the reviewed Gwotline Bling mode placement for assembly')
     parser.add_argument('--include-gwotline-candidate', action='store_true', help='assemble the incomplete Gwotline Bling playtest world externally')
     parser.add_argument('--include-breach-loadouts', action='store_true', help='stage Breach and Clear mission-owned loadouts and roster')
+    parser.add_argument('--include-breach-candidate', action='store_true', help='assemble the incomplete Breach and Clear playtest world externally')
     args = parser.parse_args()
+    if args.include_breach_candidate:
+        args.include_breach_loadouts = True
     if args.include_gwotline_candidate:
         if not args.stage or not args.units or not args.base_database:
             parser.error('the Gwotline playtest candidate requires --stage, --units and --base-database')
@@ -102,6 +105,9 @@ def main():
                         reviewed_candidate = (
                             args.include_hnevice_candidate and world == hnevice.WORLD
                             and layer == hnevice.FOLDER + 'default.layer'
+                        ) or (
+                            args.include_breach_candidate and world == breach.WORLD
+                            and layer == breach.LAYERS + 'default.layer'
                         )
                         if layer in dev.files and not reviewed_candidate:
                             audit['gap'] = 'Dev already contains the original layer path; review before adding boundary siblings'
@@ -305,8 +311,20 @@ def main():
             if path in dev.files and dev.read(path).strip() != body.strip():
                 parser.error(f'Dev already has differing {path}')
             out[path] = body
-        report['worlds'][breach.WORLD]['loadoutCandidates'] = audit
-        report['worlds'][breach.WORLD]['rosterCandidate'] = roster_audit
+        row = report['worlds'][breach.WORLD]
+        row['loadoutCandidates'] = audit
+        row['rosterCandidate'] = roster_audit
+        if args.include_breach_candidate:
+            candidate, icons = breach.assemble(source, dev, row['briefingModePreset'])
+            for path, body in candidate.items():
+                if path in dev.files and dev.read(path).strip() != body.strip():
+                    parser.error(f'Dev already has differing {path}')
+                out[path] = body
+            row['playtestCandidate'] = {
+                'presentOnDev': all(path in dev.files for path in candidate),
+                'icons': icons,
+                'remainingBehavior': breach.GAPS,
+            }
     if args.stage:
         stage = args.stage.resolve()
         if any(stage.is_relative_to(root.resolve()) for root in ([args.missions, lobby] + ([args.units] if args.units else []))):

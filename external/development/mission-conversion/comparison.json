@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "471ffbb89facbfa2e780d13ed88c0a89220fda3d",
+  "target": "97bec59d02123e677860ab91d284bab01125014f",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -199,7 +199,7 @@
         "worlds/Corax/Breach and clear/Breach_and_Clear.ent"
       ],
       "declaredPath": "worlds/Corax/Breach and clear/Breach_and_Clear.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{0FC36D955A7779AE}worlds/Corax/Breach and clear/Breach_and_Clear.ent"
     },
     "Missions/Corax/Hnevice/Hnevice.conf": {
@@ -3721,8 +3721,8 @@
     "worlds/Corax/Breach and clear/Breach_and_Clear.ent": {
       "sourceResourceCount": 11,
       "devPaths": {
-        "absent": 5,
-        "changed": 6
+        "changed": 9,
+        "identical": 2
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -3829,6 +3829,16 @@
         "playableGroups": 7,
         "unitPrefabEntries": 48,
         "supportAI": 2
+      },
+      "playtestCandidate": {
+        "presentOnDev": true,
+        "icons": 7,
+        "remainingBehavior": [
+          "Translate both loss events as notifications under the legacy Core end-game suppression",
+          "Compare restriction-zone boundary behavior and the legacy warning HUD for both sides",
+          "Verify inherited vehicles, weather, scenery, faction marker audiences and issued equipment",
+          "Compare Senior Rifleman formation offsets and linked player and AI orders"
+        ]
       }
     },
     "worlds/Corax/Green mountain/Greenmountain.ent": {

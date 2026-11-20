@@ -1,12 +1,29 @@
 """Restore the Breach and Clear mission-owned loadout variants."""
 from catalog import REF
-from briefings import block_end
+from briefings import block_end, guid
 from groups import ROOT, group_layer, inheritance, legacy_member, only_path, scalar
-from launchers import META_NAME, replace_reference
+from launchers import META_NAME, launcher, replace_reference
+from markers import convert_layer as convert_markers
 
 WORLD = 'worlds/Corax/Breach and clear/Breach_and_Clear.ent'
 FOLDER = 'worlds/Corax/Breach and clear/No ETool/'
 PLAYERS = WORLD.removesuffix('.ent') + '_Layers/Players.layer'
+LAYERS = WORLD.removesuffix('.ent') + '_Layers/'
+HEADER = 'Missions/Corax/Breachandclear/BreachAndClear.conf'
+SMOKE = 'worlds/Corax/Breach and clear/Building_Explosion_Smoke.ptc'
+WORLD_INPUTS = {
+    WORLD: 'c69a1a6413d4e2ef2c218b62f35eba72947189b9',
+    LAYERS + 'default.layer': '4736ea7184c9246bc9fce73965a78f85de5d21f8',
+    LAYERS + 'Fixtures.layer': 'f59d01e6ec469a80eb5fecbaf53902ff139a2d0c',
+    LAYERS + 'Briefing.layer': 'f595a5b544194e97e193effc1ed67ecb768443ba',
+    SMOKE: '54c8899b8d624bf2c11bf338e17af975a9cb160b',
+}
+GAPS = [
+    'Translate both loss events as notifications under the legacy Core end-game suppression',
+    'Compare restriction-zone boundary behavior and the legacy warning HUD for both sides',
+    'Verify inherited vehicles, weather, scenery, faction marker audiences and issued equipment',
+    'Compare Senior Rifleman formation offsets and linked player and AI orders',
+]
 REVIEWED = {
     'AAT': 'f4c7d29d87dec64268bce907242dbf17cfaf753e',
     'AR': '95b7bafb7bdcd47b276392ef8cefffec6874fc11',
@@ -86,3 +103,84 @@ def stage_roster(source, source_units, dev_units, stock, locally_owned, loadouts
     if (groups, slots, len(support)) != (7, 48, 2):
         raise ValueError('Breach and Clear slot or support roster changed')
     return body + ''.join(support), {'playableGroups': groups, 'unitPrefabEntries': slots, 'supportAI': len(support)}
+
+
+def assemble(source, dev, preset):
+    for path, oid in WORLD_INPUTS.items():
+        if source.files.get(path) != oid:
+            raise ValueError('Breach and Clear world source changed: ' + path)
+    world, _, files = launcher(source, dev, HEADER)
+    if world != WORLD:
+        raise ValueError('Breach and Clear launcher resolves to a different world')
+    files[world] = source.read(world)
+    smoke_guid = 'BF496ADB7584E640'
+    if any(path != SMOKE for path in dev.resources.get(smoke_guid, [])):
+        raise ValueError('Breach and Clear smoke resource identity collision')
+    files[SMOKE] = source.read(SMOKE)
+    files[SMOKE + '.meta'] = replace_reference(source.read(SMOKE + '.meta'), META_NAME, smoke_guid, SMOKE)
+
+    lines = source.read(LAYERS + 'default.layer').splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith('PS_GameModeCoop '))
+    stop = block_end(lines, start)
+    arms = next(i for i, line in enumerate(lines) if line.startswith('$grp PolylineShapeEntity '))
+    component_end = block_end(lines, start + 1)
+    weather = '\n'.join(lines[start + 2:component_end]).replace('5EE3229927D4D2F5', '6B71E9A8B1A8C501')
+    mode = f'''GC_LobbyGameMode GC_BreachMode : "{{{guid(WORLD + '/resource')}}}{preset}" {{
+ components {{
+{weather}
+  SCR_PlayersRestrictionZoneManagerComponent "{{{guid(WORLD + '/restriction-manager')}}}" {{
+  }}
+  GC_LobbyFreezeComponent "{{E81E75BC287148D0}}" {{
+   m_iAuthoredCountdownSeconds 60
+  }}
+  GC_LobbyManager "{{6A137A39106A4973}}" {{
+   m_aMissionEvents + {{
+    GC_Event "{{{guid(WORLD + '/release')}}}" {{
+     m_sName "Release starting zone"
+     m_aConditions {{
+      GC_TimerCondition "{{{guid(WORLD + '/release/timer')}}}" {{
+       m_fSeconds 60
+      }}
+     }}
+     m_aActions {{
+      GC_DeleteEntitiesAction "{{{guid(WORLD + '/release/delete')}}}" {{
+       m_aEntities {{
+        "GC_BreachStartingZone"
+       }}
+      }}
+     }}
+    }}
+   }}
+  }}
+ }}
+ coords 1601.722 20.219 2178.804
+}}'''
+    files[LAYERS + 'default.layer'] = '\n'.join([
+        *lines[:block_end(lines, 0) + 1], mode, *lines[stop + 1:arms],
+        *lines[block_end(lines, arms) + 1:], '',
+    ])
+
+    briefing = source.read(LAYERS + 'Briefing.layer').splitlines()
+    start = next(i for i, line in enumerate(briefing) if line.startswith('$grp PS_ManualMarker '))
+    icons, briefing_count = convert_markers('\n'.join(briefing[start:]))
+    files[LAYERS + 'Briefing.layer'] = icons
+    fixtures = source.read(LAYERS + 'Fixtures.layer').splitlines()
+    model = []
+    i = 0
+    fixture_count = 0
+    while i < len(fixtures):
+        if not fixtures[i].strip():
+            i += 1
+            continue
+        end = block_end(fixtures, i)
+        if fixtures[i].startswith('$grp PS_ManualMarker '):
+            body, fixture_count = convert_markers('\n'.join(fixtures[i:end + 1]))
+            model.extend(body.splitlines())
+        elif not fixtures[i].startswith('TILW_MissionFrameworkEntity '):
+            block = fixtures[i:end + 1]
+            if block[0].startswith('SCR_EditorRestrictionZoneEntity :'):
+                block[0] = block[0].replace(' :', ' GC_BreachStartingZone :', 1)
+            model.extend(block)
+        i = end + 1
+    files[LAYERS + 'Fixtures.layer'] = '\n'.join(model) + '\n'
+    return files, briefing_count + fixture_count
