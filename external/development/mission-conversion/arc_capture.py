@@ -10,6 +10,12 @@ from markers import convert_layer
 from scenery import StockPrefabs
 
 RECIPES = {
+    'EFPStragglers': {
+        'world': '57b3ed345d3cc642ebeb20bdc5eec4731792f8c9',
+        'default.layer': '537fec8355d2c74f192e1aa7c04fd179df5c1c1c',
+        'briefing.layer': '6c1c18039d31c03ba6bb7ac0473927b7f69bd415',
+        'vehicles.layer': '7b7061505cd162c98408ff93605549ab43da3736',
+    },
     'SoumontSawmill': {
         'world': '4c0008aff8edc1a7621767d0bdd996585bd07bf3',
         'default.layer': 'c0b0ce31159c5cb6252b8d02afdf242502852367',
@@ -41,15 +47,19 @@ def capture(source, world):
         'coords', 'm_queryRadius', 'm_captureTime', 'm_sendStatusMessages', 'm_locationName',
         'm_flagName', 'm_stopAfterFirstChange', 'm_playersOnly', 'm_ownerFactionKey',
     })
-    if any(data.get(name) != '1' for name in ('m_playersOnly', 'm_sendStatusMessages', 'm_stopAfterFirstChange')):
+    players_only = data.get('m_playersOnly', '0')
+    stops = data.get('m_stopAfterFirstChange', '0')
+    if data.get('m_sendStatusMessages') != '1' or players_only not in ('0', '1') or stops not in ('0', '1'):
         raise ValueError('Arc capture options changed')
     if not re.fullmatch(QUOTED, data.get('m_locationName', '')):
         raise ValueError('Arc capture location name changed')
     key = world + '/capture/' + data['m_flagName']
+    who = '' if players_only == '1' else '        m_iWho 2\n'
+    stop = '        m_bStopAfterFirstChange 1\n' if stops == '1' else ''
     condition = f'''      GC_AreaCondition "{{{guid(key)}}}" {{
        m_sArea "GC_ArcCapture"
        m_Targets GC_CharacterAreaTargets "{{{guid(key + '/players')}}}" {{
-        m_aFactions {{
+{who}        m_aFactions {{
          {data['m_ownerFactionKey']}
         }}
        }}
@@ -60,8 +70,7 @@ def capture(source, world):
         m_fSeconds {data['m_captureTime']}
         m_bUseElapsedTime 1
         m_iInterruption 3
-        m_bStopAfterFirstChange 1
-        m_Messages GC_CaptureMessages "{{{guid(key + '/messages')}}}" {{
+{stop}        m_Messages GC_CaptureMessages "{{{guid(key + '/messages')}}}" {{
          m_sLocation {data['m_locationName']}
          m_sCaptured "The %1 has taken control of %2."
          m_sCapturing "The %1 is taking control of %2."
@@ -84,6 +93,8 @@ def capture(source, world):
         'radiusMeters': int(data['m_queryRadius']),
         'requiredLocalShare': 1,
         'timing': 'elapsed mission seconds',
+        'population': 'players' if players_only == '1' else 'players and AI',
+        'stopsAfterFirstChange': stops == '1',
     }
     return {data['m_flagName']: condition.splitlines()}, area, audit
 
@@ -118,7 +129,7 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
                     database = StockPrefabs(workshop / PROVIDERS[resource] / 'resourceDatabase.rdb')
                 if not database.contains(resource, ref_path):
                     raise ValueError(name + ' vehicle dependency changed: ' + ref_path)
-            if name == 'WateryGrave':
+            if name in ('WateryGrave', 'EFPStragglers'):
                 vehicle_name = ''
                 kept = []
                 for line in files[path].splitlines(keepends=True):
@@ -128,12 +139,12 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
                     group = re.fullmatch(r'\s*m_sAttachmentGroupName "([\w.-]+)"\s*', line)
                     if group:
                         if not vehicle_name or vehicle_name in legacy_vehicle_groups:
-                            raise ValueError('Watery Grave has an ambiguous vehicle attachment')
+                            raise ValueError(name + ' has an ambiguous vehicle attachment')
                         legacy_vehicle_groups[vehicle_name] = group[1]
                     else:
                         kept.append(line)
-                if len(legacy_vehicle_groups) != 7:
-                    raise ValueError('Watery Grave vehicle attachments changed')
+                if len(legacy_vehicle_groups) != (7 if name == 'WateryGrave' else 1):
+                    raise ValueError(name + ' vehicle attachments changed')
                 files[path] = ''.join(kept)
         elif part.lower() == 'briefing.layer':
             text = source.read(path)
@@ -143,9 +154,27 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
     boundary_path = folder + 'default_GC_Boundaries.layer'
     text = source.read(default)
     files[boundary_path], audit = convert_boundaries(text, allow_public_faction_color=True)
-    if len(audit) != 2 or any('gap' in entry for entry in audit.values()):
+    if len(audit) != (1 if name == 'EFPStragglers' else 2) or any('gap' in entry for entry in audit.values()):
         raise ValueError(name + ' AO polygons need review')
     children = ''
+    terrain = None
+    environment = ''
+    if name == 'EFPStragglers':
+        terrain = StockPrefabs(workshop / 'Ruha_653CB36244ADBE0F' / 'resourceDatabase.rdb')
+        text = text.replace('m_bUseSpecifiedDate 1', 'm_bDateOverride 1\n   m_iDay 1')
+        text = text.replace('m_iSetMonth ', 'm_iMonth ').replace('m_iSetYear ', 'm_iYear ')
+        values = {}
+        for old, new in {'FogDensity': 'FogAmount', 'FogHeight': 'FogHeightDensity',
+                         'Rain': 'RainIntensity', 'Wind': 'WindSpeed'}.items():
+            field = re.search(r'^   m_f' + old + r' ([\d.]+)\n', text, re.M)
+            values[new] = field[1]
+            text = text.replace(field[0], '', 1)
+        text = text.replace('   m_bOverrideEnvironment 1\n', '', 1)
+        fields = '\n'.join(f'   m_f{key} {value}' for key, value in values.items())
+        environment = f'''  GC_MissionEnvironmentComponent "{{{guid(world + '/environment')}}}" {{
+{fields}
+  }}
+'''
     if name == 'WateryGrave':
         lines = text.splitlines()
         start = lines.index('    SCR_Faction "{5978B9CE6585BBE8}" {')
@@ -161,6 +190,6 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
 '''
         files[header] = files[header].replace('m_iPlayerCount 45', 'm_iPlayerCount 60')
     body = outcome_mode(world, 'GC_' + name + 'Mode', row['briefingModePreset'], text, stock, rules,
-                        'GC_ArcStartingZone', children)
+                        'GC_ArcStartingZone', children, terrain, environment)
     files[default] = body.rstrip() + '\n' + area
     return files, audit, icons, legacy_vehicle_groups

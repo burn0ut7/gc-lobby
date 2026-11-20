@@ -56,12 +56,12 @@ def assemble(source, dev, stock, workshop, preset, rules, staged):
     return files, review
 
 
-def outcome_mode(world, name, preset, text, stock, rules, zone_name, children=''):
+def outcome_mode(world, name, preset, text, stock, rules, zone_name, children='', terrain=None, environment=''):
     lines = text.splitlines()
     start = next(i for i, line in enumerate(lines) if line.startswith('PS_GameModeCoop '))
     prelude = '\n'.join(lines[:start])
     for resource, path in REF.findall(prelude):
-        if not stock.contains(resource, path):
+        if not stock.contains(resource, path) and not (terrain and terrain.contains(resource, path)):
             raise ValueError('default prefab changed: ' + path)
     weather = '\n'.join(lines[start + 2:block_end(lines, start + 1)]).replace('5EE3229927D4D2F5', '6B71E9A8B1A8C501')
     old_mode = '\n'.join(lines[start:block_end(lines, start)])
@@ -70,15 +70,26 @@ def outcome_mode(world, name, preset, text, stock, rules, zone_name, children=''
     if millis % 1000:
         raise ValueError('staging time needs whole seconds')
     seconds = millis // 1000
-    first = next(i for i, line in enumerate(lines) if line.startswith('SCR_EditorRestrictionZoneEntity :'))
-    zone = '\n'.join(lines[first:block_end(lines, first) + 1])
-    if text.endswith('\n') or block_end(lines, first) < len(lines) - 1:
-        zone += '\n'
-    zone = zone.replace('SCR_EditorRestrictionZoneEntity :', f'SCR_EditorRestrictionZoneEntity {zone_name} :', 1)
-    for resource, path in REF.findall(zone):
+    zones, names = [], []
+    for i, line in enumerate(lines):
+        if not line.startswith('SCR_EditorRestrictionZoneEntity :'):
+            continue
+        label = zone_name if not names else zone_name + str(len(names) + 1)
+        names.append(label)
+        end = block_end(lines, i)
+        zone = '\n'.join(lines[i:end + 1]).replace('SCR_EditorRestrictionZoneEntity :',
+                                                    f'SCR_EditorRestrictionZoneEntity {label} :', 1)
+        if text.endswith('\n') or end < len(lines) - 1:
+            zone += '\n'
+        zones.append(zone)
+    if not names:
+        raise ValueError('missing restriction zone')
+    zones = ''.join(zones)
+    for resource, path in REF.findall(zones):
         if not stock.contains(resource, path):
             raise ValueError('restriction zone prefab changed: ' + path)
     key = world + '/release'
+    zone_names = '\n'.join(f'        "{label}"' for label in names)
     event_name = 'Release Industrial Metal staging zone' if world == WORLD else 'Release staging zone'
     return prelude + f'''
 SCR_MapEntity MapEntity1 : "{{731564B66F91B107}}Prefabs/World/Game/MapEntity.et" {{
@@ -87,7 +98,7 @@ SCR_MapEntity MapEntity1 : "{{731564B66F91B107}}Prefabs/World/Game/MapEntity.et"
 GC_LobbyGameMode {name} : "{{{guid(world + '/resource')}}}{preset}" {{
  components {{
 {weather}
-  SCR_PlayersRestrictionZoneManagerComponent "{{{guid(WORLD + '/zone-manager')}}}" {{
+{environment}  SCR_PlayersRestrictionZoneManagerComponent "{{{guid(WORLD + '/zone-manager')}}}" {{
   }}
   GC_LobbyFreezeComponent "{{E81E75BC287148D0}}" {{
    m_iAuthoredCountdownSeconds {seconds}
@@ -106,7 +117,7 @@ GC_LobbyGameMode {name} : "{{{guid(world + '/resource')}}}{preset}" {{
      m_aActions {{
       GC_DeleteEntitiesAction "{{{guid(key + '/delete')}}}" {{
        m_aEntities {{
-        "{zone_name}"
+{zone_names}
        }}
       }}
      }}
@@ -116,4 +127,4 @@ GC_LobbyGameMode {name} : "{{{guid(world + '/resource')}}}{preset}" {{
  }}
  coords {coords}
 {children}}}
-''' + zone
+''' + zones

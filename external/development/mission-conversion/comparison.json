@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "eed4e392ecad5dc8346ffa4ec9c8690dc79a3928",
+  "target": "c7fc807ad81843933bd6709cea466544d44e85e6",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1833,7 +1833,7 @@
         "worlds/arc/EFPStragglers/EFPStragglers.ent"
       ],
       "declaredPath": "worlds/arc/EFPStragglers/EFPStragglers.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{348501A2DD6CA877}worlds/arc/EFPStragglers/EFPStragglers.ent"
     },
     "Missions/arc/EasternEnvelopment.conf": {
@@ -30409,8 +30409,9 @@
     "worlds/arc/EFPStragglers/EFPStragglers.ent": {
       "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 6,
-        "changed": 2
+        "absent": 2,
+        "changed": 5,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -30489,6 +30490,16 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "captureCandidate": {
+        "faction": "GC_SEPARATIST",
+        "location": "the hamlet",
+        "seconds": 60,
+        "radiusMeters": 30,
+        "requiredLocalShare": 1,
+        "timing": "elapsed mission seconds",
+        "population": "players and AI",
+        "stopsAfterFirstChange": false
+      },
       "outcomeCandidate": {
         "events": {
           "worlds/arc/EFPStragglers/EFPStragglers_Layers/default.layer:95": {
@@ -30510,8 +30521,20 @@
             ]
           },
           "worlds/arc/EFPStragglers/EFPStragglers_Layers/default.layer:111": {
+            "trigger": "area capture",
+            "flag": "SEP_CAP",
             "name": "SEP_CAP",
-            "gap": "unresolved or unsupported outcome flag \"SEP_CAP\""
+            "announcements": [
+              {
+                "faction": "GC_SEPARATIST",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
           },
           "worlds/arc/EFPStragglers/EFPStragglers_Layers/default.layer:127": {
             "trigger": "peak player loss",
@@ -30551,7 +30574,27 @@
       },
       "briefingModePreset": "worlds/arc/EFPStragglers/EFPStragglers_GC_Settings.et",
       "renumberedInSourceOrder": true,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "playtestCandidate": {
+        "presentOnDev": true,
+        "boundaries": {
+          "61": {
+            "vertices": 4,
+            "name": null,
+            "lastLine": 82
+          }
+        },
+        "icons": 2,
+        "remainingBehavior": [
+          "Compare live capture, interrupted and contested capture, and remote notifications",
+          "Compare staging-zone enforcement, release and long timeout notices",
+          "Compare callsign labels, issued equipment and vehicle handling",
+          "Restore legacy vehicle previews and locked-vehicle removal"
+        ],
+        "legacyVehicleGroups": {
+          "SEP_BTR": "SEP_HQ"
+        }
+      }
     },
     "worlds/arc/EasternEnvelopment/EasternEnvelopment.ent": {
       "sourceResourceCount": 7,
@@ -34332,7 +34375,9 @@
         "seconds": 120,
         "radiusMeters": 30,
         "requiredLocalShare": 1,
-        "timing": "elapsed mission seconds"
+        "timing": "elapsed mission seconds",
+        "population": "players",
+        "stopsAfterFirstChange": true
       },
       "outcomeCandidate": {
         "events": {
@@ -35774,7 +35819,9 @@
         "seconds": 300,
         "radiusMeters": 15,
         "requiredLocalShare": 1,
-        "timing": "elapsed mission seconds"
+        "timing": "elapsed mission seconds",
+        "population": "players",
+        "stopsAfterFirstChange": true
       },
       "outcomeCandidate": {
         "events": {
