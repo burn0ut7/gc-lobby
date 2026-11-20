@@ -6,8 +6,7 @@ import re
 
 from briefings import block_end, guid, properties
 from catalog import SOURCE_TEXT
-from delayed_extraction import SPAWN, render_spawn
-from event_actions import compile_action, recognized
+from event_actions import SPAWN, compile_action, prefab_spawn, recognized, render_spawn
 from events import EVENT, LITERAL, MESSAGE, message, peak_flags
 
 FRAMEWORK = re.compile(r'^TILW_MissionFrameworkEntity(?: [\w.-]+)? : "\{8F846D0FD5D6EA51\}[^"]+" \{$')
@@ -127,7 +126,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0)
     return {'trigger': 'all' if match[1] == 'Conjunction' else 'any', 'operands': operands}
 
 
-def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns):
+def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns, resolve_spawn):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -156,7 +155,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 end_match = ENDING.fullmatch(fields[j])
                 waypoint_match = WAYPOINTS.fullmatch(fields[j]) if compound else None
                 action_match = recognized(fields[j]) if compound else None
-                spawn_match = SPAWN.fullmatch(fields[j]) if extraction_spawns else None
+                spawn_match = SPAWN.fullmatch(fields[j]) if extraction_spawns or resolve_spawn else None
                 if notify_match:
                     delay, body = message(fields[j + 1:last], key + '/' + notify_match[1], multiline=True)
                     messages += 1
@@ -176,6 +175,9 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                     details = extraction_spawns[spawn_match[1]]
                     delay, body = render_spawn(details, key + '/' + spawn_match[1])
                     delayed_areas.append(details)
+                elif spawn_match and resolve_spawn:
+                    delay, body, details = prefab_spawn(fields[j + 1:last], key + '/' + spawn_match[1], resolve_spawn)
+                    converted_actions.append({'instructionId': spawn_match[1], **details})
                 else:
                     raise ValueError('unsupported outcome instruction ' + fields[j].strip().split(' ')[0])
                 actions[delay].extend(body)
@@ -267,8 +269,24 @@ def render(key, name, term, actions, captures, capture_messages):
     return result
 
 
+def review_prefab_spawns(fields, key, resolve_spawn):
+    review = []
+    for index, field in enumerate(fields):
+        instruction = SPAWN.fullmatch(field)
+        if not instruction:
+            continue
+        identity = instruction[1]
+        try:
+            end = block_end(fields, index)
+            _, _, details = prefab_spawn(fields[index + 1:end], key + '/' + identity, resolve_spawn)
+        except ValueError as exc:
+            details = {'gap': str(exc)}
+        review.append({'instructionId': identity, **details})
+    return review
+
+
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
-                     extraction_spawns=None, scripts=None):
+                     extraction_spawns=None, scripts=None, resolve_spawn=None):
     captures = captures or {}
     notification_audit = notification_audit or {}
     extraction_spawns = extraction_spawns or {}
@@ -310,7 +328,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         spawns = {child.split('/')[1]: detail for child, detail in extraction_spawns.items()
                   if child.startswith(event[1] + '/')}
         if not spawns and not any(ENDING.fullmatch(item) or (compound and (WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item)
-                                                                          or recognized(item)))
+                                                                          or recognized(item)
+                                                                          or (resolve_spawn and SPAWN.fullmatch(item))))
                    for item in fields):
             continue
         name = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
@@ -319,7 +338,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         name = name[1:-1]
         try:
             term, actions, details = read_event(
-                fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns)
+                fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns,
+                resolve_spawn)
             emitted_names = {f'{name} ({delay:f}s)' for delay in actions}
             if term['trigger'] != 'Match start':
                 emitted_names.add(name)
@@ -330,4 +350,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             names.update(emitted_names)
         except ValueError as exc:
             audit[loc] = {'name': name, 'gap': str(exc)}
+            if resolve_spawn:
+                spawns_for_review = review_prefab_spawns(fields, world + '/' + event[1], resolve_spawn)
+                if spawns_for_review:
+                    audit[loc]['prefabSpawnCandidates'] = spawns_for_review
     return compiled, audit, None

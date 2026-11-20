@@ -6,11 +6,11 @@ import re
 
 from briefings import block_end, guid, properties
 from catalog import REF, SOURCE_TEXT
+from event_actions import SPAWN
 from events import EVENT, LITERAL
 from extraction import condition
 from launchers import META_NAME, replace_reference
 
-SPAWN = re.compile(r'    TILW_SpawnPrefabInstruction "\{([\da-fA-F]{16})\}" \{')
 EXTRACTION = re.compile(r'TILW_ExtractionTriggerEntity : "\{192ABD6B9232E064\}[^"]+" \{')
 KEY = r'"[\w.-]+"'
 NUMBER = r'\d+(?:\.\d+)?'
@@ -21,17 +21,6 @@ class DelayedExtraction:
     assets: dict = field(default_factory=dict)
     spawns: dict = field(default_factory=dict)
     conditions: dict = field(default_factory=dict)
-
-
-def render_spawn(details, key):
-    return Decimal(details['delay']), [
-        f'      GC_SpawnAction "{{{guid(key)}}}" {{',
-        f'       m_Spawn GC_PrefabSpawn "{{{guid(key + "/spawn")}}}" {{',
-        f'        m_sLocation "{details["anchor"]}"',
-        f'        m_sPrefab {details["prefab"]}',
-        f'        m_sEntityName "{details["area"]}"',
-        '       }', '      }',
-    ]
 
 
 def read_prefab(source, path, asset, key):

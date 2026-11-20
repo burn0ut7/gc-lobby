@@ -3,11 +3,13 @@ from decimal import Decimal
 import re
 
 from briefings import guid, properties
+from catalog import REF
 
 INSTRUCTION = re.compile(r'^    (TILW_\w+Instruction) "\{([\da-fA-F]{16})\}" \{$')
 NUMBER = r'\d+(?:\.\d+)?'
 CLOCK_FIELDS = ('m_iHours', 'm_iMinutes', 'm_iSeconds')
 FACTION_VISIBILITY = re.compile(r'TILW_FactionVisibility "\{[\da-fA-F]{16}\}" \{([^{}]*)\}')
+SPAWN = re.compile(r'    TILW_SpawnPrefabInstruction "\{([\da-fA-F]{16})\}" \{')
 
 
 def target_names(value):
@@ -103,6 +105,37 @@ def set_flag(data, _key):
     return ['       m_sFlagName ' + flag, '       m_iOperation 1', '       m_iAmount 1'], {
         'setsFlag': flag[1:-1],
     }
+
+
+def render_spawn(details, key):
+    body = [
+        f'      GC_SpawnAction "{{{guid(key)}}}" {{',
+        f'       m_Spawn GC_PrefabSpawn "{{{guid(key + "/spawn")}}}" {{',
+        f'        m_sLocation "{details["anchor"]}"',
+        f'        m_sPrefab {details["prefab"]}',
+    ]
+    if details['area']:
+        body.append(f'        m_sEntityName "{details["area"]}"')
+    return Decimal(details['delay']), [*body, '       }', '      }']
+
+
+def prefab_spawn(lines, key, resolve_resource):
+    data = properties(lines, {'m_executionDelay', 'm_prefab', 'm_locationName', 'm_setEntityName'})
+    ref = REF.fullmatch(data.get('m_prefab', ''))
+    name = data.get('m_setEntityName', '""')
+    anchor = data.get('m_locationName', '')
+    delay = data.get('m_executionDelay', '5')
+    if (not ref or not re.fullmatch(r'"[\w.-]+"', anchor)
+            or not re.fullmatch(r'"[\w.-]*"', name) or not re.fullmatch(NUMBER, delay) or Decimal(delay) > 86400):
+        raise ValueError('unsupported prefab spawn placement or delay')
+    path = resolve_resource(ref[1].upper(), ref[2])
+    if not path:
+        raise ValueError('spawn prefab identity or behavior needs review: ' + ref[2])
+    details = {'anchor': anchor[1:-1], 'area': name[1:-1],
+               'prefab': f'"{{{ref[1]}}}{path}"', 'delay': delay}
+    seconds, body = render_spawn(details, key)
+    return seconds, body, {'instruction': 'TILW_SpawnPrefabInstruction', 'delaySeconds': delay,
+                          'spawnAnchor': details['anchor'], 'spawnName': details['area'], 'prefab': details['prefab']}
 
 
 ACTIONS = {

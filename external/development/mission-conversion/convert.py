@@ -116,6 +116,10 @@ def main():
         dev_units = Snapshot(args.units, args.units_dev)
         report['sourceUnits'] = source_units.commit
         report['targetUnits'] = dev_units.commit
+
+    def resolve_spawn(resource, path):
+        return batch.spawn_resource(source, dev, source_units, dev_units, stock, resource, path)
+
     out = {}
     arc_areas = {}
     batch_areas = {}
@@ -285,7 +289,8 @@ def main():
                 row['delayedExtractionGap'] = str(exc)
                 delayed = None
         has_event_actions = args.batch and any(row['serializedTypes'].get(kind) for kind in
-                                              ('TILW_AssignWaypointsInstruction', 'TILW_SendMessageInstruction', *ACTIONS))
+                                              ('TILW_AssignWaypointsInstruction', 'TILW_SendMessageInstruction',
+                                               'TILW_SpawnPrefabInstruction', *ACTIONS))
         if args.include_outcomes and (has_outcomes or has_event_actions or (delayed and delayed.spawns)):
             try:
                 captures = {}
@@ -305,7 +310,8 @@ def main():
                     source, world, captures, compound=args.batch, notification_audit=review,
                     objective_flags=objective_flags, extraction_spawns=delayed.spawns if delayed else None,
                     scripts=batch.script_text(source) if args.batch and
-                    row['serializedTypes'].get('TILW_SetFlagInstruction') else None)
+                    row['serializedTypes'].get('TILW_SetFlagInstruction') else None,
+                    resolve_spawn=resolve_spawn if args.batch else None)
                 outcome = {'events': outcome_audit}
                 if gap:
                     outcome['gap'] = gap

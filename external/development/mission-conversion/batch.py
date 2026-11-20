@@ -241,6 +241,30 @@ def passive_asset(source, path):
     raise ValueError('requires a resource conversion rule')
 
 
+def spawn_resource(source, dev, source_units, dev_units, stock, guid, path):
+    if not path.lower().endswith('.et') or path.lower().startswith('prefabs/groups/'):
+        return None
+    owned = source.resources.get(guid)
+    if owned:
+        if owned != [path] or dev.resources.get(guid) not in (None, [path]):
+            return None
+        try:
+            body = passive_asset(source, path)
+        except ValueError:
+            return None
+        return path if path not in dev.files or body == dev.read(path) else None
+    if guid in dev.resources:
+        return None
+    before = source_units.resources.get(guid)
+    after = dev_units.resources.get(guid)
+    if before or after:
+        if before != [path] or after != [path]:
+            return None
+        body = source_units.read(path)
+        return path if body == dev_units.read(path) and not LEGACY.search(body) else None
+    return path if stock.contains(guid, path) else None
+
+
 def resource_aliases(workshop, units):
     aliases, databases = {}, {}
     if workshop:
@@ -652,6 +676,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             draft[path] = ''.join(blocks_in_layer)
     assignments = [item for event in rules.values() for item in event.get('waypointAssignments', [])]
     marker_edits = [item for event in rules.values() for item in event.get('convertedActions', []) if 'markers' in item]
+    prefab_spawns = [item for event in rules.values() for item in event.get('convertedActions', []) if 'spawnAnchor' in item]
     extraction_spawns = [item for event in rules.values() for item in event.get('extractionSpawns', [])]
     if delayed:
         flag_uses = Counter(term.get('flag') for term in terms if term['trigger'] == 'area capture')
@@ -659,7 +684,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 or any(flag_uses[flag[1:-1]] != 1 for flag in delayed.conditions)):
             blockers.append({'rule': 'delayed extraction', 'file': world,
                              'detail': 'extraction needs all spawns and one positive consumer per flag'})
-    if not blockers and (assignments or marker_edits or extraction_spawns or area_names
+    if not blockers and (assignments or marker_edits or prefab_spawns or extraction_spawns or area_names
                          or any('m_aStatic' in body for body in draft.values())):
         named = named_placements(draft.values())
         for name in sorted(set(area_names)):
@@ -669,6 +694,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             if len(named.get(spawn['anchor'], [])) != 1 or spawn['area'] in named:
                 blockers.append({'rule': 'delayed extraction', 'file': world,
                                  'detail': 'missing or ambiguous placement for ' + spawn['anchor']})
+        spawned_names = Counter(item['spawnName'] for item in prefab_spawns if item['spawnName'])
+        for spawn in prefab_spawns:
+            anchor, name = spawn['spawnAnchor'], spawn['spawnName']
+            if (len(named.get(anchor, [])) != 1
+                    or (name and (spawned_names[name] != 1 or name in named))):
+                blockers.append({'rule': 'prefab spawn', 'file': world,
+                                 'detail': 'missing anchor or conflicting spawn name for ' + anchor})
         for gap in waypoint_gaps(named, assignments):
             blockers.append({'rule': 'waypoint assignments', 'file': world, 'detail': gap})
         for layer, field, target in static_link_gaps(draft, named):
@@ -737,6 +769,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare timing of simultaneous flag changes and their dependent event chains.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Auxiliary outlines use screen width instead of metres.')
+    if prefab_spawns:
+        remaining.append('Compare spawn placement and timing in Match, including concurrent actions.')
     return ({} if blockers else draft), {
         'status': 'blocked by conversion rules' if blockers else 'generated for file review',
         'blockers': blockers, 'files': sorted(draft), 'mixedLayerGroups': group_blocks,

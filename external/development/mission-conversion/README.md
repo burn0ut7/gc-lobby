@@ -472,3 +472,9 @@ The converter retains mission-owned playable character prefabs under their origi
 The stock wrapper ledger now includes the archived Soviet rifle squad wrapper, verified through the published GC Lobby package. Its native group can retain explicitly authored mission-owned slots. The legacy FIA base overlay from published Core also matches the Units Dev copy byte for byte. This allows the Syrian Checkpoint HTS and SAA character prefabs to keep their authored gear while selecting the canonical Units parents and radio.
 
 Syrian Checkpoint now stages all 17 custom characters and all 60 ordered roster slots. The resource audit still holds the draft on the legacy jacket, trousers and baseball cap GUIDs `F102F28DCAC86628`, `5C8C69E719F68617` and `5DF4933859A5CF08`. The archived index and installed registries did not resolve these assets. Live equipment and faction presentation remain open.
+
+## Timed prefab spawns
+
+The batch can translate plain legacy prefab spawns to GC Lobby's native spawn action. The conversion keeps the delay, exact anchor, prefab identity and any assigned name. The resolver accepts registered stock resources, unchanged Units prefabs, and supported passive mission-owned resources. It verifies that the anchor is unique in the draft and that the spawned name cannot collide. Pregame events, legacy-scripted spawn resources, and separately authored group or crew configuration still require their own conversion rules.
+
+When another instruction or condition blocks the full event, the report records each plain spawn that passed the instruction and resource checks. The catalog found 29 such actions across five worlds. Arty Arty Arty accounts for 19 and still needs its separately named driver groups and later orders. A complete event built from a registered stock resource verified delay, anchor and name serialization. Live placement and timing remain shared runtime checks.
