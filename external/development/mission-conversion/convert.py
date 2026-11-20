@@ -356,6 +356,9 @@ def main():
                 gaps.append(str(exc))
         row['briefingGaps'] = gaps
     report['devOnlyHeaders'] = sorted(target_headers - set(report['headers']))
+    reviewed_race_aliases = {(guid, path): (guid, alternate)
+                             for (guid, path), alternate in batch.STOCK_RESOURCE_ALIASES.items()}
+    reviewed_race_aliases.update({key: resource[1:] for key, resource in batch.WORKSHOP_RESOURCE_ALIASES.items()})
     for enabled, world, recipe in [(args.include_race_day, RACE_WORLD, race_files), (args.include_ruha, RUHA_WORLD, ruha_files)]:
         if not enabled:
             continue
@@ -364,7 +367,11 @@ def main():
         generated = recipe(source)
         for path, data in generated.items():
             if path in dev.files and dev.read(path).strip() != data.strip():
-                if world != RACE_WORLD or dev.files[path] != PRIOR_KUNAR_LAYERS.get(path):
+                # Reuse already-installed reference repairs if the rest of the recipe output matches.
+                repaired = batch.replace_registered_paths(data, source, dev, reviewed_race_aliases)
+                if path.endswith('.layer') and dev.read(path).strip() == repaired.strip():
+                    data = repaired
+                elif world != RACE_WORLD or dev.files[path] != PRIOR_KUNAR_LAYERS.get(path):
                     parser.error(f'Dev already has differing {path}')
             out[path] = data
         report['worlds'][world]['raceConversion'] = {

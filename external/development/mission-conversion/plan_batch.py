@@ -24,14 +24,21 @@ def summarize(inventory, review, limit):
     for world, headers in sorted(candidates.items()):
         draft = migration['worlds'][world]
         issues = []
+        remaining_resources = set()
+        resource_repairs = set(draft['files']) if draft.get('resourcePathRepairs') else set()
         for header in sorted(headers):
             comparison = review['missions'][header]
-            issues.extend(f'{header} — {issue}' for issue in comparison['issues'])
+            issues.extend(f'{header} — {issue}' for issue in comparison['issues']
+                          if not resource_repairs or issue != 'Unresolved external resource references')
             for entry in comparison.get('unresolvedExternalReferences', []):
-                issues.append(f"{{{entry['guid']}}}{entry['path']}")
+                reference = f"{{{entry['guid']}}}{entry['path']}"
+                if resource_repairs and resource_repairs.isdisjoint(entry['referencedBy']):
+                    remaining_resources.add(reference)
+                else:
+                    issues.append(reference)
             if comparison['status'] != 'compare' and not comparison['issues']:
                 issues.append(f'{header} — comparison incomplete')
-            advertised = draft['advertisedSlots'].get(header)
+            advertised = draft.get('advertisedSlots', {}).get(header)
             if advertised is not None and advertised != draft['verifiedPlayableSlots']:
                 issues.append(f"{header} — {advertised} advertised slots, "
                               f"{draft['verifiedPlayableSlots']} converted")
@@ -39,6 +46,8 @@ def summarize(inventory, review, limit):
                   'behaviorGaps': draft.get('remainingBehavior', [])}
         if draft.get('reviewedReplacements'):
             record['reviewedReplacements'] = sorted(draft['reviewedReplacements'])
+        if remaining_resources:
+            record['remainingResources'] = sorted(remaining_resources)
         if issues:
             held.append({**record, 'issues': sorted(set(issues))})
         else:
@@ -64,6 +73,7 @@ def summarize(inventory, review, limit):
         'launcherFileChecks': dict(Counter(row['status'] for row in review['missions'].values())),
         'worldConversionChecks': migration['totals'],
         'suggestedBatch': ready[:limit], 'additionalDrafts': ready[limit:], 'heldDrafts': held,
+        'unresolvedResources': review.get('unresolvedResources', []),
         'rules': [{'rule': rule, **priority[rule]} for rule in rules],
     }
 
@@ -79,6 +89,8 @@ def markdown(plan):
             lines.extend(f'  - `{header}`' for header in entry['launchers'])
             lines.extend(f'  - Existing Dev layer repair in `{path}`'
                          for path in entry.get('reviewedReplacements', []))
+            lines.extend(f'  - Unresolved reference in other layers or resources: `{resource}`'
+                         for resource in entry.get('remainingResources', []))
             lines.extend(f'  - {gap}' for gap in entry['behaviorGaps'])
     else:
         lines.append('No drafts cleared the file checks.')
@@ -87,8 +99,21 @@ def markdown(plan):
     for entry in plan['heldDrafts']:
         lines.append(f"- `{entry['world']}`")
         lines.extend(f'  - {issue}' for issue in entry['issues'])
+        lines.extend(f'  - Unresolved reference in other layers or resources: `{resource}`'
+                     for resource in entry.get('remainingResources', []))
     if not plan['heldDrafts']:
         lines.append('None.')
+    resources = plan['unresolvedResources']
+    if resources:
+        lines.extend(['', '## Unresolved resource registrations', '',
+                      'Alternate paths show where an installed database registers the same resource ID. '
+                      'Verify content and dependency coverage before approving a replacement.', ''])
+        for entry in resources:
+            lines.append(f"- `{{{entry['guid']}}}{entry['path']}` · {len(entry['launchers'])} launcher(s)")
+            lines.extend(f"  - {registration['provider']} · `{registration['path']}`"
+                         for registration in entry['registrations'])
+            if not entry['registrations']:
+                lines.append('  - No installed registration found for this ID.')
     lines.extend(['', '## Conversion rules to investigate', '',
                   '| Rule | Only reported blocker | Worlds affected |',
                   '| --- | ---: | ---: |'])

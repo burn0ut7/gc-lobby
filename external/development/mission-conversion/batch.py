@@ -54,12 +54,19 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Props/Wrecks/BRDM2_wreck/BRDM2_wreck_static.et',
     ('23C0BE9D80929DBD', 'Prefabs/Vegetation/Bush/b_salix_cinerea_1w_collision.et'):
         'Prefabs/Vegetation/Bush/b_salix_cinerea_1w.et',
+    ('2591F1D52FD5DC65', 'PrefabLibrary/Walls/Net/NetFence_04_8m.et'):
+        'PrefabLibrary/DefaultLibrary/Walls/Net/NetFence_04_8m.et',
     ('25B265F3E7CBDFC8', 'Prefabs/Props/Wrecks/BMP1_wreck.et'):
         'Prefabs/Props/Wrecks/BMP1_wreck/BMP1_wreck.et',
     ('AE300E34EA8FF40C', 'Prefabs/Props/Wrecks/Ural4320_wreck_static.et'):
         'Prefabs/Props/Wrecks/Ural4320_wreck/Ural4320_wreck_static.et',
+    ('CAFF4B51059A0F81', 'PrefabLibrary/Walls/Concrete/ConcreteWall_01_3m.et'):
+        'PrefabLibrary/DefaultLibrary/Walls/Concrete/ConcreteWall_01_3m.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('36EA87CEC1BE77E0', 'Prefabs/Vehicles/Wheeled/JLTV/OGPK/M2HB/JLTV_OGPK_Olive.et'): (
+        'WCS_JLTV_5C721177A220B42F', '36EA87CEC1BE77E0',
+        'Prefabs/Vehicles/Wheeled/JLTV/OGPK/M2HB/JLTV_OGPK_M2HB_Olive.et'),
     ('77CA4803A4A2B8E3', 'Prefabs/Drones/FPVBase/FPVRPG.et'): (
         'RealisticCombatDrones_65AD60E204191D37', '77CA4803A4A2B8E3', 'Prefabs/Drones/FPVBase/FPVRpg.et'),
     ('B0DFDF7AAA9C5D39', 'Prefabs/Weapons/Magazines/BC_Shell_12ga_Buckshot.et'): (
@@ -323,6 +330,30 @@ def resource_aliases(workshop, units, stock):
     return aliases
 
 
+def registered_alias(resource, path, source, dev, aliases):
+    if resource not in source.resources and resource not in dev.resources:
+        alias = aliases.get((resource, path))
+        if alias:
+            return f'"{{{alias[0]}}}{alias[1]}"'
+    return None
+
+
+def replace_registered_paths(text, source, dev, aliases):
+    return REF.sub(lambda ref: registered_alias(ref[1].upper(), ref[2], source, dev, aliases) or ref[0], text)
+
+
+def repair_registered_paths(source, dev, world, aliases):
+    """Stage reference-only layer repairs with the existing-file hash."""
+    repairs, original_hashes = {}, {}
+    for path in dev.layers[world.lower()]:
+        original = dev.read(path)
+        updated = replace_registered_paths(original, source, dev, aliases)
+        if updated != original:
+            repairs[path] = updated
+            original_hashes[path] = sha256(original.encode()).hexdigest()
+    return repairs, original_hashes
+
+
 def migrate_assets(source, dev, draft, asset_aliases, local_loadouts):
     files = list(draft)
     blockers = set()
@@ -332,9 +363,9 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts):
 
         def relocate(ref):
             resource, path = ref[1].upper(), ref[2]
-            if (resource, path) in asset_aliases and resource not in source.resources and resource not in dev.resources:
-                alias_guid, alias_path = asset_aliases[(resource, path)]
-                return f'"{{{alias_guid}}}{alias_path}"'
+            alias = registered_alias(resource, path, source, dev, asset_aliases)
+            if alias:
+                return alias
             old_ai_path, new_ai_path = AI_WORLD_ALIASES.get(resource, (None, None))
             if path == old_ai_path and dev.resources.get(resource) == [new_ai_path]:
                 identity = META_NAME.search(dev.read(new_ai_path + '.meta'))
@@ -604,6 +635,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if not row['headers']:
         return {}, {'status': 'no launcher'}
     if world in dev.files:
+        repairs, hashes = repair_registered_paths(source, dev, world, asset_aliases)
+        if repairs:
+            return repairs, {'status': 'generated for file review', 'files': sorted(repairs),
+                             'reviewedReplacements': hashes, 'resourcePathRepairs': True, 'blockers': []}
         return {}, {'status': 'existing Dev world', 'review': row['headers']}
     preset = row.get('briefingModePreset')
     if not preset or row['briefingGaps']:

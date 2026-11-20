@@ -519,3 +519,12 @@ The batch converts a standard placed vehicle crew with one group and one station
 Retribution and Tip of the Spear are in Missions Dev commit `fccb0206`. File review matched 73 and 57 playable slots, respectively, and the original crew order and seat filters for one UAZ and two BTRs. The batch retained the GUIDs and placement data of Retribution's three wrecks while normalizing their paths. Installed resource checks passed for both worlds. Eastern Envelopment preserves its four BTR crews and 75 slots in the draft. Its legacy Mi-24 registration now points to a different loadout and remains a resource compatibility gap.
 
 Two runs reproduced the roster comparison, file audit and draft files byte for byte. Workbench compiled the crew component with zero errors in session `logs_2026-11-20_18-18-31`.
+
+
+## Resource registration audits and repairs
+
+The planner groups unresolved resource references by GUID and authored path. The JSON reports list every affected launcher, the files that reference the asset, and alternate exact-GUID registrations found in the installed base-game and Workshop databases. A matching GUID supplies a path to investigate. Eastern Envelopment demonstrates why the content still needs review, since its legacy helicopter GUID now points to a different loadout.
+
+Approved aliases also produce reference-only repairs for committed Dev layers. The installer requires the original layer hash and `--replace-reviewed`, and checks every reference in the repaired layers. The plan keeps unresolved references in other layers visible without holding an independent repair. An unresolved reference inside a repaired layer still blocks it.
+
+Local Missions Dev commit `63be706d` repairs five references in Race Day Kunar and Race Day Ruha. The base fence and wall and Ruha's GAU-19 keep their GUIDs. Kunar uses the verified AI World resource already selected for the Gwotline port. The diff changed only the five reference tokens, and both installers and the explicit race recipes passed. The Kunar city door, Ruha M134 variant and Breach and Clear smoke prefab remain unresolved. Two full planning runs produced identical reports and drafts.

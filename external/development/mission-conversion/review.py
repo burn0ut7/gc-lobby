@@ -187,6 +187,29 @@ def draft_diff(source, draft, paths):
     return ''.join(result).encode()
 
 
+def external_resource_review(missions, databases):
+    """Group unresolved references and show alternate installed registrations."""
+    references = defaultdict(dict)
+    for launcher_path, mission in missions.items():
+        for entry in mission.get('unresolvedExternalReferences', []):
+            references[entry['guid'], entry['path']][launcher_path] = entry['referencedBy']
+    if not references:
+        return []
+    guids = sorted({guid for guid, _ in references})
+    registrations = defaultdict(list)
+    for index, path in enumerate(databases):
+        try:
+            database = StockPrefabs(path)
+        except ValueError:
+            continue
+        provider = 'Base game' if index == 0 else path.parent.name
+        for guid in guids:
+            registrations[guid].extend({'provider': provider, 'path': alternate}
+                                       for alternate in database.registered_paths(guid))
+    return [{'guid': guid, 'path': path, 'launchers': owners, 'registrations': registrations[guid]}
+            for (guid, path), owners in sorted(references.items(), key=lambda entry: (-len(entry[1]), *entry[0]))]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--missions', required=True, type=Path)
@@ -254,6 +277,8 @@ def main():
     report = {'source': source.commit, 'target': target.commit, 'missions': missions}
     if args.draft_stage:
         report['includesDraft'] = True
+    if args.workshop_addons:
+        report['unresolvedResources'] = external_resource_review(missions, databases)
     args.report.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     if args.summary:
         args.summary.write_text(markdown(source, target, missions), encoding='utf-8')
