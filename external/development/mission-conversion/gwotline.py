@@ -10,6 +10,7 @@ from markers import DEST as MAP_MARKER, convert_layer as convert_markers
 WORLD = 'worlds/Fruz/Gwotline Bling/Gwotline Bling.ent'
 HEADER = 'Missions/Fruz/Gwotline_Bling.conf'
 DEFAULT = WORLD[:-4] + '_Layers/default.layer'
+PRIOR_DEFAULT = 'f234b8de5f4bbf1614e31c77222471de5c60f0fc'
 AO = DEFAULT.removesuffix('default.layer') + 'AO.layer'
 GROUPS = {
     'Blufor1/Blufor.layer': '15814895695ea27140f4d286b38cbe859be90430',
@@ -21,7 +22,7 @@ GAPS = [
     'Verify starting slot counts, callsigns, and issued equipment on both sides',
     'Compare the public AO outline and verify that the authored GC_MUC key has no members',
     'Compare both public start markers and the lantern and floodlight behavior in play',
-    'Transfer the custom faction callsigns and verify both starting areas',
+    'Compare native allocation of the custom RHS_USAF callsigns and both starting areas',
     'Compare the 3,900-second Time Limit event, which has no serialized condition',
     'Verify vehicles, staging restrictions, weather and both casualty notifications in play',
 ]
@@ -51,6 +52,8 @@ def stage_mode(source, preset):
     start = next(i for i, line in enumerate(lines) if line.startswith('  SCR_TimeAndWeatherHandlerComponent '))
     stop = block_end(lines, start)
     weather = '\n'.join(lines[start:stop + 1]).replace('5EE3229927D4D2F5', '6B71E9A8B1A8C501')
+    faction_start = lines.index('    SCR_Faction "{5CC8DE37E1FF0F7A}" {')
+    faction = '\n'.join(lines[faction_start:block_end(lines, faction_start) + 1])
     events = ''.join(r['events'] for r in rules)
     mode = f'''GC_LobbyGameMode GC_GwotlineMode : "{{{guid(WORLD + '/resource')}}}{preset}" {{
  components {{
@@ -66,6 +69,14 @@ def stage_mode(source, preset):
   }}
  }}
  coords 2812.845 10 3152.494
+ {{
+  SCR_FactionManager {{
+   ID "6ADC9BB66394BE46"
+   Factions + {{
+{faction}
+   }}
+  }}
+ }}
 }}
 '''
     audit = [{k: v for k, v in record.items() if k != 'events'} for record in rules]

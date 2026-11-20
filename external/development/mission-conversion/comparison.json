@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "e4f6bc890ec368db03e5bf87a970ac23fa18a6d3",
+  "target": "d76d3e6df1bdbc9cb272820d2e13adaaf5995347",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -6508,7 +6508,7 @@
           "Verify starting slot counts, callsigns, and issued equipment on both sides",
           "Compare the public AO outline and verify that the authored GC_MUC key has no members",
           "Compare both public start markers and the lantern and floodlight behavior in play",
-          "Transfer the custom faction callsigns and verify both starting areas",
+          "Compare native allocation of the custom RHS_USAF callsigns and both starting areas",
           "Compare the 3,900-second Time Limit event, which has no serialized condition",
           "Verify vehicles, staging restrictions, weather and both casualty notifications in play"
         ]
@@ -6552,7 +6552,7 @@
           "Verify starting slot counts, callsigns, and issued equipment on both sides",
           "Compare the public AO outline and verify that the authored GC_MUC key has no members",
           "Compare both public start markers and the lantern and floodlight behavior in play",
-          "Transfer the custom faction callsigns and verify both starting areas",
+          "Compare native allocation of the custom RHS_USAF callsigns and both starting areas",
           "Compare the 3,900-second Time Limit event, which has no serialized condition",
           "Verify vehicles, staging restrictions, weather and both casualty notifications in play"
         ]

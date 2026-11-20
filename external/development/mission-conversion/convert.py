@@ -278,12 +278,14 @@ def main():
             candidate = gwotline.assemble(source, dev, mode)
             for candidate_path, body in candidate.items():
                 if candidate_path in dev.files and dev.read(candidate_path).strip() != body.strip():
-                    parser.error(f'Dev already has differing {candidate_path}')
+                    if candidate_path != gwotline.DEFAULT or dev.files[candidate_path] != gwotline.PRIOR_DEFAULT:
+                        parser.error(f'Dev already has differing {candidate_path}')
                 out[candidate_path] = body
             del out[row['modeCandidate']['placementLayer']]
             row['modeCandidate']['placementLayer'] = gwotline.DEFAULT
             row['playtestCandidate'] = {
-                'presentOnDev': all(candidate_path in dev.files for candidate_path in candidate),
+                'presentOnDev': all(candidate_path in dev.files and dev.read(candidate_path).strip() == body.strip()
+                                    for candidate_path, body in candidate.items()),
                 'remainingBehavior': gwotline.GAPS,
             }
     if args.stage:
