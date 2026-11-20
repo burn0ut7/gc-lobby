@@ -2,14 +2,17 @@
 from decimal import Decimal
 import re
 
-from briefings import guid, properties
+from briefings import block_end, guid, properties
 from catalog import REF
+from vehicle_crew import SEAT_TYPES, SERIALIZED_ID, contents, crew_roles, crew_station
 
 INSTRUCTION = re.compile(r'^    (TILW_\w+Instruction) "\{([\da-fA-F]{16})\}" \{$')
 NUMBER = r'\d+(?:\.\d+)?'
 CLOCK_FIELDS = ('m_iHours', 'm_iMinutes', 'm_iSeconds')
 FACTION_VISIBILITY = re.compile(r'TILW_FactionVisibility "\{[\da-fA-F]{16}\}" \{([^{}]*)\}')
 SPAWN = re.compile(r'    TILW_SpawnPrefabInstruction "\{([\da-fA-F]{16})\}" \{')
+VEHICLE_SPAWN = re.compile(r'    TILW_SpawnVehicleInstruction "\{([\da-fA-F]{16})\}" \{')
+SPAWN_FIELDS = {'m_executionDelay', 'm_prefab', 'm_locationName', 'm_setEntityName'}
 
 
 def target_names(value):
@@ -107,20 +110,19 @@ def set_flag(data, _key):
     }
 
 
-def render_spawn(details, key):
+def render_spawn(details, key, spawn_type='GC_PrefabSpawn', fields=()):
     body = [
         f'      GC_SpawnAction "{{{guid(key)}}}" {{',
-        f'       m_Spawn GC_PrefabSpawn "{{{guid(key + "/spawn")}}}" {{',
+        f'       m_Spawn {spawn_type} "{{{guid(key + "/spawn")}}}" {{',
         f'        m_sLocation "{details["anchor"]}"',
         f'        m_sPrefab {details["prefab"]}',
     ]
     if details['area']:
         body.append(f'        m_sEntityName "{details["area"]}"')
-    return Decimal(details['delay']), [*body, '       }', '      }']
+    return Decimal(details['delay']), [*body, *fields, '       }', '      }']
 
 
-def prefab_spawn(lines, key, resolve_resource):
-    data = properties(lines, {'m_executionDelay', 'm_prefab', 'm_locationName', 'm_setEntityName'})
+def spawn_details(data, resolve_resource):
     ref = REF.fullmatch(data.get('m_prefab', ''))
     name = data.get('m_setEntityName', '""')
     anchor = data.get('m_locationName', '')
@@ -131,11 +133,76 @@ def prefab_spawn(lines, key, resolve_resource):
     path = resolve_resource(ref[1].upper(), ref[2])
     if not path:
         raise ValueError('spawn prefab identity or behavior needs review: ' + ref[2])
-    details = {'anchor': anchor[1:-1], 'area': name[1:-1],
-               'prefab': f'"{{{ref[1]}}}{path}"', 'delay': delay}
+    return {'anchor': anchor[1:-1], 'area': name[1:-1],
+            'prefab': f'"{{{ref[1]}}}{path}"', 'delay': delay}
+
+
+def prefab_spawn(lines, key, resolve_resource):
+    details = spawn_details(properties(lines, SPAWN_FIELDS), resolve_resource)
     seconds, body = render_spawn(details, key)
-    return seconds, body, {'instruction': 'TILW_SpawnPrefabInstruction', 'delaySeconds': delay,
+    return seconds, body, {'instruction': 'TILW_SpawnPrefabInstruction', 'delaySeconds': details['delay'],
                           'spawnAnchor': details['anchor'], 'spawnName': details['area'], 'prefab': details['prefab']}
+
+
+def split_crew_block(lines, field):
+    starts = [i for i, line in enumerate(lines) if re.fullmatch(field + r' \{', line.strip())]
+    if len(starts) != 1:
+        raise ValueError('vehicle spawn needs one ' + field.split()[0])
+    start = starts[0]
+    end = block_end(lines, start)
+    return lines[start + 1:end], lines[:start] + lines[end + 1:]
+
+
+def vehicle_spawn(lines, key, resolve_resource, resolve_character):
+    if any(line.strip().startswith('m_crewConfig ') for line in lines):
+        config, spawn = split_crew_block(lines, 'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID)
+        groups, config_fields = split_crew_block(config, 'm_crewGroups')
+        config_options = properties(config_fields, {'m_noTurretDismount', 'm_useIdleGroups'})
+        group = contents(groups, 'TILW_CrewGroup ' + SERIALIZED_ID)
+        stations, group_fields = split_crew_block(group, 'm_crewStations')
+        options = properties(group_fields, {'m_waypointNames', 'm_waypointDelay'})
+        flags, roles = crew_station(stations, resolve_character, allow_empty=True)
+        data = properties(spawn, SPAWN_FIELDS)
+        stay_seated = config_options.get('m_noTurretDismount', '0')
+        idle = config_options.get('m_useIdleGroups', '1')
+        waypoint_delay = options.get('m_waypointDelay', '0')
+    else:
+        data = properties(lines, SPAWN_FIELDS | {
+            'm_customCrew', 'm_waypointNames', 'm_waypointDelay', 'm_idleGroup',
+            *('m_spawn' + position for position in SEAT_TYPES),
+        })
+        options = data
+        flags = {position: data.get('m_spawn' + position, '1') for position in SEAT_TYPES}
+        roles = crew_roles(data.get('m_customCrew', ''), flags, resolve_character, allow_empty=True)
+        stay_seated = '0'
+        idle = data.get('m_idleGroup', '0')
+        waypoint_delay = options.get('m_waypointDelay', '5')
+    waypoints = target_names(options['m_waypointNames']) if options.get('m_waypointNames') else []
+    if (stay_seated not in ('0', '1') or idle not in ('0', '1')
+            or (waypoints and (not re.fullmatch(NUMBER, waypoint_delay) or Decimal(waypoint_delay) > 86400))):
+        raise ValueError('unsupported crew order delay or configuration')
+    if waypoints and idle == '1' and flags['Turret'] == '1':
+        raise ValueError('separate idle gunner groups need separate conversion')
+    ref = REF.fullmatch(data.get('m_prefab', ''))
+    if not ref or not ref[2].startswith('Prefabs/Vehicles/'):
+        raise ValueError('crewed spawn requires a vehicle prefab')
+    details = spawn_details(data, resolve_resource)
+    flags_native = zip(SEAT_TYPES, ('Driver', 'Gunners', 'Passengers'))
+    fields = ['        m_aCrewGroups {', f'         GC_SpawnCrewGroup "{{{guid(key + "/crew")}}}" {{',
+              *(f'          m_b{native} 0' for legacy, native in flags_native if flags[legacy] == '0'),
+              '          m_aCharacters {', *('           ' + role for role in roles), '          }']
+    if stay_seated == '1':
+        fields.append('          m_bKeepGunnersSeated 1')
+    if waypoints:
+        if Decimal(waypoint_delay):
+            fields.append('          m_fWaypointDelay ' + waypoint_delay)
+        fields.extend(['          m_aWaypoints {', *('           ' + name for name in waypoints), '          }'])
+    fields.extend(['         }', '        }'])
+    seconds, body = render_spawn(details, key, 'GC_CrewedVehicleSpawn', fields)
+    return seconds, body, {'instruction': 'TILW_SpawnVehicleInstruction', 'delaySeconds': details['delay'],
+                          'spawnAnchor': details['anchor'], 'spawnName': details['area'], 'prefab': details['prefab'],
+                          'crew': roles, 'crewWaypoints': [waypoint[1:-1] for waypoint in waypoints],
+                          'crewWaypointDelaySeconds': waypoint_delay if waypoints else '0'}
 
 
 ACTIONS = {

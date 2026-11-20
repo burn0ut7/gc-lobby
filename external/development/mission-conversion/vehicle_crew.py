@@ -39,18 +39,37 @@ def character_reference(guid, path, source_units, dev_units, stock, owned):
     return f'"{{{guid}}}{path}"'
 
 
-def render_component(component, lines, resolve_character):
-    station = lines
-    for field in (r'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID, 'm_crewGroups',
-                  'TILW_CrewGroup ' + SERIALIZED_ID, 'm_crewStations', 'TILW_CrewStation ' + SERIALIZED_ID):
-        station = contents(station, field)
+CREW_ROLE = re.compile(REF.pattern + r'|""')
+
+
+def crew_roles(authored, flags, resolve_character, allow_empty=False):
+    if (not authored or CREW_ROLE.sub('', authored).strip() or all(flag == '0' for flag in flags.values())
+            or any(flag not in ('0', '1') for flag in flags.values())):
+        raise ValueError('crew migration requires explicit characters and qualifying seats')
+    roles = list(CREW_ROLE.finditer(authored))
+    if len(roles) > 128 or not any(role[1] for role in roles):
+        raise ValueError('unsupported crew size or empty roster')
+    if not allow_empty and any(not role[1] for role in roles):
+        raise ValueError('crew station contains empty seats')
+    return [resolve_character(role[1].upper(), role[2]) if role[1] else '""' for role in roles]
+
+
+def crew_station(lines, resolve_character, allow_empty=False):
+    station = contents(lines, 'TILW_CrewStation ' + SERIALIZED_ID)
     values = properties(station, {'m_characters', *('m_allow' + seat for seat in SEAT_TYPES)})
     flags = {seat: values.get('m_allow' + seat, '1') for seat in SEAT_TYPES}
     authored = values.get('m_characters', '')
-    if (not authored or REF.sub('', authored).strip() or all(flag == '0' for flag in flags.values())
-            or any(flag not in ('0', '1') for flag in flags.values())):
-        raise ValueError('crew migration requires explicit characters and qualifying seats')
-    roles = [resolve_character(guid.upper(), path) for guid, path in REF.findall(authored)]
+    if authored.startswith('""'):
+        raise ValueError('legacy station suppresses crew when the first seat is blank')
+    return flags, crew_roles(authored, flags, resolve_character, allow_empty)
+
+
+def render_component(component, lines, resolve_character):
+    station = lines
+    for field in (r'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID, 'm_crewGroups',
+                  'TILW_CrewGroup ' + SERIALIZED_ID, 'm_crewStations'):
+        station = contents(station, field)
+    flags, roles = crew_station(station, resolve_character)
     return [f'  GC_VehicleCrewComponent {component["id"]} {{',
             *(f'   m_bAllow{seat} 0' for seat in SEAT_TYPES if flags[seat] == '0'),
             '   m_aCharacters {', *('    ' + role for role in roles), '   }', '  }']

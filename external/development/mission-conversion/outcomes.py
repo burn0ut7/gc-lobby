@@ -6,7 +6,7 @@ import re
 
 from briefings import block_end, guid, properties
 from catalog import SOURCE_TEXT
-from event_actions import SPAWN, compile_action, prefab_spawn, recognized, render_spawn
+from event_actions import SPAWN, VEHICLE_SPAWN, compile_action, prefab_spawn, recognized, render_spawn, vehicle_spawn
 from events import EVENT, LITERAL, MESSAGE, message, peak_flags
 
 FRAMEWORK = re.compile(r'^TILW_MissionFrameworkEntity(?: [\w.-]+)? : "\{8F846D0FD5D6EA51\}[^"]+" \{$')
@@ -107,8 +107,11 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0)
         if invert == '0' and flag in ai:
             faction, ratio = ai[flag]
             return {'trigger': 'AI loss', 'flag': flag[1:-1], 'faction': faction, 'ratio': ratio}
-        if invert == '0' and flag in captures:
-            return {'trigger': 'area capture', 'flag': flag[1:-1]}
+        if flag in captures:
+            if invert == '0':
+                return {'trigger': 'area capture', 'flag': flag[1:-1]}
+            if invert == '1' and any(line.strip() == 'm_bStopAfterFirstChange 1' for line in captures[flag]):
+                return {'trigger': 'area capture', 'flag': flag[1:-1], 'inverted': True}
         if invert == '0' and flag[1:-1] in objective_flags:
             return {'trigger': 'interaction flag', 'flag': flag[1:-1]}
         if invert == '0' and flag[1:-1] in event_flags:
@@ -126,7 +129,8 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0)
     return {'trigger': 'all' if match[1] == 'Conjunction' else 'any', 'operands': operands}
 
 
-def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns, resolve_spawn):
+def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
+               resolve_spawn, resolve_crew):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -156,6 +160,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 waypoint_match = WAYPOINTS.fullmatch(fields[j]) if compound else None
                 action_match = recognized(fields[j]) if compound else None
                 spawn_match = SPAWN.fullmatch(fields[j]) if extraction_spawns or resolve_spawn else None
+                vehicle_match = VEHICLE_SPAWN.fullmatch(fields[j]) if resolve_spawn and resolve_crew else None
                 if notify_match:
                     delay, body = message(fields[j + 1:last], key + '/' + notify_match[1], multiline=True)
                     messages += 1
@@ -178,6 +183,10 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 elif spawn_match and resolve_spawn:
                     delay, body, details = prefab_spawn(fields[j + 1:last], key + '/' + spawn_match[1], resolve_spawn)
                     converted_actions.append({'instructionId': spawn_match[1], **details})
+                elif vehicle_match:
+                    delay, body, details = vehicle_spawn(fields[j + 1:last], key + '/' + vehicle_match[1],
+                                                         resolve_spawn, resolve_crew)
+                    converted_actions.append({'instructionId': vehicle_match[1], **details})
                 else:
                     raise ValueError('unsupported outcome instruction ' + fields[j].strip().split(' ')[0])
                 actions[delay].extend(body)
@@ -210,12 +219,19 @@ def leaves(term):
         yield term
 
 
-def render_check(term, key, captures, capture_messages):
+def render_check(term, key, captures, capture_messages, tracked_areas):
     trigger = term['trigger']
     if trigger in ('interaction flag', 'event flag'):
         return [f'      GC_MissionFlagCondition "{{{guid(key + "/objective")}}}" {{',
                 f'       m_sFlagName "{term["flag"]}"', '      }']
     if trigger == 'area capture':
+        tracked = tracked_areas.get(term['flag'])
+        if tracked:
+            lines = [f'      GC_MissionEventCondition "{{{guid(key + "/capture latch")}}}" {{',
+                     f'       m_sEventName "{tracked}"']
+            if term.get('inverted'):
+                lines.append('       m_bRequireFalse 1')
+            return [*lines, '      }']
         flag = '"' + term['flag'] + '"'
         lines = captures[flag]
         # Each occurrence needs its own subtree IDs. A legacy trigger emits status only once.
@@ -232,7 +248,8 @@ def render_check(term, key, captures, capture_messages):
         result = [f'      GC_ConditionGroup "{{{guid(key + "/group")}}}" {{',
                   f'       m_iMatch {int(trigger == "any")}', '       m_aConditions {']
         for index, child in enumerate(term['operands']):
-            result.extend('  ' + line for line in render_check(child, f'{key}/{index}', captures, capture_messages))
+            result.extend('  ' + line for line in render_check(child, f'{key}/{index}', captures, capture_messages,
+                                                               tracked_areas))
         return result + ['       }', '      }']
     check = 'GC_LivingAndDeadAICheck' if trigger == 'AI loss' else 'GC_PeakFactionPopulationCheck'
     result = [f'      GC_CustomScriptCondition "{{{guid(key + "/condition")}}}" {{',
@@ -242,14 +259,14 @@ def render_check(term, key, captures, capture_messages):
     return result + [f'        m_fRatio {term["ratio"]}', '       }', '      }']
 
 
-def render(key, name, term, actions, captures, capture_messages):
+def render(key, name, term, actions, captures, capture_messages, tracked_areas):
     condition = term['trigger'] != 'Match start'
     result = []
     if condition:
-        if term['trigger'] == 'area capture' and capture_messages is None:
+        if term['trigger'] == 'area capture' and capture_messages is None and term['flag'] not in tracked_areas:
             check = captures['"' + term['flag'] + '"']
         else:
-            check = render_check(term, key, captures, capture_messages)
+            check = render_check(term, key, captures, capture_messages, tracked_areas)
         result.extend([
             f'    GC_Event "{{{guid(key + "/trigger")}}}" {{', f'     m_sName "{name}"',
             '     m_aConditions {', *check, '     }',
@@ -269,16 +286,33 @@ def render(key, name, term, actions, captures, capture_messages):
     return result
 
 
-def review_prefab_spawns(fields, key, resolve_spawn):
+def render_capture_trackers(world, tracked_areas, captures, capture_messages):
+    lines = []
+    for flag, name in sorted(tracked_areas.items()):
+        key = world + '/capture tracker/' + flag
+        check = render_check({'trigger': 'area capture', 'flag': flag}, key, captures, capture_messages, {})
+        lines.extend([f'    GC_Event "{{{guid(key)}}}" {{', f'     m_sName "{name}"',
+                      '     m_aConditions {', *check, '     }', '     m_aActions {',
+                      f'      GC_MessageAction "{{{guid(key + "/log")}}}" {{',
+                      f'       m_sMessage "{name}"', '       m_iDelivery 2',
+                      '      }', '     }', '    }'])
+    return lines
+
+
+def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
     review = []
     for index, field in enumerate(fields):
         instruction = SPAWN.fullmatch(field)
-        if not instruction:
+        vehicle = VEHICLE_SPAWN.fullmatch(field) if resolve_crew else None
+        if not instruction and not vehicle:
             continue
-        identity = instruction[1]
+        identity = (instruction or vehicle)[1]
         try:
             end = block_end(fields, index)
-            _, _, details = prefab_spawn(fields[index + 1:end], key + '/' + identity, resolve_spawn)
+            if vehicle:
+                _, _, details = vehicle_spawn(fields[index + 1:end], key + '/' + identity, resolve_spawn, resolve_crew)
+            else:
+                _, _, details = prefab_spawn(fields[index + 1:end], key + '/' + identity, resolve_spawn)
         except ValueError as exc:
             details = {'gap': str(exc)}
         review.append({'instructionId': identity, **details})
@@ -286,7 +320,7 @@ def review_prefab_spawns(fields, key, resolve_spawn):
 
 
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
-                     extraction_spawns=None, scripts=None, resolve_spawn=None):
+                     extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None):
     captures = captures or {}
     notification_audit = notification_audit or {}
     extraction_spawns = extraction_spawns or {}
@@ -314,7 +348,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     if set(objective_flags) & {key[1:-1] for key in (*flags, *ai, *captures)}:
         return [], {}, 'ambiguous interaction flag producer'
     event_flags = instruction_flags(source, world, path, body, scripts) if scripts is not None else ()
-    compiled, audit = [], {}
+    parsed, audit = [], {}
     names = set()
     capture_messages = set() if compound else None
     for i, line in enumerate(body):
@@ -329,7 +363,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                   if child.startswith(event[1] + '/')}
         if not spawns and not any(ENDING.fullmatch(item) or (compound and (WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item)
                                                                           or recognized(item)
-                                                                          or (resolve_spawn and SPAWN.fullmatch(item))))
+                                                                          or (resolve_spawn and SPAWN.fullmatch(item))
+                                                                          or (resolve_crew and VEHICLE_SPAWN.fullmatch(item))))
                    for item in fields):
             continue
         name = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
@@ -339,19 +374,26 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         try:
             term, actions, details = read_event(
                 fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns,
-                resolve_spawn)
+                resolve_spawn, resolve_crew)
             emitted_names = {f'{name} ({delay:f}s)' for delay in actions}
             if term['trigger'] != 'Match start':
                 emitted_names.add(name)
             if emitted_names & names:
                 raise ValueError('duplicate generated event name')
-            compiled.extend(render(world + '/' + event[1], name, term, actions, captures, capture_messages))
+            parsed.append((event[1], name, term, actions))
             audit[loc] = {**term, 'name': name, **details}
             names.update(emitted_names)
         except ValueError as exc:
             audit[loc] = {'name': name, 'gap': str(exc)}
             if resolve_spawn:
-                spawns_for_review = review_prefab_spawns(fields, world + '/' + event[1], resolve_spawn)
+                spawns_for_review = review_prefab_spawns(fields, world + '/' + event[1], resolve_spawn, resolve_crew)
                 if spawns_for_review:
                     audit[loc]['prefabSpawnCandidates'] = spawns_for_review
+    tracked = {item['flag'] for _, _, term, _ in parsed for item in leaves(term) if item.get('inverted')}
+    tracked_areas = {flag: 'GC_MigrationCapture_' + flag for flag in sorted(tracked)}
+    if set(tracked_areas.values()) & names:
+        return [], audit, 'generated capture tracker name collides with a mission event'
+    compiled = render_capture_trackers(world, tracked_areas, captures, capture_messages)
+    for identity, name, term, actions in parsed:
+        compiled.extend(render(world + '/' + identity, name, term, actions, captures, capture_messages, tracked_areas))
     return compiled, audit, None

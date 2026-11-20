@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "63be706d6a93be73e190cd292feb2eb49ff6f21b",
+  "target": "58a5c9fed39084cc5b3825ce82bdc9d404607a83",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -2033,7 +2033,7 @@
         "worlds/arc/ReturnOfTheWac/ReturnOfTheWac.ent"
       ],
       "declaredPath": "worlds/arc/ReturnOfTheWac/ReturnOfTheWac.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{79D3317BEBFD6316}worlds/arc/ReturnOfTheWac/ReturnOfTheWac.ent"
     },
     "Missions/arc/RidgeRumble.conf": {
@@ -34040,8 +34040,9 @@
     "worlds/arc/ReturnOfTheWac/ReturnOfTheWac.ent": {
       "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 7,
-        "changed": 1
+        "absent": 2,
+        "changed": 5,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -34087,7 +34088,7 @@
               "lastLine": 57
             }
           },
-          "placementLayer": "worlds/arc/ReturnOfTheWac/ReturnOfTheWac_Layers/default_GC_Boundaries.layer"
+          "gap": "Dev already contains the original layer path; review before adding boundary siblings"
         }
       },
       "directBriefingsRead": 4,

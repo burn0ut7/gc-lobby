@@ -121,6 +121,9 @@ def main():
     def resolve_spawn(resource, path):
         return batch.spawn_resource(source, dev, source_units, dev_units, stock, resource, path)
 
+    def resolve_crew(resource, path):
+        return vehicle_crew.character_reference(resource, path, source_units, dev_units, stock, locally_owned)
+
     out = {}
     arc_areas = {}
     batch_areas = {}
@@ -291,7 +294,7 @@ def main():
                 delayed = None
         has_event_actions = args.batch and any(row['serializedTypes'].get(kind) for kind in
                                               ('TILW_AssignWaypointsInstruction', 'TILW_SendMessageInstruction',
-                                               'TILW_SpawnPrefabInstruction', *ACTIONS))
+                                               'TILW_SpawnPrefabInstruction', 'TILW_SpawnVehicleInstruction', *ACTIONS))
         if args.include_outcomes and (has_outcomes or has_event_actions or (delayed and delayed.spawns)):
             try:
                 captures = {}
@@ -312,7 +315,7 @@ def main():
                     objective_flags=objective_flags, extraction_spawns=delayed.spawns if delayed else None,
                     scripts=batch.script_text(source) if args.batch and
                     row['serializedTypes'].get('TILW_SetFlagInstruction') else None,
-                    resolve_spawn=resolve_spawn if args.batch else None)
+                    resolve_spawn=resolve_spawn if args.batch else None, resolve_crew=resolve_crew if args.batch else None)
                 outcome = {'events': outcome_audit}
                 if gap:
                     outcome['gap'] = gap

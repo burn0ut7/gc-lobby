@@ -31,7 +31,7 @@ modded class GC_LobbyManager
 			case GC_ERuleAction.ASSIGN_WAYPOINTS:
 				return GC_WaypointOrders.Apply(AIGroup.Cast(GetGame().GetWorld().FindEntityByName(action.m_sTextOrName)), action.m_aFlagNames, action.m_bFlagAnswer);
 			case GC_ERuleAction.SPAWN:
-				return action.m_Spawn.Execute();
+				return action.m_Spawn.Execute(source);
 			case GC_ERuleAction.MISSION_MESSAGE:
 				return GC_SendMissionMessage(action);
 			case GC_ERuleAction.END_MISSION:

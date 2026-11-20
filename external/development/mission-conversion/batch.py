@@ -793,6 +793,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     or (name and (spawned_names[name] != 1 or name in named))):
                 blockers.append({'rule': 'prefab spawn', 'file': world,
                                  'detail': 'missing anchor or conflicting spawn name for ' + anchor})
+            for waypoint in spawn.get('crewWaypoints', ()):
+                targets = named.get(waypoint, [])
+                if len(targets) != 1 or not re.fullmatch(WAYPOINT_CLASS, targets[0][0]):
+                    blockers.append({'rule': 'crewed vehicle spawn', 'file': world,
+                                     'detail': 'expected one placed AI waypoint named ' + waypoint})
         for gap in waypoint_gaps(named, assignments):
             blockers.append({'rule': 'waypoint assignments', 'file': world, 'detail': gap})
         for layer, field, target in static_link_gaps(draft, named):

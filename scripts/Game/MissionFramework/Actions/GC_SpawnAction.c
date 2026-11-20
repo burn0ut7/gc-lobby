@@ -56,8 +56,8 @@ class GC_PrefabSpawn
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Called only through the manager's current-engine/server authority gate. No callbacks or polling.
-	bool Execute()
+	//! Called through the manager's current-engine/server authority gate.
+	bool Execute(GC_MissionRuleEngine source = null)
 	{
 		if (!IsValid())
 			return false;
@@ -75,6 +75,7 @@ class GC_PrefabSpawn
 		if (!entity)
 			return false;
 		GC_SpawnAttempt attempt = new GC_SpawnAttempt();
+		attempt.m_RuleSource = source;
 		SCR_AIGroup group = SCR_AIGroup.Cast(entity);
 		if ((group && group.IsPlayable()) || !Configure(entity, attempt))
 		{
@@ -193,6 +194,8 @@ class GC_SpawnCrewGroup
 	ref array<ResourceName> m_aCharacters;
 	[Attribute("", UIWidgets.EditComboBox, "Existing AI waypoint names in order. These orders apply only to this crew group. Empty means no added orders.", enums: {ParamEnum("", "", "gc-choices:2:GC_WaypointChoices")})]
 	ref array<string> m_aWaypoints;
+	[Attribute("0", UIWidgets.EditBox, "Seconds after boarding before assigning this group's orders.", params: "0 86400")]
+	float m_fWaypointDelay;
 	[Attribute("0", UIWidgets.CheckBox, "Keep this group's gunners in their turrets rather than voluntarily dismounting to fight.")]
 	bool m_bKeepGunnersSeated;
 
@@ -200,6 +203,7 @@ class GC_SpawnCrewGroup
 	bool IsValid()
 	{
 		return (m_bDriver || m_bGunners || m_bPassengers) && GC_RuleAction.ValidTargetNames(m_aWaypoints)
+			&& m_fWaypointDelay >= 0 && m_fWaypointDelay <= 86400
 			&& (!m_aCharacters || m_aCharacters.Count() <= 128);
 	}
 
@@ -262,7 +266,7 @@ class GC_SpawnCrewGroup
 			}
 		}
 		if (group)
-			return GC_WaypointOrders.Apply(group, m_aWaypoints);
+			return attempt.AssignOrders(group, m_aWaypoints, m_fWaypointDelay);
 		return true;
 	}
 }
@@ -270,6 +274,7 @@ class GC_SpawnCrewGroup
 //! Local attempt bookkeeping only; native groups own members after success.
 class GC_SpawnAttempt
 {
+	GC_MissionRuleEngine m_RuleSource;
 	protected ref array<IEntity> m_aCrew = {};
 	protected ref array<AIGroup> m_aGroups = {};
 
@@ -286,6 +291,30 @@ class GC_SpawnAttempt
 	bool HasCrew()
 	{
 		return !m_aCrew.IsEmpty();
+	}
+
+	bool AssignOrders(AIGroup group, array<string> waypoints, float delay)
+	{
+		if (!waypoints || waypoints.IsEmpty())
+			return true;
+		if (delay == 0)
+			return GC_WaypointOrders.Apply(group, waypoints);
+
+		GC_LobbyManager manager = GC_LobbyManager.GetManager();
+		if (!manager || !manager.GC_HasFrameworkSource(m_RuleSource))
+			return false;
+
+		GetGame().GetCallqueue().CallLater(ApplyDelayedOrders, Math.Round(delay * 1000), false,
+			manager, m_RuleSource, group, waypoints);
+		return true;
+	}
+
+	protected static void ApplyDelayedOrders(GC_LobbyManager manager, GC_MissionRuleEngine source, AIGroup group, array<string> waypoints)
+	{
+		// A failed spawn rolls back its new group before any delayed orders run.
+		if (group && manager && manager == GC_LobbyManager.GetManager() && manager.GC_HasFrameworkSource(source)
+			&& manager.GetLobbyPhase() == SCR_EGameModeState.GAME)
+			GC_WaypointOrders.Apply(group, waypoints);
 	}
 
 	//------------------------------------------------------------------------------------------------
