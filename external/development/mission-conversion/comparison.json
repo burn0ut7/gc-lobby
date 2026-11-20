@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "baaf12a050baa2470f06de8ee26d2385057efe52",
+  "target": "9fc57ad48636e196a8328d2e67eefc0645db8c6b",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1849,7 +1849,7 @@
         "worlds/arc/ErquyEvasion/ErquyEvasion.ent"
       ],
       "declaredPath": "worlds/arc/ErquyEvasion/ErquyEvasion.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{9FFC4F9F76B14973}worlds/arc/ErquyEvasion/ErquyEvasion.ent"
     },
     "Missions/arc/FactorySiegeRedux.conf": {
@@ -30858,7 +30858,9 @@
     "worlds/arc/ErquyEvasion/ErquyEvasion.ent": {
       "sourceResourceCount": 11,
       "devPaths": {
-        "absent": 11
+        "absent": 2,
+        "changed": 8,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -30886,7 +30888,8 @@
       },
       "groupLayers": {
         "worlds/arc/ErquyEvasion/ErquyEvasion_Layers/Players.layer": {
-          "gap": "unresolved or duplicate Units prefab BC357974A560F678"
+          "playableGroups": 8,
+          "unitPrefabEntries": 54
         }
       },
       "directBriefingsRead": 9,

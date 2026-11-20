@@ -14,22 +14,25 @@ Omit `--stage` to compare without generating files. Use a new staging directory 
 
 Use the batch workflow for the catalog. The same rules process every legacy launcher. They assemble complete drafts when all placements and behavior in a world match supported rules. Unrecognized constructs stay in the inventory with their file, line where available and conversion rule. The inventory groups blockers by the number of worlds affected, so a shared rule can unblock several missions on the next run.
 
-Set the following paths from a GC Lobby checkout. Use a fresh staging directory when the commits or conversion rules change.
+Run the planner from GC Lobby with a clean Missions Dev checkout. Use a fresh output directory when the commits or conversion rules change.
 
     $repo = '../gc-reforger-missions'
     $tools = 'external/development/mission-conversion'
-    $stage = "$env:TEMP/gc-missions-drafts"
-    $inventory = "$env:TEMP/gc-missions-inventory.json"
+    $output = "$env:TEMP/gc-missions-plan"
     $base = 'C:/Program Files (x86)/Steam/steamapps/common/Arma Reforger/addons/data/resourceDatabase.rdb'
     $workshop = "$env:USERPROFILE/Documents/My Games/ArmaReforger/addons"
-    python "$tools/convert.py" --missions $repo --dev HEAD --batch --units ../gc-reforger-units --units-dev HEAD --base-database $base --workshop-addons $workshop --stage $stage --report $inventory
-    python "$tools/review.py" --missions $repo --dev HEAD --inventory $inventory --draft-stage $stage --dependency . --dependency ../gc-reforger-units --dependency ../gc-reforger-core --base-database $base --workshop-addons $workshop --report "$env:TEMP/gc-missions-review.json" --summary "$env:TEMP/gc-missions-review.md"
+    python "$tools/plan_batch.py" --missions $repo --units ../gc-reforger-units --dependency ../gc-reforger-core --base-database $base --workshop-addons $workshop --output $output
 
-The review reports unchanged, changed, source-only and Dev-only files. It locates source and Dev declarations for modes, briefings, rosters, markers and boundaries, respawns, events, weather and vehicles. It flags inconsistent launcher and mission-owned resource references. With --workshop-addons it also names unresolved resource references and the files that use them, using the same installed databases as the installer. Use repeatable --mission arguments with exact launcher paths and --patch to produce a focused diff. Omit --draft-stage to compare the committed branches.
+Open `plan.md` for the suggested batch of up to ten worlds and the reasons any generated drafts were held. All launchers pointing at a drafted world travel together. `plan.json` gives source examples for each blocked conversion rule and ranks rules by the number of worlds where that rule is the only reported blocker, then by total worlds affected. Some downstream checks run only when a draft is complete. Add shared rules for those constructs and rerun the catalog.
 
-Install supported drafts into the Dev checkout after file review. Use --dry-run first to validate paths, hashes, collisions and resource references against the selected addon snapshots and installed databases. Repeat without --dry-run to install. Use --mission to select a subset or omit it to install all complete drafts in that inventory.
+`inventory.json` records conversion decisions and source locations. `review.md` and `review.json` compare every legacy launcher with the Dev snapshot overlaid with generated drafts. They report unchanged, changed, source-only and Dev-only files and locate declarations for modes, briefings, rosters, markers and boundaries, respawns, events, weather and vehicles. They also identify inconsistent launcher or resource references and name each file that uses an unresolved resource. Run `review.py` with repeatable `--mission` arguments and `--patch` for a focused diff. Omit `--draft-stage` to compare committed branches.
 
-    python "$tools/install_batch.py" --missions $repo --inventory $inventory --stage $stage --dependency . --dependency ../gc-reforger-units --dependency ../gc-reforger-core --base-database $base --workshop-addons $workshop --dry-run
+After reviewing a batch, pass its launcher paths to the installer. Use `--dry-run` to validate paths, hashes, collisions and resource references before installing. Repeat without `--dry-run` to install.
+
+    $plan = Get-Content -Raw "$output/plan.json" | ConvertFrom-Json
+    $selection = @($plan.suggestedBatch.launchers | ForEach-Object { '--mission'; $_ })
+    if ($selection.Count -eq 0) { throw 'No suggested drafts to install' }
+    python "$tools/install_batch.py" --missions $repo --inventory "$output/inventory.json" --stage "$output/drafts" --dependency . --dependency ../gc-reforger-units --dependency ../gc-reforger-core --base-database $base --workshop-addons $workshop @selection --dry-run
 
 The installer leaves Git commits and pushes to the delivery batch. It refuses to overwrite differing files. The review resolves file identities and records supported conversions. It cannot establish runtime behavior for new framework features, historical terrain revisions or inherited behavior that the file rules cannot account for. Exercise a shared feature in Workbench when needed and apply that evidence to the relevant conversion rule across missions.
 
@@ -401,3 +404,9 @@ The native placement pass now retains Tank, Turret and SCR_DestructibleEntity pl
 The legacy PS GameMode timer subtracts up to 1,000 milliseconds before any wait. An explicit zero or subsecond value therefore removes restriction zones immediately when Match starts and displays no countdown. The batch preserves that behavior with a Match-start zone release. Fractional values above one second remain flagged for separate review.
 
 Get to the Chop Tank is in local Missions Dev commit `baaf12a0`. The comparison verified 32 playable slots, the original locked M113, both 30-metre player-only capture zones and their 300-second holds, both named staging zones and four faction-result notices. The 1,800-second timeout popup stays in place. The legacy Core overlay suppresses automatic endings, and the factionless neutral instruction cannot construct its old faction-based popup. The port records that neutral result in the server log at 1,820 seconds and leaves Match active. The files passed the resource audit. Live capture timing and restriction-zone release remain open.
+
+## Delayed extraction zones
+
+The batch replaces supported Match-start extraction spawns with native spawn actions at unique named anchors. It preserves the delay, radius, hold duration, player share, faction and authored status messages. Each area starts counting after its spawn and first discovery. When multiple areas originally set one flag, a native condition accepts a hold at any one area. The converter requires a single positive, once-only consumer and holds drafts with ambiguous flag producers or dynamic anchors.
+
+Erquy Evasion is in local Missions Dev commit `9fc57ad4`. The file comparison matched all 54 playable slots, three extraction spawns at 35:05, three 30-metre zones and the 120-second hold for at least 80 percent of eligible USSR players. It also verified the current Units registration for the helicopter against the archived prefab. The resource audit passed. Live multiplayer extraction timing and status messages still need shared feature coverage.

@@ -112,6 +112,7 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
         'sourceOnly': sorted(incoming - outgoing),
         'devOnly': sorted(outgoing - incoming),
     }
+    notes_for_world = notes.get(world, {})
     return {
         'world': world,
         'status': 'missing' if header not in target.files or world not in target.files else 'review' if issues else 'compare',
@@ -119,7 +120,10 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
         'unresolvedExternalReferences': missing,
         'areas': {area: {'source': before.get(area, {}), 'dev': after.get(area, {})}
                   for area in AREAS if area in before or area in after},
-        'documentedGaps': notes.get(world, {}).get('playtestCandidate', {}).get('remainingBehavior', []),
+        'documentedGaps': [
+            *notes_for_world.get('playtestCandidate', {}).get('remainingBehavior', []),
+            *notes_for_world.get('batchDraft', {}).get('remainingBehavior', []),
+        ],
     }
 
 
@@ -211,7 +215,8 @@ def main():
         inventory = json.loads(args.inventory.read_text(encoding='utf-8'))
         if (inventory.get('source'), inventory.get('target')) != (source.commit, target.commit):
             parser.error('the inventory describes different commits')
-        notes = inventory['worlds']
+        notes = {world: {**row, 'batchDraft': inventory.get('batchMigration', {}).get('worlds', {}).get(world, {})}
+                 for world, row in inventory['worlds'].items()}
     if args.draft_stage:
         try:
             target = overlay(target, args.draft_stage, inventory['batchMigration']['sha256'])

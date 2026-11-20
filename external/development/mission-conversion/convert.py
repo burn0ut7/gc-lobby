@@ -13,6 +13,7 @@ import batch
 import bugout
 from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
+from delayed_extraction import collect as collect_delayed_extraction
 from event_actions import ACTIONS
 from events import world_events
 from groups import group_layer, rhs_ai_characters
@@ -118,6 +119,7 @@ def main():
     arc_areas = {}
     batch_areas = {}
     batch_interactions = {}
+    delayed_extractions = {}
     headers_by_world = defaultdict(list)
     target_headers = set(dev.headers())
     for header in sorted(source.headers()):
@@ -269,9 +271,20 @@ def main():
             except ValueError as exc:
                 row['interactionCandidate'] = {'gap': str(exc)}
         has_outcomes = row['serializedTypes'].get('TILW_EndGameInstruction')
+        delayed = None
+        if args.batch and row['serializedTypes'].get('TILW_SpawnPrefabInstruction'):
+            try:
+                delayed = collect_delayed_extraction(source, world)
+                if delayed.conditions:
+                    if any(flag[1:-1] in batch.script_text(source) for flag in delayed.conditions):
+                        raise ValueError('mission script refers to a delayed extraction flag')
+                    delayed_extractions[world] = delayed
+            except ValueError as exc:
+                row['delayedExtractionGap'] = str(exc)
+                delayed = None
         has_event_actions = args.batch and any(row['serializedTypes'].get(kind) for kind in
                                               ('TILW_AssignWaypointsInstruction', 'TILW_SendMessageInstruction', *ACTIONS))
-        if args.include_outcomes and (has_outcomes or has_event_actions):
+        if args.include_outcomes and (has_outcomes or has_event_actions or (delayed and delayed.spawns)):
             try:
                 captures = {}
                 if world in arc_worlds:
@@ -280,9 +293,13 @@ def main():
                     arc_areas[world] = area
                 elif args.batch:
                     captures, batch_areas[world] = batch.area_rules(source, world)
+                if delayed and delayed.conditions:
+                    if captures.keys() & delayed.conditions.keys():
+                        raise ValueError('dynamic extraction flag also has a placed area producer')
+                    captures.update(delayed.conditions)
                 rules, outcome_audit, gap = compile_outcomes(
                     source, world, captures, compound=args.batch, notification_audit=review,
-                    objective_flags=objective_flags)
+                    objective_flags=objective_flags, extraction_spawns=delayed.spawns if delayed else None)
                 outcome = {'events': outcome_audit}
                 if gap:
                     outcome['gap'] = gap
@@ -616,10 +633,11 @@ def main():
             return group_layer(body, source_units, dev_units, stock, locally_owned, external_ai=external_ai)
 
         try:
-            asset_aliases = batch.vehicle_aliases(args.workshop_addons) if args.workshop_addons else {}
+            asset_aliases = batch.vehicle_aliases(args.workshop_addons, dev_units)
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
-        out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block, asset_aliases)
+        out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
+                         asset_aliases, delayed_extractions)
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
                         for path, contents in out.items()}

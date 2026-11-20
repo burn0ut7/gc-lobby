@@ -43,6 +43,10 @@ VEHICLE_ALIASES = {
                          'Prefabs/Vehicles/Helicopters/AH6M/AH6M_GAU19.et',
                          'Prefabs/Vehicles/Helicopters/AH6M/AH6M_GAU19_X1.et'),
 }
+UNITS_VEHICLE_ALIASES = {
+    'F503F71C08BE3F7D': ('48F288F5BFF10D8B', 'Prefabs/Vehicles/Helicopters/AUS_MH60/AUS_UH60_armed.et',
+                         '67ea7fa93be8a84811d12f1be66ae2bce2b58f0a881dbd4375e0a89cbeeee5cd'),
+}
 
 
 def blocks(text):
@@ -208,15 +212,20 @@ def passive_asset(source, path):
     raise ValueError('requires a resource conversion rule')
 
 
-def vehicle_aliases(workshop):
+def vehicle_aliases(workshop, units):
     aliases, databases = {}, {}
-    for resource, (provider, old, current) in VEHICLE_ALIASES.items():
-        if provider not in databases:
-            path = workshop / provider / 'resourceDatabase.rdb'
-            databases[provider] = StockPrefabs(path) if path.is_file() else None
-        database = databases[provider]
-        if database and database.contains(resource, current):
-            aliases[(resource, old)] = current
+    if workshop:
+        for resource, (provider, old, current) in VEHICLE_ALIASES.items():
+            if provider not in databases:
+                path = workshop / provider / 'resourceDatabase.rdb'
+                databases[provider] = StockPrefabs(path) if path.is_file() else None
+            database = databases[provider]
+            if database and database.contains(resource, current):
+                aliases[(resource, old)] = (resource, current)
+    for old, (current, path, digest) in UNITS_VEHICLE_ALIASES.items():
+        if (old not in units.resources and units.resources.get(current) == [path]
+                and sha256(units.read(path).strip().encode()).hexdigest() == digest):
+            aliases[(old, path)] = (current, path)
     return aliases
 
 
@@ -231,7 +240,8 @@ def migrate_assets(source, dev, draft, asset_aliases=None):
         def relocate(ref):
             resource, path = ref[1].upper(), ref[2]
             if (resource, path) in asset_aliases and resource not in source.resources and resource not in dev.resources:
-                return f'"{{{ref[1]}}}{asset_aliases[(resource, path)]}"'
+                alias_guid, alias_path = asset_aliases[(resource, path)]
+                return f'"{{{alias_guid}}}{alias_path}"'
             old_ai_path, new_ai_path = AI_WORLD_ALIASES.get(resource, (None, None))
             if path == old_ai_path and dev.resources.get(resource) == [new_ai_path]:
                 identity = META_NAME.search(dev.read(new_ai_path + '.meta'))
@@ -474,7 +484,8 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
 '''
 
 
-def world_draft(source, dev, world, row, staged, area_placements, interactions, convert_group_block, asset_aliases):
+def world_draft(source, dev, world, row, staged, area_placements, interactions, convert_group_block, asset_aliases,
+                delayed=None):
     draft, blockers = {}, []
     if row.get('playtestCandidate') or row.get('raceConversion'):
         return {}, {'status': 'explicit recipe'}
@@ -571,7 +582,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
 
     if mode is None:
         blockers.append({'rule': 'mode placement', 'file': world})
-    elif preset:
+    else:
         mode_name = mode[0].split(' : ', 1)[0].removeprefix('PS_GameModeCoop').strip()
         if mode_name and any(mode_name in action['entities'] for event in rules.values()
                              for action in event.get('convertedActions', [])
@@ -580,7 +591,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                              'detail': 'legacy instruction deletes its own game mode'})
         try:
             layer, index = mode_index
-            parts[layer][index] = render_mode(world, mode, preset, rule_text, zones, ai_faction, objective_flags)
+            rendered = render_mode(world, mode, preset or '', rule_text, zones, ai_faction, objective_flags)
+            if preset:
+                parts[layer][index] = rendered
         except ValueError as exc:
             blockers.append({'rule': 'mode settings', 'file': mode_index[0], 'detail': str(exc)})
     for path, blocks_in_layer in parts.items():
@@ -588,8 +601,20 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             draft[path] = ''.join(blocks_in_layer)
     assignments = [item for event in rules.values() for item in event.get('waypointAssignments', [])]
     marker_edits = [item for event in rules.values() for item in event.get('convertedActions', []) if 'markers' in item]
-    if not blockers and (assignments or marker_edits or any('m_aStatic' in body for body in draft.values())):
+    extraction_spawns = [item for event in rules.values() for item in event.get('extractionSpawns', [])]
+    if delayed:
+        flag_uses = Counter(term.get('flag') for term in terms if term['trigger'] == 'area capture')
+        if ({item['area'] for item in extraction_spawns} != {item['area'] for item in delayed.spawns.values()}
+                or any(flag_uses[flag[1:-1]] != 1 for flag in delayed.conditions)):
+            blockers.append({'rule': 'delayed extraction', 'file': world,
+                             'detail': 'extraction needs all spawns and one positive consumer per flag'})
+    if not blockers and (assignments or marker_edits or extraction_spawns
+                         or any('m_aStatic' in body for body in draft.values())):
         named = named_placements(draft.values())
+        for spawn in extraction_spawns:
+            if len(named.get(spawn['anchor'], [])) != 1 or spawn['area'] in named:
+                blockers.append({'rule': 'delayed extraction', 'file': world,
+                                 'detail': 'missing or ambiguous placement for ' + spawn['anchor']})
         for gap in waypoint_gaps(named, assignments):
             blockers.append({'rule': 'waypoint assignments', 'file': world, 'detail': gap})
         for layer, field, target in static_link_gaps(draft, named):
@@ -628,6 +653,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             draft.update(files)
         except ValueError as exc:
             blockers.append({'rule': 'launcher', 'file': header, 'detail': str(exc)})
+    if delayed:
+        draft.update(delayed.assets)
     blockers.extend(migrate_assets(source, dev, draft, asset_aliases))
     for path, text in draft.items():
         if path not in dev.files:
@@ -642,21 +669,28 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         count = re.search(r'^\s*m_iPlayerCount (\d+)\s*$', source.read(header), re.M)
         if count:
             advertised[header] = int(count[1])
+    remaining = []
+    if ai_faction:
+        remaining.append('AI casualty tracking uses native registration and confirmed death events. '
+                         'Compare possession, faction changes and delayed recounts separately.')
+    if delayed:
+        remaining.append('Compare delayed extraction polling and status messages in multiplayer.')
     return ({} if blockers else draft), {
         'status': 'blocked by conversion rules' if blockers else 'generated for file review',
         'blockers': blockers, 'files': sorted(draft), 'mixedLayerGroups': group_blocks,
         'verifiedPlayableSlots': slots, 'advertisedSlots': advertised,
         **({'unusedRandomFlags': unused_flags} if unused_flags else {}),
-        **({'remainingBehavior': ['AI casualty tracking uses native registration and confirmed death events. '
-                                  'Compare possession, faction changes and delayed recounts separately.']} if ai_faction else {}),
+        **({'remainingBehavior': remaining} if remaining else {}),
     }
 
 
-def plan(source, dev, report, staged, area_placements, interactions, convert_group_block, asset_aliases):
+def plan(source, dev, report, staged, area_placements, interactions, convert_group_block, asset_aliases,
+         delayed_extractions):
     results, emitted, totals, families = {}, {}, Counter(), Counter()
     for world, row in report['worlds'].items():
         draft, result = world_draft(source, dev, world, row, staged, area_placements.get(world, {}),
-                                    interactions.get(world, ((), {})), convert_group_block, asset_aliases)
+                                    interactions.get(world, ((), {})), convert_group_block, asset_aliases,
+                                    delayed_extractions.get(world))
         results[world] = result
         totals[result['status']] += 1
         families.update({blocker['rule'] for blocker in result.get('blockers', [])})

@@ -393,7 +393,7 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
             raise ValueError('mission-owned group ' + guid)
         spec = WRAPPERS['groups'].get(guid) if guid not in source_units.resources and stock else None
         if spec:
-            if REF.search(lines[i])[2] != spec['path'] or not stock.contains(*spec['parent']):
+            if REF.search(lines[i])[2].casefold() != spec['path'].casefold() or not stock.contains(*spec['parent']):
                 raise ValueError('unverified stock wrapper group ' + guid)
             resource, dest = spec['parent']
             convert = partial(convert_stock_instance, spec=spec, source_units=source_units, dev_units=dev_units,

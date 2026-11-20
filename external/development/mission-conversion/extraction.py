@@ -2,16 +2,29 @@
 from briefings import guid
 
 
-def condition(world, name, area, faction, ratio, seconds=None):
+def condition(world, name, area, faction, ratio, seconds=None, *, skip_discovery=False, latch=True, location=None):
     key = world + '/' + name
     hold = ''
     if seconds:
+        options = '  m_bStopAfterFirstChange 1\n' if latch else ''
+        if skip_discovery:
+            options += '  m_bSkipDiscovery 1\n'
+        if location:
+            options += f'''  m_Messages GC_CaptureMessages "{{{guid(key + '/messages')}}}" {{
+   m_sLocation {location}
+   m_sCaptured "The %1 has extracted to %2."
+   m_sCapturing "The %1 is extracting to %2."
+   m_sCaptureInterrupted "The %1 is no longer extracting to %2."
+   m_sLost "The %1 has stopped extraction to %2."
+   m_sLosing "The %1 is stopping extraction to %2."
+   m_sLossInterrupted "The %1 is no longer stopping extraction to %2."
+  }}
+'''
         hold = f''' m_Capture GC_AreaCaptureOptions "{{{guid(key + '/hold')}}}" {{
   m_fSeconds {seconds}
   m_bUseElapsedTime 1
   m_iInterruption 3
-  m_bStopAfterFirstChange 1
- }}
+{options} }}
 '''
     return f'''GC_AreaCondition "{{{guid(key + '/area')}}}" {{
  m_sArea "{area}"
