@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "c7fc807ad81843933bd6709cea466544d44e85e6",
+  "target": "9afc5539d47642e574f999c0bc46074283f370db",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1881,7 +1881,7 @@
         "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents.ent"
       ],
       "declaredPath": "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{FF8BE49E7DC5C603}worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents.ent"
     },
     "Missions/arc/ForeignExchangeStudentsII.conf": {
@@ -31219,7 +31219,9 @@
     "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents.ent": {
       "sourceResourceCount": 6,
       "devPaths": {
-        "absent": 6
+        "absent": 1,
+        "changed": 4,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -31254,7 +31256,8 @@
       },
       "groupLayers": {
         "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents_Layers/players.layer": {
-          "gap": "unresolved character prefab DBC177C261C93B9D"
+          "playableGroups": 7,
+          "unitPrefabEntries": 46
         }
       },
       "directBriefingsRead": 5,
@@ -31271,6 +31274,16 @@
         "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents_Layers/default.layer:131": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "captureCandidate": {
+        "faction": "US",
+        "location": "the location",
+        "seconds": 120,
+        "radiusMeters": 28,
+        "requiredLocalShare": 0.75,
+        "timing": "elapsed mission seconds",
+        "population": "players and AI",
+        "stopsAfterFirstChange": true
       },
       "outcomeCandidate": {
         "events": {
@@ -31293,8 +31306,20 @@
             ]
           },
           "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents_Layers/default.layer:99": {
+            "trigger": "area capture",
+            "flag": "US_CAP",
             "name": "US_CAP",
-            "gap": "unresolved or unsupported outcome flag \"US_CAP\""
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
           },
           "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents_Layers/default.layer:115": {
             "trigger": "peak player loss",
@@ -31334,7 +31359,23 @@
       },
       "briefingModePreset": "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents_GC_Settings.et",
       "renumberedInSourceOrder": true,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "playtestCandidate": {
+        "presentOnDev": true,
+        "boundaries": {},
+        "icons": 3,
+        "remainingBehavior": [
+          "Compare live capture, interrupted and contested capture, and remote notifications",
+          "Compare staging-zone enforcement, release and long timeout notices",
+          "Compare callsign labels, issued equipment and vehicle handling",
+          "Compare authored placements against historical Longmoor Extended"
+        ],
+        "terrainParent": {
+          "legacy": "{2E5C56A432F72F88}Worlds/Longmoor Extended/Longmoor Extended.ent",
+          "dev": "{E90C30D273FF302E}Worlds/LongmoorTrainingArea/LongmoorTrainingArea.ent",
+          "terrainAddon": "61BD1072371B5470"
+        }
+      }
     },
     "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII.ent": {
       "sourceResourceCount": 7,

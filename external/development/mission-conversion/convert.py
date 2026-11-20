@@ -54,7 +54,7 @@ def main():
     parser.add_argument('--include-outcomes', action='store_true', help='audit and stage supported legacy outcome rule fragments')
     parser.add_argument('--include-industrial-candidate', action='store_true', help='assemble the Industrial Metal playtest world')
     parser.add_argument('--include-irish-candidate', action='store_true', help='assemble the Irish Checkpoint playtest world')
-    parser.add_argument('--include-arc-capture-candidates', action='store_true', help='assemble Soumont Sawmill and Watery Grave')
+    parser.add_argument('--include-arc-capture-candidates', action='store_true', help='assemble the reviewed Arc capture missions')
     args = parser.parse_args()
     if args.include_industrial_candidate:
         if not args.stage or not args.units or not args.workshop_addons or not args.base_database:
@@ -170,7 +170,10 @@ def main():
             ticket_gaps.extend(issues)
             if args.units:
                 try:
-                    groups = group_layer(text, source_units, dev_units, stock, locally_owned)
+                    if arc_worlds.get(world) == 'ForeignExchangeStudents' and layer.endswith('/players.layer'):
+                        groups = arc_capture.foreign_roster(source, source_units, dev_units, stock, locally_owned, layer)
+                    else:
+                        groups = group_layer(text, source_units, dev_units, stock, locally_owned)
                     if groups:
                         body, count, slots = groups
                         if layer in dev.files and dev.read(layer).strip() != body.strip():
@@ -531,6 +534,13 @@ def main():
                 'Compare callsign labels, issued equipment and vehicle handling',
             ],
         }
+        if arc_capture.WORLDS[world] == 'ForeignExchangeStudents':
+            row['playtestCandidate']['terrainParent'] = {
+                'legacy': arc_capture.LONGMOOR_LEGACY_PARENT,
+                'dev': arc_capture.LONGMOOR_CURRENT_PARENT,
+                'terrainAddon': '61BD1072371B5470',
+            }
+            row['playtestCandidate']['remainingBehavior'].append('Compare authored placements against historical Longmoor Extended')
         if legacy_vehicle_groups:
             row['playtestCandidate']['legacyVehicleGroups'] = legacy_vehicle_groups
             row['playtestCandidate']['remainingBehavior'].append('Restore legacy vehicle previews and locked-vehicle removal')

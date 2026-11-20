@@ -56,7 +56,8 @@ def assemble(source, dev, stock, workshop, preset, rules, staged):
     return files, review
 
 
-def outcome_mode(world, name, preset, text, stock, rules, zone_name, children='', terrain=None, environment=''):
+def outcome_mode(world, name, preset, text, stock, rules, zone_name, children='', terrain=None, environment='',
+                 include_map=True):
     lines = text.splitlines()
     start = next(i for i, line in enumerate(lines) if line.startswith('PS_GameModeCoop '))
     prelude = '\n'.join(lines[:start])
@@ -91,11 +92,12 @@ def outcome_mode(world, name, preset, text, stock, rules, zone_name, children=''
     key = world + '/release'
     zone_names = '\n'.join(f'        "{label}"' for label in names)
     event_name = 'Release Industrial Metal staging zone' if world == WORLD else 'Release staging zone'
-    return prelude + f'''
+    map_entity = f'''
 SCR_MapEntity MapEntity1 : "{{731564B66F91B107}}Prefabs/World/Game/MapEntity.et" {{
  coords {coords}
 }}
-GC_LobbyGameMode {name} : "{{{guid(world + '/resource')}}}{preset}" {{
+''' if include_map else ''
+    return prelude + map_entity + f'''GC_LobbyGameMode {name} : "{{{guid(world + '/resource')}}}{preset}" {{
  components {{
 {weather}
 {environment}  SCR_PlayersRestrictionZoneManagerComponent "{{{guid(WORLD + '/zone-manager')}}}" {{
