@@ -487,3 +487,10 @@ The mode converter recognizes both standard published lobby prefab registrations
 The batch also preserves verified native non-playable AI group prefabs and their supported placement fields. The stock group ledger records the prefab digests, base ancestry and roster resource identities reviewed from the installed Reforger archives through Reforger MCP. The published Core overlay on the stock group base only adds a disabled callsign component. The RHS overlay repeats the entity ID. The converter checks the registered GUID and path and holds placements with playability overrides, unreviewed members or mission or Units resource overrides. Spawned AI behavior still needs shared runtime coverage.
 
 Across all 277 launchers, the pass cleared 31 world mode blockers and 60 AI-group layer blockers. Two runs using different Python hash seeds produced identical inventories, install plans and draft hashes. The existing conversion recipes produced the same comparison report. The four held drafts retain their resource or roster audit findings.
+
+
+## Navigation around placed compositions
+
+The batch converts an empty legacy navmesh regeneration component under a native placement's component list. It preserves the component identity, parent prefab, transform and other placement data. Custom component fields remain in the blocker report. GC Lobby requests Reforger's native entity and child navigation rebuild after initialization on the server. The component is opt-in, tied to the active GC Lobby mode and cancels its deferred call if the owner is deleted. The reference implementation was reviewed in the published TilW package. The GC Lobby component calls the base game's AI World directly.
+
+Provins Approach Redux is in local Missions Dev commit `46cd612b`. File review confirmed 68 slots against its launcher, all four checkpoint compositions at their original transforms, the 180-second staging release, and the 120-second Obj. Apollo capture. Resource validation passed. A clean Workbench script reload completed with zero errors in session `logs_2026-11-20_18-00-36`. AI routing around the compositions still needs a shared gameplay check.

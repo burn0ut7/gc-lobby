@@ -34,6 +34,7 @@ LIGHT_COMPONENT = [
 LIGHT_FIELDS = {'ID', 'coords', 'Color', 'LV', 'ClipEV', 'Radius', 'NearPlane', 'SpotAngle',
                 'SpotAngleAttenuation', 'DistanceAttenuation', 'LensFlareType', 'LensFlareScale'}
 SERIALIZED_ID = '"\\{[0-9a-fA-F]{16}\\}"'
+NAVMESH_COMPONENT = re.compile(rf' +TILW_NavmeshRegenComponent {SERIALIZED_ID} \{{')
 MATERIAL_OVERRIDE = re.compile(
     rf'SCR_DestructibleBuildingEntity : "\{{[\da-fA-F]{{16}}\}}Prefabs/Structures/[^"\n]+\.et" \{{\n'
     rf' ID "[\da-fA-F]{{16}}"\n components \{{\n  MeshObject {SERIALIZED_ID} \{{\n   Materials \{{\n'
@@ -90,6 +91,25 @@ def blocks(text):
         end = block_end(lines, index)
         yield index + 1, lines[index:end + 1]
         index = end + 1
+
+
+def native_placement(block):
+    if not NATIVE.match(block[0]):
+        return None
+    lines = block
+    if any('TILW_NavmeshRegenComponent' in line for line in block):
+        lines = block.copy()
+        stack = []
+        for index, line in enumerate(block):
+            if (NAVMESH_COMPONENT.fullmatch(line) and stack and stack[-1] == 'components {'
+                    and block[index + 1] == ' ' * (len(line) - len(line.lstrip())) + '}'):
+                lines[index] = line.replace('TILW_NavmeshRegenComponent', 'GC_NavmeshRebuildComponent', 1)
+            if line.endswith(' {'):
+                stack.append(line.strip())
+            elif line.strip() == '}':
+                stack.pop()
+    text = '\n'.join(lines) + '\n'
+    return None if LEGACY.search(text) else text
 
 
 def interaction_rules(source, world, stock):
@@ -658,8 +678,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     names, converted = restriction_zones(block, len(zones) + 1)
                     zones.extend(names)
                     result.append(converted)
-                elif NATIVE.match(head) and not LEGACY.search(body):
-                    result.append(body)
+                elif (converted := native_placement(block)) is not None:
+                    result.append(converted)
                 else:
                     rule = 'framework events' if kind == 'TILW_MissionFrameworkEntity' else kind
                     blockers.append({'rule': rule, 'file': layer, 'line': line})
