@@ -252,6 +252,13 @@ def main():
         out[path] = mode
         row['modeCandidate'] = {'placementLayer': path, 'casualtyNotifications': audit,
                                 'remainingBehavior': gwotline.GAPS}
+        if args.units:
+            row['rosterCandidates'] = {}
+            for path, body, roster in gwotline.stage_rosters(source, source_units, dev_units, stock, locally_owned):
+                if path in dev.files and dev.read(path).strip() != body.strip():
+                    parser.error(f'Dev already has differing {path}')
+                out[path] = body
+                row['rosterCandidates'][path] = roster
     if args.stage:
         stage = args.stage.resolve()
         if any(stage.is_relative_to(root.resolve()) for root in ([args.missions, lobby] + ([args.units] if args.units else []))):

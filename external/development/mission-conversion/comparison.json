@@ -6497,13 +6497,32 @@
           }
         ],
         "remainingBehavior": [
-          "Port the two starting rosters, including the mixed BLUFOR layer, and verify issued equipment",
+          "Preserve the mixed player and AI machine-gun group and the BLUFOR floodlights",
+          "Verify starting slot counts, callsigns, and issued equipment on both sides",
           "Resolve AO prefab defaults and preserve public faction color and map-only settings",
           "Convert the markers in the ammunition layer and verify both map audiences",
           "Transfer the custom faction callsigns and verify both starting areas",
           "Compare the 3,900-second Time Limit event, which has no serialized condition",
           "Verify vehicles, staging restrictions, weather and both casualty notifications in play"
         ]
+      },
+      "rosterCandidates": {
+        "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/Blufor1/Blufor_GC_Roster.layer": {
+          "sourceLayer": "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/Blufor1/Blufor.layer",
+          "groups": 7,
+          "unitPrefabEntries": 39,
+          "remainingPlacements": {
+            "129": "retained source placement requires separate review"
+          }
+        },
+        "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/Opfor1/OPFOR_GC_Roster.layer": {
+          "sourceLayer": "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/Opfor1/OPFOR.layer",
+          "groups": 2,
+          "unitPrefabEntries": 14,
+          "remainingPlacements": {
+            "20": "legacy slot playability requires review 328AFF9E8B3F3AE9"
+          }
+        }
       }
     },
     "worlds/Fruz/Korengal Vacation/Korengal Vacation.ent": {
@@ -6884,7 +6903,8 @@
           "unitPrefabEntries": 37
         },
         "worlds/Gabe/GuerrillasByDay/GuerrillasByDay_Layers/Players_Civilian.layer": {
-          "gap": "unsupported slot list"
+          "playableGroups": 4,
+          "unitPrefabEntries": 8
         },
         "worlds/Gabe/GuerrillasByDay/GuerrillasByDay_Layers/Players_Opfor.layer": {
           "gap": "mission-owned slot 3774124C219B12FA"
@@ -9405,7 +9425,7 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/NVA_Players/NVA_Players.layer": {
-          "gap": "mixed layer or custom group declaration"
+          "gap": "ambiguous duplicate callsign component"
         },
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/US_Players/US_Players.layer": {
           "gap": "group field needs review: m_faction"
@@ -25538,8 +25558,7 @@
           "gap": "parent playability requires inheritance or member review"
         },
         "worlds/arc/Hunted/Hunted_Layers/Players.layer": {
-          "playableGroups": 3,
-          "unitPrefabEntries": 20
+          "gap": "ambiguous duplicate callsign component"
         }
       },
       "boundaryLayers": {
@@ -27748,8 +27767,7 @@
       },
       "groupLayers": {
         "worlds/arc/TwoCheckpoints/TwoCheckpoints_Layers/players_cdf.layer": {
-          "playableGroups": 5,
-          "unitPrefabEntries": 27
+          "gap": "ambiguous duplicate callsign component"
         },
         "worlds/arc/TwoCheckpoints/TwoCheckpoints_Layers/players_ru.layer": {
           "playableGroups": 9,

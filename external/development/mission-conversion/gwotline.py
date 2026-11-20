@@ -1,11 +1,18 @@
 """Stage Gwotline Bling's reviewed GC Lobby game mode for world assembly."""
 from briefings import block_end, guid
 from events import peak_notifications
+from groups import ROOT, group_layer
 
 WORLD = 'worlds/Fruz/Gwotline Bling/Gwotline Bling.ent'
 DEFAULT = WORLD[:-4] + '_Layers/default.layer'
+GROUPS = {
+    'Blufor1/Blufor.layer': '15814895695ea27140f4d286b38cbe859be90430',
+    'Opfor1/OPFOR.layer': '5659970f638434e7de5bb62625cd0f2429064b57',
+}
+CALLSIGNS = frozenset({'6508C3582F634926', '68B37CEF862EBFE6', '6508C35869053D73'})
 GAPS = [
-    'Port the two starting rosters, including the mixed BLUFOR layer, and verify issued equipment',
+    'Preserve the mixed player and AI machine-gun group and the BLUFOR floodlights',
+    'Verify starting slot counts, callsigns, and issued equipment on both sides',
     'Resolve AO prefab defaults and preserve public faction color and map-only settings',
     'Convert the markers in the ammunition layer and verify both map audiences',
     'Transfer the custom faction callsigns and verify both starting areas',
@@ -44,3 +51,35 @@ def stage_mode(source, preset):
 '''
     audit = [{k: v for k, v in record.items() if k != 'events'} for record in rules]
     return mode, audit
+
+
+def stage_rosters(source, source_units, dev_units, stock, locally_owned):
+    for relative, oid in GROUPS.items():
+        path = DEFAULT.removesuffix('default.layer') + relative
+        if source.files[path] != oid:
+            raise ValueError('Gwotline group source layer changed: ' + path)
+        lines = source.read(path).splitlines()
+        staged, exceptions = [], {}
+        groups = slots = i = 0
+        while i < len(lines):
+            if not lines[i].strip():
+                i += 1
+                continue
+            end = block_end(lines, i)
+            if ROOT.fullmatch(lines[i]):
+                try:
+                    body, count, members = group_layer('\n'.join(lines[i:end + 1]), source_units, dev_units,
+                                                       stock, locally_owned, CALLSIGNS)
+                    staged.append(body)
+                    groups += count
+                    slots += members
+                except ValueError as exc:
+                    exceptions[str(i + 1)] = str(exc)
+            else:
+                exceptions[str(i + 1)] = 'retained source placement requires separate review'
+            i = end + 1
+        if not staged:
+            raise ValueError('Gwotline roster generated no groups: ' + path)
+        yield path.removesuffix('.layer') + '_GC_Roster.layer', ''.join(staged), {
+            'sourceLayer': path, 'groups': groups, 'unitPrefabEntries': slots, 'remainingPlacements': exceptions,
+        }

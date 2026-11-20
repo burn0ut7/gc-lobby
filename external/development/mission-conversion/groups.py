@@ -6,7 +6,8 @@ from briefings import block_end
 from catalog import REF
 
 ROOT = re.compile(r'^(?P<group>\$grp )?SCR_AIGroup(?: [\w.\-]+)? : "\{(?P<guid>[A-Fa-f0-9]{16})\}[^"]+\.et" \{$')
-CALL = re.compile(r'^\s*PS_GroupCallsignAssigner "\{63616C6C7369676E\}" \{$', re.I)
+CALL = re.compile(r'^\s*PS_GroupCallsignAssigner "\{([\da-f]{16})\}" \{$', re.I)
+STANDARD_CALLSIGN = '63616C6C7369676E'
 INDEX = {'m_iCompanyCallsign': 'm_iGC_CallsignCompany', 'm_iPlatoonCallsign': 'm_iGC_CallsignPlatoon',
          'm_iSquadCallsign': 'm_iGC_CallsignSquad'}
 SLOTS = re.compile(r'^ m_aUnitPrefabSlots \{\n(.*?)^ \}', re.M | re.S)
@@ -76,7 +77,8 @@ def legacy_member(snapshot, guid, force):
     return False
 
 
-def convert_instance(lines, guid, old, new, source_units, dev_units, stock, locally_owned):
+def convert_instance(lines, guid, old, new, source_units, dev_units, stock, locally_owned,
+                     reviewed_callsigns=frozenset()):
     explicit_force = any(l.strip() == 'm_bSetPlayable 1' for l in lines)
     native_playable = any(l.strip() == 'm_bPlayable 1' for l in lines) or scalar(inheritance(dev_units, guid), 'm_bPlayable') == 1
     if not native_playable and not explicit_force:
@@ -104,9 +106,13 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             end = block_end(lines, i)
             j = i + 1
             components = []
+            assigned = False
             while j < end:
                 last = block_end(lines, j)
-                if CALL.fullmatch(lines[j]):
+                match = CALL.fullmatch(lines[j])
+                if match and (match[1].upper() == STANDARD_CALLSIGN or match[1].upper() in reviewed_callsigns):
+                    if assigned and not reviewed_callsigns:
+                        raise ValueError('ambiguous duplicate callsign component')
                     placed = callsign(lines[j+1:last])
                     # PS_PlayableManager reads the component even when Enabled is zero.
                     # Unspecified attributes inherit through the Units prefab chain, then
@@ -115,10 +121,13 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                     for body in reversed(inheritance(source_units, guid)):
                         source_lines = body.splitlines()
                         for pos, item in enumerate(source_lines):
-                            if CALL.fullmatch(item):
+                            inherited_call = CALL.fullmatch(item)
+                            if inherited_call and inherited_call[1].upper() == match[1].upper():
                                 effective.update(callsign(source_lines[pos+1:block_end(source_lines, pos)]))
                     effective.update(placed)
-                    metadata.extend(indent + f'{dest} "{effective[k]}"' for k, dest in INDEX.items())
+                    if not assigned:
+                        metadata.extend(indent + f'{dest} "{effective[k]}"' for k, dest in INDEX.items())
+                    assigned = True
                 elif re.fullmatch(r'AIFormationComponent "\{[\da-fA-F]{16}\}" \{', lines[j].strip()):
                     components.extend(lines[j:last+1])
                 else:
@@ -146,7 +155,7 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             roster.extend(g for item in lines[i+1:end] for g, _ in REF.findall(item))
             out.append(line)
             for item in lines[i+1:end]:
-                if REF.sub('', item).strip():
+                if REF.sub('', item).replace('""', '').strip():
                     raise ValueError('unsupported slot list')
                 out.append(REF.sub(slot, item))
             out.append(lines[end])
@@ -171,7 +180,7 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     return out + metadata, len(roster)
 
 
-def group_layer(text, source_units, dev_units, stock, locally_owned):
+def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset()):
     if not re.search(r'^(?:\$grp )?SCR_AIGroup\b', text, re.M):
         return None
     lines = text.splitlines()
@@ -197,13 +206,13 @@ def group_layer(text, source_units, dev_units, stock, locally_owned):
                 if not re.fullmatch(r' (?:[\w.\-]+ )?\{', lines[j]):
                     raise ValueError('unexpected group instance')
                 last = block_end(lines, j)
-                body, members = convert_instance(lines[j+1:last], guid, old, new, source_units, dev_units, stock, locally_owned)
+                body, members = convert_instance(lines[j+1:last], guid, old, new, source_units, dev_units, stock, locally_owned, reviewed_callsigns)
                 result.extend([lines[j], *body, lines[last]])
                 slots += members
                 count += 1
                 j = last + 1
         else:
-            body, members = convert_instance(lines[i+1:end], guid, old, new, source_units, dev_units, stock, locally_owned)
+            body, members = convert_instance(lines[i+1:end], guid, old, new, source_units, dev_units, stock, locally_owned, reviewed_callsigns)
             result.extend(body)
             slots += members
             count += 1
