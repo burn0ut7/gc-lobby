@@ -15,7 +15,17 @@ The comparison indexes mission headers, including Scenario Framework subclasses,
 
 The first pass translates placed PS mission descriptions into mission-specific GC Lobby mode prefabs. Each preset inherits the GC Lobby template and holds the scenario's briefing definitions. The selected worlds still require actual mode placement and conversion of their other systems. A world with an unsupported description receives no preset. This prevents a partially parsed group or a missing audience restriction from being published as a complete briefing. Entries with duplicate or out-of-range display indices receive consecutive indices in stable source order after sorting by legacy order. This preserves relative ordering, but external references to legacy indices require review.
 
-The Blood and Smoke uses the expanded notes newly added by legacy commit `9a681ab9`. Its parent contains the shorter notes. The converter resolves only the exact conflicted blob. Topdown and San Serriffe Busters share source world GUID `321510A1C6838890`. Their headers distinguish them by path. Retain both and resolve the GUID collision before registering both worlds together on Dev.
+The Blood and Smoke uses the expanded notes newly added by legacy commit `9a681ab9`. Its parent contains the shorter notes. The converter resolves only the exact conflicted blob. The launcher staging command resolves the shared Topdown and San Serriffe Busters world identity.
+
+## Preparing launcher resources for assembly
+
+```powershell
+python external/development/mission-conversion/launchers.py --missions ../gc-reforger-missions --source origin/master --dev origin/dev --stage "$env:TEMP/gc-launchers" Missions/Delfer/Topdown/Topdown.conf
+```
+
+Supply the source header paths for the batch, or omit them to prepare the whole catalog. Each output contains the launcher header, its metadata, and the metadata for the world it loads. Keep these files in staging until the converted world and its layers are ready. The comparison records the resulting reference in `destinationWorld`.
+
+Five headers have outdated paths and Operation Steel has a case difference. Topdown and San Serriffe Busters share the legacy GUID and both source metadata files name SerrifBusters. Busters keeps `321510A1C6838890` and Topdown receives `052737705D787FC7`. Loose Ends regains its historical launcher identity `2B73EAFD3FFE9D0B` from the metadata preceding its removal in commit `5489ae66`. Checks on the staged catalog resolved all 277 headers and found 554 distinct header and world identities. Map previews, external references and in-engine registration need verification with the assembled missions.
 
 ## Remaining behavior work
 

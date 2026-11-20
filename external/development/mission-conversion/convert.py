@@ -11,6 +11,7 @@ from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
 from events import world_events
 from groups import group_layer
+from launchers import launcher
 from markers import convert_layer as convert_markers
 from respawns import read_respawns, ticket_event
 from scenery import StockPrefabs, placements
@@ -59,10 +60,12 @@ def main():
         row = {'worlds': worlds, 'declaredPath': declared[1] if declared else None,
                'devHeaderAtSamePath': header in target_headers}
         report['headers'][header] = row
-        for world in worlds:
-            if len(worlds) > 1 and declared and world.lower() != declared[1].lower():
-                continue
+        try:
+            world, world_id, _ = launcher(source, dev, header)
+            row['destinationWorld'] = '{' + world_id + '}' + world
             headers_by_world[world].append(header)
+        except ValueError as exc:
+            row['launcherGap'] = str(exc)
 
     for world in sorted(p for p in source.files if p.lower().endswith('.ent')):
         row = compare(source, dev, world)

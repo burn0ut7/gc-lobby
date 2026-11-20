@@ -7,196 +7,224 @@
         "worlds/Aurelas/Spearhead Air Support/SpearheadAirSupport.ent"
       ],
       "declaredPath": "worlds/Aurelas/Spearhead Air Support/SpearheadAirSupport.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{AA6C8912B575921D}worlds/Aurelas/Spearhead Air Support/SpearheadAirSupport.ent"
     },
     "Missions/Aurelas/TVT70_MontignacMeatGrind.conf": {
       "worlds": [
         "worlds/Aurelas/Montignac Meat Grind/Montignac Meat Grind.ent"
       ],
       "declaredPath": "worlds/Aurelas/Montignac Meat Grind/MontignacMeatGrind.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{724AD4B6531593EF}worlds/Aurelas/Montignac Meat Grind/Montignac Meat Grind.ent"
     },
     "Missions/Barwick/The Blood and Smoke.conf": {
       "worlds": [
         "worlds/Barwick/The Blood and Smoke/The Blood and Smoke.ent"
       ],
       "declaredPath": "worlds/Barwick/The Blood and Smoke/The Blood and Smoke.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{C0272EBB573FC9D1}worlds/Barwick/The Blood and Smoke/The Blood and Smoke.ent"
     },
     "Missions/Blue/COTVT80_TheBearWentOvertheMountainCH1S6.conf": {
       "worlds": [
         "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2.ent"
       ],
       "declaredPath": "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{421D06274A9D1229}worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2.ent"
     },
     "Missions/Blue/SimonsAbatis.conf": {
       "worlds": [
         "worlds/Blue/SimonsAbatis/SimonsAbatis.ent"
       ],
       "declaredPath": "worlds/Blue/SimonsAbatis/SimonsAbatis.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{4BDC35EEDBB2DF77}worlds/Blue/SimonsAbatis/SimonsAbatis.ent"
     },
     "Missions/Blue/TVT39_Direction_Found.conf": {
       "worlds": [
         "worlds/Blue/DirectionFound/DirectionFound.ent"
       ],
       "declaredPath": "worlds/Blue/DirectionFound/DirectionFound.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{77D8E4A556E0E011}worlds/Blue/DirectionFound/DirectionFound.ent"
     },
     "Missions/Blue/TVT66_OpportunityKnocks.conf": {
       "worlds": [
         "worlds/Blue/Opportunity Knocks/OpportunityKnocks.ent"
       ],
       "declaredPath": "worlds/Blue/Opportunity Knocks/OpportunityKnocks.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{9D4276BFC699BF44}worlds/Blue/Opportunity Knocks/OpportunityKnocks.ent"
     },
     "Missions/Blue/TVT69_RUCKUSBerg.conf": {
       "worlds": [
         "worlds/Blue/Ruckusberg/RuckusBerg.ent"
       ],
       "declaredPath": "worlds/Blue/Ruckusberg/RuckusBerg.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{A0BEE555BF959466}worlds/Blue/Ruckusberg/RuckusBerg.ent"
     },
     "Missions/Blue/TVT98_Bangalorious.conf": {
       "worlds": [
         "worlds/Blue/Bangalorious/Bangalorious.ent"
       ],
       "declaredPath": "worlds/Blue/Bangalorious/Bangalorious.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{4105510FF77A3AD4}worlds/Blue/Bangalorious/Bangalorious.ent"
     },
     "Missions/Burger4606/Hush.conf": {
       "worlds": [
         "worlds/Burger4606/Hush/Hush.ent"
       ],
       "declaredPath": "worlds/Burger4606/Hush/Hush.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{818DA85BB1B1EA72}worlds/Burger4606/Hush/Hush.ent"
     },
     "Missions/Burn0ut7/Farm.conf": {
       "worlds": [
         "worlds/Burn0ut7/Farm/Farm.ent"
       ],
       "declaredPath": "worlds/Burn0ut7/Farm/Farm.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{A9E5675A967E8F1A}worlds/Burn0ut7/Farm/Farm.ent"
     },
     "Missions/Burn0ut7/KillZone.conf": {
       "worlds": [
         "worlds/Burn0ut7/Killzone/Killzone.ent"
       ],
       "declaredPath": "worlds/Burn0ut7/Killzone/Killzone.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{0050966DBF47C97D}worlds/Burn0ut7/Killzone/Killzone.ent"
     },
     "Missions/Burn0ut7/RockyRoad.conf": {
       "worlds": [
         "worlds/Burn0ut7/Rocky Road/Rocky_Road.ent"
       ],
       "declaredPath": "worlds/Burn0ut7/Rocky Road/Rocky_Road.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{17B819B1966AAEE6}worlds/Burn0ut7/Rocky Road/Rocky_Road.ent"
     },
     "Missions/Burn0ut7/RouletteAnizay.conf": {
       "worlds": [
         "worlds/Burn0ut7/Roulette/Anizay/Roulette_Anizay.ent"
       ],
       "declaredPath": "worlds/Burn0ut7/Roulette/Anizay/Roulette_Anizay.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{0EB05570B13F7B0C}worlds/Burn0ut7/Roulette/Anizay/Roulette_Anizay.ent"
     },
     "Missions/Burn0ut7/RouletteArland.conf": {
       "worlds": [
         "worlds/Burn0ut7/Roulette/Arland/Roulette_Arland.ent"
       ],
       "declaredPath": "worlds/Burn0ut7/Roulette/Arland/Roulette_Arland.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{301FD2B1AB749239}worlds/Burn0ut7/Roulette/Arland/Roulette_Arland.ent"
     },
     "Missions/Burn0ut7/RouletteBadOrb.conf": {
       "worlds": [
         "worlds/Burn0ut7/Roulette/Bad Orb/Roulette_BadOrb.ent"
       ],
       "declaredPath": "worlds/Burn0ut7/Roulette/Bad Orb/Roulette_BadOrb.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{25446CBF0E5F6A7F}worlds/Burn0ut7/Roulette/Bad Orb/Roulette_BadOrb.ent"
     },
     "Missions/Burn0ut7/RouletteBystrany.conf": {
       "worlds": [
         "worlds/Burn0ut7/Roulette/Bystrany/Roulette_Bystrany.ent"
       ],
       "declaredPath": "worlds/Burn0ut7/Roulette/Bystrany/Roulette_Bystrany.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{E3FF2B905DD0E299}worlds/Burn0ut7/Roulette/Bystrany/Roulette_Bystrany.ent"
     },
     "Missions/Burn0ut7/RouletteEveron.conf": {
       "worlds": [
         "worlds/Burn0ut7/Roulette/Everon/Roulette_Everon.ent"
       ],
       "declaredPath": "worlds/Burn0ut7/Roulette/Everon/Roulette_Everon.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{3D4F5CF54284DE29}worlds/Burn0ut7/Roulette/Everon/Roulette_Everon.ent"
     },
     "Missions/Burn0ut7/RouletteKolgujev.conf": {
       "worlds": [
         "worlds/Burn0ut7/Roulette/Kolgujev/Roulette_Kolgujev.ent"
       ],
       "declaredPath": "worlds/Burn0ut7/Roulette/Kolgujev/Roulette_Kolgujev.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{43BDA4C616B2B331}worlds/Burn0ut7/Roulette/Kolgujev/Roulette_Kolgujev.ent"
     },
     "Missions/Burn0ut7/RouletteKunar.conf": {
       "worlds": [
         "worlds/Burn0ut7/Roulette/Kunar/Roulette_Kunar.ent"
       ],
       "declaredPath": "worlds/Burn0ut7/Roulette/Kunar/Roulette_Kunar.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{75C39840AFE359F7}worlds/Burn0ut7/Roulette/Kunar/Roulette_Kunar.ent"
     },
     "Missions/Burn0ut7/RouletteRuha.conf": {
       "worlds": [
         "worlds/Burn0ut7/Roulette/Ruha/Roulette_Ruha.ent"
       ],
       "declaredPath": "worlds/Burn0ut7/Roulette/Ruha/Roulette_Ruha.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{42191E5F4AB38496}worlds/Burn0ut7/Roulette/Ruha/Roulette_Ruha.ent"
     },
     "Missions/Burn0ut7/RouletteTakistan.conf": {
       "worlds": [
         "worlds/Burn0ut7/Roulette/Takistan/Roulette_Takistan.ent"
       ],
       "declaredPath": "worlds/Burn0ut7/Roulette/Takistan/Roulette_Takistan.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{1C90B56CCEDCF121}worlds/Burn0ut7/Roulette/Takistan/Roulette_Takistan.ent"
     },
     "Missions/Burn0ut7/RouletteZarichne.conf": {
       "worlds": [
         "worlds/Burn0ut7/Roulette/Zarichne/Roulette_Zarichne.ent"
       ],
       "declaredPath": "worlds/Burn0ut7/Roulette/Zarichne/Roulette_Zarichne.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{91551E6BB4134BFC}worlds/Burn0ut7/Roulette/Zarichne/Roulette_Zarichne.ent"
     },
     "Missions/Corax/BlackhawkBrawl/BlackhawkBrawl.conf": {
       "worlds": [
         "worlds/Corax/BlackhawkBrawl/blackhawk_brawl.ent"
       ],
       "declaredPath": "worlds/Corax/BlackhawkBrawl/blackhawk_brawl.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{F3A31F7BA3BB22ED}worlds/Corax/BlackhawkBrawl/blackhawk_brawl.ent"
     },
     "Missions/Corax/Breachandclear/BreachAndClear.conf": {
       "worlds": [
         "worlds/Corax/Breach and clear/Breach_and_Clear.ent"
       ],
       "declaredPath": "worlds/Corax/Breach and clear/Breach_and_Clear.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{0FC36D955A7779AE}worlds/Corax/Breach and clear/Breach_and_Clear.ent"
     },
     "Missions/Corax/Hnevice/Hnevice.conf": {
       "worlds": [
         "worlds/Corax/Hnevice/Hnevice.ent"
       ],
       "declaredPath": "worlds/Corax/Hnevice/Hnevice.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{E299D715AAD3EB0B}worlds/Corax/Hnevice/Hnevice.ent"
     },
     "Missions/Corax/IntersectionForces/IntersectingForces.conf": {
       "worlds": [
         "worlds/Corax/IntercectingForces/IntersectingForces.ent"
       ],
       "declaredPath": "worlds/Corax/IntercectingForces/IntersectingForces.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{088D7D332642BC4F}worlds/Corax/IntercectingForces/IntersectingForces.ent"
     },
     "Missions/Corax/LooseEnds/CO57_Loose_Ends.conf": {
       "worlds": [
         "worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1.ent"
       ],
       "declaredPath": "worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{41815814960EFA30}worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1.ent"
     },
     "Missions/Corax/SanSerriffeBusters/Serriff_Busters.conf": {
       "worlds": [
@@ -204,70 +232,80 @@
         "worlds/Delfer/Topdown/Topdown.ent"
       ],
       "declaredPath": "worlds/Corax/SerriffBusters/SerrifBusters.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{321510A1C6838890}worlds/Corax/SerriffBusters/SerrifBusters.ent"
     },
     "Missions/Corax/Summerdays/summerdays.conf": {
       "worlds": [
         "worlds/Corax/SummerDays/SummerDays.ent"
       ],
       "declaredPath": "worlds/Corax/SummerDays/SummerDays.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{FF4E1CC495AE9EC3}worlds/Corax/SummerDays/SummerDays.ent"
     },
     "Missions/Cunnah/A_Hop_Skip_And_A_Jump.conf": {
       "worlds": [
         "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump.ent"
       ],
       "declaredPath": "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{18B8C22BA5B6B472}worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump.ent"
     },
     "Missions/Cunnah/Arty_Arty_Arty.conf": {
       "worlds": [
         "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty.ent"
       ],
       "declaredPath": "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{997F40322EB0FFC9}worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty.ent"
     },
     "Missions/Cunnah/Darwin_Hill.conf": {
       "worlds": [
         "worlds/Cunnah/Darwin_Hill/Darwin_Hill.ent"
       ],
       "declaredPath": "worlds/Cunnah/Darwin_Hill/Darwin_Hill.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{BE39D98170E8A762}worlds/Cunnah/Darwin_Hill/Darwin_Hill.ent"
     },
     "Missions/Cunnah/Local_Problems.conf": {
       "worlds": [
         "worlds/Cunnah/Local_Problems/Local_Problems.ent"
       ],
       "declaredPath": "worlds/Cunnah/Local_Problems/Local_Problems.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{69E9797B08AA3197}worlds/Cunnah/Local_Problems/Local_Problems.ent"
     },
     "Missions/Cunnah/Rocky_Start.conf": {
       "worlds": [
         "worlds/Cunnah/Rocky_Start/Rocky_Start.ent"
       ],
       "declaredPath": "worlds/Cunnah/Rocky_Start/Rocky_Start.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{A7A4EC50FBE859AA}worlds/Cunnah/Rocky_Start/Rocky_Start.ent"
     },
     "Missions/Cunnah/coastal_cappers.conf": {
       "worlds": [
         "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers.ent"
       ],
       "declaredPath": "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{8C3FF86CACBB8CD5}worlds/Cunnah/Coastal_Cappers/Coastal_Cappers.ent"
     },
     "Missions/Delfer/Grouse Hunt/Grouse Hunt.conf": {
       "worlds": [
         "worlds/Delfer/Grouse_Hunt/Grouse_Hunt.ent"
       ],
       "declaredPath": "worlds/Delfer/Grouse_Hunt/Grouse_Hunt.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{C46904859476755C}worlds/Delfer/Grouse_Hunt/Grouse_Hunt.ent"
     },
     "Missions/Delfer/Morning_Routine/Morning_Routine.conf": {
       "worlds": [
         "worlds/Delfer/Morning_Routine/Morning_Routine.ent"
       ],
       "declaredPath": "worlds/Delfer/Morning_Routine/Morning_Routine.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{D371B45D2983EADA}worlds/Delfer/Morning_Routine/Morning_Routine.ent"
     },
     "Missions/Delfer/Topdown/Topdown.conf": {
       "worlds": [
@@ -275,1673 +313,1912 @@
         "worlds/Delfer/Topdown/Topdown.ent"
       ],
       "declaredPath": "worlds/Delfer/Topdown/Topdown.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{052737705D787FC7}worlds/Delfer/Topdown/Topdown.ent"
     },
     "Missions/Elite/ConcreteJungleV2.conf": {
       "worlds": [
         "worlds/Elite/ConcreteJungle/ConcreteJungle.ent"
       ],
       "declaredPath": "worlds/Elite/ConcreteJungle/ConcreteJungle.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{E9689B35F167C067}worlds/Elite/ConcreteJungle/ConcreteJungle.ent"
     },
     "Missions/Elite/DesertHeat.conf": {
       "worlds": [
         "worlds/Elite/DesertHeat/DesertHeat.ent"
       ],
       "declaredPath": "worlds/Elite/DesertHeat/DesertHeat.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{532819E2983D700A}worlds/Elite/DesertHeat/DesertHeat.ent"
     },
     "Missions/Elite/PonderingThyOrb.conf": {
       "worlds": [
         "worlds/Elite/PonderingThyOrb/PonderingThyOrb.ent"
       ],
       "declaredPath": "worlds/Elite/PonderingThyOrb/PonderingThyOrb.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{5BF3D5B115126C3B}worlds/Elite/PonderingThyOrb/PonderingThyOrb.ent"
     },
     "Missions/FSM/TVT66ZherebetsRiverCache.conf": {
       "worlds": [
         "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache.ent"
       ],
       "declaredPath": "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{85CF8525A6D8DEE5}worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache.ent"
     },
     "Missions/FSM/TVT72UnowaldCache.conf": {
       "worlds": [
         "worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache.ent"
       ],
       "declaredPath": "worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{E67861F34CB2B8C4}worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache.ent"
     },
     "Missions/FloridaMan/EminentDomain.conf": {
       "worlds": [
         "worlds/FloridaMan/worlds/EminentDomain/EminentDomain.ent"
       ],
       "declaredPath": "worlds/FloridaMan/worlds/EminentDomain/EminentDomain.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{5C03D5393301ADB0}worlds/FloridaMan/worlds/EminentDomain/EminentDomain.ent"
     },
     "Missions/FloridaMan/LostAndFound.conf": {
       "worlds": [
         "worlds/FloridaMan/worlds/LostAndFound/LostAndFound.ent"
       ],
       "declaredPath": "worlds/FloridaMan/worlds/LostAndFound/LostAndFound.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{21AD09DFF027DED5}worlds/FloridaMan/worlds/LostAndFound/LostAndFound.ent"
     },
     "Missions/FloridaMan/PreciousMinerals.conf": {
       "worlds": [
         "worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals.ent"
       ],
       "declaredPath": "worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{780B1971855B9884}worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals.ent"
     },
     "Missions/Fruz/Gwotline_Bling.conf": {
       "worlds": [
         "worlds/Fruz/Gwotline Bling/Gwotline Bling.ent"
       ],
       "declaredPath": "worlds/Fruz/Gwotline Bling/Gwotline Bling.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{330E37F884C1CD84}worlds/Fruz/Gwotline Bling/Gwotline Bling.ent"
     },
     "Missions/Fruz/Korengal Vacation.conf": {
       "worlds": [
         "worlds/Fruz/Korengal Vacation/Korengal Vacation.ent"
       ],
       "declaredPath": "worlds/Fruz/Korengal Vacation/Korengal Vacation.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{7CBFB92B00C21AF5}worlds/Fruz/Korengal Vacation/Korengal Vacation.ent"
     },
     "Missions/Fruz/Operation_Tampa.conf": {
       "worlds": [
         "worlds/Fruz/Operation Tampa/Operation Tampa.ent"
       ],
       "declaredPath": "worlds/Fruz/Operation Tampa/Operation Tampa.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{6352991A14912329}worlds/Fruz/Operation Tampa/Operation Tampa.ent"
     },
     "Missions/Gabe/BlocParty/BlocParty.conf": {
       "worlds": [
         "worlds/Gabe/BlocParty/BlocParty.ent"
       ],
       "declaredPath": "worlds/Gabe/BlocParty/BlocParty.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{871F3A8DE6BCEF45}worlds/Gabe/BlocParty/BlocParty.ent"
     },
     "Missions/Gabe/GuerrillasByDay/GuerrillasByDay.conf": {
       "worlds": [
         "worlds/Gabe/GuerrillasByDay/GuerrillasByDay.ent"
       ],
       "declaredPath": "worlds/Gabe/GuerrillasByDay/GuerrillasByDay.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{CC3C1B612289AFB2}worlds/Gabe/GuerrillasByDay/GuerrillasByDay.ent"
     },
     "Missions/Gabe/IronResolve/IronResolve.conf": {
       "worlds": [
         "worlds/Gabe/IronResolve/IronResolve.ent"
       ],
       "declaredPath": "worlds/Gabe/IronResolve/IronResolve.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{9AF99979E3CE957D}worlds/Gabe/IronResolve/IronResolve.ent"
     },
     "Missions/Gabe/TVT50ZavarakSlums/TVT50ZavarakSlums.conf": {
       "worlds": [
         "worlds/Gabe/ZavarakSlums/TVT50ZavarakSlums.ent"
       ],
       "declaredPath": "worlds/Gabe/ZavarakSlums/TVT50ZavarakSlums.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{704B72E58C837DC4}worlds/Gabe/ZavarakSlums/TVT50ZavarakSlums.ent"
     },
     "Missions/Gabe/TVT66TheHillsHaveEyes.conf": {
       "worlds": [
         "worlds/Gabe/TheHillsHaveEyes/TheHillsHaveEyes.ent"
       ],
       "declaredPath": "worlds/Gabe/TheHillsHaveEyes/TheHillsHaveEyes.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{98617303A2BA0EE3}worlds/Gabe/TheHillsHaveEyes/TheHillsHaveEyes.ent"
     },
     "Missions/Gabe/TVT97PowerStruggle/TVT97PowerStruggle.conf": {
       "worlds": [
         "worlds/Gabe/PowerStruggle/TVT97PowerStruggle.ent"
       ],
       "declaredPath": "worlds/Gabe/PowerStruggle/TVT97PowerStruggle.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{DD917817F90D0456}worlds/Gabe/PowerStruggle/TVT97PowerStruggle.ent"
     },
     "Missions/HelloCam3/CO63_Stashed_Cache_v2.conf": {
       "worlds": [
         "worlds/HelloCam3/worlds/COOP_StashedCache/COOP_StashedCache_v2.ent"
       ],
       "declaredPath": "worlds/CO63_StashedCache_v2/CO63_StashedCache_v2.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{99E9B3A3BC344847}worlds/HelloCam3/worlds/COOP_StashedCache/COOP_StashedCache_v2.ent"
     },
     "Missions/HitTheMan/2nd Break The Line/2ndBreakTheLine.conf": {
       "worlds": [
         "worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine.ent"
       ],
       "declaredPath": "worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{1373792C7D2F8DE9}worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine.ent"
     },
     "Missions/HitTheMan/3rd Break The Line/3rdBreakTheLine.conf": {
       "worlds": [
         "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine.ent"
       ],
       "declaredPath": "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{D10913B5F1FC98BD}worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine.ent"
     },
     "Missions/HitTheMan/Air Assault Onto Skalisty/AirAssaultOntoSkalisty.conf": {
       "worlds": [
         "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{D66E8F804810B1FC}worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty.ent"
     },
     "Missions/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol.conf": {
       "worlds": [
         "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{CF8986F307B44F61}worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol.ent"
     },
     "Missions/HitTheMan/BMP Incursion/BMPIncursion.conf": {
       "worlds": [
         "worlds/HitTheMan/BMP Incursion/BMPIncursion.ent"
       ],
       "declaredPath": "worlds/HitTheMan/BMP Incursion/BMPIncursion.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{34CF09D51B43E676}worlds/HitTheMan/BMP Incursion/BMPIncursion.ent"
     },
     "Missions/HitTheMan/Battalion Breakthrough/BattalionBreakthrough.conf": {
       "worlds": [
         "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{2C79E9F5F7F9EDF7}worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough.ent"
     },
     "Missions/HitTheMan/Battle For Rasman/BattleForRasman.conf": {
       "worlds": [
         "worlds/HitTheMan/Battle For Rasman/BattleForRasman.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Battle For Rasman/BattleForRasman.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{76F18394736F2CC0}worlds/HitTheMan/Battle For Rasman/BattleForRasman.ent"
     },
     "Missions/HitTheMan/Battle For Zarichne/BattleForZarichne.conf": {
       "worlds": [
         "worlds/HitTheMan/Battle For Zarichne/BattleForZarichne.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Battle For Zarichne/BattleForZarichne.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{9BF28A919F63D106}worlds/HitTheMan/Battle For Zarichne/BattleForZarichne.ent"
     },
     "Missions/HitTheMan/Beach Holiday to Mineraly/BeachHolidaytoMineraly.conf": {
       "worlds": [
         "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{FCBD05227CA98CD7}worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly.ent"
     },
     "Missions/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay.conf": {
       "worlds": [
         "worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{01DB2506C5F5E771}worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay.ent"
     },
     "Missions/HitTheMan/Brambledeep Adventure/BrambledeepAdventure.conf": {
       "worlds": [
         "worlds/HitTheMan/Brambledeep Adventure/BrambledeepAdventure.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Brambledeep Adventure/BrambledeepAdventure.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{ED0252E15217260E}worlds/HitTheMan/Brambledeep Adventure/BrambledeepAdventure.ent"
     },
     "Missions/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov.conf": {
       "worlds": [
         "worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{22679A79FEAF58CF}worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov.ent"
     },
     "Missions/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo.conf": {
       "worlds": [
         "worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{24DAC4878F6AA430}worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo.ent"
     },
     "Missions/HitTheMan/Clearing The Path/ClearingThePath.conf": {
       "worlds": [
         "worlds/HitTheMan/Clearing The Path/ClearingThePath.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Clearing The Path/ClearingThePath.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{3C8111F02E23CCF3}worlds/HitTheMan/Clearing The Path/ClearingThePath.ent"
     },
     "Missions/HitTheMan/Devils Crossing/DevilsCrossing.conf": {
       "worlds": [
         "worlds/HitTheMan/Devils Crossing/DevilsCrossing.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Devils Crossing/DevilsCrossing.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{677DAB580E49AEB0}worlds/HitTheMan/Devils Crossing/DevilsCrossing.ent"
     },
     "Missions/HitTheMan/Encircled NVA/EncircledNVA.conf": {
       "worlds": [
         "worlds/HitTheMan/Encircled NVA/EncircledNVA.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Encircled NVA/EncircledNVA.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{89227E7A0A60B6A2}worlds/HitTheMan/Encircled NVA/EncircledNVA.ent"
     },
     "Missions/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon.conf": {
       "worlds": [
         "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{58B7D7108DA46F0E}worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon.ent"
     },
     "Missions/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault.conf": {
       "worlds": [
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{B3550A63047C5B7A}worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault.ent"
     },
     "Missions/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite.conf": {
       "worlds": [
         "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{B4EF3C3BF65879AE}worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite.ent"
     },
     "Missions/HitTheMan/Green Hill Military Assault/GreenHillAssault.conf": {
       "worlds": [
         "worlds/HitTheMan/Green Hill Assault/GreenHillAssault.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Green Hill Assault/GreenHillAssault.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{787FEAAF591A2DE4}worlds/HitTheMan/Green Hill Assault/GreenHillAssault.ent"
     },
     "Missions/HitTheMan/Hall Boss Mines/HallBossMines.conf": {
       "worlds": [
         "worlds/HitTheMan/Hall Boss Mines/HallBossMines.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Hall Boss Mines/HallBossMines.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{BB0DA9D6557BAD5E}worlds/HitTheMan/Hall Boss Mines/HallBossMines.ent"
     },
     "Missions/HitTheMan/Hall Boss/HallBoss.conf": {
       "worlds": [
         "worlds/HitTheMan/Hall Boss/HallBoss.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Hall Boss/HallBoss.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{5F7151C9AC22DC0B}worlds/HitTheMan/Hall Boss/HallBoss.ent"
     },
     "Missions/HitTheMan/Mountainous Mujahideen/MountainousMujahideen.conf": {
       "worlds": [
         "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{4F03E074D58CA059}worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen.ent"
     },
     "Missions/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence.conf": {
       "worlds": [
         "worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{E6845EB262ED04A4}worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence.ent"
     },
     "Missions/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice.conf": {
       "worlds": [
         "worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{D30E17E5F7C33016}worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice.ent"
     },
     "Missions/HitTheMan/Ruinous Defence/RuinousDefence.conf": {
       "worlds": [
         "worlds/HitTheMan/Ruinous Defence/RuinousDefence.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Ruinous Defence/RuinousDefence.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{5231DF278E933BFF}worlds/HitTheMan/Ruinous Defence/RuinousDefence.ent"
     },
     "Missions/HitTheMan/Screening The Orb/ScreeningTheOrb.conf": {
       "worlds": [
         "worlds/HitTheMan/Screening The Orb/ScreeningTheOrb.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Screening The Orb/ScreeningTheOrb.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{85412240E7F3ADEE}worlds/HitTheMan/Screening The Orb/ScreeningTheOrb.ent"
     },
     "Missions/HitTheMan/Seeder Cold War Domination/ColdWarDomination.conf": {
       "worlds": [
         "worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{39D3A900CA469682}worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination.ent"
     },
     "Missions/HitTheMan/Stealthing Into Villa/StealthingIntoVilla.conf": {
       "worlds": [
         "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{C290C13BF5B62D09}worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla.ent"
     },
     "Missions/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation.conf": {
       "worlds": [
         "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation.ent"
       ],
       "declaredPath": "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{42A75D3E6A0A5D06}worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation.ent"
     },
     "Missions/HitTheMan/Urdarnik Assault/UdarnikAssault.conf": {
       "worlds": [
         "worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{3E72095370936758}worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault.ent"
     },
     "Missions/HitTheMan/VDV Blockade/VDVBlockadeEvent.conf": {
       "worlds": [
         "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent.ent"
       ],
       "declaredPath": "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{3F20A3D3AFBF65F5}worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent.ent"
     },
     "Missions/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky.conf": {
       "worlds": [
         "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky.ent"
       ],
       "declaredPath": "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{E75B3AD884BEBF7D}worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky.ent"
     },
     "Missions/HitTheMan/VDV Leads The Way/VDVLeadsTheWay.conf": {
       "worlds": [
         "worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay.ent"
       ],
       "declaredPath": "worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{95064059C037CFBE}worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay.ent"
     },
     "Missions/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn.conf": {
       "worlds": [
         "worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn.ent"
       ],
       "declaredPath": "worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{907D4036A9BFAF02}worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn.ent"
     },
     "Missions/HitTheMan/Woodys Horse Track/WoodysHorseTrack.conf": {
       "worlds": [
         "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack.ent"
       ],
       "declaredPath": "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{4019FABE277BA8A3}worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack.ent"
     },
     "Missions/Hot Mic/AssadsLastStandV2.conf": {
       "worlds": [
         "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2.ent"
       ],
       "declaredPath": "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{96D1FE1D75F93A3B}worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2.ent"
     },
     "Missions/Hot Mic/AssaultOnRasmanMilitaryBase.conf": {
       "worlds": [
         "worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase.ent"
       ],
       "declaredPath": "worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{079764E9950E94B6}worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase.ent"
     },
     "Missions/Hot Mic/DelayingActionRuhaPlatoon.conf": {
       "worlds": [
         "worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon.ent"
       ],
       "declaredPath": "worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{0B9F55632FE32D9A}worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon.ent"
     },
     "Missions/Hot Mic/FightForUSSConcrete.conf": {
       "worlds": [
         "worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete.ent"
       ],
       "declaredPath": "worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{D36D5F8C839FC3A7}worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete.ent"
     },
     "Missions/Hot Mic/OperationConcreteCrushers.conf": {
       "worlds": [
         "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers.ent"
       ],
       "declaredPath": "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{9123AB9A7F34E92A}worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers.ent"
     },
     "Missions/Hot Mic/StopTheFOODMarketAtKunar.conf": {
       "worlds": [
         "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar.ent"
       ],
       "declaredPath": "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{2E14ED9A3096C844}worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar.ent"
     },
     "Missions/Hot Mic/SupplySecureAtMontignac.conf": {
       "worlds": [
         "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac.ent"
       ],
       "declaredPath": "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{A5FDB0AF4DFCC24D}worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac.ent"
     },
     "Missions/Hot Mic/VehicleInterdictionAtKunarCOOP.conf": {
       "worlds": [
         "worlds/HotMic/VehicleInterdictionCOOPKunar/VehicleInterdictionCOOPKunar.ent"
       ],
       "declaredPath": "worlds/HotMic/VehicleInterdictionCOOPKunar/VehicleInterdictionCOOPKunar.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{4913EF833B2B6595}worlds/HotMic/VehicleInterdictionCOOPKunar/VehicleInterdictionCOOPKunar.ent"
     },
     "Missions/Huska/MortonBay.conf": {
       "worlds": [
         "worlds/Huska/MortonBay/MortonBay.ent"
       ],
       "declaredPath": "worlds/Huska/MortonBay/MortonBay.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{F057FA872FDEF7AF}worlds/Huska/MortonBay/MortonBay.ent"
     },
     "Missions/Huska/WindyGoat.conf": {
       "worlds": [
         "worlds/Huska/WindyGoat/WindyGoat.ent"
       ],
       "declaredPath": "worlds/Huska/WindyGoat/WindyGoat.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{D49F7CDE1F1418ED}worlds/Huska/WindyGoat/WindyGoat.ent"
     },
     "Missions/IronFunnelEvent/MSN1.conf": {
       "worlds": [
         "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault.ent"
       ],
       "declaredPath": "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{9D4859F9B355491E}worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault.ent"
     },
     "Missions/IronFunnelEvent/MSN2.conf": {
       "worlds": [
         "worlds/IronFunnelEvent/MSN2/ScoutsOut.ent"
       ],
       "declaredPath": "worlds/IronFunnelEvent/MSN2/ScoutsOut.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{9A737C02E83EE835}worlds/IronFunnelEvent/MSN2/ScoutsOut.ent"
     },
     "Missions/IronFunnelEvent/MSN3.conf": {
       "worlds": [
         "worlds/IronFunnelEvent/MSN3/SovietLevies.ent"
       ],
       "declaredPath": "worlds/IronFunnelEvent/MSN3/SovietLevies.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{6F1C0285DD0377AD}worlds/IronFunnelEvent/MSN3/SovietLevies.ent"
     },
     "Missions/James/BootnecksAndBTRs.conf": {
       "worlds": [
         "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs.ent"
       ],
       "declaredPath": "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{566A250E9C52D8B1}worlds/James/BootnecksAndBTRs/BootnecksAndBTRs.ent"
     },
     "Missions/James/FuckDitchesGetMoney.conf": {
       "worlds": [
         "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney.ent"
       ],
       "declaredPath": "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{23F91EE756F94A38}worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney.ent"
     },
     "Missions/James/JavoryPrelude.conf": {
       "worlds": [
         "worlds/James/JavoryPrelude/JavoryPrelude.ent"
       ],
       "declaredPath": "worlds/James/JavoryPrelude/JavoryPrelude.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{F18F8412AB742268}worlds/James/JavoryPrelude/JavoryPrelude.ent"
     },
     "Missions/James/KhandarClearance.conf": {
       "worlds": [
         "worlds/James/KhandarClearance/KhandarClearance.ent"
       ],
       "declaredPath": "worlds/James/KhandarClearance/KhandarClearance.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{D2EB1ECDE7E6E213}worlds/James/KhandarClearance/KhandarClearance.ent"
     },
     "Missions/James/LacourtManor.conf": {
       "worlds": [
         "worlds/James/LacourtManor/LacourtManor.ent"
       ],
       "declaredPath": "worlds/James/LacourtManor/LacourtManor.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{3D23A05FBFE1C9B1}worlds/James/LacourtManor/LacourtManor.ent"
     },
     "Missions/James/LehtoTussle.conf": {
       "worlds": [
         "worlds/James/LehtoTussle/LehtoTussle.ent"
       ],
       "declaredPath": "worlds/James/LehtoTussle/LehtoTussle.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{48A5FFA87D888B6A}worlds/James/LehtoTussle/LehtoTussle.ent"
     },
     "Missions/James/OrbSturm.conf": {
       "worlds": [
         "worlds/James/OrbSturm/OrbSturm.ent"
       ],
       "declaredPath": "worlds/James/OrbSturm/OrbSturm.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{1101D0CD64B7FB2B}worlds/James/OrbSturm/OrbSturm.ent"
     },
     "Missions/James/RichahlamRumble.conf": {
       "worlds": [
         "worlds/James/RichahlamRumble/RichahlamRumble.ent"
       ],
       "declaredPath": "worlds/James/RichahlamRumble/RichahlamRumble.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{0D38BB928C87BFFA}worlds/James/RichahlamRumble/RichahlamRumble.ent"
     },
     "Missions/James/TorskeTussle.conf": {
       "worlds": [
         "worlds/James/TorskeTussle/TorskeTussle.ent"
       ],
       "declaredPath": "worlds/James/TorskeTussle/TorskeTussle.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{FDFDC95B10508E13}worlds/James/TorskeTussle/TorskeTussle.ent"
     },
     "Missions/Jub/AlHadraRumble.conf": {
       "worlds": [
         "worlds/Jub/ALHADRA RUMBLE/ALHADRA RUMBLE.ent"
       ],
       "declaredPath": "worlds/Jub/ALHADRA RUMBLE/ALHADRA RUMBLE.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{9DE1D4EFC33B492F}worlds/Jub/ALHADRA RUMBLE/ALHADRA RUMBLE.ent"
     },
     "Missions/Jub/Another Hill/Another Hill.conf": {
       "worlds": [
         "worlds/Jub/Another Hill/Another Hill.ent"
       ],
       "declaredPath": "worlds/Jub/Another Hill/Another Hill.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{4BD16CA9A567D114}worlds/Jub/Another Hill/Another Hill.ent"
     },
     "Missions/Jub/CobrasBite.conf": {
       "worlds": [
         "worlds/Jub/CobrasBite/Cobras_bite.ent"
       ],
       "declaredPath": "worlds/Jub/CobrasBite/Cobras_bite.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{67BB62D6850D45FB}worlds/Jub/CobrasBite/Cobras_bite.ent"
     },
     "Missions/Jub/CombindAntiArmorTeam.conf": {
       "worlds": [
         "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam.ent"
       ],
       "declaredPath": "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{65D6D3642BA2D5DC}worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam.ent"
     },
     "Missions/Jub/DuckHunt.conf": {
       "worlds": [
         "worlds/Jub/Duck Hunt/Duck Hunt.ent"
       ],
       "declaredPath": "worlds/Jub/Duck Hunt/Duck Hunt.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{718E70F1B875FAFB}worlds/Jub/Duck Hunt/Duck Hunt.ent"
     },
     "Missions/Jub/LightArmoredRecon.conf": {
       "worlds": [
         "worlds/Jub/LightArmoredRecon/LightArmoredRecon.ent"
       ],
       "declaredPath": "worlds/Jub/LightArmoredRecon/LightArmoredRecon.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{0A04EF216B35C42B}worlds/Jub/LightArmoredRecon/LightArmoredRecon.ent"
     },
     "Missions/Jub/MissionWithAssets.conf": {
       "worlds": [
         "worlds/Jub/MissionWithAssets/MissionWithAssets.ent"
       ],
       "declaredPath": "worlds/Jub/MissionWithAssets/MissionWithAssets.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{7F46FEF3CFFBC942}worlds/Jub/MissionWithAssets/MissionWithAssets.ent"
     },
     "Missions/Jub/OpSteel.conf": {
       "worlds": [
         "worlds/Jub/OpSteel/OpSteel.ent"
       ],
       "declaredPath": "Worlds/Jub/OpSteel/OpSteel.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{48EEEEEB359BE096}worlds/Jub/OpSteel/OpSteel.ent"
     },
     "Missions/Jub/OperationArrowheadIronCipher.conf": {
       "worlds": [
         "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher.ent"
       ],
       "declaredPath": "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{4CC0153F97F64DDC}worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher.ent"
     },
     "Missions/Jub/OperationArrowheadMulladostPass.conf": {
       "worlds": [
         "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass.ent"
       ],
       "declaredPath": "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{111B7B7F80232053}worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass.ent"
     },
     "Missions/Jub/OperationArrowheadTwoBloodyMiles.conf": {
       "worlds": [
         "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles.ent"
       ],
       "declaredPath": "worlds/Jub/OperationArrowhead2TwoBloodyMiles/OperationArrowhead2TwoBloodyMiles.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{527BD1432950EC41}worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles.ent"
     },
     "Missions/Jub/OperationJaws.conf": {
       "worlds": [
         "worlds/Jub/OperationJaws/OperationJaws.ent"
       ],
       "declaredPath": "worlds/Jub/OperationJaws/OperationJaws.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{CFD361681DEC28AD}worlds/Jub/OperationJaws/OperationJaws.ent"
     },
     "Missions/Perfk/AbadDayinKunarUS.conf": {
       "worlds": [
         "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS.ent"
       ],
       "declaredPath": "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{CD4236F4C3A4848C}worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS.ent"
     },
     "Missions/Perfk/AbadDayinKunarUSSR.conf": {
       "worlds": [
         "worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR.ent"
       ],
       "declaredPath": "worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{C3FEB4AAE54BCD6A}worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR.ent"
     },
     "Missions/Perfk/AbadDayinKunarUSTVT.conf": {
       "worlds": [
         "worlds/Perfk/AbadDayinKunarUSTVT/AbadDayinKunarUSTVT.ent"
       ],
       "declaredPath": "worlds/Perfk/AbadDayinKunarUSTVT/AbadDayinKunarUSTVT.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{566724574D2E6D5E}worlds/Perfk/AbadDayinKunarUSTVT/AbadDayinKunarUSTVT.ent"
     },
     "Missions/Perfk/NagalamTrafficJam.conf": {
       "worlds": [
         "worlds/Perfk/NagalamTrafficJam/NagalamTrafficJam.ent"
       ],
       "declaredPath": "worlds/Perfk/NagalamTrafficJam/NagalamTrafficJam.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{1120AE9C621F25EF}worlds/Perfk/NagalamTrafficJam/NagalamTrafficJam.ent"
     },
     "Missions/Perfk/PowerPlay.conf": {
       "worlds": [
         "worlds/Perfk/PowerPlay/PowerPlay.ent"
       ],
       "declaredPath": "worlds/Perfk/PowerPlay/PowerPlay.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{FBCB5532EE0BA927}worlds/Perfk/PowerPlay/PowerPlay.ent"
     },
     "Missions/Perfk/RaceDayKunar.conf": {
       "worlds": [
         "worlds/Perfk/RaceDayKunar/RaceDayKunar.ent"
       ],
       "declaredPath": "worlds/Perfk/RaceDayKunar/RaceDayKunar.ent",
-      "devHeaderAtSamePath": true
+      "devHeaderAtSamePath": true,
+      "destinationWorld": "{ECCEDC826157C1F9}worlds/Perfk/RaceDayKunar/RaceDayKunar.ent"
     },
     "Missions/Perfk/RaceDayRuha.conf": {
       "worlds": [
         "worlds/Perfk/RaceDayRuha/RaceDayRuha.ent"
       ],
       "declaredPath": "worlds/Perfk/RaceDayRuha/RaceDayRuha.ent",
-      "devHeaderAtSamePath": true
+      "devHeaderAtSamePath": true,
+      "destinationWorld": "{78993D7B5FEBDF93}worlds/Perfk/RaceDayRuha/RaceDayRuha.ent"
     },
     "Missions/Reapzr/Deadlock.conf": {
       "worlds": [
         "worlds/Reapzr/Deadlock/Deadlock.ent"
       ],
       "declaredPath": "worlds/Reapzr/Deadlock/Deadlock.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{DE14E9DDD9BFB2B1}worlds/Reapzr/Deadlock/Deadlock.ent"
     },
     "Missions/RedTheKnown/BritsAtBeauregard.conf": {
       "worlds": [
         "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard.ent"
       ],
       "declaredPath": "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{C980DF310284853D}worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard.ent"
     },
     "Missions/RedTheKnown/ChakChakChosen.conf": {
       "worlds": [
         "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen.ent"
       ],
       "declaredPath": "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{B4EE39AD58F39002}worlds/RedTheKnown/ChakChakChosen/ChakChakChosen.ent"
     },
     "Missions/RedTheKnown/DownhillStryke.conf": {
       "worlds": [
         "worlds/RedTheKnown/DownhillStryke/DownhillStryke.ent"
       ],
       "declaredPath": "worlds/RedTheKnown/DownhillStryke/DownhillStryke.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{DFBBF2B7910A5FDA}worlds/RedTheKnown/DownhillStryke/DownhillStryke.ent"
     },
     "Missions/RoseOutTheAshes/FIALeMouleRaid.conf": {
       "worlds": [
         "worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid.ent"
       ],
       "declaredPath": "worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{09DA5EFAE2B316A7}worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid.ent"
     },
     "Missions/Sasha20k_pro/Assault of thirty palms.conf": {
       "worlds": [
         "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms.ent"
       ],
       "declaredPath": "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{EF5A2D0CAED36D77}worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms.ent"
     },
     "Missions/StatusRed/GetToTheChopTank.conf": {
       "worlds": [
         "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank.ent"
       ],
       "declaredPath": "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{46DA597F602E0715}worlds/StatusRed/GetToTheChopTank/GetToTheChopTank.ent"
     },
     "Missions/StatusRed/OSITheAirfieldIncident.conf": {
       "worlds": [
         "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident.ent"
       ],
       "declaredPath": "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{FC05C25346F02EC4}worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident.ent"
     },
     "Missions/TemplateHeader.conf": {
       "worlds": [
         "worlds/TemplateMission/TemplateMission.ent"
       ],
       "declaredPath": "worlds/TemplateMission/TemplateMission.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{4F74B118840009EC}worlds/TemplateMission/TemplateMission.ent"
     },
     "Missions/TheLocalPub/BarnyardBashers.conf": {
       "worlds": [
         "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{3BD0B77A257CF381}worlds/TheLocalPub/BarnyardBashers/BarnyardBashers.ent"
     },
     "Missions/TheLocalPub/BattleOfTheBulges.conf": {
       "worlds": [
         "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{B528DD94ECAFBC5E}worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges.ent"
     },
     "Missions/TheLocalPub/BebbleIslandRaid.conf": {
       "worlds": [
         "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{C46F04A115F73350}worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid.ent"
     },
     "Missions/TheLocalPub/BlockDefenders.conf": {
       "worlds": [
         "worlds/TheLocalPub/BlockDefenders/BlockDefenders.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/BlockDefenders/BlockDefenders.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{92EE2F6986884405}worlds/TheLocalPub/BlockDefenders/BlockDefenders.ent"
     },
     "Missions/TheLocalPub/BugOut.conf": {
       "worlds": [
         "worlds/TheLocalPub/BugOut/BugOut.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/BugOut/BugOut.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{2DFFB74F07D51C97}worlds/TheLocalPub/BugOut/BugOut.ent"
     },
     "Missions/TheLocalPub/CimicHouse.conf": {
       "worlds": [
         "worlds/TheLocalPub/CimicHouse/CimicHouse.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/CimicHouse/CimicHouse.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{6E9E31D1F16C3D3F}worlds/TheLocalPub/CimicHouse/CimicHouse.ent"
     },
     "Missions/TheLocalPub/CleanHouse.conf": {
       "worlds": [
         "worlds/TheLocalPub/CleanHouse/CleanHouse.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/CleanHouse/CleanHouse.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{EA4E85DF0CED4EA9}worlds/TheLocalPub/CleanHouse/CleanHouse.ent"
     },
     "Missions/TheLocalPub/IraqiCheckpoint.conf": {
       "worlds": [
         "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{B8F7CC979E05A7CE}worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint.ent"
     },
     "Missions/TheLocalPub/IraqiCheckpoint2.conf": {
       "worlds": [
         "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{ADA7A979AD480A29}worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2.ent"
     },
     "Missions/TheLocalPub/Joutus.conf": {
       "worlds": [
         "worlds/TheLocalPub/Joutus/Joutus.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/Joutus/Joutus.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{4686580AAF58BDDF}worlds/TheLocalPub/Joutus/Joutus.ent"
     },
     "Missions/TheLocalPub/LamentinLosers.conf": {
       "worlds": [
         "worlds/TheLocalPub/LamentinLosers/LamentinLosers.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/LamentinLosers/LamentinLosers.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{E223CEC24B18A917}worlds/TheLocalPub/LamentinLosers/LamentinLosers.ent"
     },
     "Missions/TheLocalPub/LongmoorLashings.conf": {
       "worlds": [
         "worlds/TheLocalPub/LongmoorLashings/LongmoorLashings.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/LongmoorLashings/LongmoorLashings.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{15FFB74F07D5194E}worlds/TheLocalPub/LongmoorLashings/LongmoorLashings.ent"
     },
     "Missions/TheLocalPub/OilRigRangos.conf": {
       "worlds": [
         "worlds/TheLocalPub/OilRigRangos/OilRigRangos.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/OilRigRangos/OilRigRangos.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{00840EF88C54F288}worlds/TheLocalPub/OilRigRangos/OilRigRangos.ent"
     },
     "Missions/TheLocalPub/PublicEnemies.conf": {
       "worlds": [
         "worlds/TheLocalPub/PublicEnemies/PublicEnemies.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/PublicEnemies/PublicEnemies.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{F4E75BA1BAF46F2E}worlds/TheLocalPub/PublicEnemies/PublicEnemies.ent"
     },
     "Missions/TheLocalPub/QuickReactions.conf": {
       "worlds": [
         "worlds/TheLocalPub/QuickReaction/QuickReactions.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/QuickReaction/QuickReactions.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{8D5AF1ABEEB558B0}worlds/TheLocalPub/QuickReaction/QuickReactions.ent"
     },
     "Missions/TheLocalPub/RailroadReactions.conf": {
       "worlds": [
         "worlds/TheLocalPub/RailroadReactions/RailroadReactions.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/RailroadReactions/RailroadReactions.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{255F6070E7C0695E}worlds/TheLocalPub/RailroadReactions/RailroadReactions.ent"
     },
     "Missions/TheLocalPub/RapidAttack.conf": {
       "worlds": [
         "worlds/TheLocalPub/RapidAttack/RapidAttack.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/RapidAttack/RapidAttack.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{1395C050CE417167}worlds/TheLocalPub/RapidAttack/RapidAttack.ent"
     },
     "Missions/TheLocalPub/RiverStandoff.conf": {
       "worlds": [
         "worlds/TheLocalPub/RiverStandoff/RiverStandoff.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/RiverStandoff/RiverStandoff.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{5D767BF5251EE4AB}worlds/TheLocalPub/RiverStandoff/RiverStandoff.ent"
     },
     "Missions/TheLocalPub/SD01_ConvoyChaos.conf": {
       "worlds": [
         "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{54CF099AA6A2EEF0}worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos.ent"
     },
     "Missions/TheLocalPub/TakingTrenches.conf": {
       "worlds": [
         "worlds/TheLocalPub/TakingTrenches/TakingTrenches.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/TakingTrenches/TakingTrenches.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{20CACBE0D7D21595}worlds/TheLocalPub/TakingTrenches/TakingTrenches.ent"
     },
     "Missions/TheLocalPub/TopMaloHouse.conf": {
       "worlds": [
         "worlds/TheLocalPub/TopMaloHouse/TopMalohouse.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/TopMaloHouse/TopMalohouse.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{571A9159CD071C68}worlds/TheLocalPub/TopMaloHouse/TopMalohouse.ent"
     },
     "Missions/TheLocalPub/WeHateStairsExpress.conf": {
       "worlds": [
         "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{5FA57D3946DD4A89}worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress.ent"
     },
     "Missions/TheLocalPub/WetFeet.conf": {
       "worlds": [
         "worlds/TheLocalPub/WetFeet/WetFeet.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/WetFeet/WetFeet.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{1AEB491E5E4F6D05}worlds/TheLocalPub/WetFeet/WetFeet.ent"
     },
     "Missions/Til/ALittleWhileLonger.conf": {
       "worlds": [
         "worlds/Til/ALittleWhileLonger/ALittleWhileLonger.ent"
       ],
       "declaredPath": "worlds/Til/ALittleWhileLonger/ALittleWhileLonger.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{062FCE90122B59D9}worlds/Til/ALittleWhileLonger/ALittleWhileLonger.ent"
     },
     "Missions/Til/AndresBeacon.conf": {
       "worlds": [
         "worlds/Til/AndresBeacon/AndresBeacon.ent"
       ],
       "declaredPath": "worlds/Til/AndresBeacon/AndresBeacon.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{5D6EFE7616255553}worlds/Til/AndresBeacon/AndresBeacon.ent"
     },
     "Missions/Til/CompanyTeamCounterAttack.conf": {
       "worlds": [
         "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack.ent"
       ],
       "declaredPath": "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{B53C28C3BCE039A8}worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack.ent"
     },
     "Missions/Til/Countdown.conf": {
       "worlds": [
         "worlds/Til/Countdown/Countdown.ent"
       ],
       "declaredPath": "worlds/Til/Countdown/Countdown.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{BB0A3AAF45B86C1F}worlds/Til/Countdown/Countdown.ent"
     },
     "Missions/Til/DaybreakDiplomacy.conf": {
       "worlds": [
         "worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy.ent"
       ],
       "declaredPath": "worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{7B9897135359DEB6}worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy.ent"
     },
     "Missions/Til/DevilsDrive.conf": {
       "worlds": [
         "worlds/Til/DevilsDrive/DevilsDrive.ent"
       ],
       "declaredPath": "worlds/Til/DevilsDrive/DevilsDrive.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{5D4D0310E22B589E}worlds/Til/DevilsDrive/DevilsDrive.ent"
     },
     "Missions/Til/DieselPower.conf": {
       "worlds": [
         "worlds/Til/DieselPower/DieselPower.ent"
       ],
       "declaredPath": "worlds/Til/DieselPower/DieselPower.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{539E733C837FBF6E}worlds/Til/DieselPower/DieselPower.ent"
     },
     "Missions/Til/FalconsFlight.conf": {
       "worlds": [
         "worlds/Til/FalconsFlight/FalconsFlight.ent"
       ],
       "declaredPath": "worlds/Til/FalconsFlight/FalconsFlight.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{B359D2010B6E867E}worlds/Til/FalconsFlight/FalconsFlight.ent"
     },
     "Missions/Til/FarmDefense.conf": {
       "worlds": [
         "worlds/Til/FarmDefense/FarmDefense.ent"
       ],
       "declaredPath": "worlds/Til/FarmDefense/FarmDefense.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{4B17B233166E202F}worlds/Til/FarmDefense/FarmDefense.ent"
     },
     "Missions/Til/GoreyRaid.conf": {
       "worlds": [
         "worlds/Til/GoreyRaid/GoreyRaid.ent"
       ],
       "declaredPath": "worlds/Til/GoreyRaid/GoreyRaid.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{691C780E86975137}worlds/Til/GoreyRaid/GoreyRaid.ent"
     },
     "Missions/Til/GreenScreen.conf": {
       "worlds": [
         "worlds/Til/GreenScreen/GreenScreen.ent"
       ],
       "declaredPath": "worlds/Til/GreenScreen/GreenScreen.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{2236987BB81F415A}worlds/Til/GreenScreen/GreenScreen.ent"
     },
     "Missions/Til/GullBayGuns.conf": {
       "worlds": [
         "worlds/Til/GullBayGuns/GullBayGuns.ent"
       ],
       "declaredPath": "worlds/Til/GullBayGuns/GullBayGuns.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{E2FA07CE7BD8AEB6}worlds/Til/GullBayGuns/GullBayGuns.ent"
     },
     "Missions/Til/HeatherBayHarbor.conf": {
       "worlds": [
         "worlds/Til/HeatherBayHarbor/HeatherBayHarbor.ent"
       ],
       "declaredPath": "worlds/Til/HeatherBayHarbor/HeatherBayHarbor.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{0537A0EFBC6F01ED}worlds/Til/HeatherBayHarbor/HeatherBayHarbor.ent"
     },
     "Missions/Til/HueyHill.conf": {
       "worlds": [
         "worlds/Til/HueyHill/HueyHill.ent"
       ],
       "declaredPath": "worlds/Til/HueyHill/HueyHill.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{262027E20FD1794F}worlds/Til/HueyHill/HueyHill.ent"
     },
     "Missions/Til/JavoryHill.conf": {
       "worlds": [
         "worlds/Til/JavoryHill/JavoryHill.ent"
       ],
       "declaredPath": "worlds/Til/JavoryHill/JavoryHill.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{7D365E35037CC762}worlds/Til/JavoryHill/JavoryHill.ent"
     },
     "Missions/Til/JunctionJab.conf": {
       "worlds": [
         "worlds/Til/JunctionJab/JunctionJab.ent"
       ],
       "declaredPath": "worlds/Til/JunctionJab/JunctionJab.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{EE2DBE40557712DE}worlds/Til/JunctionJab/JunctionJab.ent"
     },
     "Missions/Til/JunctionJabXL.conf": {
       "worlds": [
         "worlds/Til/JunctionJabXL/JunctionJabXL.ent"
       ],
       "declaredPath": "worlds/Til/JunctionJabXL/JunctionJabXL.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{EE2DBE40557712DF}worlds/Til/JunctionJabXL/JunctionJabXL.ent"
     },
     "Missions/Til/KasselbergClamber.conf": {
       "worlds": [
         "worlds/Til/KasselbergClamber/KasselbergClamber.ent"
       ],
       "declaredPath": "worlds/Til/KasselbergClamber/KasselbergClamber.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{EB9D8336732B0E12}worlds/Til/KasselbergClamber/KasselbergClamber.ent"
     },
     "Missions/Til/KoskelankylaCrossing.conf": {
       "worlds": [
         "worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing.ent"
       ],
       "declaredPath": "worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{8845D4E8D2187E5B}worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing.ent"
     },
     "Missions/Til/MetalsMight.conf": {
       "worlds": [
         "worlds/Til/MetalsMight/MetalsMight.ent"
       ],
       "declaredPath": "worlds/Til/MetalsMight/MetalsMight.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{2A476B981689B7EE}worlds/Til/MetalsMight/MetalsMight.ent"
     },
     "Missions/Til/Metalwave.conf": {
       "worlds": [
         "worlds/Til/Metalwave/Metalwave.ent"
       ],
       "declaredPath": "worlds/Til/Metalwave/Metalwave.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{62F6D95F4EFA0962}worlds/Til/Metalwave/Metalwave.ent"
     },
     "Missions/Til/MetsalaAirfield.conf": {
       "worlds": [
         "worlds/Til/MetsalaAirfield/MetsalaAirfield.ent"
       ],
       "declaredPath": "worlds/Til/MetsalaAirfield/MetsalaAirfield.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{52F4F9BCFD1B1884}worlds/Til/MetsalaAirfield/MetsalaAirfield.ent"
     },
     "Missions/Til/OwlsPrey.conf": {
       "worlds": [
         "worlds/Til/OwlsPrey/OwlsPrey.ent"
       ],
       "declaredPath": "worlds/Til/OwlsPrey/OwlsPrey.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{43060BE6BD58243A}worlds/Til/OwlsPrey/OwlsPrey.ent"
     },
     "Missions/Til/PerelleBayPeril.conf": {
       "worlds": [
         "worlds/Til/PerelleBayPeril/PerelleBayPeril.ent"
       ],
       "declaredPath": "worlds/Til/PerelleBayPeril/PerelleBayPeril.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{C0873A0F5B4C8E81}worlds/Til/PerelleBayPeril/PerelleBayPeril.ent"
     },
     "Missions/Til/RoutePierre.conf": {
       "worlds": [
         "worlds/Til/RoutePierre/RoutePierre.ent"
       ],
       "declaredPath": "worlds/Til/RoutePierre/RoutePierre.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{E5BC48CC7021C3B9}worlds/Til/RoutePierre/RoutePierre.ent"
     },
     "Missions/Til/RouteRowan.conf": {
       "worlds": [
         "worlds/Til/RouteRowan/RouteRowan.ent"
       ],
       "declaredPath": "worlds/Til/RouteRowan/RouteRowan.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{C54B35D900B45703}worlds/Til/RouteRowan/RouteRowan.ent"
     },
     "Missions/Til/RouteTremaux.conf": {
       "worlds": [
         "worlds/Til/RouteTremaux/RouteTremaux.ent"
       ],
       "declaredPath": "worlds/Til/RouteTremaux/RouteTremaux.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{ACD8062204E2C7FC}worlds/Til/RouteTremaux/RouteTremaux.ent"
     },
     "Missions/Til/TheAdjacentWave.conf": {
       "worlds": [
         "worlds/Til/TheAdjacentWave/TheAdjacentWave.ent"
       ],
       "declaredPath": "worlds/Til/TheAdjacentWave/TheAdjacentWave.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{5736E0A9D1D26445}worlds/Til/TheAdjacentWave/TheAdjacentWave.ent"
     },
     "Missions/Til/TrenchAssault.conf": {
       "worlds": [
         "worlds/Til/TrenchAssault/TrenchAssault.ent"
       ],
       "declaredPath": "worlds/Til/TrenchAssault/TrenchAssault.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{360FED920A0A73AC}worlds/Til/TrenchAssault/TrenchAssault.ent"
     },
     "Missions/Til/TyroneThrust.conf": {
       "worlds": [
         "worlds/Til/TyroneThrust/TyroneThrust.ent"
       ],
       "declaredPath": "worlds/Til/TyroneThrust/TyroneThrust.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{D3423DC8D54D19BC}worlds/Til/TyroneThrust/TyroneThrust.ent"
     },
     "Missions/Wade/NightSeizure.conf": {
       "worlds": [
         "worlds/Wade/NightSeizure/NightSeizure.ent"
       ],
       "declaredPath": "worlds/Wade/NightSeizure/NightSeizure.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{B9234B4077C6522F}worlds/Wade/NightSeizure/NightSeizure.ent"
     },
     "Missions/Wade/TheLocalFiles.conf": {
       "worlds": [
         "worlds/Wade/TheLocalFiles/TheLocalFiles.ent"
       ],
       "declaredPath": "worlds/Wade/TheLocalFiles/TheLocalFiles.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{28EFCC5DBB854FCE}worlds/Wade/TheLocalFiles/TheLocalFiles.ent"
     },
     "Missions/Woody/COTVTXX_Karachinar_Crashout.conf": {
       "worlds": [
         "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout.ent"
       ],
       "declaredPath": "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{0ED36C6EE5435D9B}worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout.ent"
     },
     "Missions/Woody/COTVTXX_Kassel_Crashers.conf": {
       "worlds": [
         "worlds/Woody/COTVTXX_Kassel_Crashers/COTVTXX_Kassel_Crashers.ent"
       ],
       "declaredPath": "worlds/Woody/COTVTXX_Kassel_Crashers/COTVTXX_Kassel_Crashers.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{361B45D7A3EE3F73}worlds/Woody/COTVTXX_Kassel_Crashers/COTVTXX_Kassel_Crashers.ent"
     },
     "Missions/Woody/COTVTXX_Kassel_Crashers_MODERN_REDUX2.conf": {
       "worlds": [
         "worlds/Woody/COTVTXX_Kassel_Crashers_MODERN_REDUX/COTVTXX_Kassel_Crashers_MODERN_REDUX.ent"
       ],
       "declaredPath": "worlds/Woody/COTVTXX_Kassel_Crashers_MODERN_REDUX/COTVTXX_Kassel_Crashers_MODERN_REDUX.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{95DC129C49DA2DC7}worlds/Woody/COTVTXX_Kassel_Crashers_MODERN_REDUX/COTVTXX_Kassel_Crashers_MODERN_REDUX.ent"
     },
     "Missions/Woody/COTVTXX_Zavarak_Farmland.conf": {
       "worlds": [
         "worlds/Woody/COTVTXX_Zavarak_Farmland/COTVTXX_Zavarak_Farmland.ent"
       ],
       "declaredPath": "worlds/Woody/COTVTXX_Zavarak_Farmland/COTVTXX_Zavarak_Farmland.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{184DD2B863AEA495}worlds/Woody/COTVTXX_Zavarak_Farmland/COTVTXX_Zavarak_Farmland.ent"
     },
     "Missions/Woody/COXX_Funf_Wege_Lodgement.conf": {
       "worlds": [
         "worlds/Woody/COXX_Funf_Wege_Lodgement/COXX_Funf_Wege_Lodgement.ent"
       ],
       "declaredPath": "worlds/Woody/COXX_Funf_Wege_Lodgement/COXX_Funf_Wege_Lodgement.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{582D5DFAA827CC52}worlds/Woody/COXX_Funf_Wege_Lodgement/COXX_Funf_Wege_Lodgement.ent"
     },
     "Missions/Woody/COXX_Heely_Co_Peter_Raid_Part_1.conf": {
       "worlds": [
         "worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1.ent"
       ],
       "declaredPath": "worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{A71A1F6E8C93D4A2}worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1.ent"
     },
     "Missions/Woody/COXX_Hof_Lomelsberg_Flank.conf": {
       "worlds": [
         "worlds/Woody/COXX_Hof_Lomelsberg_Flank/COXX_Hof_Lomelsberg_Flank.ent"
       ],
       "declaredPath": "worlds/Woody/COXX_Hof_Lomelsberg_Flank/COXX_Hof_Lomelsberg_Flank.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{BB411D18132130CB}worlds/Woody/COXX_Hof_Lomelsberg_Flank/COXX_Hof_Lomelsberg_Flank.ent"
     },
     "Missions/Woody/COXX_Landay_Haul.conf": {
       "worlds": [
         "worlds/Woody/COXX_Landay_Haul/COXX_Landay_Haul.ent"
       ],
       "declaredPath": "worlds/Woody/COXX_Landay_Haul/COXX_Landay_Haul.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{C1A3EEB8040DFB87}worlds/Woody/COXX_Landay_Haul/COXX_Landay_Haul.ent"
     },
     "Missions/Woody/COXX_Torske_Crossing.conf": {
       "worlds": [
         "worlds/Woody/COXX_Torske_Crossing/COXX_Torske_Crossing.ent"
       ],
       "declaredPath": "worlds/Woody/COXX_Torske_Crossing/COXX_Torske_Crossing.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{E5440CC8835F9FC8}worlds/Woody/COXX_Torske_Crossing/COXX_Torske_Crossing.ent"
     },
     "Missions/Woody/TVTXX_Waterside_Punchup.conf": {
       "worlds": [
         "worlds/Woody/TVTXX_Waterside_Punchup/TVTXX_Waterside_Punchup.ent"
       ],
       "declaredPath": "worlds/Woody/TVTXX_Waterside_Punchup/TVTXX_Waterside_Punchup.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{E960440C33E347BD}worlds/Woody/TVTXX_Waterside_Punchup/TVTXX_Waterside_Punchup.ent"
     },
     "Missions/ac337/CO15_Gravette_Gamble.conf": {
       "worlds": [
         "worlds/ac337/GravetteGamble/GravetteGamble.ent"
       ],
       "declaredPath": "worlds/ac337/GravetteGamble/GravetteGamble.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{6EABC9B20AAB4D63}worlds/ac337/GravetteGamble/GravetteGamble.ent"
     },
     "Missions/anteante101/Attack of the Howlers.conf": {
       "worlds": [
         "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers.ent"
       ],
       "declaredPath": "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{5F92156547B5938B}worlds/anteante101/Attack of the Howelrs/Attack of the Howlers.ent"
     },
     "Missions/anteante101/Castle Crushers.conf": {
       "worlds": [
         "worlds/anteante101/Castle Crushers/CastleCrushers.ent"
       ],
       "declaredPath": "worlds/anteante101/Castle Crushers/CastleCrushers.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{B7794795D99959E4}worlds/anteante101/Castle Crushers/CastleCrushers.ent"
     },
     "Missions/anteante101/Its all uphill from here.conf": {
       "worlds": [
         "worlds/anteante101/Its all uphill from here/Its all uphill from here.ent"
       ],
       "declaredPath": "worlds/anteante101/Its all uphill from here/Its all uphill from here.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{17BA46B2D7A10B37}worlds/anteante101/Its all uphill from here/Its all uphill from here.ent"
     },
     "Missions/anteante101/Operation Desert Sentinel.conf": {
       "worlds": [
         "worlds/anteante101/Operation Desert Sentinel/Operation Desert Sentinel.ent"
       ],
       "declaredPath": "worlds/anteante101/Operation Desert Sentinel/Operation Desert Sentinal.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{9FED5B105679618D}worlds/anteante101/Operation Desert Sentinel/Operation Desert Sentinel.ent"
     },
     "Missions/anteante101/RoleReversal CDF edition.conf": {
       "worlds": [
         "worlds/anteante101/Role Reversal CDF edition/Role Reversal CDF edition.ent"
       ],
       "declaredPath": "worlds/anteante101/Role Reversal CDF edition/Role Reversal CDF edition.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{FB684D81E7431C2C}worlds/anteante101/Role Reversal CDF edition/Role Reversal CDF edition.ent"
     },
     "Missions/anteante101/RoleReversal.conf": {
       "worlds": [
         "worlds/anteante101/RoleReversal/RoleReversal.ent"
       ],
       "declaredPath": "worlds/anteante101/RoleReversal/RoleReversal.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{CD72FCF714A5065F}worlds/anteante101/RoleReversal/RoleReversal.ent"
     },
     "Missions/anteante101/South wind is blowing.conf": {
       "worlds": [
         "worlds/anteante101/South wind is blowing/South wind is blowing.ent"
       ],
       "declaredPath": "worlds/anteante101/South wind is blowing/South wind is blowing.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{62E19E08D663F36D}worlds/anteante101/South wind is blowing/South wind is blowing.ent"
     },
     "Missions/arc/BarnBusters.conf": {
       "worlds": [
         "worlds/arc/BarnBusters/BarnBusters.ent"
       ],
       "declaredPath": "worlds/arc/BarnBusters/BarnBusters.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{494EEAF2298F287B}worlds/arc/BarnBusters/BarnBusters.ent"
     },
     "Missions/arc/BarnBustersXS.conf": {
       "worlds": [
         "worlds/arc/BarnBustersXS/BarnBustersXS.ent"
       ],
       "declaredPath": "worlds/arc/BarnBustersXS/BarnBustersXS.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{9CF05819C869C3A4}worlds/arc/BarnBustersXS/BarnBustersXS.ent"
     },
     "Missions/arc/BrambledeepBypass.conf": {
       "worlds": [
         "worlds/arc/BrambledeepBypass/BrambledeepBypass.ent"
       ],
       "declaredPath": "worlds/arc/BrambledeepBypass/BrambledeepBypass.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{B587B01692B5BAD5}worlds/arc/BrambledeepBypass/BrambledeepBypass.ent"
     },
     "Missions/arc/BunkerBusters.conf": {
       "worlds": [
         "worlds/arc/BunkerBusters/BunkerBusters.ent"
       ],
       "declaredPath": "worlds/arc/BunkerBusters/BunkerBusters.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{3966A849C6F13CE1}worlds/arc/BunkerBusters/BunkerBusters.ent"
     },
     "Missions/arc/BunkerBustersXL.conf": {
       "worlds": [
         "worlds/arc/BunkerBustersXL/BunkerBustersXL.ent"
       ],
       "declaredPath": "worlds/arc/BunkerBustersXL/BunkerBustersXL.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{349F448073A97A46}worlds/arc/BunkerBustersXL/BunkerBustersXL.ent"
     },
     "Missions/arc/CoastalClearance.conf": {
       "worlds": [
         "worlds/arc/CoastalClearance/CoastalClearance.ent"
       ],
       "declaredPath": "worlds/arc/CoastalClearance/CoastalClearance.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{865318A6EE50568A}worlds/arc/CoastalClearance/CoastalClearance.ent"
     },
     "Missions/arc/CommandosReforged.conf": {
       "worlds": [
         "worlds/arc/CommandosReforged/CommandosReforged.ent"
       ],
       "declaredPath": "worlds/arc/CommandosReforged/CommandosReforged.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{AA3A963F6DACAD5B}worlds/arc/CommandosReforged/CommandosReforged.ent"
     },
     "Missions/arc/Compromised.conf": {
       "worlds": [
         "worlds/arc/Compromised/Compromised.ent"
       ],
       "declaredPath": "worlds/arc/Compromised/Compromised.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{5A5D21A478DA5A03}worlds/arc/Compromised/Compromised.ent"
     },
     "Missions/arc/CrashParty.conf": {
       "worlds": [
         "worlds/arc/CrashParty/CrashParty.ent"
       ],
       "declaredPath": "worlds/arc/Crash Party/CrashParty.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{9BCB932E357801CB}worlds/arc/CrashParty/CrashParty.ent"
     },
     "Missions/arc/DustyDrive.conf": {
       "worlds": [
         "worlds/arc/DustyDrive/DustyDrive.ent"
       ],
       "declaredPath": "worlds/arc/DustyDrive/DustyDrive.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{D6EDCDC42CFE2310}worlds/arc/DustyDrive/DustyDrive.ent"
     },
     "Missions/arc/DustyDrive95.conf": {
       "worlds": [
         "worlds/arc/DustyDrive95/DustyDrive95.ent"
       ],
       "declaredPath": "worlds/arc/DustyDrive95/DustyDrive95.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{66A192017E6DC2D8}worlds/arc/DustyDrive95/DustyDrive95.ent"
     },
     "Missions/arc/EFPLumberjacks.conf": {
       "worlds": [
         "worlds/arc/EFPLumberjacks/EFPLumberjacks.ent"
       ],
       "declaredPath": "worlds/arc/EFPLumberjacks/EFPLumberjacks.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{F46DC9415D2A8D76}worlds/arc/EFPLumberjacks/EFPLumberjacks.ent"
     },
     "Missions/arc/EFPStragglers.conf": {
       "worlds": [
         "worlds/arc/EFPStragglers/EFPStragglers.ent"
       ],
       "declaredPath": "worlds/arc/EFPStragglers/EFPStragglers.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{348501A2DD6CA877}worlds/arc/EFPStragglers/EFPStragglers.ent"
     },
     "Missions/arc/EasternEnvelopment.conf": {
       "worlds": [
         "worlds/arc/EasternEnvelopment/EasternEnvelopment.ent"
       ],
       "declaredPath": "worlds/arc/EasternEnvelopment/EasternEnvelopment.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{B96B136D8B3A08EE}worlds/arc/EasternEnvelopment/EasternEnvelopment.ent"
     },
     "Missions/arc/ErquyEvasion.conf": {
       "worlds": [
         "worlds/arc/ErquyEvasion/ErquyEvasion.ent"
       ],
       "declaredPath": "worlds/arc/ErquyEvasion/ErquyEvasion.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{9FFC4F9F76B14973}worlds/arc/ErquyEvasion/ErquyEvasion.ent"
     },
     "Missions/arc/FactorySiegeRedux.conf": {
       "worlds": [
         "worlds/arc/FactorySiegeRedux/FactorySiegeRedux.ent"
       ],
       "declaredPath": "worlds/arc/FactorySiegeRedux/FactorySiegeRedux.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{EFBC64965A33129F}worlds/arc/FactorySiegeRedux/FactorySiegeRedux.ent"
     },
     "Missions/arc/FightingRetreat.conf": {
       "worlds": [
         "worlds/arc/FightingRetreat/FightingRetreat.ent"
       ],
       "declaredPath": "worlds/arc/FightingRetreat/FightingRetreat.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{99ACA238B8AAB7C7}worlds/arc/FightingRetreat/FightingRetreat.ent"
     },
     "Missions/arc/FirstLightAtEden.conf": {
       "worlds": [
         "worlds/arc/FirstLightAtEden/FirstLightAtEden.ent"
       ],
       "declaredPath": "worlds/arc/FirstLightAtEden/FirstLightAtEden.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{1D4BF9C3B2A7A046}worlds/arc/FirstLightAtEden/FirstLightAtEden.ent"
     },
     "Missions/arc/ForeignExchangeStudents.conf": {
       "worlds": [
         "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents.ent"
       ],
       "declaredPath": "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{FF8BE49E7DC5C603}worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents.ent"
     },
     "Missions/arc/ForeignExchangeStudentsII.conf": {
       "worlds": [
         "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII.ent"
       ],
       "declaredPath": "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{F189FF4D5FA1DC9C}worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII.ent"
     },
     "Missions/arc/HappyCampers.conf": {
       "worlds": [
         "worlds/arc/HappyCampers/HappyCampers.ent"
       ],
       "declaredPath": "worlds/arc/HappyCampers/HappyCampers.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{3907768F4011E51E}worlds/arc/HappyCampers/HappyCampers.ent"
     },
     "Missions/arc/HeavenAndHell.conf": {
       "worlds": [
         "worlds/arc/HeavenAndHell/HeavenAndHell.ent"
       ],
       "declaredPath": "worlds/arc/HeavenAndHell/HeavenAndHell.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{1BDBC47EF51A84D3}worlds/arc/HeavenAndHell/HeavenAndHell.ent"
     },
     "Missions/arc/HotBoxes.conf": {
       "worlds": [
         "worlds/arc/HotBoxes/HotBoxes.ent"
       ],
       "declaredPath": "worlds/arc/HotBoxes/HotBoxes.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{5560326CC1E2838B}worlds/arc/HotBoxes/HotBoxes.ent"
     },
     "Missions/arc/Hunted.conf": {
       "worlds": [
         "worlds/arc/Hunted/Hunted.ent"
       ],
       "declaredPath": "worlds/arc/Hunted/Hunted.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{D9583381365E1FF5}worlds/arc/Hunted/Hunted.ent"
     },
     "Missions/arc/IndustrialMetal.conf": {
       "worlds": [
         "worlds/arc/IndustrialMetal/IndustrialMetal.ent"
       ],
       "declaredPath": "worlds/arc/IndustrialMetal/IndustrialMetal.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{B875983503E5A1AB}worlds/arc/IndustrialMetal/IndustrialMetal.ent"
     },
     "Missions/arc/IrishCheckpoint.conf": {
       "worlds": [
         "worlds/arc/IrishCheckpoint/IrishCheckpoint.ent"
       ],
       "declaredPath": "worlds/arc/IrishCheckpoint/IrishCheckpoint.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{44537F34D942EF40}worlds/arc/IrishCheckpoint/IrishCheckpoint.ent"
     },
     "Missions/arc/JEFRMCWAC.conf": {
       "worlds": [
         "worlds/arc/JEFRMCWAC/JEFRMCWAC.ent"
       ],
       "declaredPath": "worlds/arc/JEFRMCWAC/JEFRMCWAC.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{B81328C323C64DCB}worlds/arc/JEFRMCWAC/JEFRMCWAC.ent"
     },
     "Missions/arc/LastBastion.conf": {
       "worlds": [
         "worlds/arc/LastBastion/LastBastion.ent"
       ],
       "declaredPath": "worlds/arc/LastBastion/LastBastion.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{5A27A655592A50ED}worlds/arc/LastBastion/LastBastion.ent"
     },
     "Missions/arc/LeMouleApproachRedux.conf": {
       "worlds": [
         "worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux.ent"
       ],
       "declaredPath": "worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{39AFBF5961C99E60}worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux.ent"
     },
     "Missions/arc/NorthCoastRaid.conf": {
       "worlds": [
         "worlds/arc/NorthCoastRaid/NorthCoastRaid.ent"
       ],
       "declaredPath": "worlds/arc/NorthCoastRaid/NorthCoastRaid.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{C85C0D5AE1B66039}worlds/arc/NorthCoastRaid/NorthCoastRaid.ent"
     },
     "Missions/arc/PatrolTroubles.conf": {
       "worlds": [
         "worlds/arc/PatrolTroubles/PatrolTroubles.ent"
       ],
       "declaredPath": "worlds/arc/PatrolTroubles/PatrolTroubles.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{34D6E382D7F1DF21}worlds/arc/PatrolTroubles/PatrolTroubles.ent"
     },
     "Missions/arc/PirateRadio.conf": {
       "worlds": [
         "worlds/arc/PirateRadio/PirateRadio.ent"
       ],
       "declaredPath": "worlds/arc/PirateRadio/PirateRadio.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{D533486CF69739FD}worlds/arc/PirateRadio/PirateRadio.ent"
     },
     "Missions/arc/Privateering.conf": {
       "worlds": [
         "worlds/arc/Privateering/Privateering.ent"
       ],
       "declaredPath": "worlds/arc/Privateering/Privateering.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{66068F69039E3B7B}worlds/arc/Privateering/Privateering.ent"
     },
     "Missions/arc/ProvinsApproachRedux.conf": {
       "worlds": [
         "worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux.ent"
       ],
       "declaredPath": "worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{E9B3EBB5287D42E7}worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux.ent"
     },
     "Missions/arc/QuickReaction.conf": {
       "worlds": [
         "worlds/arc/QuickReaction/QuickReaction.ent"
       ],
       "declaredPath": "worlds/arc/QuickReaction/QuickReaction.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{BE75166AF5CB98D9}worlds/arc/QuickReaction/QuickReaction.ent"
     },
     "Missions/arc/RavineRuckus.conf": {
       "worlds": [
         "worlds/arc/RavineRuckus/RavineRuckus.ent"
       ],
       "declaredPath": "worlds/arc/RavineRuckus/RavineRuckus.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{761ACEFA85BA1C75}worlds/arc/RavineRuckus/RavineRuckus.ent"
     },
     "Missions/arc/Retribution.conf": {
       "worlds": [
         "worlds/arc/Retribution/Retribution.ent"
       ],
       "declaredPath": "worlds/arc/Retribution/Retribution.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{CD8AABCA03F2CB12}worlds/arc/Retribution/Retribution.ent"
     },
     "Missions/arc/ReturnOfTheWac.conf": {
       "worlds": [
         "worlds/arc/ReturnOfTheWac/ReturnOfTheWac.ent"
       ],
       "declaredPath": "worlds/arc/ReturnOfTheWac/ReturnOfTheWac.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{79D3317BEBFD6316}worlds/arc/ReturnOfTheWac/ReturnOfTheWac.ent"
     },
     "Missions/arc/RidgeRumble.conf": {
       "worlds": [
         "worlds/arc/RidgeRumble/RidgeRumble.ent"
       ],
       "declaredPath": "worlds/arc/RidgeRumble/RidgeRumble.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{938E6065DBC93383}worlds/arc/RidgeRumble/RidgeRumble.ent"
     },
     "Missions/arc/RocketScience.conf": {
       "worlds": [
         "worlds/arc/RocketScience/RocketScience.ent"
       ],
       "declaredPath": "worlds/arc/RocketScience/RocketScience.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{79064ED14BCB3E64}worlds/arc/RocketScience/RocketScience.ent"
     },
     "Missions/arc/SOBRUp.conf": {
       "worlds": [
         "worlds/arc/SOBRUp/SOBRUp.ent"
       ],
       "declaredPath": "worlds/arc/SOBRUp/SOBRUp.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{9BE9849088050747}worlds/arc/SOBRUp/SOBRUp.ent"
     },
     "Missions/arc/ShootAndScoot.conf": {
       "worlds": [
         "worlds/arc/ShootAndScoot/ShootAndScoot.ent"
       ],
       "declaredPath": "worlds/arc/ShootAndScoot/ShootAndScoot.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{5F6BBFEB3AD2F34C}worlds/arc/ShootAndScoot/ShootAndScoot.ent"
     },
     "Missions/arc/SoumontSawmill.conf": {
       "worlds": [
         "worlds/arc/SoumontSawmill/SoumontSawmill.ent"
       ],
       "declaredPath": "worlds/arc/SoumontSawmill/SoumontSawmill.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{F90DC63AB259B0EC}worlds/arc/SoumontSawmill/SoumontSawmill.ent"
     },
     "Missions/arc/StationSmashers.conf": {
       "worlds": [
         "worlds/arc/StationSmashers/StationSmashers.ent"
       ],
       "declaredPath": "worlds/arc/StationSmashers/StationSmashers.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{BDC222AF52EC81D8}worlds/arc/StationSmashers/StationSmashers.ent"
     },
     "Missions/arc/SunnyWAC.conf": {
       "worlds": [
         "worlds/arc/SunnyWAC/SunnyWAC.ent"
       ],
       "declaredPath": "worlds/arc/SunnyWAC/SunnyWAC.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{7BB33D6E48D2BD53}worlds/arc/SunnyWAC/SunnyWAC.ent"
     },
     "Missions/arc/SyrianCheckpoint.conf": {
       "worlds": [
         "worlds/arc/SyrianCheckpoint/SyrianCheckpoint.ent"
       ],
       "declaredPath": "worlds/arc/SyrianCheckpoint/SyrianCheckpoint.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{97F9BFDEDA07431D}worlds/arc/SyrianCheckpoint/SyrianCheckpoint.ent"
     },
     "Missions/arc/TheBestDefense.conf": {
       "worlds": [
         "worlds/arc/TheBestDefense/TheBestDefense.ent"
       ],
       "declaredPath": "worlds/arc/TheBestDefense/TheBestDefense.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{C52793401302BB6F}worlds/arc/TheBestDefense/TheBestDefense.ent"
     },
     "Missions/arc/TheOldWood.conf": {
       "worlds": [
         "worlds/arc/TheOldWood2024/TheOldWood2024.ent"
       ],
       "declaredPath": "worlds/arc/TheOldWood2024/TheOldWood2024.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{918DA97F6227C9F2}worlds/arc/TheOldWood2024/TheOldWood2024.ent"
     },
     "Missions/arc/TipOfTheSpear.conf": {
       "worlds": [
         "worlds/arc/TipOfTheSpear/TipOfTheSpear.ent"
       ],
       "declaredPath": "worlds/arc/TipOfTheSpear/TipOfTheSpear.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{34805D1BB83971A6}worlds/arc/TipOfTheSpear/TipOfTheSpear.ent"
     },
     "Missions/arc/TwoCheckpoints.conf": {
       "worlds": [
         "worlds/arc/TwoCheckpoints/TwoCheckpoints.ent"
       ],
       "declaredPath": "worlds/arc/TwoCheckpoints/TwoCheckpoints.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{60918A35896FC8F7}worlds/arc/TwoCheckpoints/TwoCheckpoints.ent"
     },
     "Missions/arc/UrbanTroubles.conf": {
       "worlds": [
         "worlds/arc/UrbanTroubles/UrbanTroubles.ent"
       ],
       "declaredPath": "worlds/arc/UrbanTroubles/UrbanTroubles.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{537F451744CFB46D}worlds/arc/UrbanTroubles/UrbanTroubles.ent"
     },
     "Missions/arc/VilleneufPunchupRedux.conf": {
       "worlds": [
         "worlds/arc/VilleneufPunchupRedux/VilleneufPunchupRedux.ent"
       ],
       "declaredPath": "worlds/arc/VilleneufPunchupRedux/VilleneufPunchupRedux.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{DF43635EC51DEC8A}worlds/arc/VilleneufPunchupRedux/VilleneufPunchupRedux.ent"
     },
     "Missions/arc/WateryGrave.conf": {
       "worlds": [
         "worlds/arc/WateryGrave/WateryGrave.ent"
       ],
       "declaredPath": "worlds/arc/WateryGrave/WateryGrave.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{4E25905079DE8CE8}worlds/arc/WateryGrave/WateryGrave.ent"
     },
     "Missions/arc/ZeroArcThirty.conf": {
       "worlds": [
         "worlds/arc/ZeroArcThirty/ZeroArcThirty.ent"
       ],
       "declaredPath": "worlds/arc/ZeroArcThirty/ZeroArcThirty.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{C3D9F74EB07CCDA9}worlds/arc/ZeroArcThirty/ZeroArcThirty.ent"
     },
     "Missions/blackskimask/DeadlyCrossing.conf": {
       "worlds": [
         "worlds/blackskimask/Deadly Crossing/DeadlyCrossing.ent"
       ],
       "declaredPath": "worlds/blackskimask/Deadly Crossing/DeadlyCrossing.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{C4B8B6187E756CD8}worlds/blackskimask/Deadly Crossing/DeadlyCrossing.ent"
     },
     "Missions/blackskimask/PlantAttack.conf": {
       "worlds": [
         "worlds/blackskimask/Plant Attack/PlantAttack.ent"
       ],
       "declaredPath": "worlds/blackskimask/Plant Attack/PlantAttack.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{8A802BC0E6403A23}worlds/blackskimask/Plant Attack/PlantAttack.ent"
     },
     "Missions/blackskimask/ZarichneFront.conf": {
       "worlds": [
         "worlds/blackskimask/ZarichneFront/ZarichneFront.ent"
       ],
       "declaredPath": "worlds/blackskimask/ZarichneFront/ZarichneFront.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{77BF2245E07ED898}worlds/blackskimask/ZarichneFront/ZarichneFront.ent"
     },
     "Missions/chillboy/Gigantomachia.conf": {
       "worlds": [
         "worlds/chllboy/Gigantomachia/Gigantomachia.ent"
       ],
       "declaredPath": "worlds/chllboy/Gigantomachia/Gigantomachia.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{714ABB04B13C9853}worlds/chllboy/Gigantomachia/Gigantomachia.ent"
     },
     "Missions/chillboy/Hephaestus Forge.conf": {
       "worlds": [
         "worlds/chllboy/Hephaestus Forge/Hephaestus Forge.ent"
       ],
       "declaredPath": "worlds/chllboy/Hephaestus Forge/Hephaestus Forge.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{22E75D3543B7D656}worlds/chllboy/Hephaestus Forge/Hephaestus Forge.ent"
     },
     "Missions/chillboy/Makeup.conf": {
       "worlds": [
         "worlds/chllboy/Makeup/Makeup.ent"
       ],
       "declaredPath": "worlds/chllboy/Makeup/Makeup.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{74E330896733EF8A}worlds/chllboy/Makeup/Makeup.ent"
     },
     "Missions/chillboy/Trifecta.conf": {
       "worlds": [
         "worlds/chllboy/Trifecta/Trifecta.ent"
       ],
       "declaredPath": "worlds/chllboy/Trifecta/Trifecta.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": false,
+      "destinationWorld": "{C96ECC406F91E668}worlds/chllboy/Trifecta/Trifecta.ent"
     }
   },
   "worlds": {

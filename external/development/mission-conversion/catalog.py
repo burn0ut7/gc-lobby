@@ -16,6 +16,7 @@ SOURCE_TEXT = {'.ent', '.layer', '.et', '.conf', '.layout'}
 
 class Snapshot:
     def __init__(self, repo, revision):
+        self.repo = repo
         def git(*args, **kwargs):
             return subprocess.check_output(['git', '-C', str(repo), *args], **kwargs)
 
