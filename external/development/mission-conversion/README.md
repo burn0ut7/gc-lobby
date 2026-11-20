@@ -44,6 +44,8 @@ Sources for the legacy contracts include Reforger Lobby Community's `PS_MissionD
 
 A mission is ready for the launcher once its header resolves its converted world, assets and playable slots load, and the behavior checks above have recorded outcomes. Record unavailable features by mission. A preset or a successful resource load alone does not establish mission parity.
 
+Keep mission commits local while preparing and verifying the batch. Push substantial batches of roughly ten converted missions together with their required GC Lobby and Units changes. Count mission worlds in the batch and record the remaining behavior gaps for each one.
+
 ## Reproducing the Kunar pilot and marker review
 
 Add `--include-race-day` to stage the Race Day – Kunar launcher header, world, and layers alongside its settings preset. The recipe checks the legacy rules blob before rewriting its events. The port uses the race motorbike from Units Dev commit `358ce612`. The playable world files are in Missions Dev commit `2a334cc5`.
