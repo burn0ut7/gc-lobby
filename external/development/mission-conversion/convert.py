@@ -7,6 +7,8 @@ from pathlib import Path, PurePosixPath
 
 from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
+from markers import convert_layer as convert_markers
+from race_day import race_files, WORLD as RACE_WORLD
 
 
 def main():
@@ -16,6 +18,8 @@ def main():
     parser.add_argument('--dev', default='origin/dev')
     parser.add_argument('--report', type=Path, required=True)
     parser.add_argument('--stage', type=Path, help='empty or identical output folder outside either addon')
+    parser.add_argument('--include-race-day', action='store_true', help='also generate the reviewed Kunar world recipe')
+    parser.add_argument('--stage-marker-candidates', action='store_true', help='stage icon layers for visual and asset review')
     args = parser.parse_args()
     source = Snapshot(args.missions, args.source)
     dev = Snapshot(args.missions, args.dev)
@@ -42,8 +46,20 @@ def main():
         row['headers'] = headers_by_world[world]
         report['worlds'][world] = row
         pages, gaps = [], []
+        row['markerLayers'] = {}
         for layer in source.layers[world.lower()]:
             text = source.read(layer)
+            try:
+                markers = convert_markers(text)
+                if markers:
+                    body, count = markers
+                    if layer in dev.files and dev.read(layer).strip() != body.strip():
+                        raise ValueError('Dev has different layer content')
+                    row['markerLayers'][layer] = {'candidateIcons': count}
+                    if args.stage_marker_candidates:
+                        out[layer] = body
+            except ValueError as exc:
+                row['markerLayers'][layer] = {'gap': str(exc)}
             # 9a681ab9 added the expanded notes alongside its parent's version.
             # Apply the author's newer text only to this exact committed blob.
             if source.files[layer] == '07a115a929850eee77382a911e9511d5b280d448':
@@ -81,6 +97,14 @@ def main():
                 gaps.append(str(exc))
         row['briefingGaps'] = gaps
     report['devOnlyHeaders'] = sorted(target_headers - set(report['headers']))
+    if args.include_race_day:
+        race = report['worlds'][RACE_WORLD]
+        if 'briefingModePreset' not in race:
+            parser.error('Kunar world needs a verified generated briefing preset')
+        for path, data in race_files(source).items():
+            if path in dev.files and dev.read(path).strip() != data.strip():
+                parser.error(f'Dev already has differing {path}')
+            out[path] = data
     if args.stage:
         stage = args.stage.resolve()
         if any(stage.is_relative_to(root.resolve()) for root in (args.missions, lobby)):
@@ -97,7 +121,8 @@ def main():
             target.write_bytes(contents.encode())
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_bytes((json.dumps(report, indent=2, ensure_ascii=False) + '\n').encode())
-    print(f"{len(report['headers'])} headers, {len(report['worlds'])} worlds, {len(out)//2} briefing presets")
+    presets = sum('briefingModePreset' in row for row in report['worlds'].values())
+    print(f"{len(report['headers'])} headers, {len(report['worlds'])} worlds, {presets} briefing presets")
 
 
 if __name__ == '__main__':

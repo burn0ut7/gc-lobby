@@ -37,13 +37,13 @@ def block_end(lines, start):
     raise ValueError('unterminated block')
 
 
-def page(lines, origin):
+def properties(lines, allowed):
     values = {}
     i = 0
     while i < len(lines):
         field, _, value = lines[i].strip().partition(' ')
-        if field not in ALLOWED or field in values:
-            raise ValueError('custom or duplicate description field ' + field)
+        if field not in allowed or field in values:
+            raise ValueError('custom or duplicate field ' + field)
         if value == '{':
             stop = block_end(lines, i)
             value = ' '.join(line.strip() for line in lines[i + 1:stop])
@@ -56,6 +56,11 @@ def page(lines, origin):
                 value += '\n' + lines[i].strip()
         values[field] = value
         i += 1
+    return values
+
+
+def page(lines, origin):
+    values = properties(lines, ALLOWED)
     if 'm_sDescriptionLayout' in values and not values['m_sDescriptionLayout'].startswith('"' + LAYOUT):
         raise ValueError('custom description layout')
     for key in ['m_bShowForAnyFaction', 'm_bEmptyFactionVisibility']:

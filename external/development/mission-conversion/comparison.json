@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "1686299b54c39b22229df659b9d10efd1c1a5204",
+  "target": "2a334cc578b6ab16d09b9016b5efcd6eda4603b1",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -933,7 +933,7 @@
         "worlds/Perfk/RaceDayKunar/RaceDayKunar.ent"
       ],
       "declaredPath": "worlds/Perfk/RaceDayKunar/RaceDayKunar.ent",
-      "devHeaderAtSamePath": false
+      "devHeaderAtSamePath": true
     },
     "Missions/Perfk/RaceDayRuha.conf": {
       "worlds": [
@@ -1977,6 +1977,11 @@
       "headers": [
         "Missions/Aurelas/TVT70_MontignacMeatGrind.conf"
       ],
+      "markerLayers": {
+        "worlds/Aurelas/Montignac Meat Grind/Montignac Meat Grind_Layers/Map_Markers.layer": {
+          "candidateIcons": 3
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/Aurelas/Montignac Meat Grind/Montignac Meat Grind_Layers/Briefings/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -2012,6 +2017,11 @@
       "headers": [
         "Missions/Aurelas/SpearheadAirSupport.conf"
       ],
+      "markerLayers": {
+        "worlds/Aurelas/Spearhead Air Support/SpearheadAirSupport_Layers/Map_Markers.layer": {
+          "gap": "line 2 separate unassigned audience"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Aurelas/Spearhead Air Support/SpearheadAirSupport_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -2051,6 +2061,20 @@
       "headers": [
         "Missions/Barwick/The Blood and Smoke.conf"
       ],
+      "markerLayers": {
+        "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Army/Army_Markers.layer": {
+          "candidateIcons": 1
+        },
+        "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Insurgents/Insurgent_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Seals/Seals_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/ZCity_Markers/Roadblocks_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "briefingResolution": "Expanded notes introduced in 9a681ab9",
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_GC_Settings.et",
@@ -2089,6 +2113,17 @@
       "headers": [
         "Missions/Blue/TVT98_Bangalorious.conf"
       ],
+      "markerLayers": {
+        "worlds/Blue/Bangalorious/Bangalorious_Layers/RU/RUMap.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Blue/Bangalorious/Bangalorious_Layers/US/USBrief.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Blue/Bangalorious/Bangalorious_Layers/US/USMap.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/Blue/Bangalorious/Bangalorious_Layers/RU/RUBrief.layer:1 unsupported serialized briefing string"
@@ -2127,6 +2162,14 @@
       "headers": [
         "Missions/Blue/TVT39_Direction_Found.conf"
       ],
+      "markerLayers": {
+        "worlds/Blue/DirectionFound/DirectionFound_Layers/BLUFOR/Brief.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Blue/DirectionFound/DirectionFound_Layers/OPFOR/Brief.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 14,
       "briefingModePreset": "worlds/Blue/DirectionFound/DirectionFound_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -2165,6 +2208,17 @@
       "headers": [
         "Missions/Blue/TVT66_OpportunityKnocks.conf"
       ],
+      "markerLayers": {
+        "worlds/Blue/Opportunity Knocks/OpportunityKnocks_Layers/MapMarking/BLUFORMAP.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Blue/Opportunity Knocks/OpportunityKnocks_Layers/MapMarking/GLOBAL.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Blue/Opportunity Knocks/OpportunityKnocks_Layers/MapMarking/OPFORMAP.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/Blue/Opportunity Knocks/OpportunityKnocks_Layers/MapMarking/GLOBAL.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -2204,6 +2258,17 @@
       "headers": [
         "Missions/Blue/TVT69_RUCKUSBerg.conf"
       ],
+      "markerLayers": {
+        "worlds/Blue/Ruckusberg/RuckusBerg_Layers/UK/Map.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Blue/Ruckusberg/RuckusBerg_Layers/UK/Marker_U.layer": {
+          "gap": "line 1 inherited marker preset 63BCE30CF8B65BCE"
+        },
+        "worlds/Blue/Ruckusberg/RuckusBerg_Layers/USSR/MarkersRU.layer": {
+          "gap": "line 1 inherited marker preset 60226647F08EF462"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/Blue/Ruckusberg/RuckusBerg_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -2247,6 +2312,14 @@
       "headers": [
         "Missions/Blue/SimonsAbatis.conf"
       ],
+      "markerLayers": {
+        "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/BLUFOR/Briefing_BLUFOR/Markers.layer": {
+          "candidateIcons": 5
+        },
+        "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/OPFOR/Briefing_OPFOR/Markers.layer": {
+          "candidateIcons": 11
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/default.layer:123 legacy audience needs independent unaffiliated visibility"
@@ -2288,6 +2361,14 @@
       "headers": [
         "Missions/Blue/COTVT80_TheBearWentOvertheMountainCH1S6.conf"
       ],
+      "markerLayers": {
+        "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/BRIEFINGBLUFOR.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/BRIEFINGOPFOR.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/default.layer:63 legacy audience needs independent unaffiliated visibility"
@@ -2319,6 +2400,11 @@
       "headers": [
         "Missions/Burger4606/Hush.conf"
       ],
+      "markerLayers": {
+        "worlds/Burger4606/Hush/Hush_Layers/Markers.layer": {
+          "gap": "line 2 separate unassigned audience"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Burger4606/Hush/Hush_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -2347,6 +2433,14 @@
       "headers": [
         "Missions/Burn0ut7/Farm.conf"
       ],
+      "markerLayers": {
+        "worlds/Burn0ut7/Farm/Farm_Layers/Blufor.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Burn0ut7/Farm/Farm_Layers/Opfor.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/Burn0ut7/Farm/Farm_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -2377,6 +2471,14 @@
       "headers": [
         "Missions/Burn0ut7/KillZone.conf"
       ],
+      "markerLayers": {
+        "worlds/Burn0ut7/Killzone/Killzone_Layers/opfor.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Burn0ut7/Killzone/Killzone_Layers/zblufor.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/Burn0ut7/Killzone/Killzone_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -2409,6 +2511,17 @@
       "headers": [
         "Missions/Burn0ut7/RockyRoad.conf"
       ],
+      "markerLayers": {
+        "worlds/Burn0ut7/Rocky Road/Rocky_Road_Layers/Blufor.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Burn0ut7/Rocky Road/Rocky_Road_Layers/Opfor.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Burn0ut7/Rocky Road/Rocky_Road_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/Burn0ut7/Rocky Road/Rocky_Road_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -2435,6 +2548,7 @@
       "headers": [
         "Missions/Burn0ut7/RouletteAnizay.conf"
       ],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Burn0ut7/Roulette/Anizay/Roulette_Anizay_Layers/default.layer nested description",
@@ -2462,6 +2576,7 @@
       "headers": [
         "Missions/Burn0ut7/RouletteArland.conf"
       ],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Burn0ut7/Roulette/Prefabs/Roulette_GameMode.et contains an inherited or prefab-owned briefing"
@@ -2488,6 +2603,7 @@
       "headers": [
         "Missions/Burn0ut7/RouletteBadOrb.conf"
       ],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Burn0ut7/Roulette/Prefabs/Roulette_GameMode.et contains an inherited or prefab-owned briefing"
@@ -2514,6 +2630,7 @@
       "headers": [
         "Missions/Burn0ut7/RouletteBystrany.conf"
       ],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Burn0ut7/Roulette/Prefabs/Roulette_GameMode.et contains an inherited or prefab-owned briefing"
@@ -2543,6 +2660,7 @@
       "headers": [
         "Missions/Burn0ut7/RouletteEveron.conf"
       ],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Burn0ut7/Roulette/Prefabs/Roulette_GameMode.et contains an inherited or prefab-owned briefing"
@@ -2569,6 +2687,7 @@
       "headers": [
         "Missions/Burn0ut7/RouletteKolgujev.conf"
       ],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Burn0ut7/Roulette/Prefabs/Roulette_GameMode.et contains an inherited or prefab-owned briefing"
@@ -2595,6 +2714,7 @@
       "headers": [
         "Missions/Burn0ut7/RouletteKunar.conf"
       ],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Burn0ut7/Roulette/Kunar/Roulette_Kunar_Layers/default.layer nested description"
@@ -2621,6 +2741,7 @@
       "headers": [
         "Missions/Burn0ut7/RouletteRuha.conf"
       ],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Burn0ut7/Roulette/Prefabs/Roulette_GameMode.et contains an inherited or prefab-owned briefing"
@@ -2647,6 +2768,7 @@
       "headers": [
         "Missions/Burn0ut7/RouletteTakistan.conf"
       ],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Burn0ut7/Roulette/Prefabs/Roulette_GameMode.et contains an inherited or prefab-owned briefing"
@@ -2673,6 +2795,7 @@
       "headers": [
         "Missions/Burn0ut7/RouletteZarichne.conf"
       ],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Burn0ut7/Roulette/Prefabs/Roulette_GameMode.et contains an inherited or prefab-owned briefing"
@@ -2710,6 +2833,11 @@
       "headers": [
         "Missions/Corax/BlackhawkBrawl/BlackhawkBrawl.conf"
       ],
+      "markerLayers": {
+        "worlds/Corax/BlackhawkBrawl/blackhawk_brawl_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 12,
       "briefingModePreset": "worlds/Corax/BlackhawkBrawl/blackhawk_brawl_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -2747,6 +2875,14 @@
       "headers": [
         "Missions/Corax/Breachandclear/BreachAndClear.conf"
       ],
+      "markerLayers": {
+        "worlds/Corax/Breach and clear/Breach_and_Clear_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Corax/Breach and clear/Breach_and_Clear_Layers/Fixtures.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/Corax/Breach and clear/Breach_and_Clear_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -2781,6 +2917,11 @@
       },
       "configurationOverrides": {},
       "headers": [],
+      "markerLayers": {
+        "worlds/Corax/Green mountain/Greenmountain_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 7,
       "briefingModePreset": "worlds/Corax/Green mountain/Greenmountain_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -2817,6 +2958,14 @@
       "headers": [
         "Missions/Corax/Hnevice/Hnevice.conf"
       ],
+      "markerLayers": {
+        "worlds/Corax/Hnevice/Hnevice_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Corax/Hnevice/Hnevice_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/Corax/Hnevice/Hnevice_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -2856,6 +3005,14 @@
       "headers": [
         "Missions/Corax/IntersectionForces/IntersectingForces.conf"
       ],
+      "markerLayers": {
+        "worlds/Corax/IntercectingForces/IntersectingForces_Layers/MinefieldMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Corax/IntercectingForces/IntersectingForces_Layers/unitmarkers.layer": {
+          "gap": "line 1 inherited marker preset 63BCE30CF8B65BCE"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingModePreset": "worlds/Corax/IntercectingForces/IntersectingForces_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -2885,6 +3042,11 @@
       "headers": [
         "Missions/Corax/SanSerriffeBusters/Serriff_Busters.conf"
       ],
+      "markerLayers": {
+        "worlds/Corax/SerriffBusters/SerrifBusters_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingModePreset": "worlds/Corax/SerriffBusters/SerrifBusters_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -2933,6 +3095,11 @@
       "headers": [
         "Missions/Corax/Summerdays/summerdays.conf"
       ],
+      "markerLayers": {
+        "worlds/Corax/SummerDays/SummerDays_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 3,
       "briefingModePreset": "worlds/Corax/SummerDays/SummerDays_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -2970,6 +3137,11 @@
       "headers": [
         "Missions/Corax/LooseEnds/CO57_Loose_Ends.conf"
       ],
+      "markerLayers": {
+        "worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 1,
       "briefingGaps": [
         "worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1_Layers/Briefing.layer:1 unsupported faction key list"
@@ -3024,6 +3196,11 @@
       "headers": [
         "Missions/Cunnah/A_Hop_Skip_And_A_Jump.conf"
       ],
+      "markerLayers": {
+        "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingGaps": [
         "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/BLUFOR_brief.layer:1 legacy audience needs independent unaffiliated visibility",
@@ -3068,6 +3245,11 @@
       "headers": [
         "Missions/Cunnah/Arty_Arty_Arty.conf"
       ],
+      "markerLayers": {
+        "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/Markers.layer": {
+          "candidateIcons": 9
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/default.layer:39 legacy audience needs independent unaffiliated visibility"
@@ -3118,6 +3300,11 @@
       "headers": [
         "Missions/Cunnah/coastal_cappers.conf"
       ],
+      "markerLayers": {
+        "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 12,
       "briefingGaps": [
         "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_Layers/NOTES.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -3166,6 +3353,11 @@
       "headers": [
         "Missions/Cunnah/Darwin_Hill.conf"
       ],
+      "markerLayers": {
+        "worlds/Cunnah/Darwin_Hill/Darwin_Hill_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/Cunnah/Darwin_Hill/Darwin_Hill_Layers/default.layer:114 legacy audience needs independent unaffiliated visibility"
@@ -3207,6 +3399,11 @@
       "headers": [
         "Missions/Cunnah/Local_Problems.conf"
       ],
+      "markerLayers": {
+        "worlds/Cunnah/Local_Problems/Local_Problems_Layers/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/Cunnah/Local_Problems/Local_Problems_Layers/Brief_Notes.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -3244,6 +3441,11 @@
       "headers": [
         "Missions/Cunnah/Rocky_Start.conf"
       ],
+      "markerLayers": {
+        "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/Markers.layer": {
+          "gap": "line 13 separate unassigned audience"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/default.layer:62 legacy audience needs independent unaffiliated visibility"
@@ -3278,6 +3480,11 @@
       "headers": [
         "Missions/Delfer/Grouse Hunt/Grouse Hunt.conf"
       ],
+      "markerLayers": {
+        "worlds/Delfer/Grouse_Hunt/Grouse_Hunt_Layers/Flags.layer": {
+          "gap": "line 1 inherited marker preset 63BCE30CF8B65BCE"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Delfer/Grouse_Hunt/Grouse_Hunt_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -3310,6 +3517,11 @@
       "headers": [
         "Missions/Delfer/Morning_Routine/Morning_Routine.conf"
       ],
+      "markerLayers": {
+        "worlds/Delfer/Morning_Routine/Morning_Routine_Layers/Markers.layer": {
+          "gap": "line 1 inherited marker preset 63BCE30CF8B65BCE"
+        }
+      },
       "directBriefingsRead": 17,
       "briefingGaps": [
         "worlds/Delfer/Morning_Routine/Morning_Routine_Layers/Briefinggeneral.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -3354,6 +3566,20 @@
       "headers": [
         "Missions/Delfer/Topdown/Topdown.conf"
       ],
+      "markerLayers": {
+        "worlds/Delfer/Topdown/Topdown_Layers/endcons.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Delfer/Topdown/Topdown_Layers/markers_all.layer": {
+          "gap": "line 1 inherited marker preset 676B84E0291E12D6"
+        },
+        "worlds/Delfer/Topdown/Topdown_Layers/markers_blue.layer": {
+          "gap": "line 1 inherited marker preset 676B84E0291E12D6"
+        },
+        "worlds/Delfer/Topdown/Topdown_Layers/markers_red.layer": {
+          "gap": "line 1 inherited marker preset 676B84E0291E12D6"
+        }
+      },
       "directBriefingsRead": 16,
       "briefingGaps": [
         "worlds/Delfer/Topdown/Topdown_Layers/Briefinggeneral.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -3384,6 +3610,11 @@
       "headers": [
         "Missions/Elite/ConcreteJungleV2.conf"
       ],
+      "markerLayers": {
+        "worlds/Elite/ConcreteJungle/ConcreteJungle_Layers/Markers.layer": {
+          "candidateIcons": 10
+        }
+      },
       "directBriefingsRead": 1,
       "briefingGaps": [
         "worlds/Elite/ConcreteJungle/ConcreteJungle_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -3414,6 +3645,11 @@
       "headers": [
         "Missions/Elite/DesertHeat.conf"
       ],
+      "markerLayers": {
+        "worlds/Elite/DesertHeat/DesertHeat_Layers/Markers.layer": {
+          "gap": "line 24 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 5,
       "briefingGaps": [
         "worlds/Elite/DesertHeat/DesertHeat_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -3452,6 +3688,11 @@
       "headers": [
         "Missions/Elite/PonderingThyOrb.conf"
       ],
+      "markerLayers": {
+        "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/Markers.layer": {
+          "candidateIcons": 2
+        }
+      },
       "directBriefingsRead": 7,
       "briefingGaps": [
         "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -3481,6 +3722,11 @@
       },
       "configurationOverrides": {},
       "headers": [],
+      "markerLayers": {
+        "worlds/FSM/Worlds/Co55EntreDeux_attack/CO_55EntreDeux_attack_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 7,
       "briefingModePreset": "worlds/FSM/Worlds/Co55EntreDeux_attack/CO_55EntreDeux_attack_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -3518,6 +3764,11 @@
         ]
       },
       "headers": [],
+      "markerLayers": {
+        "worlds/FSM/Worlds/TVT62ForestTrouble/TVT62ForestTrouble_Layers/markers.layer": {
+          "gap": "line 2 separate unassigned audience"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/FSM/Worlds/TVT62ForestTrouble/TVT62ForestTrouble_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -3555,6 +3806,11 @@
         ]
       },
       "headers": [],
+      "markerLayers": {
+        "worlds/FSM/Worlds/TVT66BlockBusters/TVT66BlockBusters_Layers/Framework.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/FSM/Worlds/TVT66BlockBusters/TVT66BlockBusters_Layers/Framework.layer:135 legacy audience needs independent unaffiliated visibility"
@@ -3587,6 +3843,11 @@
       "headers": [
         "Missions/FSM/TVT66ZherebetsRiverCache.conf"
       ],
+      "markerLayers": {
+        "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache_Layers/Framework.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 12,
       "briefingGaps": [
         "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache_Layers/Framework.layer:139 legacy audience needs independent unaffiliated visibility"
@@ -3624,6 +3885,11 @@
         ]
       },
       "headers": [],
+      "markerLayers": {
+        "worlds/FSM/Worlds/TVTBarrackHoldout/TVT67BarrackHoldout_Layers/Framework.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 7,
       "briefingGaps": [
         "worlds/FSM/Worlds/TVTBarrackHoldout/TVT67BarrackHoldout_Layers/Framework.layer:133 legacy audience needs independent unaffiliated visibility"
@@ -3663,6 +3929,11 @@
       "headers": [
         "Missions/FSM/TVT72UnowaldCache.conf"
       ],
+      "markerLayers": {
+        "worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache_Layers/Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_iZOrder"
+        }
+      },
       "directBriefingsRead": 7,
       "briefingGaps": [
         "worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -3690,6 +3961,7 @@
       },
       "configurationOverrides": {},
       "headers": [],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": []
     },
@@ -3706,6 +3978,7 @@
       },
       "configurationOverrides": {},
       "headers": [],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": []
     },
@@ -3722,6 +3995,7 @@
       },
       "configurationOverrides": {},
       "headers": [],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": []
     },
@@ -3741,6 +4015,7 @@
       },
       "configurationOverrides": {},
       "headers": [],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": []
     },
@@ -3782,6 +4057,11 @@
       },
       "configurationOverrides": {},
       "headers": [],
+      "markerLayers": {
+        "worlds/FloridaMan/worlds/CounterTheCounter/CounterTheCounter_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 1,
       "briefingGaps": [
         "worlds/FloridaMan/worlds/CounterTheCounter/CounterTheCounter_Layers/Briefing.layer:1 custom description layout"
@@ -3814,6 +4094,11 @@
       "headers": [
         "Missions/FloridaMan/EminentDomain.conf"
       ],
+      "markerLayers": {
+        "worlds/FloridaMan/worlds/EminentDomain/EminentDomain_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 7,
       "briefingGaps": [
         "worlds/FloridaMan/worlds/EminentDomain/EminentDomain_Layers/Briefing.layer:753 legacy audience needs independent unaffiliated visibility"
@@ -3850,6 +4135,11 @@
       "headers": [
         "Missions/FloridaMan/LostAndFound.conf"
       ],
+      "markerLayers": {
+        "worlds/FloridaMan/worlds/LostAndFound/LostAndFound_Layers/BriefingMaterials.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 1,
       "briefingGaps": [
         "worlds/FloridaMan/worlds/LostAndFound/LostAndFound_Layers/BriefingMaterials.layer:35 legacy audience needs independent unaffiliated visibility"
@@ -3898,6 +4188,11 @@
       "headers": [
         "Missions/FloridaMan/PreciousMinerals.conf"
       ],
+      "markerLayers": {
+        "worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals_Layers/systems.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingGaps": [
         "worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals_Layers/briefings/common.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -3933,6 +4228,14 @@
       "headers": [
         "Missions/Fruz/Gwotline_Bling.conf"
       ],
+      "markerLayers": {
+        "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/Opfor1/Ammo_crates.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/markers.layer": {
+          "candidateIcons": 1
+        }
+      },
       "directBriefingsRead": 12,
       "briefingModePreset": "worlds/Fruz/Gwotline Bling/Gwotline Bling_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -3972,6 +4275,17 @@
       "headers": [
         "Missions/Fruz/Korengal Vacation.conf"
       ],
+      "markerLayers": {
+        "worlds/Fruz/Korengal Vacation/Korengal Vacation_Layers/Static.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Fruz/Korengal Vacation/Korengal Vacation_Layers/insertion_points.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Fruz/Korengal Vacation/Korengal Vacation_Layers/markers.layer": {
+          "candidateIcons": 5
+        }
+      },
       "directBriefingsRead": 13,
       "briefingModePreset": "worlds/Fruz/Korengal Vacation/Korengal Vacation_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -4011,6 +4325,11 @@
       "headers": [
         "Missions/Fruz/Operation_Tampa.conf"
       ],
+      "markerLayers": {
+        "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -4051,6 +4370,14 @@
       "headers": [
         "Missions/Gabe/BlocParty/BlocParty.conf"
       ],
+      "markerLayers": {
+        "worlds/Gabe/BlocParty/BlocParty_Layers/CapZones.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Gabe/BlocParty/BlocParty_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Gabe/BlocParty/BlocParty_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -4090,6 +4417,14 @@
       "headers": [
         "Missions/Gabe/GuerrillasByDay/GuerrillasByDay.conf"
       ],
+      "markerLayers": {
+        "worlds/Gabe/GuerrillasByDay/GuerrillasByDay_Layers/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Gabe/GuerrillasByDay/GuerrillasByDay_Layers/WeaponsCaches.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/Gabe/GuerrillasByDay/GuerrillasByDay_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -4128,6 +4463,11 @@
       "headers": [
         "Missions/Gabe/IronResolve/IronResolve.conf"
       ],
+      "markerLayers": {
+        "worlds/Gabe/IronResolve/IronResolve_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Gabe/IronResolve/IronResolve_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -4169,6 +4509,11 @@
       "headers": [
         "Missions/Gabe/TVT97PowerStruggle/TVT97PowerStruggle.conf"
       ],
+      "markerLayers": {
+        "worlds/Gabe/PowerStruggle/TVT97PowerStruggle_Layers/Markers.layer": {
+          "gap": "line 1 inherited marker preset 60226647F08EF462"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingGaps": [
         "worlds/Gabe/PowerStruggle/TVT97PowerStruggle_Layers/Brief_Separatist.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -4206,6 +4551,11 @@
       "headers": [
         "Missions/Gabe/TVT66TheHillsHaveEyes.conf"
       ],
+      "markerLayers": {
+        "worlds/Gabe/TheHillsHaveEyes/TheHillsHaveEyes_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/Gabe/TheHillsHaveEyes/TheHillsHaveEyes_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -4244,6 +4594,11 @@
       "headers": [
         "Missions/Gabe/TVT50ZavarakSlums/TVT50ZavarakSlums.conf"
       ],
+      "markerLayers": {
+        "worlds/Gabe/ZavarakSlums/TVT50ZavarakSlums_Layers/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/Gabe/ZavarakSlums/TVT50ZavarakSlums_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -4294,6 +4649,11 @@
       "headers": [
         "Missions/HelloCam3/CO63_Stashed_Cache_v2.conf"
       ],
+      "markerLayers": {
+        "worlds/HelloCam3/worlds/COOP_StashedCache/COOP_StashedCache_v2_Layers/mapmarkers.layer": {
+          "candidateIcons": 7
+        }
+      },
       "directBriefingsRead": 6,
       "briefingModePreset": "worlds/HelloCam3/worlds/COOP_StashedCache/COOP_StashedCache_v2_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -4331,6 +4691,17 @@
       "headers": [
         "Missions/HitTheMan/2nd Break The Line/2ndBreakTheLine.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_Layers/BLUFOR/MortarStrikes.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_Layers/CORE/Markers_2nd.layer": {
+          "gap": "line 13 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_Layers/CORE/Markers_3rd.layer": {
+          "gap": "line 13 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -4368,6 +4739,17 @@
       "headers": [
         "Missions/HitTheMan/3rd Break The Line/3rdBreakTheLine.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/BLUFOR/BLU_AI_Forward_Trench_98xAI.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/CORE/Markers_2nd.layer": {
+          "gap": "line 13 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/CORE/Markers_3rd.layer": {
+          "gap": "line 13 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -4450,6 +4832,17 @@
       "headers": [
         "Missions/HitTheMan/Air Assault Onto Skalisty/AirAssaultOntoSkalisty.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 13,
       "briefingGaps": [
         "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/CORE/All_Brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -4484,6 +4877,11 @@
       "headers": [
         "Missions/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol_Layers/Players/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingModePreset": "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -4534,6 +4932,20 @@
       "headers": [
         "Missions/HitTheMan/BMP Incursion/BMPIncursion.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/BMP Incursion/BMPIncursion_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/BMP Incursion/BMPIncursion_Layers/CORE/All_Markers.layer": {
+          "gap": "line 1 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/BMP Incursion/BMPIncursion_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/BMP Incursion/BMPIncursion_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/BMP Incursion/BMPIncursion_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -4574,6 +4986,20 @@
       "headers": [
         "Missions/HitTheMan/Battalion Breakthrough/BattalionBreakthrough.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/CORE/All_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/Players_Soviets/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/Players_UK/UK_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/Players_UK/UK_Players.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 16,
       "briefingModePreset": "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -4620,6 +5046,20 @@
       "headers": [
         "Missions/HitTheMan/Battle For Rasman/BattleForRasman.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/Core/Props.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/TAK_Players/TAK_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/US_Players/US_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Battle For Rasman/BattleForRasman_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -4663,6 +5103,26 @@
         ]
       },
       "headers": [],
+      "markerLayers": {
+        "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/CORE/Props.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/CORE/Pub_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/NVA_Players/NVA_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/NVA_Players/NVA_Players.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/US_Players/US_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -4709,6 +5169,20 @@
       "headers": [
         "Missions/HitTheMan/Battle For Zarichne/BattleForZarichne.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/CORE/Pub_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/NVA_Players/NVA_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/US_Players/US_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -4786,6 +5260,17 @@
       "headers": [
         "Missions/HitTheMan/Beach Holiday to Mineraly/BeachHolidaytoMineraly.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -4824,6 +5309,11 @@
       "headers": [
         "Missions/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay_Layers/US_Players/US_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingModePreset": "worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -4864,6 +5354,17 @@
       "headers": [
         "Missions/HitTheMan/Brambledeep Adventure/BrambledeepAdventure.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Brambledeep Adventure/BrambledeepAdventure_Layers/CORE/All_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Brambledeep Adventure/BrambledeepAdventure_Layers/Players_Soviets/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Brambledeep Adventure/BrambledeepAdventure_Layers/Players_UK/UK_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Brambledeep Adventure/BrambledeepAdventure_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -4910,6 +5411,17 @@
       "headers": [
         "Missions/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov_Layers/CORE/All_Markers.layer": {
+          "gap": "line 1 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -4950,6 +5462,17 @@
       "headers": [
         "Missions/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo_Layers/CORE/All_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -4989,6 +5512,17 @@
       "headers": [
         "Missions/HitTheMan/Clearing The Path/ClearingThePath.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Clearing The Path/ClearingThePath_Layers/CORE/All_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Clearing The Path/ClearingThePath_Layers/Players_Soviets/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Clearing The Path/ClearingThePath_Layers/Players_UK/UK_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Clearing The Path/ClearingThePath_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5026,6 +5560,11 @@
         ]
       },
       "headers": [],
+      "markerLayers": {
+        "worlds/HitTheMan/Damn The Dam/Damn the Dam_Layers/Markers.layer": {
+          "candidateIcons": 5
+        }
+      },
       "directBriefingsRead": 6,
       "briefingGaps": [
         "worlds/HitTheMan/Damn The Dam/Damn the Dam_Layers/BLI_Briefings.layer:1 unsupported faction key list"
@@ -5067,6 +5606,17 @@
       "headers": [
         "Missions/HitTheMan/Devils Crossing/DevilsCrossing.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Devils Crossing/DevilsCrossing_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/Devils Crossing/DevilsCrossing_Layers/CORE/All_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Devils Crossing/DevilsCrossing_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 16,
       "briefingModePreset": "worlds/HitTheMan/Devils Crossing/DevilsCrossing_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5108,6 +5658,14 @@
       "headers": [
         "Missions/HitTheMan/Encircled NVA/EncircledNVA.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Encircled NVA/EncircledNVA_Layers/CORE/All_Brief.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/Encircled NVA/EncircledNVA_Layers/CORE/Teleports_Outwards.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Encircled NVA/EncircledNVA_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5149,6 +5707,17 @@
       "headers": [
         "Missions/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon_Layers/NVA_Players/NVA_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_iZOrder"
+        },
+        "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon_Layers/US_Players/US_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5189,6 +5758,23 @@
       "headers": [
         "Missions/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/CORE/Pub_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/NVA_Players/NVA_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/NVA_Players/NVA_Players.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/US_Players/US_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5228,6 +5814,20 @@
       "headers": [
         "Missions/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/CDF_Players/CDF_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/CORE/Pub_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/SEP_Players/SEP_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingModePreset": "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5267,6 +5867,14 @@
       "headers": [
         "Missions/HitTheMan/Green Hill Military Assault/GreenHillAssault.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Green Hill Assault/GreenHillAssault_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Green Hill Assault/GreenHillAssault_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 16,
       "briefingModePreset": "worlds/HitTheMan/Green Hill Assault/GreenHillAssault_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5305,6 +5913,14 @@
       "headers": [
         "Missions/HitTheMan/Hall Boss Mines/HallBossMines.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Hall Boss Mines/HallBossMines_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Hall Boss Mines/HallBossMines_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 1 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Hall Boss Mines/HallBossMines_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5343,6 +5959,14 @@
       "headers": [
         "Missions/HitTheMan/Hall Boss/HallBoss.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Hall Boss/HallBoss_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Hall Boss/HallBoss_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 1 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Hall Boss/HallBoss_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5373,6 +5997,11 @@
       },
       "configurationOverrides": {},
       "headers": [],
+      "markerLayers": {
+        "worlds/HitTheMan/Leaf and The Saw/Leaf and Saw_Layers/Markers.layer": {
+          "candidateIcons": 9
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Leaf and The Saw/Leaf and Saw_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5403,6 +6032,11 @@
       },
       "configurationOverrides": {},
       "headers": [],
+      "markerLayers": {
+        "worlds/HitTheMan/Leaf and Two Bridges/Leaf and Two Bridges_Layers/Markers.layer": {
+          "candidateIcons": 9
+        }
+      },
       "directBriefingsRead": 16,
       "briefingModePreset": "worlds/HitTheMan/Leaf and Two Bridges/Leaf and Two Bridges_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5436,6 +6070,11 @@
       },
       "configurationOverrides": {},
       "headers": [],
+      "markerLayers": {
+        "worlds/HitTheMan/Mechanized Leaf/MechanizedLeaf_Layers/Markers.layer": {
+          "candidateIcons": 6
+        }
+      },
       "directBriefingsRead": 9,
       "briefingModePreset": "worlds/HitTheMan/Mechanized Leaf/MechanizedLeaf_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -5479,6 +6118,20 @@
       "headers": [
         "Missions/HitTheMan/Mountainous Mujahideen/MountainousMujahideen.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/CDF_Players/CDF_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/CORE/Pub_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/SEP_Players/SEP_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingModePreset": "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5523,6 +6176,17 @@
       "headers": [
         "Missions/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence_Layers/CORE/All_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5562,6 +6226,17 @@
       "headers": [
         "Missions/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice_Layers/CORE/All_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5597,6 +6272,14 @@
       },
       "configurationOverrides": {},
       "headers": [],
+      "markerLayers": {
+        "worlds/HitTheMan/River Crossing Leaf/River Crossing Leaf_Layers/Markers.layer": {
+          "gap": "line 46 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/River Crossing Leaf/River Crossing Leaf_Layers/OPF_Markers.layer": {
+          "candidateIcons": 22
+        }
+      },
       "directBriefingsRead": 16,
       "briefingModePreset": "worlds/HitTheMan/River Crossing Leaf/River Crossing Leaf_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5638,6 +6321,17 @@
       "headers": [
         "Missions/HitTheMan/Ruinous Defence/RuinousDefence.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/CORE/All_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingGaps": [
         "worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/CORE/All_Brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -5675,6 +6369,11 @@
       "headers": [
         "Missions/HitTheMan/Screening The Orb/ScreeningTheOrb.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/CORE/Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 6,
       "briefingGaps": [
         "worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/CORE/Briefing_NVA.layer:1 unsupported faction key list"
@@ -5737,6 +6436,17 @@
       "headers": [
         "Missions/HitTheMan/Seeder Cold War Domination/ColdWarDomination.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_Layers/CORE/All_Markers.layer": {
+          "gap": "line 1 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 14,
       "briefingModePreset": "worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5791,6 +6501,23 @@
       "headers": [
         "Missions/HitTheMan/Stealthing Into Villa/StealthingIntoVilla.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla_Layers/CORE/ObjMarkers.layer": {
+          "gap": "line 2 custom or duplicate field m_iZOrder"
+        },
+        "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla_Layers/CORE/Random_Caches.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla_Layers/CORE/Teleports_Outwards.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 21,
       "briefingModePreset": "worlds/HitTheMan/Stealthing Into Villa/StealthingIntoVilla_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5831,6 +6558,20 @@
       "headers": [
         "Missions/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_Layers/CORE/All_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_Layers/Players_Canadians/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_Layers/Players_Soviets/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_Layers/Players_UK/UK_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 21,
       "briefingModePreset": "worlds/HitTheMan/The Commowealth Joint Operation/TheCommowealthJointOperation_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5894,6 +6635,14 @@
       "headers": [
         "Missions/HitTheMan/Urdarnik Assault/UdarnikAssault.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingModePreset": "worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -5942,6 +6691,20 @@
       "headers": [
         "Missions/HitTheMan/VDV Blockade/VDVBlockadeEvent.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/CORE/All_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/Players_Soviets/OPFOR_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/Players_Soviets/OPFOR_Players.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/Players_UK/UK_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 16,
       "briefingModePreset": "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5976,6 +6739,20 @@
       "headers": [
         "Missions/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/CORE/All_Markers.layer": {
+          "gap": "line 1 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 16,
       "briefingModePreset": "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -6010,6 +6787,17 @@
       "headers": [
         "Missions/HitTheMan/VDV Leads The Way/VDVLeadsTheWay.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_Layers/OPFOR_Players/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -6049,6 +6837,17 @@
       "headers": [
         "Missions/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn_Layers/CORE/All_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn_Layers/Players_Soviets/OPFOR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn_Layers/Players_UK/UK_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -6090,6 +6889,20 @@
       "headers": [
         "Missions/HitTheMan/Woodys Horse Track/WoodysHorseTrack.conf"
       ],
+      "markerLayers": {
+        "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack_Layers/CORE/All_Brief.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack_Layers/CORE/Teleports_Outwards.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack_Layers/NVA_Players/NVA_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_iZOrder"
+        },
+        "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -6132,6 +6945,11 @@
       "headers": [
         "Missions/Hot Mic/AssadsLastStandV2.conf"
       ],
+      "markerLayers": {
+        "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -6195,6 +7013,11 @@
       "headers": [
         "Missions/Hot Mic/AssaultOnRasmanMilitaryBase.conf"
       ],
+      "markerLayers": {
+        "worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 3,
       "briefingGaps": [
         "worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase_Layers/Briefing.layer:1 custom description layout"
@@ -6237,6 +7060,11 @@
       "headers": [
         "Missions/Hot Mic/DelayingActionRuhaPlatoon.conf"
       ],
+      "markerLayers": {
+        "worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon_Layers/Briefings.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon_Layers/Briefings.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -6275,6 +7103,17 @@
       "headers": [
         "Missions/Hot Mic/FightForUSSConcrete.conf"
       ],
+      "markerLayers": {
+        "worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete_Layers/Bluefor/Briefings.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete_Layers/Redfor/Briefings.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 6,
       "briefingGaps": [
         "worlds/HotMic/FightForUSSConcrete/FightForUSSConcrete_Layers/Briefings.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -6332,6 +7171,26 @@
       "headers": [
         "Missions/Hot Mic/OperationConcreteCrushers.conf"
       ],
+      "markerLayers": {
+        "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/Bluefor/Briefings.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/PhaseTwoRedfor/Lamentin.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/PhaseTwoRedfor/Montignac.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/PhaseTwoRedfor/Morton.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/PhaseTwoRedfor/StPhilipe.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/PhaseTwoRedfor/StPierre.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/Bluefor/Briefings.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -6384,6 +7243,11 @@
       "headers": [
         "Missions/Hot Mic/StopTheFOODMarketAtKunar.conf"
       ],
+      "markerLayers": {
+        "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/GreenFor/Briefings.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 1,
       "briefingGaps": [
         "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/GreenFor/Briefings.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -6426,6 +7290,11 @@
       "headers": [
         "Missions/Hot Mic/SupplySecureAtMontignac.conf"
       ],
+      "markerLayers": {
+        "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -6472,6 +7341,11 @@
       "headers": [
         "Missions/Hot Mic/VehicleInterdictionAtKunarCOOP.conf"
       ],
+      "markerLayers": {
+        "worlds/HotMic/VehicleInterdictionCOOPKunar/VehicleInterdictionCOOPKunar_Layers/Briefings.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 6,
       "briefingGaps": [
         "worlds/HotMic/VehicleInterdictionCOOPKunar/VehicleInterdictionCOOPKunar_Layers/Briefings.layer:1 custom description layout"
@@ -6505,6 +7379,14 @@
       "headers": [
         "Missions/Huska/MortonBay.conf"
       ],
+      "markerLayers": {
+        "worlds/Huska/MortonBay/MortonBay_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Huska/MortonBay/MortonBay_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Huska/MortonBay/MortonBay_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -6535,6 +7417,11 @@
       "headers": [
         "Missions/Huska/WindyGoat.conf"
       ],
+      "markerLayers": {
+        "worlds/Huska/WindyGoat/WindyGoat_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 4,
       "briefingGaps": [
         "worlds/Huska/WindyGoat/WindyGoat_Layers/Briefing.layer:1 unsupported faction key list"
@@ -6562,6 +7449,17 @@
       "headers": [
         "Missions/IronFunnelEvent/MSN1.conf"
       ],
+      "markerLayers": {
+        "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/NATO_mapmarkers.layer": {
+          "gap": "line 2 custom or duplicate field {"
+        },
+        "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/PACT_mapmarkers.layer": {
+          "candidateIcons": 8
+        },
+        "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/mapmarkers.layer": {
+          "candidateIcons": 3
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -6584,6 +7482,17 @@
       "headers": [
         "Missions/IronFunnelEvent/MSN2.conf"
       ],
+      "markerLayers": {
+        "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/BLUFOR/BriefingBLUFOR.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/MissionCore/EMPTYFACBRIEF.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/OPFOR/BriefingOPFOR.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/MissionCore/EMPTYFACBRIEF.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -6621,6 +7530,11 @@
       "headers": [
         "Missions/IronFunnelEvent/MSN3.conf"
       ],
+      "markerLayers": {
+        "worlds/IronFunnelEvent/MSN3/SovietLevies_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/IronFunnelEvent/MSN3/SovietLevies_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -6665,6 +7579,17 @@
       "headers": [
         "Missions/James/BootnecksAndBTRs.conf"
       ],
+      "markerLayers": {
+        "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs_Layers/uk_markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        },
+        "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs_Layers/ussr_markers.layer": {
+          "candidateIcons": 2
+        }
+      },
       "directBriefingsRead": 13,
       "briefingModePreset": "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -6702,6 +7627,17 @@
       "headers": [
         "Missions/James/FuckDitchesGetMoney.conf"
       ],
+      "markerLayers": {
+        "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney_Layers/blu.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney_Layers/red.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/James/FuckDitchesGetMoney/FuckDitchesGetMoney_Layers/default.layer:27 legacy audience needs independent unaffiliated visibility"
@@ -6738,6 +7674,11 @@
         ]
       },
       "headers": [],
+      "markerLayers": {
+        "worlds/James/IDidntStealThisConcept/IDidntStealThisConcept_Layers/Misc.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/James/IDidntStealThisConcept/IDidntStealThisConcept_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -6775,6 +7716,17 @@
       "headers": [
         "Missions/James/JavoryPrelude.conf"
       ],
+      "markerLayers": {
+        "worlds/James/JavoryPrelude/JavoryPrelude_Layers/blu.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/James/JavoryPrelude/JavoryPrelude_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/James/JavoryPrelude/JavoryPrelude_Layers/red.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingGaps": [
         "worlds/James/JavoryPrelude/JavoryPrelude_Layers/default.layer:61 legacy audience needs independent unaffiliated visibility"
@@ -6818,6 +7770,11 @@
       "headers": [
         "Missions/James/KhandarClearance.conf"
       ],
+      "markerLayers": {
+        "worlds/James/KhandarClearance/KhandarClearance_Layers/brief.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 7,
       "briefingModePreset": "worlds/James/KhandarClearance/KhandarClearance_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -6855,6 +7812,11 @@
       "headers": [
         "Missions/James/LacourtManor.conf"
       ],
+      "markerLayers": {
+        "worlds/James/LacourtManor/LacourtManor_Layers/misc.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingModePreset": "worlds/James/LacourtManor/LacourtManor_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -6898,6 +7860,17 @@
       "headers": [
         "Missions/James/LehtoTussle.conf"
       ],
+      "markerLayers": {
+        "worlds/James/LehtoTussle/LehtoTussle_Layers/blu_markers.layer": {
+          "gap": "line 2 custom or duplicate field m_iZOrder"
+        },
+        "worlds/James/LehtoTussle/LehtoTussle_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/James/LehtoTussle/LehtoTussle_Layers/red_markers.layer": {
+          "candidateIcons": 2
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/James/LehtoTussle/LehtoTussle_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -6933,6 +7906,14 @@
       "headers": [
         "Missions/James/OrbSturm.conf"
       ],
+      "markerLayers": {
+        "worlds/James/OrbSturm/OrbSturm_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/James/OrbSturm/OrbSturm_Layers/minefield_markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingModePreset": "worlds/James/OrbSturm/OrbSturm_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -6971,6 +7952,14 @@
       "headers": [
         "Missions/James/RichahlamRumble.conf"
       ],
+      "markerLayers": {
+        "worlds/James/RichahlamRumble/RichahlamRumble_Layers/insurgent_brief.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/James/RichahlamRumble/RichahlamRumble_Layers/ussr_brief.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingModePreset": "worlds/James/RichahlamRumble/RichahlamRumble_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -7008,6 +7997,17 @@
       "headers": [
         "Missions/James/TorskeTussle.conf"
       ],
+      "markerLayers": {
+        "worlds/James/TorskeTussle/TorskeTussle_Layers/blu.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/James/TorskeTussle/TorskeTussle_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/James/TorskeTussle/TorskeTussle_Layers/red.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/James/TorskeTussle/TorskeTussle_Layers/default.layer:25 legacy audience needs independent unaffiliated visibility"
@@ -7045,6 +8045,11 @@
       "headers": [
         "Missions/Jub/AlHadraRumble.conf"
       ],
+      "markerLayers": {
+        "worlds/Jub/ALHADRA RUMBLE/ALHADRA RUMBLE_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 14,
       "briefingModePreset": "worlds/Jub/ALHADRA RUMBLE/ALHADRA RUMBLE_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -7082,6 +8087,14 @@
       "headers": [
         "Missions/Jub/Another Hill/Another Hill.conf"
       ],
+      "markerLayers": {
+        "worlds/Jub/Another Hill/Another Hill_Layers/Markers.layer": {
+          "candidateIcons": 4
+        },
+        "worlds/Jub/Another Hill/Another Hill_Layers/Markers_ARG.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 5,
       "briefingModePreset": "worlds/Jub/Another Hill/Another Hill_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -7121,6 +8134,11 @@
       "headers": [
         "Missions/Jub/CobrasBite.conf"
       ],
+      "markerLayers": {
+        "worlds/Jub/CobrasBite/Cobras_bite_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 2,
       "briefingGaps": [
         "worlds/Jub/CobrasBite/Cobras_bite_Layers/briefing.layer:1 unexpected grouped instance"
@@ -7161,6 +8179,11 @@
       "headers": [
         "Missions/Jub/CombindAntiArmorTeam.conf"
       ],
+      "markerLayers": {
+        "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/Markers.layer": {
+          "candidateIcons": 7
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -7198,6 +8221,11 @@
       "headers": [
         "Missions/Jub/DuckHunt.conf"
       ],
+      "markerLayers": {
+        "worlds/Jub/Duck Hunt/Duck Hunt_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 2,
       "briefingModePreset": "worlds/Jub/Duck Hunt/Duck Hunt_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -7234,6 +8262,11 @@
       "headers": [
         "Missions/Jub/LightArmoredRecon.conf"
       ],
+      "markerLayers": {
+        "worlds/Jub/LightArmoredRecon/LightArmoredRecon_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 6,
       "briefingModePreset": "worlds/Jub/LightArmoredRecon/LightArmoredRecon_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -7271,6 +8304,11 @@
       "headers": [
         "Missions/Jub/MissionWithAssets.conf"
       ],
+      "markerLayers": {
+        "worlds/Jub/MissionWithAssets/MissionWithAssets_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/Jub/MissionWithAssets/MissionWithAssets_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -7308,6 +8346,11 @@
       "headers": [
         "Missions/Jub/OpSteel.conf"
       ],
+      "markerLayers": {
+        "worlds/Jub/OpSteel/OpSteel_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/Jub/OpSteel/OpSteel_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -7354,6 +8397,11 @@
       "headers": [
         "Missions/Jub/OperationArrowheadIronCipher.conf"
       ],
+      "markerLayers": {
+        "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/SYSTEMS/AllMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 6,
       "briefingGaps": [
         "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -7405,6 +8453,11 @@
       "headers": [
         "Missions/Jub/OperationArrowheadMulladostPass.conf"
       ],
+      "markerLayers": {
+        "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -7444,6 +8497,11 @@
       "headers": [
         "Missions/Jub/OperationArrowheadTwoBloodyMiles.conf"
       ],
+      "markerLayers": {
+        "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles_Layers/Markers.layer": {
+          "candidateIcons": 10
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -7491,6 +8549,14 @@
       "headers": [
         "Missions/Jub/OperationJaws.conf"
       ],
+      "markerLayers": {
+        "worlds/Jub/OperationJaws/OperationJaws_Layers/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Jub/OperationJaws/OperationJaws_Layers/OBJs.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 13,
       "briefingModePreset": "worlds/Jub/OperationJaws/OperationJaws_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -7531,6 +8597,17 @@
       "headers": [
         "Missions/Perfk/AbadDayinKunarUS.conf"
       ],
+      "markerLayers": {
+        "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/BLUFOR/BLUFOR_Markers.layer": {
+          "gap": "line 12 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/CORE/ALL_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/OPFOR/OPFOR_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/BLUFOR/BLUFOR_Brief.layer:1 custom description layout",
@@ -7573,6 +8650,17 @@
       "headers": [
         "Missions/Perfk/AbadDayinKunarUSSR.conf"
       ],
+      "markerLayers": {
+        "worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR_Layers/CORE/ALL_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR_Layers/OPFOR/OPFOR_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR_Layers/USSR/USSR_Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 4,
       "briefingGaps": [
         "worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR_Layers/CORE/ALL_Brief.layer:1 custom description layout",
@@ -7621,6 +8709,17 @@
       "headers": [
         "Missions/Perfk/AbadDayinKunarUSTVT.conf"
       ],
+      "markerLayers": {
+        "worlds/Perfk/AbadDayinKunarUSTVT/AbadDayinKunarUSTVT_Layers/BLUFOR/BLUFOR_Markers.layer": {
+          "gap": "line 12 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/Perfk/AbadDayinKunarUSTVT/AbadDayinKunarUSTVT_Layers/CORE/ALL_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Perfk/AbadDayinKunarUSTVT/AbadDayinKunarUSTVT_Layers/OPFOR/OPFOR_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Perfk/AbadDayinKunarUSTVT/AbadDayinKunarUSTVT_Layers/BLUFOR/BLUFOR_Brief.layer:1 custom description layout",
@@ -7680,6 +8779,11 @@
       "headers": [
         "Missions/Perfk/NagalamTrafficJam.conf"
       ],
+      "markerLayers": {
+        "worlds/Perfk/NagalamTrafficJam/NagalamTrafficJam_Layers/Blufor/Blufor_Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 1,
       "briefingGaps": [
         "worlds/Perfk/NagalamTrafficJam/NagalamTrafficJam_Layers/ANA/ANA_Briefing.layer:1 custom description layout",
@@ -7763,6 +8867,14 @@
       "headers": [
         "Missions/Perfk/PowerPlay.conf"
       ],
+      "markerLayers": {
+        "worlds/Perfk/PowerPlay/PowerPlay_Layers/BLUFOR/Modern/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Perfk/PowerPlay/PowerPlay_Layers/OPFOR/AI/SingleGuard.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 1,
       "briefingGaps": [
         "worlds/Perfk/PowerPlay/PowerPlay_Layers/BLUFOR/Modern/Briefing.layer:5 custom description layout",
@@ -7772,7 +8884,9 @@
     "worlds/Perfk/RaceDayKunar/RaceDayKunar.ent": {
       "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 9
+        "absent": 1,
+        "changed": 3,
+        "identical": 5
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -7797,6 +8911,7 @@
       "headers": [
         "Missions/Perfk/RaceDayKunar.conf"
       ],
+      "markerLayers": {},
       "directBriefingsRead": 1,
       "briefingModePreset": "worlds/Perfk/RaceDayKunar/RaceDayKunar_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -7833,6 +8948,11 @@
       "headers": [
         "Missions/Perfk/RaceDayRuha.conf"
       ],
+      "markerLayers": {
+        "worlds/Perfk/RaceDayRuha/RaceDayRuha_Layers/Helicopterarea.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 1,
       "briefingModePreset": "worlds/Perfk/RaceDayRuha/RaceDayRuha_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -7873,6 +8993,11 @@
       "headers": [
         "Missions/Reapzr/Deadlock.conf"
       ],
+      "markerLayers": {
+        "worlds/Reapzr/Deadlock/Deadlock_Layers/Markers.layer": {
+          "candidateIcons": 5
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Reapzr/Deadlock/Deadlock_Layers/Briefings.layer:1 legacy audience needs independent unaffiliated visibility",
@@ -7914,6 +9039,20 @@
       "headers": [
         "Missions/RedTheKnown/BritsAtBeauregard.conf"
       ],
+      "markerLayers": {
+        "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_Layers/Markers/Markers_All.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_Layers/Markers/Markers_BAF.layer": {
+          "candidateIcons": 4
+        },
+        "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_Layers/Markers/Markers_Opfor.layer": {
+          "candidateIcons": 8
+        },
+        "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_Layers/Markers/TimberPathCover.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 16,
       "briefingGaps": [
         "worlds/RedTheKnown/BritsAtBeauregard/BritsAtBeauregard_Layers/Breifings/breif_opfor.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -7953,6 +9092,17 @@
       "headers": [
         "Missions/RedTheKnown/ChakChakChosen.conf"
       ],
+      "markerLayers": {
+        "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen_Layers/Markers/MarkersALL.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen_Layers/Markers/MarkersRebels.layer": {
+          "candidateIcons": 4
+        },
+        "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen_Layers/Markers/MarkersTKA.layer": {
+          "candidateIcons": 4
+        }
+      },
       "directBriefingsRead": 14,
       "briefingModePreset": "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -7998,6 +9148,17 @@
       "headers": [
         "Missions/RedTheKnown/DownhillStryke.conf"
       ],
+      "markerLayers": {
+        "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/Markers/MarksALL.layer": {
+          "gap": "line 2 separate unassigned audience"
+        },
+        "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/Markers/MarksSEP.layer": {
+          "gap": "line 232 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/Markers/MarksUS.layer": {
+          "gap": "line 2 separate unassigned audience"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/Briefings/BriefsALL.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8031,6 +9192,11 @@
       "headers": [
         "Missions/RoseOutTheAshes/FIALeMouleRaid.conf"
       ],
+      "markerLayers": {
+        "worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid_layers/markers.layer": {
+          "gap": "line 2 custom or duplicate field m_iZOrder"
+        }
+      },
       "directBriefingsRead": 4,
       "briefingModePreset": "worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -8064,6 +9230,11 @@
       "headers": [
         "Missions/Sasha20k_pro/Assault of thirty palms.conf"
       ],
+      "markerLayers": {
+        "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/Markers.layer": {
+          "candidateIcons": 4
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8101,6 +9272,11 @@
       "headers": [
         "Missions/StatusRed/GetToTheChopTank.conf"
       ],
+      "markerLayers": {
+        "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_Layers/GameLogic.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -8141,6 +9317,11 @@
       "headers": [
         "Missions/StatusRed/OSITheAirfieldIncident.conf"
       ],
+      "markerLayers": {
+        "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_Layers/Logic.layer": {
+          "gap": "line 1 inherited marker preset 676B84E0291E12D6"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingGaps": [
         "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8162,6 +9343,7 @@
       "headers": [
         "Missions/TemplateHeader.conf"
       ],
+      "markerLayers": {},
       "directBriefingsRead": 5,
       "briefingGaps": [
         "worlds/TemplateMission/TemplateMission_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8223,10 +9405,15 @@
         ]
       },
       "headers": [],
+      "markerLayers": {
+        "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/SplashBrief.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
-        "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/CDFBrief.layer:1 custom or duplicate description field components",
-        "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/RUBrief.layer:1 custom or duplicate description field components",
+        "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/CDFBrief.layer:1 custom or duplicate field components",
+        "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/RUBrief.layer:1 custom or duplicate field components",
         "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/SplashBrief.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
     },
@@ -8266,6 +9453,17 @@
       "headers": [
         "Missions/TheLocalPub/BarnyardBashers.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_Layers/BLUFOR/Markers.layer": {
+          "candidateIcons": 3
+        },
+        "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_Layers/OPFOR/Markers.layer": {
+          "candidateIcons": 5
+        },
+        "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_Layers/SYSTEMS/AllMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8329,6 +9527,11 @@
       "headers": [
         "Missions/TheLocalPub/BattleOfTheBulges.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_Layers/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 7,
       "briefingModePreset": "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -8374,6 +9577,11 @@
       "headers": [
         "Missions/TheLocalPub/BebbleIslandRaid.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_Layers/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_Layers/ALL_BRIEFS.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8437,6 +9645,14 @@
       "headers": [
         "Missions/TheLocalPub/BlockDefenders.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/IRAQ/Markers.layer": {
+          "candidateIcons": 1
+        },
+        "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/SYSTEMS/AllMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8469,6 +9685,11 @@
       "headers": [
         "Missions/TheLocalPub/BugOut.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/BugOut/BugOut_Layers/BLUFOR/BLUFOR_MARKERS.layer": {
+          "candidateIcons": 2
+        }
+      },
       "directBriefingsRead": 6,
       "briefingGaps": [
         "worlds/TheLocalPub/BugOut/BugOut_Layers/SYSTEMS/ALL_BRIEFS.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8507,6 +9728,17 @@
       "headers": [
         "Missions/TheLocalPub/CimicHouse.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/CimicHouse/CimicHouse_Layers/BLUFOR/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/TheLocalPub/CimicHouse/CimicHouse_Layers/OPFOR/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/TheLocalPub/CimicHouse/CimicHouse_Layers/SYSTEMS/AllMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingGaps": [
         "worlds/TheLocalPub/CimicHouse/CimicHouse_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8546,6 +9778,17 @@
       "headers": [
         "Missions/TheLocalPub/CleanHouse.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/CleanHouse/CleanHouse_Layers/BLUFOR/Markers.layer": {
+          "gap": "line 24 custom or duplicate field components"
+        },
+        "worlds/TheLocalPub/CleanHouse/CleanHouse_Layers/OFPOR/Markers.layer": {
+          "gap": "line 1 custom or duplicate field components"
+        },
+        "worlds/TheLocalPub/CleanHouse/CleanHouse_Layers/SYSTEMS/AllMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/TheLocalPub/CleanHouse/CleanHouse_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8598,6 +9841,17 @@
       "headers": [
         "Missions/TheLocalPub/IraqiCheckpoint.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint_Layers/INDFOR/Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint_Layers/OPFOR/Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint_Layers/SYSTEMS/AllMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint_Layers/SYSTEMS/AllBriefs.layer:1 unsupported faction key list"
@@ -8651,6 +9905,14 @@
       "headers": [
         "Missions/TheLocalPub/IraqiCheckpoint2.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_Layers/INDFOR/Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_Layers/OPFOR/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8683,6 +9945,11 @@
       "headers": [
         "Missions/TheLocalPub/Joutus.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/Joutus/Joutus_Layers/SYSTEMS/AllMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/TheLocalPub/Joutus/Joutus_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8715,6 +9982,11 @@
       "headers": [
         "Missions/TheLocalPub/LamentinLosers.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/LamentinLosers/LamentinLosers_Layers/MapMarkers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        }
+      },
       "directBriefingsRead": 14,
       "briefingModePreset": "worlds/TheLocalPub/LamentinLosers/LamentinLosers_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -8757,6 +10029,11 @@
       "headers": [
         "Missions/TheLocalPub/LongmoorLashings.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/LongmoorLashings/LongmoorLashings_Layers/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/TheLocalPub/LongmoorLashings/LongmoorLashings_Layers/ALL_BRIEFS.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8797,6 +10074,14 @@
       "headers": [
         "Missions/TheLocalPub/OilRigRangos.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/OilRigRangos/OilRigRangos_Layers/BLUFOR/Markers.layer": {
+          "candidateIcons": 10
+        },
+        "worlds/TheLocalPub/OilRigRangos/OilRigRangos_Layers/OPFOR/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/TheLocalPub/OilRigRangos/OilRigRangos_Layers/General/Brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8843,6 +10128,17 @@
       "headers": [
         "Missions/TheLocalPub/PublicEnemies.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/PublicEnemies/PublicEnemies_Layers/BLUFOR/Markers.layer": {
+          "candidateIcons": 3
+        },
+        "worlds/TheLocalPub/PublicEnemies/PublicEnemies_Layers/OPFOR/Markers.layer": {
+          "candidateIcons": 1
+        },
+        "worlds/TheLocalPub/PublicEnemies/PublicEnemies_Layers/Systems/AllMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/TheLocalPub/PublicEnemies/PublicEnemies_Layers/Systems/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8903,6 +10199,17 @@
       "headers": [
         "Missions/TheLocalPub/QuickReactions.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/BLUFOR/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/OPFOR/Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/SYSTEMS/AllMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 19,
       "briefingGaps": [
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8948,6 +10255,14 @@
       "headers": [
         "Missions/TheLocalPub/RailroadReactions.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/BLUFOR/Markers.layer": {
+          "gap": "line 1 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/SYSTEMS/AllMarkers.layer": {
+          "gap": "line 13 custom or duplicate field m_aHideOnGameModeStates"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -8981,6 +10296,11 @@
       "headers": [
         "Missions/TheLocalPub/RapidAttack.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/RapidAttack/RapidAttack_Layers/SYSTEMS/AllMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 6,
       "briefingGaps": [
         "worlds/TheLocalPub/RapidAttack/RapidAttack_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9024,6 +10344,14 @@
       "headers": [
         "Missions/TheLocalPub/RiverStandoff.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/OPFOR/Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/SYSTEMS/AllMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingGaps": [
         "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9079,6 +10407,17 @@
       "headers": [
         "Missions/TheLocalPub/SD01_ConvoyChaos.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Indfor/Markers.layer": {
+          "gap": "line 1 custom or duplicate field m_iZOrder"
+        },
+        "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Opfor/Markers.layer": {
+          "candidateIcons": 8
+        },
+        "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Systems/AllMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Systems/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9113,6 +10452,11 @@
       "headers": [
         "Missions/TheLocalPub/TakingTrenches.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/TakingTrenches/TakingTrenches_Layers/SYSTEMS/AllMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/TheLocalPub/TakingTrenches/TakingTrenches_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9154,6 +10498,11 @@
       "headers": [
         "Missions/TheLocalPub/TopMaloHouse.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/TopMaloHouse/TopMalohouse_Layers/Systems/Markers.layer": {
+          "candidateIcons": 5
+        }
+      },
       "directBriefingsRead": 12,
       "briefingModePreset": "worlds/TheLocalPub/TopMaloHouse/TopMalohouse_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -9190,6 +10539,14 @@
       "headers": [
         "Missions/TheLocalPub/WeHateStairsExpress.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress_Layers/BLUFOR/Markers.layer": {
+          "gap": "line 13 mixed or custom placement"
+        },
+        "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress_Layers/Markers.layer": {
+          "candidateIcons": 4
+        }
+      },
       "directBriefingsRead": 9,
       "briefingGaps": [
         "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress_Layers/SYSTEM/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9221,6 +10578,17 @@
       "headers": [
         "Missions/TheLocalPub/WetFeet.conf"
       ],
+      "markerLayers": {
+        "worlds/TheLocalPub/WetFeet/WetFeet_Layers/BLUFOR/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/TheLocalPub/WetFeet/WetFeet_Layers/OPFOR/Markers.layer": {
+          "gap": "line 72 custom or duplicate field m_aHideOnGameModeStates"
+        },
+        "worlds/TheLocalPub/WetFeet/WetFeet_Layers/SYSTEMS/AllMarkers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingGaps": [
         "worlds/TheLocalPub/WetFeet/WetFeet_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9273,6 +10641,11 @@
       "headers": [
         "Missions/Til/ALittleWhileLonger.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 2,
       "briefingGaps": [
         "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9312,6 +10685,11 @@
       "headers": [
         "Missions/Til/AndresBeacon.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/AndresBeacon/AndresBeacon_Layers/markers.layer": {
+          "gap": "line 1 inherited marker preset 63BCE30CF8B65BCE"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/AndresBeacon/AndresBeacon_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9357,6 +10735,11 @@
       "headers": [
         "Missions/Til/CompanyTeamCounterAttack.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_Layers/markers.layer": {
+          "gap": "line 2 custom or duplicate field {"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9399,6 +10782,14 @@
       "headers": [
         "Missions/Til/Countdown.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/Countdown/Countdown_Layers/fw.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Til/Countdown/Countdown_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/Countdown/Countdown_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9445,6 +10836,11 @@
       "headers": [
         "Missions/Til/DaybreakDiplomacy.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9483,6 +10879,11 @@
       "headers": [
         "Missions/Til/DevilsDrive.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/DevilsDrive/DevilsDrive_Layers/markers.layer": {
+          "gap": "line 2 custom or duplicate field {"
+        }
+      },
       "directBriefingsRead": 1,
       "briefingGaps": [
         "worlds/Til/DevilsDrive/DevilsDrive_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9524,6 +10925,11 @@
       "headers": [
         "Missions/Til/DieselPower.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/DieselPower/DieselPower_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/DieselPower/DieselPower_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9577,6 +10983,11 @@
       "headers": [
         "Missions/Til/FalconsFlight.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/FalconsFlight/FalconsFlight_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 1,
       "briefingGaps": [
         "worlds/Til/FalconsFlight/FalconsFlight_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9625,6 +11036,11 @@
       "headers": [
         "Missions/Til/FarmDefense.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/FarmDefense/FarmDefense_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/FarmDefense/FarmDefense_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9660,6 +11076,11 @@
       "headers": [
         "Missions/Til/GoreyRaid.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/GoreyRaid/GoreyRaid_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/GoreyRaid/GoreyRaid_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9701,6 +11122,11 @@
       "headers": [
         "Missions/Til/GreenScreen.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/GreenScreen/GreenScreen_Layers/markers.layer": {
+          "gap": "line 1 inherited marker preset 676B84E0291E12D6"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/GreenScreen/GreenScreen_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9733,6 +11159,11 @@
       "headers": [
         "Missions/Til/GullBayGuns.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/GullBayGuns/GullBayGuns_Layers/Markers.layer": {
+          "candidateIcons": 3
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/GullBayGuns/GullBayGuns_Layers/Description.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9763,6 +11194,11 @@
       "headers": [
         "Missions/Til/HeatherBayHarbor.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_Layers/Markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_Layers/Description.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9795,6 +11231,11 @@
       "headers": [
         "Missions/Til/HueyHill.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/HueyHill/HueyHill_Layers/markers.layer": {
+          "gap": "line 1 inherited marker preset 63BCE30CF8B65BCE"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/HueyHill/HueyHill_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9840,6 +11281,11 @@
       "headers": [
         "Missions/Til/JavoryHill.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/JavoryHill/JavoryHill_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 2,
       "briefingGaps": [
         "worlds/Til/JavoryHill/JavoryHill_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9877,6 +11323,11 @@
       "headers": [
         "Missions/Til/JunctionJab.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/JunctionJab/JunctionJab_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/JunctionJab/JunctionJab_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9914,6 +11365,11 @@
       "headers": [
         "Missions/Til/JunctionJabXL.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/JunctionJabXL/JunctionJabXL_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/JunctionJabXL/JunctionJabXL_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9959,6 +11415,11 @@
       "headers": [
         "Missions/Til/KasselbergClamber.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/KasselbergClamber/KasselbergClamber_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 3,
       "briefingGaps": [
         "worlds/Til/KasselbergClamber/KasselbergClamber_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -9996,6 +11457,11 @@
       "headers": [
         "Missions/Til/KoskelankylaCrossing.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing_Layers/markers.layer": {
+          "gap": "line 25 custom or duplicate field {"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10034,6 +11500,11 @@
       "headers": [
         "Missions/Til/MetalsMight.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/MetalsMight/MetalsMight_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 1,
       "briefingGaps": [
         "worlds/Til/MetalsMight/MetalsMight_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10086,6 +11557,11 @@
       "headers": [
         "Missions/Til/Metalwave.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/Metalwave/Metalwave_Layers/markers.layer": {
+          "candidateIcons": 36
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/Metalwave/Metalwave_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10145,6 +11621,11 @@
       "headers": [
         "Missions/Til/MetsalaAirfield.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/markers.layer": {
+          "candidateIcons": 6
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/desc.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10188,6 +11669,11 @@
       "headers": [
         "Missions/Til/OwlsPrey.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/OwlsPrey/OwlsPrey_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/OwlsPrey/OwlsPrey_Layers/desc.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10222,6 +11708,11 @@
       "headers": [
         "Missions/Til/PerelleBayPeril.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/default.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10283,6 +11774,11 @@
       "headers": [
         "Missions/Til/RoutePierre.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/RoutePierre/RoutePierre_Layers/Markers.layer": {
+          "gap": "line 1 inherited marker preset 63BCE30CF8B65BCE"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/RoutePierre/RoutePierre_Layers/Description.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10338,6 +11834,11 @@
       "headers": [
         "Missions/Til/RouteRowan.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/RouteRowan/RouteRowan_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/RouteRowan/RouteRowan_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10378,6 +11879,11 @@
       "headers": [
         "Missions/Til/RouteTremaux.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/RouteTremaux/RouteTremaux_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 4,
       "briefingModePreset": "worlds/Til/RouteTremaux/RouteTremaux_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -10416,6 +11922,7 @@
         ]
       },
       "headers": [],
+      "markerLayers": {},
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/SteelPastures/SteelPastures_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10445,6 +11952,11 @@
       },
       "configurationOverrides": {},
       "headers": [],
+      "markerLayers": {
+        "worlds/Til/TerminalTakeover/TerminalTakeover_Layers/Markers.layer": {
+          "gap": "line 14 custom or duplicate field m_iZOrder"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/TerminalTakeover/TerminalTakeover_Layers/Description.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10483,6 +11995,14 @@
       "headers": [
         "Missions/Til/TheAdjacentWave.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/markers_adj.layer": {
+          "candidateIcons": 29
+        },
+        "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/markers_local.layer": {
+          "candidateIcons": 10
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10529,6 +12049,11 @@
         ]
       },
       "headers": [],
+      "markerLayers": {
+        "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/markers.layer": {
+          "gap": "line 1 inherited marker preset 63BCE30CF8B65BCE"
+        }
+      },
       "directBriefingsRead": 2,
       "briefingGaps": [
         "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/desc.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10568,6 +12093,11 @@
       "headers": [
         "Missions/Til/TrenchAssault.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/TrenchAssault/TrenchAssault_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/Til/TrenchAssault/TrenchAssault_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10605,6 +12135,11 @@
       "headers": [
         "Missions/Til/TyroneThrust.conf"
       ],
+      "markerLayers": {
+        "worlds/Til/TyroneThrust/TyroneThrust_Layers/Markers.layer": {
+          "gap": "line 1 custom or duplicate field {"
+        }
+      },
       "directBriefingsRead": 2,
       "briefingModePreset": "worlds/Til/TyroneThrust/TyroneThrust_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -10637,6 +12172,11 @@
       "headers": [
         "Missions/Wade/NightSeizure.conf"
       ],
+      "markerLayers": {
+        "worlds/Wade/NightSeizure/NightSeizure_Layers/Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_iZOrder"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/Wade/NightSeizure/NightSeizure_Layers/Briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -10685,6 +12225,11 @@
       "headers": [
         "Missions/Wade/TheLocalFiles.conf"
       ],
+      "markerLayers": {
+        "worlds/Wade/TheLocalFiles/TheLocalFiles_Layers/Markers.layer": {
+          "gap": "line 2 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 22,
       "briefingGaps": [
         "worlds/Wade/TheLocalFiles/TheLocalFiles_Layers/Briefing/BriefingAll.layer:1 legacy audience needs independent unaffiliated visibility",
@@ -10721,6 +12266,20 @@
       "headers": [
         "Missions/Woody/COTVTXX_Karachinar_Crashout.conf"
       ],
+      "markerLayers": {
+        "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/mapmarkers.layer": {
+          "candidateIcons": 7
+        },
+        "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/obj1.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/obj2.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/obj3.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 5,
       "briefingModePreset": "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -10756,6 +12315,14 @@
       "headers": [
         "Missions/Woody/COTVTXX_Kassel_Crashers.conf"
       ],
+      "markerLayers": {
+        "worlds/Woody/COTVTXX_Kassel_Crashers/COTVTXX_Kassel_Crashers_Layers/mapmarkers_NATO.layer": {
+          "gap": "line 2 custom or duplicate field {"
+        },
+        "worlds/Woody/COTVTXX_Kassel_Crashers/COTVTXX_Kassel_Crashers_Layers/mapmarkers_PACT.layer": {
+          "gap": "line 380 custom or duplicate field {"
+        }
+      },
       "directBriefingsRead": 5,
       "briefingModePreset": "worlds/Woody/COTVTXX_Kassel_Crashers/COTVTXX_Kassel_Crashers_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -10791,6 +12358,14 @@
       "headers": [
         "Missions/Woody/COTVTXX_Kassel_Crashers_MODERN_REDUX2.conf"
       ],
+      "markerLayers": {
+        "worlds/Woody/COTVTXX_Kassel_Crashers_MODERN_REDUX/COTVTXX_Kassel_Crashers_MODERN_REDUX_Layers/mapmarkers_NATO.layer": {
+          "gap": "line 2 custom or duplicate field {"
+        },
+        "worlds/Woody/COTVTXX_Kassel_Crashers_MODERN_REDUX/COTVTXX_Kassel_Crashers_MODERN_REDUX_Layers/mapmarkers_PACT.layer": {
+          "gap": "line 380 custom or duplicate field {"
+        }
+      },
       "directBriefingsRead": 6,
       "briefingModePreset": "worlds/Woody/COTVTXX_Kassel_Crashers_MODERN_REDUX/COTVTXX_Kassel_Crashers_MODERN_REDUX_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -10822,6 +12397,11 @@
       "headers": [
         "Missions/Woody/COTVTXX_Zavarak_Farmland.conf"
       ],
+      "markerLayers": {
+        "worlds/Woody/COTVTXX_Zavarak_Farmland/COTVTXX_Zavarak_Farmland_Layers/mapmarkers.layer": {
+          "gap": "line 56 custom or duplicate field {"
+        }
+      },
       "directBriefingsRead": 5,
       "briefingModePreset": "worlds/Woody/COTVTXX_Zavarak_Farmland/COTVTXX_Zavarak_Farmland_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -10856,6 +12436,11 @@
       "headers": [
         "Missions/Woody/COXX_Funf_Wege_Lodgement.conf"
       ],
+      "markerLayers": {
+        "worlds/Woody/COXX_Funf_Wege_Lodgement/COXX_Funf_Wege_Lodgement_Layers/mapmarkers.layer": {
+          "candidateIcons": 13
+        }
+      },
       "directBriefingsRead": 3,
       "briefingModePreset": "worlds/Woody/COXX_Funf_Wege_Lodgement/COXX_Funf_Wege_Lodgement_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -10886,6 +12471,11 @@
       "headers": [
         "Missions/Woody/COXX_Heely_Co_Peter_Raid_Part_1.conf"
       ],
+      "markerLayers": {
+        "worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 3,
       "briefingModePreset": "worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -10917,6 +12507,11 @@
       "headers": [
         "Missions/Woody/COXX_Hof_Lomelsberg_Flank.conf"
       ],
+      "markerLayers": {
+        "worlds/Woody/COXX_Hof_Lomelsberg_Flank/COXX_Hof_Lomelsberg_Flank_Layers/mapmarkers.layer": {
+          "candidateIcons": 45
+        }
+      },
       "directBriefingsRead": 3,
       "briefingModePreset": "worlds/Woody/COXX_Hof_Lomelsberg_Flank/COXX_Hof_Lomelsberg_Flank_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -10954,6 +12549,11 @@
       "headers": [
         "Missions/Woody/COXX_Landay_Haul.conf"
       ],
+      "markerLayers": {
+        "worlds/Woody/COXX_Landay_Haul/COXX_Landay_Haul_Layers/mapmarkers.layer": {
+          "candidateIcons": 11
+        }
+      },
       "directBriefingsRead": 3,
       "briefingModePreset": "worlds/Woody/COXX_Landay_Haul/COXX_Landay_Haul_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -10990,6 +12590,11 @@
       "headers": [
         "Missions/Woody/COXX_Torske_Crossing.conf"
       ],
+      "markerLayers": {
+        "worlds/Woody/COXX_Torske_Crossing/COXX_Torske_Crossing_Layers/mapmarkers.layer": {
+          "gap": "line 2 custom or duplicate field {"
+        }
+      },
       "directBriefingsRead": 3,
       "briefingModePreset": "worlds/Woody/COXX_Torske_Crossing/COXX_Torske_Crossing_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -11029,6 +12634,11 @@
       "headers": [
         "Missions/Woody/TVTXX_Waterside_Punchup.conf"
       ],
+      "markerLayers": {
+        "worlds/Woody/TVTXX_Waterside_Punchup/TVTXX_Waterside_Punchup_Layers/mapmarkers.layer": {
+          "gap": "line 1 inherited marker preset 63BCE30CF8B65BCE"
+        }
+      },
       "directBriefingsRead": 5,
       "briefingModePreset": "worlds/Woody/TVTXX_Waterside_Punchup/TVTXX_Waterside_Punchup_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11069,6 +12679,14 @@
       "headers": [
         "Missions/ac337/CO15_Gravette_Gamble.conf"
       ],
+      "markerLayers": {
+        "worlds/ac337/GravetteGamble/GravetteGamble_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/ac337/GravetteGamble/GravetteGamble_Layers/players.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/ac337/GravetteGamble/GravetteGamble_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -11105,9 +12723,17 @@
       "headers": [
         "Missions/anteante101/Attack of the Howlers.conf"
       ],
+      "markerLayers": {
+        "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/Howlers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/markeranddeleter.layer": {
+          "candidateIcons": 3
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
-        "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/brief.layer:1 custom or duplicate description field {",
+        "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/brief.layer:1 custom or duplicate field {",
         "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/brief.layer nested description"
       ]
     },
@@ -11144,9 +12770,14 @@
       "headers": [
         "Missions/anteante101/Castle Crushers.conf"
       ],
+      "markerLayers": {
+        "worlds/anteante101/Castle Crushers/CastleCrushers_Layers/marker.layer": {
+          "gap": "line 26 custom or duplicate field m_bringToFront"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
-        "worlds/anteante101/Castle Crushers/CastleCrushers_Layers/BRIEF.layer:1 custom or duplicate description field {",
+        "worlds/anteante101/Castle Crushers/CastleCrushers_Layers/BRIEF.layer:1 custom or duplicate field {",
         "worlds/anteante101/Castle Crushers/CastleCrushers_Layers/BRIEF.layer nested description"
       ]
     },
@@ -11184,6 +12815,11 @@
       "headers": [
         "Missions/anteante101/Its all uphill from here.conf"
       ],
+      "markerLayers": {
+        "worlds/anteante101/Its all uphill from here/Its all uphill from here_Layers/marker.layer": {
+          "candidateIcons": 2
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/anteante101/Its all uphill from here/Its all uphill from here_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility",
@@ -11224,9 +12860,14 @@
       "headers": [
         "Missions/anteante101/Operation Desert Sentinel.conf"
       ],
+      "markerLayers": {
+        "worlds/anteante101/Operation Desert Sentinel/Operation Desert Sentinel_Layers/markers.layer": {
+          "candidateIcons": 10
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
-        "worlds/anteante101/Operation Desert Sentinel/Operation Desert Sentinel_Layers/default.layer:10 custom or duplicate description field {",
+        "worlds/anteante101/Operation Desert Sentinel/Operation Desert Sentinel_Layers/default.layer:10 custom or duplicate field {",
         "worlds/anteante101/Operation Desert Sentinel/Operation Desert Sentinel_Layers/default.layer nested description"
       ]
     },
@@ -11256,9 +12897,14 @@
       "headers": [
         "Missions/anteante101/RoleReversal CDF edition.conf"
       ],
+      "markerLayers": {
+        "worlds/anteante101/Role Reversal CDF edition/Role Reversal CDF edition_Layers/misc.layer": {
+          "gap": "line 44 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
-        "worlds/anteante101/Role Reversal CDF edition/Role Reversal CDF edition_Layers/breif.layer:1 custom or duplicate description field {",
+        "worlds/anteante101/Role Reversal CDF edition/Role Reversal CDF edition_Layers/breif.layer:1 custom or duplicate field {",
         "worlds/anteante101/Role Reversal CDF edition/Role Reversal CDF edition_Layers/breif.layer nested description"
       ]
     },
@@ -11295,6 +12941,11 @@
       "headers": [
         "Missions/anteante101/RoleReversal.conf"
       ],
+      "markerLayers": {
+        "worlds/anteante101/RoleReversal/RoleReversal_Layers/marker.layer": {
+          "candidateIcons": 4
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/anteante101/RoleReversal/RoleReversal_Layers/Briefings.layer:1 legacy audience needs independent unaffiliated visibility",
@@ -11336,6 +12987,11 @@
       "headers": [
         "Missions/anteante101/South wind is blowing.conf"
       ],
+      "markerLayers": {
+        "worlds/anteante101/South wind is blowing/South wind is blowing_Layers/marker.layer": {
+          "candidateIcons": 5
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/anteante101/South wind is blowing/South wind is blowing_Layers/BRIEF.layer:1 legacy audience needs independent unaffiliated visibility",
@@ -11378,6 +13034,11 @@
       "headers": [
         "Missions/arc/BarnBusters.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/BarnBusters/BarnBusters_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingGaps": [
         "worlds/arc/BarnBusters/BarnBusters_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -11408,6 +13069,11 @@
       "headers": [
         "Missions/arc/BarnBustersXS.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/BarnBustersXS/BarnBustersXS_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 7,
       "briefingModePreset": "worlds/arc/BarnBustersXS/BarnBustersXS_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11446,6 +13112,11 @@
       "headers": [
         "Missions/arc/BrambledeepBypass.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/BrambledeepBypass/BrambledeepBypass_Layers/briefings.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/arc/BrambledeepBypass/BrambledeepBypass_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11476,6 +13147,11 @@
       "headers": [
         "Missions/arc/BunkerBusters.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/BunkerBusters/BunkerBusters_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 7,
       "briefingModePreset": "worlds/arc/BunkerBusters/BunkerBusters_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11514,6 +13190,11 @@
       "headers": [
         "Missions/arc/BunkerBustersXL.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/BunkerBustersXL/BunkerBustersXL_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/arc/BunkerBustersXL/BunkerBustersXL_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11543,6 +13224,11 @@
       "headers": [
         "Missions/arc/CoastalClearance.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/CoastalClearance/CoastalClearance_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 3,
       "briefingModePreset": "worlds/arc/CoastalClearance/CoastalClearance_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11585,6 +13271,11 @@
       "headers": [
         "Missions/arc/CommandosReforged.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/CommandosReforged/CommandosReforged_Layers/insertions.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/arc/CommandosReforged/CommandosReforged_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11626,6 +13317,11 @@
       "headers": [
         "Missions/arc/Compromised.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/Compromised/Compromised_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 20,
       "briefingModePreset": "worlds/arc/Compromised/Compromised_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11663,6 +13359,11 @@
       "headers": [
         "Missions/arc/CrashParty.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/CrashParty/CrashParty_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/arc/CrashParty/CrashParty_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11696,6 +13397,11 @@
       "headers": [
         "Missions/arc/DustyDrive.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/DustyDrive/DustyDrive_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingModePreset": "worlds/arc/DustyDrive/DustyDrive_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11729,6 +13435,11 @@
       "headers": [
         "Missions/arc/DustyDrive95.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/DustyDrive95/DustyDrive95_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingModePreset": "worlds/arc/DustyDrive95/DustyDrive95_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11763,6 +13474,11 @@
       "headers": [
         "Missions/arc/EFPLumberjacks.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/EFPLumberjacks/EFPLumberjacks_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 7,
       "briefingModePreset": "worlds/arc/EFPLumberjacks/EFPLumberjacks_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -11800,6 +13516,11 @@
       "headers": [
         "Missions/arc/EFPStragglers.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/EFPStragglers/EFPStragglers_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/arc/EFPStragglers/EFPStragglers_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11834,6 +13555,11 @@
       "headers": [
         "Missions/arc/EasternEnvelopment.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/EasternEnvelopment/EasternEnvelopment_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingModePreset": "worlds/arc/EasternEnvelopment/EasternEnvelopment_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -11863,6 +13589,11 @@
       "headers": [
         "Missions/arc/ErquyEvasion.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/ErquyEvasion/ErquyEvasion_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingModePreset": "worlds/arc/ErquyEvasion/ErquyEvasion_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11904,6 +13635,11 @@
       "headers": [
         "Missions/arc/FactorySiegeRedux.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/FactorySiegeRedux/FactorySiegeRedux_Layers/briefings.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 12,
       "briefingModePreset": "worlds/arc/FactorySiegeRedux/FactorySiegeRedux_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11940,6 +13676,11 @@
       "headers": [
         "Missions/arc/FightingRetreat.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/FightingRetreat/FightingRetreat_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/arc/FightingRetreat/FightingRetreat_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -11989,6 +13730,11 @@
       "headers": [
         "Missions/arc/FirstLightAtEden.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/FirstLightAtEden/FirstLightAtEden_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 5,
       "briefingModePreset": "worlds/arc/FirstLightAtEden/FirstLightAtEden_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12025,6 +13771,11 @@
       "headers": [
         "Missions/arc/ForeignExchangeStudents.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 5,
       "briefingModePreset": "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12061,6 +13812,11 @@
       "headers": [
         "Missions/arc/ForeignExchangeStudentsII.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12100,6 +13856,11 @@
       "headers": [
         "Missions/arc/HappyCampers.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/HappyCampers/HappyCampers_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 6,
       "briefingModePreset": "worlds/arc/HappyCampers/HappyCampers_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -12168,6 +13929,11 @@
       "headers": [
         "Missions/arc/HeavenAndHell.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/HeavenAndHell/HeavenAndHell_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingModePreset": "worlds/arc/HeavenAndHell/HeavenAndHell_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12202,6 +13968,11 @@
       "headers": [
         "Missions/arc/HotBoxes.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/HotBoxes/HotBoxes_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingModePreset": "worlds/arc/HotBoxes/HotBoxes_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12237,6 +14008,11 @@
       "headers": [
         "Missions/arc/Hunted.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/Hunted/Hunted_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 4,
       "briefingModePreset": "worlds/arc/Hunted/Hunted_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -12274,6 +14050,11 @@
       "headers": [
         "Missions/arc/IndustrialMetal.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/IndustrialMetal/IndustrialMetal_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/arc/IndustrialMetal/IndustrialMetal_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12310,6 +14091,11 @@
       "headers": [
         "Missions/arc/IrishCheckpoint.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/IrishCheckpoint/IrishCheckpoint_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/arc/IrishCheckpoint/IrishCheckpoint_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12345,6 +14131,11 @@
       "headers": [
         "Missions/arc/JEFRMCWAC.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/JEFRMCWAC/JEFRMCWAC_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 6,
       "briefingModePreset": "worlds/arc/JEFRMCWAC/JEFRMCWAC_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -12373,6 +14164,11 @@
       "headers": [
         "Missions/arc/LastBastion.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/LastBastion/LastBastion_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingModePreset": "worlds/arc/LastBastion/LastBastion_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12411,6 +14207,11 @@
       "headers": [
         "Missions/arc/LeMouleApproachRedux.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/arc/LeMouleApproachRedux/LeMouleApproachRedux_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12448,6 +14249,11 @@
       "headers": [
         "Missions/arc/NorthCoastRaid.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/NorthCoastRaid/NorthCoastRaid_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingModePreset": "worlds/arc/NorthCoastRaid/NorthCoastRaid_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12490,6 +14296,11 @@
       "headers": [
         "Missions/arc/PatrolTroubles.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/PatrolTroubles/PatrolTroubles_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 15,
       "briefingModePreset": "worlds/arc/PatrolTroubles/PatrolTroubles_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12529,6 +14340,11 @@
       "headers": [
         "Missions/arc/PirateRadio.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/PirateRadio/PirateRadio_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 12,
       "briefingModePreset": "worlds/arc/PirateRadio/PirateRadio_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12561,6 +14377,11 @@
       "headers": [
         "Missions/arc/Privateering.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/Privateering/Privateering_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/arc/Privateering/Privateering_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12599,6 +14420,11 @@
       "headers": [
         "Missions/arc/ProvinsApproachRedux.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/arc/ProvinsApproachRedux/ProvinsApproachRedux_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12639,6 +14465,11 @@
       "headers": [
         "Missions/arc/QuickReaction.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/QuickReaction/QuickReaction_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingModePreset": "worlds/arc/QuickReaction/QuickReaction_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -12677,6 +14508,11 @@
       "headers": [
         "Missions/arc/RavineRuckus.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/RavineRuckus/RavineRuckus_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/arc/RavineRuckus/RavineRuckus_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12713,6 +14549,11 @@
       "headers": [
         "Missions/arc/Retribution.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/Retribution/Retribution_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingModePreset": "worlds/arc/Retribution/Retribution_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -12744,6 +14585,11 @@
       "headers": [
         "Missions/arc/ReturnOfTheWac.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/ReturnOfTheWac/ReturnOfTheWac_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 4,
       "briefingModePreset": "worlds/arc/ReturnOfTheWac/ReturnOfTheWac_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12781,6 +14627,11 @@
       "headers": [
         "Missions/arc/RidgeRumble.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/RidgeRumble/RidgeRumble_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/arc/RidgeRumble/RidgeRumble_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12823,6 +14674,11 @@
       "headers": [
         "Missions/arc/RocketScience.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/RocketScience/RocketScience_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 6,
       "briefingModePreset": "worlds/arc/RocketScience/RocketScience_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12860,6 +14716,14 @@
       "headers": [
         "Missions/arc/SOBRUp.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/SOBRUp/SOBRUp_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/arc/SOBRUp/SOBRUp_Layers/BriefingSEP.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/arc/SOBRUp/SOBRUp_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12894,6 +14758,11 @@
       "headers": [
         "Missions/arc/ShootAndScoot.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/ShootAndScoot/ShootAndScoot_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 6,
       "briefingModePreset": "worlds/arc/ShootAndScoot/ShootAndScoot_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12932,6 +14801,11 @@
       "headers": [
         "Missions/arc/SoumontSawmill.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/SoumontSawmill/SoumontSawmill_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/arc/SoumontSawmill/SoumontSawmill_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12988,6 +14862,11 @@
       "headers": [
         "Missions/arc/StationSmashers.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/StationSmashers/StationSmashers_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 10,
       "briefingModePreset": "worlds/arc/StationSmashers/StationSmashers_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -13023,6 +14902,11 @@
       "headers": [
         "Missions/arc/SunnyWAC.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/SunnyWAC/SunnyWAC_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 9,
       "briefingModePreset": "worlds/arc/SunnyWAC/SunnyWAC_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -13060,6 +14944,11 @@
       "headers": [
         "Missions/arc/SyrianCheckpoint.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/SyrianCheckpoint/SyrianCheckpoint_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingModePreset": "worlds/arc/SyrianCheckpoint/SyrianCheckpoint_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -13092,6 +14981,11 @@
       "headers": [
         "Missions/arc/TheBestDefense.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/TheBestDefense/TheBestDefense_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingModePreset": "worlds/arc/TheBestDefense/TheBestDefense_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -13144,6 +15038,11 @@
       "headers": [
         "Missions/arc/TheOldWood.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/TheOldWood2024/TheOldWood2024_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 8,
       "briefingModePreset": "worlds/arc/TheOldWood2024/TheOldWood2024_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -13189,6 +15088,11 @@
       "headers": [
         "Missions/arc/TipOfTheSpear.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 12,
       "briefingModePreset": "worlds/arc/TipOfTheSpear/TipOfTheSpear_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -13227,6 +15131,11 @@
       "headers": [
         "Missions/arc/TwoCheckpoints.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/TwoCheckpoints/TwoCheckpoints_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/arc/TwoCheckpoints/TwoCheckpoints_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -13271,6 +15180,14 @@
       "headers": [
         "Missions/arc/UrbanTroubles.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/UrbanTroubles/UrbanTroubles_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/arc/UrbanTroubles/UrbanTroubles_Layers/briefingIRA.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 16,
       "briefingModePreset": "worlds/arc/UrbanTroubles/UrbanTroubles_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -13309,6 +15226,11 @@
       "headers": [
         "Missions/arc/VilleneufPunchupRedux.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/VilleneufPunchupRedux/VilleneufPunchupRedux_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 11,
       "briefingModePreset": "worlds/arc/VilleneufPunchupRedux/VilleneufPunchupRedux_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -13347,6 +15269,11 @@
       "headers": [
         "Missions/arc/WateryGrave.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/WateryGrave/WateryGrave_Layers/Briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 6,
       "briefingModePreset": "worlds/arc/WateryGrave/WateryGrave_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -13384,6 +15311,11 @@
       "headers": [
         "Missions/arc/ZeroArcThirty.conf"
       ],
+      "markerLayers": {
+        "worlds/arc/ZeroArcThirty/ZeroArcThirty_Layers/briefing.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 0,
       "briefingGaps": [
         "worlds/arc/ZeroArcThirty/ZeroArcThirty_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -13422,6 +15354,11 @@
       "headers": [
         "Missions/blackskimask/DeadlyCrossing.conf"
       ],
+      "markerLayers": {
+        "worlds/blackskimask/Deadly Crossing/DeadlyCrossing_Layers/markers.layer": {
+          "gap": "line 102 separate unassigned audience"
+        }
+      },
       "directBriefingsRead": 6,
       "briefingGaps": [
         "worlds/blackskimask/Deadly Crossing/DeadlyCrossing_Layers/brief_all.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -13460,6 +15397,11 @@
       "headers": [
         "Missions/blackskimask/PlantAttack.conf"
       ],
+      "markerLayers": {
+        "worlds/blackskimask/Plant Attack/PlantAttack_Layers/markers.layer": {
+          "candidateIcons": 7
+        }
+      },
       "directBriefingsRead": 6,
       "briefingGaps": [
         "worlds/blackskimask/Plant Attack/PlantAttack_Layers/briefing_all.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -13500,6 +15442,11 @@
       "headers": [
         "Missions/blackskimask/ZarichneFront.conf"
       ],
+      "markerLayers": {
+        "worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/markers.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 7,
       "briefingGaps": [
         "worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/brief_all.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -13536,6 +15483,14 @@
       "headers": [
         "Missions/chillboy/Gigantomachia.conf"
       ],
+      "markerLayers": {
+        "worlds/chllboy/Gigantomachia/Gigantomachia_Layers/BriefingBlufor.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/chllboy/Gigantomachia/Gigantomachia_Layers/BriefingOpfor.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 14,
       "briefingGaps": [
         "worlds/chllboy/Gigantomachia/Gigantomachia_Layers/Situation.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -13575,6 +15530,14 @@
       "headers": [
         "Missions/chillboy/Hephaestus Forge.conf"
       ],
+      "markerLayers": {
+        "worlds/chllboy/Hephaestus Forge/Hephaestus Forge_Layers/BriefingBlufor.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/chllboy/Hephaestus Forge/Hephaestus Forge_Layers/BriefingOpfor.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 18,
       "briefingGaps": [
         "worlds/chllboy/Hephaestus Forge/Hephaestus Forge_Layers/Situation.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -13613,6 +15576,14 @@
       "headers": [
         "Missions/chillboy/Makeup.conf"
       ],
+      "markerLayers": {
+        "worlds/chllboy/Makeup/Makeup_Layers/IndforBrief.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/chllboy/Makeup/Makeup_Layers/OpforBrief.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 14,
       "briefingGaps": [
         "worlds/chllboy/Makeup/Makeup_Layers/Situation.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -13668,6 +15639,23 @@
       "headers": [
         "Missions/chillboy/Trifecta.conf"
       ],
+      "markerLayers": {
+        "worlds/chllboy/Trifecta/Trifecta_Layers/BRIEFS/FIA_BRIEF.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/chllboy/Trifecta/Trifecta_Layers/BRIEFS/ION_BRIEF.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/chllboy/Trifecta/Trifecta_Layers/BRIEFS/PATRIOT_BRIEF.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/chllboy/Trifecta/Trifecta_Layers/BRIEFS/UNI_MARKERS.layer": {
+          "gap": "line 1 mixed or custom placement"
+        },
+        "worlds/chllboy/Trifecta/Trifecta_Layers/FACTIONS/FIA.layer": {
+          "gap": "line 1 mixed or custom placement"
+        }
+      },
       "directBriefingsRead": 20,
       "briefingGaps": [
         "worlds/chllboy/Trifecta/Trifecta_Layers/BRIEFS/UNI_MARKERS.layer:1 legacy audience needs independent unaffiliated visibility"

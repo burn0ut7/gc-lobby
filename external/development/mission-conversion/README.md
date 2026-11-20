@@ -33,3 +33,15 @@ The Blood and Smoke uses the expanded notes newly added by legacy commit `9a681a
 Sources for the legacy contracts include Reforger Lobby Community's `PS_MissionDescription`, `PS_MissionDescriptionHeadersListUI` and `PS_GameModeCoop`, and TilW Mission Framework's `TILW_Instructions.c`, `TILW_MissionFrameworkEntity.c` and `TILW_MapShapeComponent.c`. GC Lobby contracts are in `scripts/Game/Briefing`, `scripts/Game/Map` and `scripts/Game/MissionFramework`. The converter has no runtime dependency on the old framework.
 
 A mission is ready for the launcher once its header resolves its converted world, assets and playable slots load, and the behavior checks above have recorded outcomes. Record unavailable features by mission. A preset or a successful resource load alone does not establish mission parity.
+
+## Reproducing the Kunar pilot and marker review
+
+Add `--include-race-day` to stage the Race Day – Kunar launcher header, world, and layers alongside its settings preset. The recipe checks the legacy rules blob before rewriting its events. The port uses the race motorbike from Units Dev commit `358ce612`. The playable world files are in Missions Dev commit `2a334cc5`.
+
+Add `--stage-marker-candidates` for standalone icon layers. Inspect the `markerLayers` record per world. Each entry gives an icon count or the first unsupported placement, inherited prefab, or field. At the pinned source revision 53 layers containing 403 icons can be staged. These require resource, phase, faction, stacking, hover and visual checks on their owning world before publication. Other map shapes, nested markers and script-created markers require separate conversion.
+
+## Workbench observations
+
+On November 20, 2026, Workbench 1.9.0.37 loaded all 141 generated mode presets and read 1,413 GC Lobby briefing entries with unique display indices per preset. This checks resource structure. UI rendering and audience behavior still require testing in the owning missions.
+
+Race Day – Kunar registered three civilian groups, 60 slots, one briefing page and three event rules. A local authenticated admin advanced from role selection through briefing and match to after-action report. The timed gate opened. A controlled teleport into the finish triggered the finish event and delayed reminder. No dedicated-server or remote-client run was recorded. A vehicle probe reported zero simulated wheels on the race motorbike. A driven finish, legacy countdown HUD, restriction zone behavior and player reconnect remain unverified. Workbench exited during cleanup of a separate vehicle probe. The race has no gameplay-parity signoff.
