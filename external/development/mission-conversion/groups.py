@@ -1,5 +1,7 @@
 """Convert complete layers of playable groups backed by both revisions of GC Units."""
-from functools import lru_cache
+from functools import lru_cache, partial
+import json
+from pathlib import Path
 import re
 
 from briefings import block_end
@@ -11,6 +13,7 @@ STANDARD_CALLSIGN = '63616C6C7369676E'
 INDEX = {'m_iCompanyCallsign': 'm_iGC_CallsignCompany', 'm_iPlatoonCallsign': 'm_iGC_CallsignPlatoon',
          'm_iSquadCallsign': 'm_iGC_CallsignSquad'}
 SLOTS = re.compile(r'^ m_aUnitPrefabSlots \{\n(.*?)^ \}', re.M | re.S)
+WRAPPERS = json.loads(Path(__file__).with_name('stock_wrappers.json').read_text(encoding='utf-8'))
 
 
 def only_path(snapshot, guid):
@@ -77,6 +80,13 @@ def legacy_member(snapshot, guid, force):
     return False
 
 
+def stock_character(guid, path, stock):
+    member = WRAPPERS['characters'].get(guid.upper())
+    if stock and member and member['path'] == path and stock.contains(*member['parent']):
+        return member['parent']
+    return None
+
+
 def convert_instance(lines, guid, old, new, source_units, dev_units, stock, locally_owned,
                      reviewed_callsigns=frozenset(), reviewed_members=None):
     reviewed_members = reviewed_members or {}
@@ -86,6 +96,7 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
         raise ValueError('parent playability requires inheritance or member review')
     replace_slots = any(l.strip() == 'm_aUnitPrefabSlots {' for l in lines)
     roster = []
+    converted_wrappers = set()
     if not replace_slots:
         old_slots, new_slots = SLOTS.search(old), SLOTS.search(new)
         if not old_slots or not new_slots:
@@ -148,8 +159,13 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                 elif guid.upper() in source_units.resources or guid.upper() in dev_units.resources:
                     only_path(source_units, guid)
                     path = only_path(dev_units, guid)
-                elif not stock or not stock.contains(guid, path):
-                    raise ValueError('unresolved character prefab ' + guid)
+                else:
+                    parent = stock_character(guid, path, stock) if replace_slots else None
+                    if parent:
+                        converted_wrappers.add(guid.upper())
+                        return f'"{{{parent[0]}}}{parent[1]}"'
+                    if not stock or not stock.contains(guid, path):
+                        raise ValueError('unresolved character prefab ' + guid)
                 if guid.upper() not in reviewed_members and not path.lower().startswith('prefabs/characters/'):
                     raise ValueError('unexpected slot resource ' + path)
                 return '"{' + guid + '}' + path + '"'
@@ -175,7 +191,7 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     if not roster:
         raise ValueError('empty group roster')
     for member in roster:
-        if member.upper() in reviewed_members:
+        if member.upper() in reviewed_members or member.upper() in converted_wrappers:
             continue
         if not legacy_member(source_units, member, force):
             raise ValueError('legacy slot playability requires review ' + member)
@@ -183,6 +199,41 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     if not native_playable:
         metadata.append(indent + 'm_bPlayable 1')
     return out + metadata, len(roster)
+
+
+def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_owned):
+    roster = list(spec['slots'])
+    placement = []
+    depth = min((len(line) - len(line.lstrip()) for line in lines if line.strip()), default=1)
+    indent = ' ' * depth
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        slot_block = re.fullmatch(re.escape(indent) + r'm_aUnitPrefabSlots (\+ ?)?\{', line)
+        if not slot_block:
+            placement.append(line)
+            index += 1
+            continue
+        end = block_end(lines, index)
+        values = '\n'.join(lines[index + 1:end])
+        if REF.sub('', values).strip():
+            raise ValueError('unsupported stock wrapper slot list')
+        if not slot_block[1]:
+            roster.clear()
+        roster.extend(REF.findall(values))
+        index = end + 1
+    verified = {}
+    rendered = []
+    for guid, path in roster:
+        parent = stock_character(guid, path, stock)
+        if not parent:
+            raise ValueError('unverified stock wrapper character ' + guid)
+        resource, asset = parent
+        verified[resource.upper()] = asset
+        rendered.append(f'{indent} "{{{resource}}}{asset}"')
+    placement.extend([indent + 'm_aUnitPrefabSlots {', *rendered, indent + '}', indent + 'm_bSetPlayable 1'])
+    return convert_instance(placement, spec['parent'][0], '', '', source_units, dev_units, stock, locally_owned,
+                            reviewed_members=verified)
 
 
 def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset(),
@@ -202,9 +253,21 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
         guid = match['guid'].upper()
         if guid in locally_owned:
             raise ValueError('mission-owned group ' + guid)
-        _, old = prefab(source_units, guid)
-        dest, new = prefab(dev_units, guid)
-        result.append(REF.sub(lambda _: '"{' + guid + '}' + dest + '"', lines[i], count=1))
+        spec = WRAPPERS['groups'].get(guid) if guid not in source_units.resources and stock else None
+        if spec:
+            if REF.search(lines[i])[2] != spec['path'] or not stock.contains(*spec['parent']):
+                raise ValueError('unverified stock wrapper group ' + guid)
+            resource, dest = spec['parent']
+            convert = partial(convert_stock_instance, spec=spec, source_units=source_units, dev_units=dev_units,
+                              stock=stock, locally_owned=locally_owned)
+        else:
+            _, old = prefab(source_units, guid)
+            dest, new = prefab(dev_units, guid)
+            resource = guid
+            convert = partial(convert_instance, guid=guid, old=old, new=new, source_units=source_units,
+                              dev_units=dev_units, stock=stock, locally_owned=locally_owned,
+                              reviewed_callsigns=reviewed_callsigns, reviewed_members=reviewed_members)
+        result.append(REF.sub(lambda _: '"{' + resource + '}' + dest + '"', lines[i], count=1))
         end = block_end(lines, i)
         if match['group']:
             j = i + 1
@@ -212,15 +275,13 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
                 if not re.fullmatch(r' (?:[\w.\-]+ )?\{', lines[j]):
                     raise ValueError('unexpected group instance')
                 last = block_end(lines, j)
-                body, members = convert_instance(lines[j+1:last], guid, old, new, source_units,
-                                                 dev_units, stock, locally_owned, reviewed_callsigns, reviewed_members)
+                body, members = convert(lines[j+1:last])
                 result.extend([lines[j], *body, lines[last]])
                 slots += members
                 count += 1
                 j = last + 1
         else:
-            body, members = convert_instance(lines[i+1:end], guid, old, new, source_units,
-                                             dev_units, stock, locally_owned, reviewed_callsigns, reviewed_members)
+            body, members = convert(lines[i+1:end])
             result.extend(body)
             slots += members
             count += 1

@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "2545c4298c18c3b4c76fca2df16847a077108673",
+  "target": "4c203b292efdd174a5c3b89a7d6d29fa32eb78c6",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1953,7 +1953,7 @@
         "worlds/arc/LastBastion/LastBastion.ent"
       ],
       "declaredPath": "worlds/arc/LastBastion/LastBastion.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{5A27A655592A50ED}worlds/arc/LastBastion/LastBastion.ent"
     },
     "Missions/arc/LeMouleApproachRedux.conf": {
@@ -6136,7 +6136,7 @@
       },
       "groupLayers": {
         "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/Players.layer": {
-          "gap": "unresolved character prefab DBC177C261C93B9D"
+          "gap": "unresolved character prefab 64AD55FF89C97DF9"
         }
       },
       "boundaryLayers": {
@@ -15554,7 +15554,7 @@
       },
       "groupLayers": {
         "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/BLUFOR/Players.layer": {
-          "gap": "unresolved character prefab 547BA14003A67C04"
+          "gap": "legacy slot playability requires review 283A06EF2B6E7E24"
         },
         "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/OPFOR/PlayerOPFOR.layer": {
           "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
@@ -19800,7 +19800,7 @@
           "gap": "unresolved or duplicate Units prefab 0D10CCEEC7B3EC34"
         },
         "worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid_layers/players.layer": {
-          "gap": "unresolved or duplicate Units prefab 126BE8C46FA39581"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "stockPlacementLayers": {
@@ -19985,7 +19985,7 @@
           "gap": "parent playability requires inheritance or member review"
         },
         "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_Layers/Players.layer": {
-          "gap": "unresolved character prefab A5F4D7FEBDB57182"
+          "gap": "unresolved character prefab 47B0BA658525301A"
         }
       },
       "boundaryLayers": {
@@ -24554,7 +24554,7 @@
           "gap": "unresolved or duplicate Units prefab 0D10CCEEC7B3EC34"
         },
         "worlds/Til/GoreyRaid/GoreyRaid_Layers/players.layer": {
-          "gap": "unresolved character prefab A5F4D7FEBDB57182"
+          "gap": "unresolved character prefab 47B0BA658525301A"
         }
       },
       "boundaryLayers": {
@@ -26278,7 +26278,8 @@
           "gap": "unresolved or duplicate Units prefab 1BB20A4B3A53D0F5"
         },
         "worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/Players.layer": {
-          "gap": "unresolved or duplicate Units prefab D0372E0E86076022"
+          "playableGroups": 4,
+          "unitPrefabEntries": 20
         }
       },
       "stockPlacementLayers": {
@@ -26816,7 +26817,7 @@
       },
       "groupLayers": {
         "worlds/Til/TerminalTakeover/TerminalTakeover_Layers/Assets.layer": {
-          "gap": "unresolved or duplicate Units prefab 126BE8C46FA39581"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "boundaryLayers": {
@@ -29784,7 +29785,8 @@
           "gap": "unresolved or duplicate Units prefab A2F75E45C66B1C0A"
         },
         "worlds/arc/CoastalClearance/CoastalClearance_Layers/Players.layer": {
-          "gap": "unresolved or duplicate Units prefab AE7E3C1147A807CD"
+          "playableGroups": 4,
+          "unitPrefabEntries": 20
         }
       },
       "boundaryLayers": {
@@ -30030,10 +30032,11 @@
           "unitPrefabEntries": 16
         },
         "worlds/arc/Compromised/Compromised_Layers/USSRplayers.layer": {
-          "gap": "unresolved or duplicate Units prefab D0372E0E86076022"
+          "playableGroups": 1,
+          "unitPrefabEntries": 8
         },
         "worlds/arc/Compromised/Compromised_Layers/USplayers.layer": {
-          "gap": "unresolved character prefab DBC177C261C93B9D"
+          "gap": "legacy slot playability requires review E9601333852C637F"
         }
       },
       "directBriefingsRead": 20,
@@ -30852,7 +30855,7 @@
       },
       "groupLayers": {
         "worlds/arc/ErquyEvasion/ErquyEvasion_Layers/Players.layer": {
-          "gap": "unresolved or duplicate Units prefab 47EADE5E4E07076C"
+          "gap": "unresolved or duplicate Units prefab BC357974A560F678"
         }
       },
       "directBriefingsRead": 9,
@@ -31980,7 +31983,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/arc/HeavenAndHell/HeavenAndHell_Layers/players.layer": {
-          "gap": "unresolved character prefab DBC177C261C93B9D"
+          "gap": "mission-owned slot 3787254ADF02E746"
         }
       },
       "boundaryLayers": {
@@ -32742,7 +32745,9 @@
     "worlds/arc/LastBastion/LastBastion.ent": {
       "sourceResourceCount": 7,
       "devPaths": {
-        "absent": 7
+        "absent": 1,
+        "changed": 5,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -32769,7 +32774,8 @@
       },
       "groupLayers": {
         "worlds/arc/LastBastion/LastBastion_Layers/Players.layer": {
-          "gap": "unresolved or duplicate Units prefab 17C7309FFE4775B0"
+          "playableGroups": 8,
+          "unitPrefabEntries": 48
         }
       },
       "boundaryLayers": {
@@ -32781,7 +32787,7 @@
               "lastLine": 71
             }
           },
-          "placementLayer": "worlds/arc/LastBastion/LastBastion_Layers/default_GC_Boundaries.layer"
+          "gap": "Dev already contains the original layer path; review before adding boundary siblings"
         }
       },
       "directBriefingsRead": 8,
@@ -33086,7 +33092,7 @@
       },
       "groupLayers": {
         "worlds/arc/PatrolTroubles/PatrolTroubles_Layers/players.layer": {
-          "gap": "unresolved or duplicate Units prefab 17C7309FFE4775B0"
+          "gap": "unverified stock wrapper character C003F174E82DC30E"
         }
       },
       "directBriefingsRead": 15,
@@ -34251,7 +34257,8 @@
           "gap": "unresolved or duplicate Units prefab 5BEA04939D148B1D"
         },
         "worlds/arc/RocketScience/RocketScience_Layers/Players.layer": {
-          "gap": "unresolved or duplicate Units prefab D0372E0E86076022"
+          "playableGroups": 8,
+          "unitPrefabEntries": 40
         }
       },
       "stockPlacementLayers": {
@@ -35106,7 +35113,7 @@
       },
       "groupLayers": {
         "worlds/arc/SyrianCheckpoint/SyrianCheckpoint_Layers/players.layer": {
-          "gap": "unresolved or duplicate Units prefab 17C7309FFE4775B0"
+          "gap": "unverified stock wrapper character 4CB39DD6953764F7"
         }
       },
       "directBriefingsRead": 8,
@@ -35253,7 +35260,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/arc/TheBestDefense/TheBestDefense_Layers/players.layer": {
-          "gap": "unresolved character prefab DBC177C261C93B9D"
+          "gap": "legacy slot playability requires review E9601333852C637F"
         }
       },
       "directBriefingsRead": 8,
@@ -35764,7 +35771,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/arc/UrbanTroubles/UrbanTroubles_Layers/playersCIV.layer": {
-          "gap": "unresolved or duplicate Units prefab 17C7309FFE4775B0"
+          "gap": "unverified stock wrapper character C003F174E82DC30E"
         },
         "worlds/arc/UrbanTroubles/UrbanTroubles_Layers/playersIRA.layer": {
           "gap": "mission-owned slot 503F70B7DE637C02"

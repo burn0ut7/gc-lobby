@@ -1,0 +1,1021 @@
+{
+  "legacyAddon": "0315131312150201",
+  "characters": {
+    "00716F7369F3C5E8": {
+      "parent": [
+        "23ADBBC31B6A3DC6",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AR.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AR_P.et",
+      "sha256": "e16da044af1696ee225524f0a3985077ff7f1cca0a8afff1a4286c4839d0137a"
+    },
+    "0812D60CBC9DD927": {
+      "parent": [
+        "15CD521098748195",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_HeliCrew.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_HeliCrew_P.et",
+      "sha256": "ba204ab43964a06876956f242713b662a54c1fc22e1f7448bed9a7019746e7d1"
+    },
+    "094747C4F8BE9F9F": {
+      "parent": [
+        "E398E44759DA1A43",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_TL.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_TL_P.et",
+      "sha256": "2ce7fe30f2a20fb3953a4a37532dd77f4dae49921391d717e70f0894391615a1"
+    },
+    "0BDB696C0A599350": {
+      "parent": [
+        "B6A2736A7201DD23",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_RTO.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_RTO_P.et",
+      "sha256": "7c4066f898cdcb4207be5e74277405f4d65dc037cb2d240b4e8aff810b665886"
+    },
+    "0D7AF7EC9908AF81": {
+      "parent": [
+        "0B8AC0C3C447F90E",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_LMG.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_LMG_P.et",
+      "sha256": "89384e7263497ef337154dfa578df979df24e99972877d9fa52b8ae965f13155"
+    },
+    "11DB79E241B3A90A": {
+      "parent": [
+        "145DBC42B19FC4D6",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Rifleman_KLMK.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Rifleman_KLMK_P.et",
+      "sha256": "ce393e48f5d185d69f449471e601e749e94be7e285b10d63ce2de88db69dff2c"
+    },
+    "1440AE966CB75BE9": {
+      "parent": [
+        "C110498284A5418F",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_GL.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_GL_P.et",
+      "sha256": "c3b8a8e834da0326ae5ec62743d25c238712cccb1263d32c82b02af2be4cfa3c"
+    },
+    "19B81929696BD5F6": {
+      "parent": [
+        "FCA76613163633F8",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_Sapper.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_Sapper_P.et",
+      "sha256": "1a7f223b6b9260a57f0bf401c980f3cc4d527988541b5cc10c5e7cee6cc2b950"
+    },
+    "1DA21ADFF265C0BE": {
+      "parent": [
+        "CBF7A398FE060335",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sapper.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sapper_P.et",
+      "sha256": "d99d014696aabfccc1bfe45361c81f1a6d75f63effcb4ade5ecfde300ff28c01"
+    },
+    "1E8509F9011DB5F4": {
+      "parent": [
+        "862E3B66D0316F0A",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_AR_KLMK.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_AR_KLMK_P.et",
+      "sha256": "a8bffd1b34839054ff5f49b606379f226152fbe0f473c3bd43f60e386168f11f"
+    },
+    "253AF9EE4FE937BF": {
+      "parent": [
+        "066644E57BA1E26E",
+        "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Sapper.et"
+      ],
+      "path": "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Sapper_P.et",
+      "sha256": "605eb6ca7d1ca6da03a80819c495a564ed537b5a5b2bd6b079d6a969e71650a2"
+    },
+    "2B0F3996B07194C4": {
+      "parent": [
+        "C8FABF6F093DA775",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_HeliCrew.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_HeliCrew_P.et",
+      "sha256": "6f00a042d56eceaa87b4a95394068bfe556027cff233d24720df970a43d78ecd"
+    },
+    "32AB0D83A9FF6F66": {
+      "parent": [
+        "ADB43E67E3766CE7",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_Sharpshooter.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_Sharpshooter_P.et",
+      "sha256": "d5be4d07ce99f8b68f7748f7ab874d29c7a5a0dc40aebdce097804bec90ee78e"
+    },
+    "35630BBA3D667C60": {
+      "parent": [
+        "D66C215D6F03EFFD",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Medic_KLMK.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Medic_KLMK_P.et",
+      "sha256": "780b8a6660519eed9b109d74238ca6f7d6e59f502bab5ecc78c30df945ef3026"
+    },
+    "38C945FFB7C0FDED": {
+      "parent": [
+        "8CA70597606992EC",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_Medic.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_Medic_P.et",
+      "sha256": "0f7e06412aeff3265d9bde0001df6fdc5a9e3e1402b9f76d54327b60adbc4e7d"
+    },
+    "3D67614F24B76051": {
+      "parent": [
+        "1CA3D30464EE4674",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Spotter.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Spotter_P.et",
+      "sha256": "94e199b02ebcaaa7345fb44cfddb360687f61063bcdc4a3592267b7aa5d6d088"
+    },
+    "46451B805F2CDE56": {
+      "parent": [
+        "D25BC9815A9F9E8D",
+        "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AT.et"
+      ],
+      "path": "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AT_P.et",
+      "sha256": "ea1c7956fbfe858787baa31c9a7423df61f489c1380f5762ab1a56653a44dc7e"
+    },
+    "474B20F1FAE24A79": {
+      "parent": [
+        "E8EF64F8B943A507",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_AAT_KLMK.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_AAT_KLMK_P.et",
+      "sha256": "2f2bb2121c8aa64a4ec1f2f202515d6437d437fb65fda5b65240db8ab9c31453"
+    },
+    "4A9A05BF6D7DC9EA": {
+      "parent": [
+        "9A234C5857D92187",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_Medic.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_Medic_P.et",
+      "sha256": "48aee4c4074684ec0cea906dc9d9dfe690a6c066dc5dadf4948932b0df950520"
+    },
+    "4ACD46BEECC179AA": {
+      "parent": [
+        "9A12B3F6ABDF70BE",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_AT_KLMK.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_AT_KLMK_P.et",
+      "sha256": "cabae8dc9dc8cb074e052a14638811ee6dab93cf42bbf7c3ddec7311fd309cc8"
+    },
+    "501777EB151D644B": {
+      "parent": [
+        "4FBA24F7BB43E17D",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Sergeant.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Sergeant_P.et",
+      "sha256": "36395e2f032a5f8aa2a2fe7662ddece7ece6bc1472cff3b7e99abb9735495a48"
+    },
+    "530A65EFD09BD7EF": {
+      "parent": [
+        "E8A05D5E0CEAC836",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_PL_KLMK.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_PL_KLMK_P.et",
+      "sha256": "cffe86881ca5f8acd1cfc9480fdf350101f004e9db58726a6215d606c5deb8d9"
+    },
+    "547BA14003A67C04": {
+      "parent": [
+        "C9E4FEAF5AAC8D8C",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Medic.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Medic_P.et",
+      "sha256": "78385b037001c0ca4a6cd379c65045d19d17da3f8bfbbaf2a0cdc6567c27a859"
+    },
+    "54B5A1C7426185A5": {
+      "parent": [
+        "FE65E8C60C751352",
+        "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_PL.et"
+      ],
+      "path": "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_PL_P.et",
+      "sha256": "8ab2503b7ad8fb6c40c522554b8c955019be3128b85ea715be94f4d710c7f03c"
+    },
+    "5E10F18AF4717622": {
+      "parent": [
+        "677B515F119222C2",
+        "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_SL.et"
+      ],
+      "path": "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_SL_P.et",
+      "sha256": "5a59f8b4fc096c918899d7d35818b0ef2399071317a4db5f08a320203b1b4c0a"
+    },
+    "6A840CB36D1670C2": {
+      "parent": [
+        "333DA6244C7DA34C",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SR.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SR_P.et",
+      "sha256": "8fb0bfad663430417922c65ba07c9f11a3f6891895cd60586127012458746fe7"
+    },
+    "6BFF6DCD047309CD": {
+      "parent": [
+        "85261D5B04BFA7EE",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_SL.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_SL_P.et",
+      "sha256": "a2b6dab85a88ed2ec549417041dfb135aa90a5fa828b7c0ea259672f13959119"
+    },
+    "6EF882860DCD77D1": {
+      "parent": [
+        "58E47E5A4D599432",
+        "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_MG.et"
+      ],
+      "path": "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_MG_P.et",
+      "sha256": "10a25b375e0fd862d3733e0aecd889309b2b15241170c5ef53d6d6d94a775dcd"
+    },
+    "730A987119F129A8": {
+      "parent": [
+        "928DC9882A0AC79D",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sergeant.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sergeant_P.et",
+      "sha256": "341677051a61d9c3a984c05703e90456ffa9de5cd1b251086a6165fcd258d16d"
+    },
+    "793FBF6474104BA3": {
+      "parent": [
+        "BF1E43FF39AA526B",
+        "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Scout.et"
+      ],
+      "path": "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Scout_P.et",
+      "sha256": "489efd0aa780cf1e250c3b7376816bdf3e894b367c49f0c604abb2cead564528"
+    },
+    "7D34858BEEBA0C31": {
+      "parent": [
+        "2DB452B3EC386B92",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_P.et",
+      "sha256": "29c9ed3519e7a7287b8ba1ed2f39d4d6dbc1855b58326c5fa6ba90075745bc9f"
+    },
+    "7E44CF4FB58F8FF7": {
+      "parent": [
+        "5B1996C05B1E51A4",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR_P.et",
+      "sha256": "60be58b0988454936dfea3ed53f83376ad8fa987d7be6dab8aae6246cb0b96d3"
+    },
+    "83008FD82A671A96": {
+      "parent": [
+        "36E28C628A2F83CB",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_P.et",
+      "sha256": "eb89171a2ed13d6032582a6f3b804e3147f6e3323d7eabd8718524420c0313f7"
+    },
+    "8878262151B42117": {
+      "parent": [
+        "6E1E87ECA5F5A7EA",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_LMG.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_LMG_P.et",
+      "sha256": "791d0d74bfa57ed866cf0048f3b9a504c010f5ab574cf6c67a5b5ff3674cdafe"
+    },
+    "8ED9B8A1C2E51DC6": {
+      "parent": [
+        "5228D8F587B5EEDC",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_RTO.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_RTO_P.et",
+      "sha256": "647c74f52301b1e0fb9445f6f53f392fb33852a95db2382c487b60b2381f7e3e"
+    },
+    "950D59E028D3F268": {
+      "parent": [
+        "CE33AB22F61F3365",
+        "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Sharpshooter.et"
+      ],
+      "path": "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Sharpshooter_P.et",
+      "sha256": "f2922d36f3766e9be2ee7a1d7a3f752cd58c6d5190278e32b89542e407271cf2"
+    },
+    "951CA4F244097071": {
+      "parent": [
+        "96C784C502AC37DA",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG_P.et",
+      "sha256": "f15bcf9710cf0500b37ca0702c149ba769008adc5187ae32cf9821078c6865b6"
+    },
+    "9D49EF41B2B47117": {
+      "parent": [
+        "ADC2DE949F566202",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_Sharpshooter.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_Sharpshooter_P.et",
+      "sha256": "5b85e70cb9aafebd92c2c45eb6ea7c790b90183a17aa6598eb8585c3b89b65ff"
+    },
+    "A317336F18478B2A": {
+      "parent": [
+        "B823C229EC3981B7",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_GL.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_GL_P.et",
+      "sha256": "20b7c5830bbb9858a9294c749759fb259c2a38826b180946e8e034b0e01d657a"
+    },
+    "A47EB499090D69B9": {
+      "parent": [
+        "84029128FA6F6BB9",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL_P.et",
+      "sha256": "3c8bc33b2ac452b38f57bb9393ec0a2885549d27a48c832e20ffc91b404958aa"
+    },
+    "A5F4D7FEBDB57182": {
+      "parent": [
+        "5436629450D8387A",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL_P.et",
+      "sha256": "4b175c6de84c126e73aca89b9eb07e3bca05f1c2460f412c5a1dbf6590320662"
+    },
+    "A8A47F001DA13B73": {
+      "parent": [
+        "976AC400219898FA",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sharpshooter.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sharpshooter_P.et",
+      "sha256": "f0e7e1917fda64d20b1b95e376c0da6cbbb1ca05ce2200e1b24d7be14ad32327"
+    },
+    "ACD038BB506F47A9": {
+      "parent": [
+        "A8507C7BBAF64A71",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_SL_KLMK.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_SL_KLMK_P.et",
+      "sha256": "ed884e4463bb9d59d62a2d3b510102e87d54ba08108fa3bf02be295bbc809c45"
+    },
+    "AF5187B30BA58205": {
+      "parent": [
+        "426F7FAAC77A2A6D",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_PL.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_PL_P.et",
+      "sha256": "77f337f1c0f86fec5b1695841ac2d2144e5af0a848c084c143aeaaf0b5d30fd4"
+    },
+    "B452527EA042DFF0": {
+      "parent": [
+        "0F6689B491641155",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Sniper.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Sniper_P.et",
+      "sha256": "7a0df38040b18bb38a50c745e4138097b65542c35e7668242642e00b04117968"
+    },
+    "BDA13DF416E8D9F6": {
+      "parent": [
+        "1C78331E156A3D65",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT_P.et",
+      "sha256": "769cccf3ca45e6ae3a7b5817273a71b68e35d566444cf5ea4c0ae40c53173249"
+    },
+    "BF44997B8982C009": {
+      "parent": [
+        "84B40583F4D1B7A3",
+        "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman.et"
+      ],
+      "path": "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman_P.et",
+      "sha256": "40b7e6b820943dcfb4f2a82c8f8b6e1cf70e3b8434880ae4fdabfff0d8b8c292"
+    },
+    "BF5B1131DCC510CE": {
+      "parent": [
+        "730CDEC4168637B6",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_Sapper.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_Sapper_P.et",
+      "sha256": "98d25164d1859902f88c4d7fd7b2fcf66a8fc6ccbfe82b0fb978c9750c36acbf"
+    },
+    "C095F7A0632CE65E": {
+      "parent": [
+        "AE63E4B79FB45DD1",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Sapper.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Sapper_P.et",
+      "sha256": "346290e9da20d95c8d4fade5d1357408217d85aa7ce75131c0d88bb05e2ae580"
+    },
+    "C0C1F1FFD610A6BB": {
+      "parent": [
+        "23D81C023DBF85AC",
+        "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_RTO.et"
+      ],
+      "path": "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_RTO_P.et",
+      "sha256": "470395164edf26be147df3d91c46dfacd603b08c0dce929890b817c570cfa2dc"
+    },
+    "C262DC827577226C": {
+      "parent": [
+        "27BF1FF235DD6036",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_LAT.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_LAT_P.et",
+      "sha256": "fd5e3227ae10f55597280221901e5002fa4e1401e93834d76393321b19dd9a49"
+    },
+    "C9DE704C68B1DB6F": {
+      "parent": [
+        "B056E800F6286831",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Sharpshooter_KLMK.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Sharpshooter_KLMK_P.et",
+      "sha256": "3007848c14e98d7a52293399759b531ae073094f85b3c16edd9a38b5594acee4"
+    },
+    "CA2EB3A73FABC625": {
+      "parent": [
+        "6058AB54781A0C52",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AMG.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AMG_P.et",
+      "sha256": "3f862503a65d19bee078b759ad81691a7af38f13a7956130735a22729959f39c"
+    },
+    "CE2C005A0F9D7E23": {
+      "parent": [
+        "FF43925D26526B95",
+        "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AAT.et"
+      ],
+      "path": "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AAT_P.et",
+      "sha256": "7dfa436f6cde0c3304b68c3b5f2a0fd92e5ab8d40a57ddfbe90cf1d6fd9032e8"
+    },
+    "D164278FD7D9C81A": {
+      "parent": [
+        "0B3167BB0FB68110",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_PL.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_PL_P.et",
+      "sha256": "1a053a4577b7f01f156bb0b0804b064f57ad7ee7a3d17cf0ab9a9d738cdd1087"
+    },
+    "D1786D7659BC2E7C": {
+      "parent": [
+        "E9AEEF2D9E41321B",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AMG.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AMG_P.et",
+      "sha256": "2c1fccb790fce1ed53fe77e3a79fce926b2b3eba2abb7d90c170a2575ba121c0"
+    },
+    "DBC177C261C93B9D": {
+      "parent": [
+        "E45F1E163F5CA080",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_SL.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_SL_P.et",
+      "sha256": "c4d4836f06781fda2823953a2be97b1f5debe7fd5be623f2defad9c199f328bd"
+    },
+    "DC963F3BA0B5DE9B": {
+      "parent": [
+        "9C16A2371109644D",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_RTO_KLMK.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_RTO_KLMK_P.et",
+      "sha256": "e2b1af573d60bc44e2351811cbe79b7c089f58e5fec4e93d5bdc78121a25221d"
+    },
+    "DCA8F0347083D90E": {
+      "parent": [
+        "5811F02495F6810E",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_SL.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_SL_P.et",
+      "sha256": "ef2f963d7d33be36322704eeb2f2abe265fc22ba2f6d99cf2006d6761452ecf9"
+    },
+    "DD80FA65DDFF68B9": {
+      "parent": [
+        "AB9726163EC1BD81",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Medic.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Medic_P.et",
+      "sha256": "ef1b200b63425a9206b1a570c315e7cf61ea54329885e903957f0bc5eb18a50f"
+    },
+    "E5F836512D78905A": {
+      "parent": [
+        "FC13DAA97D49137F",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Sergeant_KLMK.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Sergeant_KLMK_P.et",
+      "sha256": "876df142598056c6e73d92ebb84fde04042ccd6a37a04c2f4c691efd1abd7fc8"
+    },
+    "E691995C5D7CD7A4": {
+      "parent": [
+        "75FC25863194612A",
+        "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AMG.et"
+      ],
+      "path": "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AMG_P.et",
+      "sha256": "14130f7441961d9785e5ba5d5c74ee544a40249b7795fed8aa7f2becbf57bfeb"
+    },
+    "E69E4C5F3E18EE87": {
+      "parent": [
+        "C0F45FA0C11853D1",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_Officer.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_Officer_P.et",
+      "sha256": "231d66895a33cc19965dade54f5d4acc234ba505d3de3f60d8351e3524292780"
+    },
+    "E9601333852C637F": {
+      "parent": [
+        "42A502E3BB727CEB",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_HeliPilot.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_HeliPilot_P.et",
+      "sha256": "fde5259fe8443ddcd9ccd5130f22ed6ee2a0b17ba9952a4e77945300980ee5a3"
+    },
+    "EB2904CE98753A6E": {
+      "parent": [
+        "1623EA3AEFACA0E4",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_MG.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_MG_P.et",
+      "sha256": "1b1f4f5adde96af2506089a496295d99b2885f7193b3fb7b2f55926800ddaef8"
+    },
+    "EB49AB08A32A8C1C": {
+      "parent": [
+        "C49ED6AA2EA02B15",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_SR_KLMK.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_SR_KLMK_P.et",
+      "sha256": "fb9685b66f64c6dfbce9d7b0f698e7f7feabb21acdb4c85a986c96c8eb62c7e3"
+    },
+    "EC7EDB04B4C7B73A": {
+      "parent": [
+        "3726077BE60962FF",
+        "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_RTO.et"
+      ],
+      "path": "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_RTO_P.et",
+      "sha256": "b28cf6ca998130e0cb50aa66d30f5cfc60b70ebec4edf4b325308a91e4907e91"
+    },
+    "F3C4E54791BA286D": {
+      "parent": [
+        "B2A71FE01BA567D6",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_Officer.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_Officer_P.et",
+      "sha256": "6e4d9e34c84d8ea0de7eefcd8f9ae7169acab18f5a08cf22e769da7462e27db4"
+    },
+    "F72805D5D2D05F63": {
+      "parent": [
+        "612F43A4D5AE765F",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_RTO.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_RTO_P.et",
+      "sha256": "ce58692777c08b5e97ea38d4bcd35b1703118cbafa5e589480988aad2a3d387e"
+    },
+    "F93D2B11566D65A9": {
+      "parent": [
+        "45A02CA25CBA9443",
+        "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Medic.et"
+      ],
+      "path": "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Medic_P.et",
+      "sha256": "3e3ea05b06fda606caddbd34440cf6c037ad54829ee4c196a353b1266a869043"
+    },
+    "F9C5F4700B5D87FB": {
+      "parent": [
+        "631158F6898738A4",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT_P.et",
+      "sha256": "81076800811c62582854bc22902c995fb9064453cb71a7ffaaa4bee981430c12"
+    },
+    "FFE45AFCB29CD014": {
+      "parent": [
+        "A62FA97C4EC64F14",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_HeliPilot.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_HeliPilot_P.et",
+      "sha256": "969460a252a3d285c77a476cd17b612cec352fe148ab13c677c02af00bc08a79"
+    }
+  },
+  "groups": {
+    "126BE8C46FA39581": {
+      "parent": [
+        "5BEA04939D148B1D",
+        "Prefabs/Groups/INDFOR/Group_FIA_FireTeam.et"
+      ],
+      "path": "Prefabs/Groups/INDFOR/Group_FIA_FireTeam_P.et",
+      "sha256": "b030ec6f4b08e61cb323fa76fddf9cd150013764fa28c2b24daf7750f69c380c",
+      "slots": [
+        [
+          "5E10F18AF4717622",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_SL_P.et"
+        ],
+        [
+          "46451B805F2CDE56",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AT_P.et"
+        ],
+        [
+          "BF44997B8982C009",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman_P.et"
+        ],
+        [
+          "BF44997B8982C009",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman_P.et"
+        ],
+        [
+          "BF44997B8982C009",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman_P.et"
+        ]
+      ]
+    },
+    "17C7309FFE4775B0": {
+      "parent": [
+        "CE41AF625D05D0F0",
+        "Prefabs/Groups/INDFOR/Group_FIA_RifleSquad.et"
+      ],
+      "path": "Prefabs/Groups/INDFOR/Group_FIA_RifleSquad_P.et",
+      "sha256": "20c7be7840d72fe1da8ed59c8457f9a16445a49ad12304aadd3182964f267601",
+      "slots": [
+        [
+          "5E10F18AF4717622",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_SL_P.et"
+        ],
+        [
+          "6EF882860DCD77D1",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_MG_P.et"
+        ],
+        [
+          "E691995C5D7CD7A4",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AMG_P.et"
+        ],
+        [
+          "46451B805F2CDE56",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AT_P.et"
+        ],
+        [
+          "BF44997B8982C009",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman_P.et"
+        ],
+        [
+          "BF44997B8982C009",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman_P.et"
+        ],
+        [
+          "BF44997B8982C009",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman_P.et"
+        ]
+      ]
+    },
+    "288D5E5619568501": {
+      "parent": [
+        "97D45056CFC22FF2",
+        "Prefabs/Groups/OPFOR/KLMK/Group_USSR_RifleSquad_KLMK.et"
+      ],
+      "path": "Prefabs/Groups/OPFOR/KLMK/Group_USSR_RifleSquad_KLMK_P.et",
+      "sha256": "a914940c98c436f2dbaa691cab1ae17362824b896fc3929fa20ee58c1d819092",
+      "slots": [
+        [
+          "ACD038BB506F47A9",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_SL_KLMK_P.et"
+        ],
+        [
+          "1E8509F9011DB5F4",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_AR_KLMK_P.et"
+        ],
+        [
+          "4ACD46BEECC179AA",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_AT_KLMK_P.et"
+        ],
+        [
+          "474B20F1FAE24A79",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_AAT_KLMK_P.et"
+        ],
+        [
+          "EB49AB08A32A8C1C",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_SR_KLMK_P.et"
+        ],
+        [
+          "11DB79E241B3A90A",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Rifleman_KLMK_P.et"
+        ]
+      ]
+    },
+    "47EADE5E4E07076C": {
+      "parent": [
+        "84E5BBAB25EA23E5",
+        "Prefabs/Groups/BLUFOR/Group_US_FireTeam.et"
+      ],
+      "path": "Prefabs/Groups/BLUFOR/Group_US_FireTeam_P.et",
+      "sha256": "2640467d92766fb1bbd3b59bbb14745948c240eb381a779f1083cddf24b9f690",
+      "slots": [
+        [
+          "094747C4F8BE9F9F",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_TL_P.et"
+        ],
+        [
+          "7E44CF4FB58F8FF7",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR_P.et"
+        ],
+        [
+          "A47EB499090D69B9",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL_P.et"
+        ],
+        [
+          "C262DC827577226C",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_LAT_P.et"
+        ]
+      ]
+    },
+    "6C00761F1BE10CC8": {
+      "parent": [
+        "B69270E9F222F356",
+        "Prefabs/Groups/OPFOR/KLMK/Group_USSR_PlatoonHQ_KLMK.et"
+      ],
+      "path": "Prefabs/Groups/OPFOR/KLMK/Group_USSR_PlatoonHQ_KLMK_P.et",
+      "sha256": "48349e4b7c2041c01c340110b132543451f92cf89869b341a7b6ab6ada07a35e",
+      "slots": [
+        [
+          "530A65EFD09BD7EF",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_PL_KLMK_P.et"
+        ],
+        [
+          "E5F836512D78905A",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Sergeant_KLMK_P.et"
+        ],
+        [
+          "DC963F3BA0B5DE9B",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_RTO_KLMK_P.et"
+        ],
+        [
+          "35630BBA3D667C60",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Medic_KLMK_P.et"
+        ],
+        [
+          "C9DE704C68B1DB6F",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Sharpshooter_KLMK_P.et"
+        ]
+      ]
+    },
+    "734B886D3D2AB350": {
+      "parent": [
+        "22F33D3EC8F281AB",
+        "Prefabs/Groups/INDFOR/Group_FIA_MachineGunTeam.et"
+      ],
+      "path": "Prefabs/Groups/INDFOR/Group_FIA_MachineGunTeam_P.et",
+      "sha256": "5e6f73259b6b74ada2962ebaddae00877446744c0597adb3206d460ca7f8af86",
+      "slots": [
+        [
+          "6EF882860DCD77D1",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_MG_P.et"
+        ],
+        [
+          "E691995C5D7CD7A4",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AMG_P.et"
+        ]
+      ]
+    },
+    "8298E4105B5A10C0": {
+      "parent": [
+        "6307F42403E9B8A4",
+        "Prefabs/Groups/INDFOR/Group_FIA_SharpshooterTeam.et"
+      ],
+      "path": "Prefabs/Groups/INDFOR/Group_FIA_SharpshooterTeam_P.et",
+      "sha256": "ed52efb6e1f3c79ff20ced0b6f564da49242d9fc74a5bf223768b7b959606f4f",
+      "slots": [
+        [
+          "793FBF6474104BA3",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Scout_P.et"
+        ],
+        [
+          "950D59E028D3F268",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Sharpshooter_P.et"
+        ]
+      ]
+    },
+    "9073549836A3B075": {
+      "parent": [
+        "2CC26054775FBA2C",
+        "Prefabs/Groups/INDFOR/Group_FIA_Team_AT.et"
+      ],
+      "path": "Prefabs/Groups/INDFOR/Group_FIA_Team_AT_P.et",
+      "sha256": "3068cd6a5c48406fbdf728aa4f43378b885db9eb3b045a44deefcd2e6cabb7f5",
+      "slots": [
+        [
+          "BF44997B8982C009",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman_P.et"
+        ],
+        [
+          "46451B805F2CDE56",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AT_P.et"
+        ],
+        [
+          "46451B805F2CDE56",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AT_P.et"
+        ],
+        [
+          "CE2C005A0F9D7E23",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AAT_P.et"
+        ]
+      ]
+    },
+    "9C270A463C4E0022": {
+      "parent": [
+        "BB2E6C2CC2755E9B",
+        "Prefabs/Groups/OPFOR/Group_USSR_SapperTeam.et"
+      ],
+      "path": "Prefabs/Groups/OPFOR/Group_USSR_SapperTeam_P.et",
+      "sha256": "8f45a85ff58372de46cc13358d37854d847f2b129c7e60ea71ff785f9b21368e",
+      "slots": [
+        [
+          "1DA21ADFF265C0BE",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sapper_P.et"
+        ],
+        [
+          "1DA21ADFF265C0BE",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sapper_P.et"
+        ]
+      ]
+    },
+    "AE7E3C1147A807CD": {
+      "parent": [
+        "35681BE27C302FF5",
+        "Prefabs/Groups/BLUFOR/GreenBerets/Group_US_GreenBeret_SentryTeam.et"
+      ],
+      "path": "Prefabs/Groups/BLUFOR/GreenBerets/Group_US_GreenBeret_SentryTeam_P.et",
+      "sha256": "0cd23417450f9cf75562da71a52b34eac0698c4aa12f72147bdc3431e7f8df56",
+      "slots": [
+        [
+          "83008FD82A671A96",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_P.et"
+        ],
+        [
+          "83008FD82A671A96",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_P.et"
+        ]
+      ]
+    },
+    "C0CBE71EB24755D9": {
+      "parent": [
+        "D0886786634E55AE",
+        "Prefabs/Groups/BLUFOR/GreenBerets/Group_US_GreenBeret_Squad.et"
+      ],
+      "path": "Prefabs/Groups/BLUFOR/GreenBerets/Group_US_GreenBeret_Squad_P.et",
+      "sha256": "3809dc56f888f295698db12cf110ac6fb66512654c5e62f40d4925c6d2e98657",
+      "slots": [
+        [
+          "6BFF6DCD047309CD",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_SL_P.et"
+        ],
+        [
+          "8878262151B42117",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_LMG_P.et"
+        ],
+        [
+          "9D49EF41B2B47117",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_Sharpshooter_P.et"
+        ],
+        [
+          "19B81929696BD5F6",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_Sapper_P.et"
+        ],
+        [
+          "8ED9B8A1C2E51DC6",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_RTO_P.et"
+        ],
+        [
+          "4A9A05BF6D7DC9EA",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Character_US_SF_Medic_P.et"
+        ]
+      ]
+    },
+    "C3462FCC441FDB0E": {
+      "parent": [
+        "9624D2B39397E148",
+        "Prefabs/Groups/BLUFOR/Group_US_SapperTeam.et"
+      ],
+      "path": "Prefabs/Groups/BLUFOR/Group_US_SapperTeam_P.et",
+      "sha256": "9748ce4e2eb101d23ab3ba35f285e20216270a496396f845565966af3d151e40",
+      "slots": [
+        [
+          "C095F7A0632CE65E",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Sapper_P.et"
+        ],
+        [
+          "C095F7A0632CE65E",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Sapper_P.et"
+        ]
+      ]
+    },
+    "CA73F9230999408B": {
+      "parent": [
+        "EE92725E9B949C3D",
+        "Prefabs/Groups/INDFOR/Group_FIA_PlatoonHQ.et"
+      ],
+      "path": "Prefabs/Groups/INDFOR/Group_FIA_PlatoonHQ_P.et",
+      "sha256": "ade91854ea5036ba05a740a9c57ea24cfd1e495fe07b0ee457ea271171f34acb",
+      "slots": [
+        [
+          "54B5A1C7426185A5",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_PL_P.et"
+        ],
+        [
+          "C0C1F1FFD610A6BB",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_RTO_P.et"
+        ],
+        [
+          "F93D2B11566D65A9",
+          "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Medic_P.et"
+        ]
+      ]
+    },
+    "D0372E0E86076022": {
+      "parent": [
+        "4D3BBEC1A955626A",
+        "Prefabs/Groups/OPFOR/Spetsnaz/Group_USSR_Spetsnaz_Squad.et"
+      ],
+      "path": "Prefabs/Groups/OPFOR/Spetsnaz/Group_USSR_Spetsnaz_Squad_P.et",
+      "sha256": "5e891958e221c543d9c0b96593393fe29bf16d3e144f728e0f6a3f3891094d25",
+      "slots": [
+        [
+          "DCA8F0347083D90E",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_SL_P.et"
+        ],
+        [
+          "0D7AF7EC9908AF81",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_LMG_P.et"
+        ],
+        [
+          "32AB0D83A9FF6F66",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_Sharpshooter_P.et"
+        ],
+        [
+          "BF5B1131DCC510CE",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_Sapper_P.et"
+        ],
+        [
+          "38C945FFB7C0FDED",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_Medic_P.et"
+        ],
+        [
+          "0BDB696C0A599350",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Character_USSR_SF_RTO_P.et"
+        ]
+      ]
+    },
+    "D1B420D921CC6CD4": {
+      "parent": [
+        "0D10CCEEC7B3EC34",
+        "Prefabs/Groups/OPFOR/Group_USSR_PlatoonHQ.et"
+      ],
+      "path": "Prefabs/Groups/OPFOR/Group_USSR_PlatoonHQ_P.et",
+      "sha256": "bf0da39511845827e02c8a9badf5f5e9164c08b8435e903c66f1fd4c74632afb",
+      "slots": [
+        [
+          "AF5187B30BA58205",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_PL_P.et"
+        ],
+        [
+          "730A987119F129A8",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sergeant_P.et"
+        ],
+        [
+          "F72805D5D2D05F63",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_RTO_P.et"
+        ],
+        [
+          "DD80FA65DDFF68B9",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Medic_P.et"
+        ],
+        [
+          "A8A47F001DA13B73",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sharpshooter_P.et"
+        ]
+      ]
+    },
+    "E98CEB8BE757C8A5": {
+      "parent": [
+        "A2F75E45C66B1C0A",
+        "Prefabs/Groups/OPFOR/Group_USSR_MachineGunTeam.et"
+      ],
+      "path": "Prefabs/Groups/OPFOR/Group_USSR_MachineGunTeam_P.et",
+      "sha256": "cdd09d3b6a2d5bbc0c68b5719b37dc5f101dc1b0b5257f3ee8d9971e3f2d3d72",
+      "slots": [
+        [
+          "951CA4F244097071",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG_P.et"
+        ],
+        [
+          "D1786D7659BC2E7C",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AMG_P.et"
+        ]
+      ]
+    },
+    "FCBE9E46702ED307": {
+      "parent": [
+        "B7AB5D3F8A7ADAE4",
+        "Prefabs/Groups/BLUFOR/Group_US_PlatoonHQ.et"
+      ],
+      "path": "Prefabs/Groups/BLUFOR/Group_US_PlatoonHQ_P.et",
+      "sha256": "d8262c07e089d03e148369e08719b19a2d6099508c2d7068b7c974dcd91044d6",
+      "slots": [
+        [
+          "D164278FD7D9C81A",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_PL_P.et"
+        ],
+        [
+          "501777EB151D644B",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Sergeant_P.et"
+        ],
+        [
+          "EC7EDB04B4C7B73A",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_RTO_P.et"
+        ],
+        [
+          "547BA14003A67C04",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Medic_P.et"
+        ]
+      ]
+    }
+  }
+}
