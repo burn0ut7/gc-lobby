@@ -1,0 +1,591 @@
+{
+  "0D10CCEEC7B3EC34": {
+    "path": "Prefabs/Groups/OPFOR/Group_USSR_PlatoonHQ.et",
+    "sha256": "3cde48d834fe4ee812b3c00afd3f4f0582864e287de4fb99060fd3310d91666f",
+    "inheritedGroups": [
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["426F7FAAC77A2A6D", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_PL.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["612F43A4D5AE765F", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_RTO.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["928DC9882A0AC79D", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sergeant.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["976AC400219898FA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sharpshooter.et"],
+      ["AB9726163EC1BD81", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Medic.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"]
+    ]
+  },
+  "1A5F0D93609DA5DA": {
+    "path": "Prefabs/Groups/OPFOR/Group_USSR_ManeuverGroup.et",
+    "sha256": "5e5a6743d55d78a34e675aa4cd7212e600dffb25c1cf965742f17bf2476b052c",
+    "inheritedGroups": [
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["333DA6244C7DA34C", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SR.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["BF643BE4ADBDFDD3", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_LAT.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"]
+    ]
+  },
+  "1BB20A4B3A53D0F5": {
+    "path": "Prefabs/Groups/INDFOR/Group_FIA_LightFireTeam.et",
+    "sha256": "a2987dacfd7812595ec5c30a94db9f8b37b40a3d2354d529be2a2aef0a570169",
+    "inheritedGroups": [
+      ["242BC3C6BCE96EA5", "Prefabs/Groups/INDFOR/Group_FIA_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["84B40583F4D1B7A3", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman.et"]
+    ]
+  },
+  "1BF443A793E269EB": {
+    "path": "Prefabs/Groups/OPFOR/Naval_Infantry/Group_USSR_PlatoonHQ_NI.et",
+    "sha256": "79124beeb21f34678f8ca527698167c202150aff45212b8c9fc71e9669d38b55",
+    "inheritedGroups": [
+      ["0D10CCEEC7B3EC34", "Prefabs/Groups/OPFOR/Group_USSR_PlatoonHQ.et"],
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["0BC506AD47804A53", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Naval_Infantry/Character_USSR_NI_PL.et"],
+      ["0E4D9E3249328533", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Naval_Infantry/Character_USSR_NI_RTO.et"],
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["34D564602573EDA1", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Naval_Infantry/Character_USSR_NI_Medic.et"],
+      ["426F7FAAC77A2A6D", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_PL.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["612F43A4D5AE765F", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_RTO.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["8CDEE565CB49D126", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Naval_Infantry/Character_USSR_NI_Sharpshooter.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["928DC9882A0AC79D", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sergeant.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["976AC400219898FA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sharpshooter.et"],
+      ["AB9726163EC1BD81", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Medic.et"],
+      ["D4B48CB2120CD6E0", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Naval_Infantry/Character_USSR_NI_Sergeant.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"]
+    ]
+  },
+  "1F468430E5AB477E": {
+    "path": "Prefabs/Groups/BLUFOR/GreenBerets/Suppressed/Group_US_GreenBeret_ReconSquad.et",
+    "sha256": "d2c98e981c350c62601327af8d359ca3ad66167caf364ca160bf0d97b02a85b3",
+    "inheritedGroups": [
+      ["EACD97CF4A702FAE", "Prefabs/Groups/BLUFOR/Group_US_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["218217624DA44CCD", "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Suppressed/Character_US_SF_Medic_S.et"],
+      ["33155540F5CAA602", "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Suppressed/Character_US_SF_S.et"],
+      ["B7E8542C3CD9E4B2", "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Suppressed/Character_US_SF_Sapper_S.et"],
+      ["C81429173BB025F2", "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Suppressed/Character_US_SF_RTO_S.et"],
+      ["E5E4A45D13175E67", "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Suppressed/Character_US_SF_SL_S.et"],
+      ["EC8C02BC296EEEA0", "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Suppressed/Character_US_SF_Sharpshooter_S.et"]
+    ]
+  },
+  "22F33D3EC8F281AB": {
+    "path": "Prefabs/Groups/INDFOR/Group_FIA_MachineGunTeam.et",
+    "sha256": "82b4d77dad615063dd816ec82d4e2cc0286886d123e7b0159b132ce047b61221",
+    "inheritedGroups": [
+      ["242BC3C6BCE96EA5", "Prefabs/Groups/INDFOR/Group_FIA_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["58E47E5A4D599432", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_MG.et"],
+      ["75FC25863194612A", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AMG.et"]
+    ]
+  },
+  "250BBF11AA24076F": {
+    "path": "Prefabs/Groups/OPFOR/Naval_Infantry/Group_USSR_RifleSquad_NI.et",
+    "sha256": "b34854f35a7b6f93ac8d87a1a0e1772b5851f5d0745b36c400f2dd1d48e407b5",
+    "inheritedGroups": [
+      ["E552DABF3636C2AD", "Prefabs/Groups/OPFOR/Group_USSR_RifleSquad.et"],
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["1F8E131008DE0DD1", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Naval_Infantry/Character_USSR_NI_LAT.et"],
+      ["23ADBBC31B6A3DC6", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AR.et"],
+      ["27FB27EA116AC78C", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Naval_Infantry/Character_USSR_NI_AT.et"],
+      ["333DA6244C7DA34C", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SR.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["92DBBF345A677BC3", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Naval_Infantry/Character_USSR_NI_SL.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["BF643BE4ADBDFDD3", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_LAT.et"],
+      ["D2D6106D52DF6B0A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Naval_Infantry/Character_USSR_NI_AAT.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"],
+      ["EFC353CC3FF4475A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Naval_Infantry/Character_USSR_NI_SR.et"],
+      ["FF534E2B68E3D9D0", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Naval_Infantry/Character_USSR_NI_AR.et"]
+    ]
+  },
+  "2CC26054775FBA2C": {
+    "path": "Prefabs/Groups/INDFOR/Group_FIA_Team_AT.et",
+    "sha256": "bb8aeeae32ada61418b1b49745eb388a9d1ad65861047a01b23d1238eec47dee",
+    "inheritedGroups": [
+      ["242BC3C6BCE96EA5", "Prefabs/Groups/INDFOR/Group_FIA_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["84B40583F4D1B7A3", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman.et"],
+      ["D25BC9815A9F9E8D", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AT.et"],
+      ["FF43925D26526B95", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AAT.et"]
+    ]
+  },
+  "2E9C920C3ACA2C6F": {
+    "path": "Prefabs/Groups/INDFOR/Group_FIA_ReconTeam.et",
+    "sha256": "e111501ff67772af732aa3234eb186138d3b8ebc33cbf6e5a43fa57a8466186c",
+    "inheritedGroups": [
+      ["242BC3C6BCE96EA5", "Prefabs/Groups/INDFOR/Group_FIA_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["23D81C023DBF85AC", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_RTO.et"],
+      ["BF1E43FF39AA526B", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Scout.et"]
+    ]
+  },
+  "30ED11AA4F0D41E5": {
+    "path": "Prefabs/Groups/OPFOR/Group_USSR_FireGroup.et",
+    "sha256": "ff0f75f7dd59880e8bfe96bcea617eb8957a81969dcdb2eda048db8c8b8cdb10",
+    "inheritedGroups": [
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["23ADBBC31B6A3DC6", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AR.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"]
+    ]
+  },
+  "43C7A28EEB660FF8": {
+    "path": "Prefabs/Groups/OPFOR/Group_USSR_Team_GL.et",
+    "sha256": "790d4a41012a5ec9bce5bb27d861c129deb8f1024f1d95c2054bd4dada904ddf",
+    "inheritedGroups": [
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["23ADBBC31B6A3DC6", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AR.et"],
+      ["333DA6244C7DA34C", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SR.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"]
+    ]
+  },
+  "56DC5F9D2D6119F2": {
+    "path": "Prefabs/Groups/OPFOR/KLMK/Group_USSR_MachineGunTeam_KLMK.et",
+    "sha256": "eb2c45ea8ea0c7353317511a2a35206bf734540f1e180a9bb38cecbf575f79cf",
+    "inheritedGroups": [
+      ["A2F75E45C66B1C0A", "Prefabs/Groups/OPFOR/Group_USSR_MachineGunTeam.et"],
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["8A60AEBD529FEB8B", "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_MG_KLMK.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"],
+      ["E9AEEF2D9E41321B", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AMG.et"],
+      ["F89D79B340033E32", "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_AMG_KLMK.et"]
+    ]
+  },
+  "581106FA58919E89": {
+    "path": "Prefabs/Groups/INDFOR/Group_FIA_MedicalSection.et",
+    "sha256": "9eb4353954868cbcdcb425e0206743e13231aa89a982a0c14cb96e7d8b78a734",
+    "inheritedGroups": [
+      ["242BC3C6BCE96EA5", "Prefabs/Groups/INDFOR/Group_FIA_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["45A02CA25CBA9443", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Medic.et"]
+    ]
+  },
+  "5BEA04939D148B1D": {
+    "path": "Prefabs/Groups/INDFOR/Group_FIA_FireTeam.et",
+    "sha256": "a3d0878b0b113076c7490fcb9daa7b69ef7ebf8820377d510fc54ca1ee075c61",
+    "inheritedGroups": [
+      ["242BC3C6BCE96EA5", "Prefabs/Groups/INDFOR/Group_FIA_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["677B515F119222C2", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_SL.et"],
+      ["84B40583F4D1B7A3", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman.et"],
+      ["C77DFB8546B3F2A2", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_LAT.et"],
+      ["D25BC9815A9F9E8D", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AT.et"]
+    ]
+  },
+  "6307F42403E9B8A4": {
+    "path": "Prefabs/Groups/INDFOR/Group_FIA_SharpshooterTeam.et",
+    "sha256": "8e3f9a23be60bfc18f533e13c3d628489282f2b92633e07a9c98eebd7c762b8f",
+    "inheritedGroups": [
+      ["242BC3C6BCE96EA5", "Prefabs/Groups/INDFOR/Group_FIA_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["BF1E43FF39AA526B", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Scout.et"],
+      ["CE33AB22F61F3365", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Sharpshooter.et"]
+    ]
+  },
+  "657590C1EC9E27D3": {
+    "path": "Prefabs/Groups/OPFOR/Group_USSR_LightFireTeam.et",
+    "sha256": "f776a12a2d3ab6d74ae5ce0486e46aaa5855817db1ce70667524d5a590bf95d3",
+    "inheritedGroups": [
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["333DA6244C7DA34C", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SR.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"]
+    ]
+  },
+  "666A2B0A6B1967AE": {
+    "path": "Prefabs/Groups/OPFOR/Spetsnaz/Suppressed/Group_USSR_Spetsnaz_ReconSquad.et",
+    "sha256": "af91bececfee2b89168f756463bd39b39949cd654b6324514876938d54113bf6",
+    "inheritedGroups": [
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["029FF8F84148012E", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Suppressed/Character_USSR_SF_Medic_S.et"],
+      ["1523C468AAF90312", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Suppressed/Character_USSR_SF_RTO_S.et"],
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["4D20F57C29B6EC1D", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Suppressed/Character_USSR_SF_S.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["5EFF3963153BE048", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Suppressed/Character_USSR_SF_Sharpshooter_S.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["6C1FFF78CD4E4ADA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Suppressed/Character_USSR_SF_SL_S.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["A16C1DE30B6957D9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Suppressed/Character_USSR_SF_Sapper_S.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"]
+    ]
+  },
+  "6E725D44CA973C24": {
+    "path": "Prefabs/Groups/INDFOR/Group_FIA_SentryTeam.et",
+    "sha256": "db10ee2c3268137baa9116f794f9ff13ddfdd774147d5355577e7f915e207492",
+    "inheritedGroups": [
+      ["242BC3C6BCE96EA5", "Prefabs/Groups/INDFOR/Group_FIA_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["84B40583F4D1B7A3", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman.et"]
+    ]
+  },
+  "84E5BBAB25EA23E5": {
+    "path": "Prefabs/Groups/BLUFOR/Group_US_FireTeam.et",
+    "sha256": "d6ed48e272c0baba8189eef906cff386640f4b8a5e3d7e3f8d78b8f72aaadb71",
+    "inheritedGroups": [
+      ["EACD97CF4A702FAE", "Prefabs/Groups/BLUFOR/Group_US_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["27BF1FF235DD6036", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_LAT.et"],
+      ["5B1996C05B1E51A4", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR.et"],
+      ["84029128FA6F6BB9", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et"],
+      ["E398E44759DA1A43", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_TL.et"]
+    ]
+  },
+  "958039B857396B7B": {
+    "path": "Prefabs/Groups/BLUFOR/Group_US_MachineGunTeam.et",
+    "sha256": "606f0f96c5173623ce688685d426464e70b46a897bdee59229a3827ca305a6cc",
+    "inheritedGroups": [
+      ["EACD97CF4A702FAE", "Prefabs/Groups/BLUFOR/Group_US_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1623EA3AEFACA0E4", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_MG.et"],
+      ["6058AB54781A0C52", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AMG.et"]
+    ]
+  },
+  "97D45056CFC22FF2": {
+    "path": "Prefabs/Groups/OPFOR/KLMK/Group_USSR_RifleSquad_KLMK.et",
+    "sha256": "12f6481b846336bcca1dfb1052d7feef123e181cf3ff85350145f95460a8c7ac",
+    "inheritedGroups": [
+      ["E552DABF3636C2AD", "Prefabs/Groups/OPFOR/Group_USSR_RifleSquad.et"],
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["23ADBBC31B6A3DC6", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AR.et"],
+      ["333DA6244C7DA34C", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SR.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["862E3B66D0316F0A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_AR_KLMK.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["9833B84F57F9F22F", "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_LAT_KLMK.et"],
+      ["9A12B3F6ABDF70BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_AT_KLMK.et"],
+      ["A8507C7BBAF64A71", "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_SL_KLMK.et"],
+      ["BF643BE4ADBDFDD3", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_LAT.et"],
+      ["C49ED6AA2EA02B15", "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_SR_KLMK.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"],
+      ["E8EF64F8B943A507", "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_AAT_KLMK.et"]
+    ]
+  },
+  "A0E9B5D6EA2072C4": {
+    "path": "Prefabs/Groups/INDFOR/Group_FIA_SapperTeam.et",
+    "sha256": "72006d52a6db6587a2aef01c5a54a4a60f43472b8402fedfa9e1a79fa647bfe5",
+    "inheritedGroups": [
+      ["242BC3C6BCE96EA5", "Prefabs/Groups/INDFOR/Group_FIA_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["066644E57BA1E26E", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Sapper.et"]
+    ]
+  },
+  "A2F75E45C66B1C0A": {
+    "path": "Prefabs/Groups/OPFOR/Group_USSR_MachineGunTeam.et",
+    "sha256": "beeb05c6be21d44e93fa2726364cd137321a715cf85892949839d0a284325970",
+    "inheritedGroups": [
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"],
+      ["E9AEEF2D9E41321B", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AMG.et"]
+    ]
+  },
+  "AC473DE5F4B24E82": {
+    "path": "Prefabs/Groups/BLUFOR/GreenBerets/Suppressed/Group_US_GreenBeret_ReconTeam.et",
+    "sha256": "713d8f51a5ec97fb8ea0831cb38efa2246ca3c6f451c1ea356f968419cd1baed",
+    "inheritedGroups": [
+      ["EACD97CF4A702FAE", "Prefabs/Groups/BLUFOR/Group_US_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["33155540F5CAA602", "Prefabs/Characters/Factions/BLUFOR/US_Army/GreenBerets/Suppressed/Character_US_SF_S.et"]
+    ]
+  },
+  "B69270E9F222F356": {
+    "path": "Prefabs/Groups/OPFOR/KLMK/Group_USSR_PlatoonHQ_KLMK.et",
+    "sha256": "1f7f1a094d030f94d253133b1bfa9643dc476bb383272798b7360a8d12887f52",
+    "inheritedGroups": [
+      ["0D10CCEEC7B3EC34", "Prefabs/Groups/OPFOR/Group_USSR_PlatoonHQ.et"],
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["426F7FAAC77A2A6D", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_PL.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["612F43A4D5AE765F", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_RTO.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["928DC9882A0AC79D", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sergeant.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["976AC400219898FA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Sharpshooter.et"],
+      ["9C16A2371109644D", "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_RTO_KLMK.et"],
+      ["AB9726163EC1BD81", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Medic.et"],
+      ["B056E800F6286831", "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Sharpshooter_KLMK.et"],
+      ["D66C215D6F03EFFD", "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Medic_KLMK.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"],
+      ["E8A05D5E0CEAC836", "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_PL_KLMK.et"],
+      ["FC13DAA97D49137F", "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Sergeant_KLMK.et"]
+    ]
+  },
+  "B721D5A8C1B556CE": {
+    "path": "Prefabs/Groups/OPFOR/Spetsnaz/Suppressed/Group_USSR_Spetsnaz_ReconTeam.et",
+    "sha256": "058f751b48bc6c9a0fa2794664c9d030882125a0445be1f946790b5b535012ac",
+    "inheritedGroups": [
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["4D20F57C29B6EC1D", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Spetsnaz/Suppressed/Character_USSR_SF_S.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"]
+    ]
+  },
+  "B7AB5D3F8A7ADAE4": {
+    "path": "Prefabs/Groups/BLUFOR/Group_US_PlatoonHQ.et",
+    "sha256": "938270fdd79730a235bd1249730c4ecec52492e30e3f220fd57228dba92e309a",
+    "inheritedGroups": [
+      ["EACD97CF4A702FAE", "Prefabs/Groups/BLUFOR/Group_US_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["0B3167BB0FB68110", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_PL.et"],
+      ["3726077BE60962FF", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_RTO.et"],
+      ["4FBA24F7BB43E17D", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Sergeant.et"],
+      ["C9E4FEAF5AAC8D8C", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Medic.et"]
+    ]
+  },
+  "CB58D90EA14430AD": {
+    "path": "Prefabs/Groups/OPFOR/Group_USSR_SentryTeam.et",
+    "sha256": "74d386a15bbec274051618004dfe2be7ceeb0564518fe10e94542f0a763e2f83",
+    "inheritedGroups": [
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"]
+    ]
+  },
+  "CE41AF625D05D0F0": {
+    "path": "Prefabs/Groups/INDFOR/Group_FIA_RifleSquad.et",
+    "sha256": "2025352dcb757f483fd233a8a830e96022ca338b4067985d9c4a9f5c7cf74c12",
+    "inheritedGroups": [
+      ["242BC3C6BCE96EA5", "Prefabs/Groups/INDFOR/Group_FIA_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["58E47E5A4D599432", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_MG.et"],
+      ["677B515F119222C2", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_SL.et"],
+      ["75FC25863194612A", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AMG.et"],
+      ["84B40583F4D1B7A3", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman.et"],
+      ["C77DFB8546B3F2A2", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_LAT.et"],
+      ["D25BC9815A9F9E8D", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AT.et"]
+    ]
+  },
+  "D815658156080328": {
+    "path": "Prefabs/Groups/OPFOR/Group_USSR_MedicalSection.et",
+    "sha256": "89222062ec239c8c07073cbda63857cfe110cd1071509af47c7a62d8a4280f86",
+    "inheritedGroups": [
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["AB9726163EC1BD81", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Medic.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"]
+    ]
+  },
+  "DDF3799FA1387848": {
+    "path": "Prefabs/Groups/BLUFOR/Group_US_RifleSquad.et",
+    "sha256": "21970094d28ebe968fc8aaadc9af945eae73ef48439314833e38f23324393d5a",
+    "inheritedGroups": [
+      ["EACD97CF4A702FAE", "Prefabs/Groups/BLUFOR/Group_US_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["27BF1FF235DD6036", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_LAT.et"],
+      ["5B1996C05B1E51A4", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR.et"],
+      ["84029128FA6F6BB9", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et"],
+      ["E398E44759DA1A43", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_TL.et"],
+      ["E45F1E163F5CA080", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_SL.et"]
+    ]
+  },
+  "DE747BC9217D383C": {
+    "path": "Prefabs/Groups/BLUFOR/Group_US_Team_GL.et",
+    "sha256": "f463947a58a40d702f6cef7451efa68720ad203fd3a34df11c182f0dbf34d4e6",
+    "inheritedGroups": [
+      ["EACD97CF4A702FAE", "Prefabs/Groups/BLUFOR/Group_US_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["5B1996C05B1E51A4", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR.et"],
+      ["84029128FA6F6BB9", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et"],
+      ["E398E44759DA1A43", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_TL.et"]
+    ]
+  },
+  "E552DABF3636C2AD": {
+    "path": "Prefabs/Groups/OPFOR/Group_USSR_RifleSquad.et",
+    "sha256": "75ad9388fd10a81da2f385ae019d4bd16e94da1e8f66a0d78b2802c4ce9780b8",
+    "inheritedGroups": [
+      ["8DE0C0830FE0C33D", "Prefabs/Groups/OPFOR/Group_USSR_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["1C78331E156A3D65", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"],
+      ["23ADBBC31B6A3DC6", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AR.et"],
+      ["333DA6244C7DA34C", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SR.et"],
+      ["5436629450D8387A", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et"],
+      ["631158F6898738A4", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AAT.et"],
+      ["8E0FE664CE7D1CA9", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_GL.et"],
+      ["96C784C502AC37DA", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_MG.et"],
+      ["BF643BE4ADBDFDD3", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_LAT.et"],
+      ["DCB41B3746FDD1BE", "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"]
+    ]
+  },
+  "EACD97CF4A702FAE": {
+    "path": "Prefabs/Groups/BLUFOR/Group_US_Base.et",
+    "sha256": "2d19ef4e30145bddf3f30a8a978584424fcd6b0edf330cff63513ffddc6bdaa8",
+    "inheritedGroups": [
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": []
+  },
+  "EE92725E9B949C3D": {
+    "path": "Prefabs/Groups/INDFOR/Group_FIA_PlatoonHQ.et",
+    "sha256": "81f8a52175602f89fb797330bba27ea02483f15e83052a44600bca01a586a168",
+    "inheritedGroups": [
+      ["242BC3C6BCE96EA5", "Prefabs/Groups/INDFOR/Group_FIA_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["23D81C023DBF85AC", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_RTO.et"],
+      ["45A02CA25CBA9443", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Medic.et"],
+      ["FE65E8C60C751352", "Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_PL.et"]
+    ]
+  },
+  "F72EF3429D8C8DF5": {
+    "path": "Prefabs/Groups/BLUFOR/Group_US_AmmoTeam.et",
+    "sha256": "b4a7f851d4c14d5c26b0d76cb211841eb7839f56c177588320ed4220a1d4c127",
+    "inheritedGroups": [
+      ["EACD97CF4A702FAE", "Prefabs/Groups/BLUFOR/Group_US_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["6058AB54781A0C52", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AMG.et"],
+      ["CD28EE7C5690D3BB", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Ammo.et"]
+    ]
+  },
+  "FAEA8B9E1252F56E": {
+    "path": "Prefabs/Groups/BLUFOR/Group_US_Team_LAT.et",
+    "sha256": "ef071cb8dbdf7f7680578fec67b771ae9ae14601356f71872478c95a3ecc0d22",
+    "inheritedGroups": [
+      ["EACD97CF4A702FAE", "Prefabs/Groups/BLUFOR/Group_US_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["27BF1FF235DD6036", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_LAT.et"],
+      ["5B1996C05B1E51A4", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR.et"],
+      ["E398E44759DA1A43", "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_TL.et"]
+    ]
+  }
+}

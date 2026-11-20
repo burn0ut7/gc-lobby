@@ -18,7 +18,10 @@ import polygon_capture
 from scenery import FIELD, StockPrefabs, WAYPOINT_CLASS
 
 LEGACY = re.compile(r'\b(?:TILW|PS)_\w+')
-MODE = re.compile(r'^PS_GameModeCoop(?: [\w.-]+)? : "\{4CFD54745CD45673\}[^"]+" \{$')
+MODE = re.compile(r'^PS_GameModeCoop(?: [\w.-]+)? : "'
+                  r'(?:\{4CFD54745CD45673\}Prefabs/MP/Modes/PS_GameMode_Lobby_(?:GC|TILWMF)\.et'
+                  r'|\{9C2001FE7A2F2281\}Prefabs/MP/Modes/PS_GameMode_Lobby\.et)" \{$')
+CONSTRUCTION_FIELDS = {'m_fPrepDuration', 'm_fPrepMultiplier', 'm_fGameMultiplier'}
 NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|Turret|SCR_AIWorld|GameEntity|GenericEntity|GenericTerrainEntity|StaticModelEntity|Tree|'
                     r'DecalEntity|SCR_DestructibleEntity|SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
                     r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity|LightEntity)\b')
@@ -454,6 +457,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         raise ValueError('custom legacy game mode')
     weather, coords, freeze, children = '', ' coords 0 0 0', 0, ''
     immediate_release = False
+    construction = {}
     index = 1
     while index < len(root) - 1:
         line = root[index]
@@ -476,6 +480,11 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             if fraction and freeze:
                 raise ValueError('nonintegral staging seconds')
             immediate_release = not freeze
+        elif line.strip().partition(' ')[0] in CONSTRUCTION_FIELDS:
+            field, _, value = line.strip().partition(' ')
+            if field in construction:
+                raise ValueError('duplicate construction progress field ' + field)
+            construction[field] = value
         elif line == ' {' and not children:
             end = block_end(root, index)
             children = faction_overrides(root[index:end + 1])
@@ -483,6 +492,9 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         else:
             raise ValueError('game mode field or child requires a conversion rule: ' + line.strip())
         index += 1
+    if construction:
+        authored = ', '.join(f'{field} {value}' for field, value in sorted(construction.items()))
+        raise ValueError('legacy construction progress settings need runtime support: ' + authored)
     if (zones and not (freeze or immediate_release)) or len(set(zones)) != len(zones):
         raise ValueError('staging duration requires uniquely named restriction zones')
     resource = guid(world + '/resource')

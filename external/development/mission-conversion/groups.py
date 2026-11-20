@@ -18,6 +18,7 @@ NATIVE_GROUP_FIELD = re.compile(r'm_faction "[\w.-]+"|m_iGroupRadioFrequency \d+
 STATIC_LINK_FIELDS = {'m_aStaticWaypoints {', 'm_aStaticVehicles {'}
 FORMATION = re.compile(r'AIFormationComponent "\{[\da-fA-F]{16}\}" \{')
 WRAPPERS = json.loads(Path(__file__).with_name('stock_wrappers.json').read_text(encoding='utf-8'))
+STOCK_AI_GROUPS = json.loads(Path(__file__).with_name('stock_ai_groups.json').read_text(encoding='utf-8'))
 BASE_CHARACTER = ('37578B1666981FCE', 'Prefabs/Characters/Core/Character_Base.et')
 # These external parents were verified against the published Core/RHS prefabs.
 # Both inherit Character_Base, which the legacy GC Lobby package overlays.
@@ -175,15 +176,16 @@ def native_group_field_end(lines, index):
     return None
 
 
-def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai):
-    old_chain = compare_ai_parents(source_units, dev_units, guid)
+def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai, stock_group=None):
+    old_chain = () if stock_group else compare_ai_parents(source_units, dev_units, guid)
+    inherited_stock_slots = {tuple(slot) for slot in stock_group['slots']} if stock_group else set()
     checked = set()
 
     def member(match):
         resource = match[1].upper()
-        if (resource not in locally_owned and resource not in source_units.resources and resource not in dev_units.resources
-                and external_ai.get(resource) == match[2]):
-            return match[0]
+        if resource not in locally_owned and resource not in source_units.resources and resource not in dev_units.resources:
+            if external_ai.get(resource) == match[2] or (resource, match[2]) in inherited_stock_slots:
+                return match[0]
         if resource not in checked:
             path = only_path(source_units, resource)
             character = source_units.read(path)
@@ -220,6 +222,8 @@ def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, ext
             index = end
         elif token.startswith(('coords ', 'angles ', 'angleX ', 'angleY ', 'angleZ ', 'scale ', 'm_bSnapToTerrain ')):
             result.append(line)
+        elif token == 'm_bPlayable 0' and stock_group:
+            result.append(line)
         elif token != 'm_bSetPlayable 0':
             raise ValueError('AI group field needs review: ' + token.split()[0])
         index += 1
@@ -250,7 +254,7 @@ def inherited_playable_roster(old, new, stock, owned_resources):
 
 
 def convert_instance(lines, guid, old, new, source_units, dev_units, stock, locally_owned,
-                     reviewed_callsigns=frozenset(), reviewed_members=None, external_ai=None):
+                         reviewed_callsigns=frozenset(), reviewed_members=None, external_ai=None):
     reviewed_members = reviewed_members or {}
     explicit_force = any(l.strip() == 'm_bSetPlayable 1' for l in lines)
     native_playable = any(l.strip() == 'm_bPlayable 1' for l in lines) or scalar(inheritance(dev_units, guid), 'm_bPlayable') == 1
@@ -407,7 +411,7 @@ def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_
 
 
 def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset(),
-                reviewed_members=None, external_ai=None):
+                reviewed_members=None, external_ai=None, allow_stock_ai=False):
     if not re.search(r'^(?:\$grp )?SCR_AIGroup\b', text, re.M):
         return None
     lines = text.splitlines()
@@ -424,12 +428,25 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
         if guid in locally_owned:
             raise ValueError('mission-owned group ' + guid)
         spec = WRAPPERS['groups'].get(guid) if guid not in source_units.resources and stock else None
+        stock_group = (STOCK_AI_GROUPS.get(guid) if stock and allow_stock_ai and guid not in source_units.resources
+                       and guid not in dev_units.resources else None)
         if spec:
             if REF.search(lines[i])[2].casefold() != spec['path'].casefold() or not stock.contains(*spec['parent']):
                 raise ValueError('unverified stock wrapper group ' + guid)
             resource, dest = spec['parent']
             convert = partial(convert_stock_instance, spec=spec, source_units=source_units, dev_units=dev_units,
                               stock=stock, locally_owned=locally_owned, reviewed_members=reviewed_members)
+        elif stock_group:
+            resource, dest = guid, stock_group['path']
+            if (REF.search(lines[i])[2] != dest or not stock.contains(resource, dest)
+                    or any(parent in locally_owned or parent in source_units.resources or parent in dev_units.resources
+                           or not stock.contains(parent, path) for parent, path in stock_group['inheritedGroups'])
+                    or any(slot in locally_owned or slot in source_units.resources or slot in dev_units.resources
+                           or not stock.contains(slot, path) for slot, path in stock_group['slots'])):
+                raise ValueError('unverified native AI group ancestry ' + guid)
+            convert = partial(convert_ai_instance, guid=guid, source_units=source_units, dev_units=dev_units,
+                              locally_owned=locally_owned, external_ai=external_ai or {},
+                              stock_group=stock_group)
         else:
             _, old = prefab(source_units, guid)
             dest, new = prefab(dev_units, guid)
