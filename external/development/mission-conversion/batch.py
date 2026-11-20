@@ -18,8 +18,8 @@ from scenery import StockPrefabs, WAYPOINT_CLASS
 
 LEGACY = re.compile(r'\b(?:TILW|PS)_\w+')
 MODE = re.compile(r'^PS_GameModeCoop(?: [\w.-]+)? : "\{4CFD54745CD45673\}[^"]+" \{$')
-NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|SCR_AIWorld|GenericEntity|GenericTerrainEntity|StaticModelEntity|Tree|'
-                    r'DecalEntity|SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
+NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|Turret|SCR_AIWorld|GenericEntity|GenericTerrainEntity|StaticModelEntity|Tree|'
+                    r'DecalEntity|SCR_DestructibleEntity|SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
                     r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity|LightEntity)\b')
 WEATHER = re.compile(r'  SCR_TimeAndWeatherHandlerComponent "\{5EE3229927D4D2F5\}" \{')
 PERCEPTION = re.compile(r'^PerceptionManager(?: [\w.-]+)? : "\{028DAEAD63E056BE\}[^"]+" \{$')
@@ -161,7 +161,7 @@ def waypoint_gaps(named, assignments):
 
 
 def static_link_gaps(layers, named):
-    fields = {'m_aStaticWaypoints': WAYPOINT_CLASS, 'm_aStaticVehicles': 'Vehicle'}
+    fields = {'m_aStaticWaypoints': WAYPOINT_CLASS, 'm_aStaticVehicles': '(?:Vehicle|Tank)'}
     gaps = []
     for layer, text in layers.items():
         for field, targets in re.findall(r'(?m)^ +(?P<field>m_aStatic(?:Waypoints|Vehicles)) \{\n((?: +"[^\n]*\n)*)', text):
@@ -381,6 +381,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, coords, freeze, children = '', ' coords 0 0 0', 0, ''
+    immediate_release = False
     index = 1
     while index < len(root) - 1:
         line = root[index]
@@ -400,8 +401,9 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             coords = line
         elif re.fullmatch(r' m_iFreezeTime \d+', line):
             freeze, fraction = divmod(int(line.split()[-1]), 1000)
-            if fraction:
+            if fraction and freeze:
                 raise ValueError('nonintegral staging seconds')
+            immediate_release = not freeze
         elif line == ' {' and not children:
             end = block_end(root, index)
             children = faction_overrides(root[index:end + 1])
@@ -409,7 +411,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         else:
             raise ValueError('game mode field or child requires a conversion rule: ' + line.strip())
         index += 1
-    if (zones and not freeze) or len(set(zones)) != len(zones):
+    if (zones and not (freeze or immediate_release)) or len(set(zones)) != len(zones):
         raise ValueError('staging duration requires uniquely named restriction zones')
     resource = guid(world + '/resource')
     settings = ''
@@ -434,14 +436,15 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
 '''
     if zones:
         names = '\n'.join(f'        "{name}"' for name in zones)
-        additional_rules += f'''    GC_Event "{{{guid(key)}}}" {{
-     m_sName "Release staging zones"
-     m_aConditions {{
+        timer = f'''     m_aConditions {{
       GC_TimerCondition "{{{guid(key + '/timer')}}}" {{
        m_fSeconds {freeze}
       }}
      }}
-     m_aActions {{
+''' if freeze else ''
+        additional_rules += f'''    GC_Event "{{{guid(key)}}}" {{
+     m_sName "Release staging zones"
+{timer}     m_aActions {{
       GC_DeleteEntitiesAction "{{{guid(key + '/delete')}}}" {{
        m_aEntities {{
 {names}

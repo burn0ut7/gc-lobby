@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "aa2e3a135aeb017cb994aeeb943c9ca164251407",
+  "target": "baaf12a050baa2470f06de8ee26d2385057efe52",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1129,7 +1129,7 @@
         "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank.ent"
       ],
       "declaredPath": "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{46DA597F602E0715}worlds/StatusRed/GetToTheChopTank/GetToTheChopTank.ent"
     },
     "Missions/StatusRed/OSITheAirfieldIncident.conf": {
@@ -19960,7 +19960,9 @@
     "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank.ent": {
       "sourceResourceCount": 6,
       "devPaths": {
-        "absent": 6
+        "absent": 1,
+        "changed": 4,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -20012,7 +20014,7 @@
               "lastLine": 42
             }
           },
-          "placementLayer": "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_Layers/GameLogic_GC_Boundaries.layer"
+          "gap": "Dev already contains the original layer path; review before adding boundary siblings"
         }
       },
       "directBriefingsRead": 10,

@@ -392,3 +392,12 @@ The batch converts a supported legacy action on a named, replicated world object
 The converter omits an otherwise unsupported legacy flag sampler only when its ordinary flag list has no consumers in the mission resource closure or committed mission scripts. Barn Busters XS has three such unused cache-selection flags. Its three placed caches remain independent objectives. The vehicle alias rule verifies the same GUID at the current provider path for two Tactical Flava TIGRs and one WCS AH-6M variant. Missions Dev already receives both providers through Units Dev.
 
 Barn Busters XS and SOBR Up are in local Missions Dev commit `aa2e3a13`. File review verified 22 and 35 playable slots respectively. It matched all six objective placements, their 30- or 5-second hold durations, faction restrictions, single-use settings and flag consumers. The drafts passed the installed resource audit. The new shared script compiled with zero errors in Workbench session `logs_2026-11-20_16-29-13`. Live interaction completion and multiplayer availability replication remain open.
+
+
+## Immediate staging release and neutral timeout
+
+The native placement pass now retains Tank, Turret and SCR_DestructibleEntity placements with no legacy components. This cleared 64 tank, 45 turret and 223 destructible placement blockers in the catalog. Prefab identities still pass through the installed resource audit before publication.
+
+The legacy PS GameMode timer subtracts up to 1,000 milliseconds before any wait. An explicit zero or subsecond value therefore removes restriction zones immediately when Match starts and displays no countdown. The batch preserves that behavior with a Match-start zone release. Fractional values above one second remain flagged for separate review.
+
+Get to the Chop Tank is in local Missions Dev commit `baaf12a0`. The comparison verified 32 playable slots, the original locked M113, both 30-metre player-only capture zones and their 300-second holds, both named staging zones and four faction-result notices. The 1,800-second timeout popup stays in place. The legacy Core overlay suppresses automatic endings, and the factionless neutral instruction cannot construct its old faction-based popup. The port records that neutral result in the server log at 1,820 seconds and leaves Match active. The files passed the resource audit. Live capture timing and restriction-zone release remain open.

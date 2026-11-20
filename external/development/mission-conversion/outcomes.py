@@ -17,13 +17,19 @@ TERM = re.compile(r'\s*(?:m_condition )?TILW_(Literal|Conjunction|Disjunction)Te
 AI_FLAG = re.compile(r'^  TILW_FactionAIKilledFlag "\{[\da-fA-F]{16}\}" \{$')
 
 
-def end_action(lines, key):
+def end_action(lines, key, allow_neutral=False):
     data = properties(lines, {'m_factionKey', 'm_gameOverType', 'm_executionDelay'})
     faction = data.get('m_factionKey', '')
     kind = data.get('m_gameOverType', 'EDITOR_FACTION_VICTORY')
     delay = data.get('m_executionDelay', '5')
-    if (not re.fullmatch(KEY, faction) or kind not in RESULT
-            or not re.fullmatch(r'\d+(?:\.\d+)?', delay) or Decimal(delay) > 86400):
+    if not re.fullmatch(r'\d+(?:\.\d+)?', delay) or Decimal(delay) > 86400:
+        raise ValueError('unsupported faction outcome or delay')
+    if allow_neutral and kind == 'EDITOR_FACTION_NEUTRAL' and faction in ('', '""'):
+        return Decimal(delay), [
+            f'      GC_MessageAction "{{{guid(key)}}}" {{',
+            '       m_iDelivery 2', '       m_sMessage "Neutral result reached."', '      }',
+        ], {'faction': '', 'result': kind, 'delaySeconds': delay, 'delivery': 'server log'}
+    if not re.fullmatch(KEY, faction) or kind not in RESULT:
         raise ValueError('unsupported faction outcome or delay')
     return Decimal(delay), [
         f'      GC_EndMissionAction "{{{guid(key)}}}" {{', f'       m_iResult {RESULT[kind]}',
@@ -116,7 +122,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags):
                     delay, body = message(fields[j + 1:last], key + '/' + notify_match[1], multiline=True)
                     messages += 1
                 elif end_match:
-                    delay, body, notice = end_action(fields[j + 1:last], key + '/' + end_match[1])
+                    delay, body, notice = end_action(fields[j + 1:last], key + '/' + end_match[1], compound)
                     notices.append(notice)
                 elif waypoint_match:
                     delay, body, assignment = waypoint_action(fields[j + 1:last], key + '/' + waypoint_match[1])
