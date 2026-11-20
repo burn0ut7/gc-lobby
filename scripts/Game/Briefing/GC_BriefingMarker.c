@@ -115,6 +115,15 @@ class GC_BriefingMarker
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Use the authored list as an allowlist even when it is empty.
+	void SetListedFactionAudience(bool showWithoutFaction)
+	{
+		m_bExplicitAudience = true;
+		m_bExcludeFactionKeys = false;
+		m_bVisibleWithoutFaction = showWithoutFaction;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! Mutate a detached snapshot, then publish it through UpsertBriefingMarker.
 	void SetFactionVisibility(string key, bool visible)
 	{

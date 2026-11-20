@@ -41,10 +41,13 @@ class GC_BriefingMarkerComponent : ScriptComponent
 	[Attribute("0", UIWidgets.CheckBox, "Align text with marker rotation")]
 	protected bool m_bAlignTextWithMarkerRotation;
 
-	[Attribute("", UIWidgets.Auto, "Authoritative base-game faction keys. Empty shows the marker to everyone")]
+	[Attribute("", UIWidgets.Auto, "Authoritative base-game faction keys. Empty shows the marker to everyone unless Restrict To Listed Factions is checked.")]
 	protected ref array<FactionKey> m_aFactionKeys;
 
-	[Attribute("0", UIWidgets.CheckBox, "Hide an otherwise public marker from viewers who have no faction")]
+	[Attribute("0", UIWidgets.CheckBox, "Use the faction list as an allowlist even when it is empty. Viewers without a faction follow Hide Without Faction.")]
+	protected bool m_bRestrictToListedFactions;
+
+	[Attribute("0", UIWidgets.CheckBox, "Hide the marker from viewers who have no faction when the faction audience includes them.")]
 	protected bool m_bHideWithoutFaction;
 
 	[Attribute("0", UIWidgets.ComboBox, "Earliest game-mode phase from which this marker is shown", enumType: SCR_EGameModeState)]
@@ -130,7 +133,9 @@ class GC_BriefingMarkerComponent : ScriptComponent
 			m_bWorldScale, m_fSize, m_fMinSize, m_sDescription, GC_FactionKeys.ToStrings(m_aFactionKeys),
 			m_eShowAtGameModeState, m_bInvertGameModeState, true, markerColor, m_bAlignTextWithMarkerRotation);
 		marker.SetTextColor(textColor);
-		if (m_bHideWithoutFaction)
+		if (m_bRestrictToListedFactions)
+			marker.SetListedFactionAudience(!m_bHideWithoutFaction);
+		else if (m_bHideWithoutFaction)
 			marker.SetFactionVisibility("", false);
 		return marker;
 	}

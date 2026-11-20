@@ -1,10 +1,14 @@
 """Port standalone legacy icon layers whose visual and audience fields are understood."""
+import json
+from pathlib import Path
 import re
 from briefings import block_end, properties
 from launchers import META_NAME
 
 BASE = 'CD85ADE9E0F54679'
-LEGACY = re.compile(r'^(?P<group>\$grp )?PS_ManualMarker(?: (?P<name>[\w.\-]+))? : "\{(?P<guid>[A-Fa-f0-9]{16})\}[^"]+" \{$')
+LEGACY = re.compile(r'^(?P<group>\$grp )?PS_ManualMarker(?: (?P<name>[\w.\-]+))?'
+                    r' : "\{(?P<guid>[A-Fa-f0-9]{16})\}(?P<path>[^"]+)" \{$')
+PRESETS = json.loads(Path(__file__).with_name('marker_presets.json').read_text(encoding='utf-8'))
 DEST = '{924D4B5FA0B24B22}Prefabs/Logic/Mission/MapMarker.et'
 FIELDS = {
     'm_sImageSet': 'm_sImageSetOrImage', 'm_sImageSetGlow': 'm_sHighlightImageSet',
@@ -38,8 +42,8 @@ def instance(lines, name, inherited=None):
     from_briefing = {'BRIEFING', 'GAME', 'POSTGAME', 'CUTSCENE', 'DEBRIEFING'}
     if hidden and hidden not in (before_briefing, from_briefing):
         raise ValueError('marker phase set needs review')
-    if any_side not in ('0', '1') or unassigned not in ('0', '1') or (any_side == '0' and (unassigned == '1' or not keys)):
-        raise ValueError('separate unassigned audience')
+    if any_side not in ('0', '1') or unassigned not in ('0', '1'):
+        raise ValueError('invalid marker audience')
     if factions and (not re.fullmatch(r'(?:\s*"[^"]+"\s*)+', factions)
                      or len(set(keys)) != len(keys) or len(keys) > 16):
         raise ValueError('unsupported faction list')
@@ -56,9 +60,12 @@ def instance(lines, name, inherited=None):
               '  GC_BriefingMarkerComponent "{00C8292F836D4D6F}" {']
     for old, new in FIELDS.items():
         output.append(f'   {new} ' + merged[old].replace('\n', '\n   '))
-    if any_side == '0':
+    if any_side == '0' and keys:
         output.extend(['   m_aFactionKeys {', '    ' + factions, '   }'])
-    elif unassigned == '0':
+    explicit_list = any_side == '0' and (unassigned == '1' or not keys)
+    if explicit_list:
+        output.append('   m_bRestrictToListedFactions 1')
+    if unassigned == '0' and (any_side == '1' or explicit_list):
         output.append('   m_bHideWithoutFaction 1')
     if hidden:
         output.append('   m_eShowAtGameModeState BRIEFING')
@@ -100,8 +107,12 @@ def convert_layer(text, dev=None):
         match = LEGACY.fullmatch(lines[i])
         if not match:
             raise ValueError(f'line {i + 1} mixed or custom placement')
+        inherited = None
         if match['guid'].upper() != BASE:
-            raise ValueError(f'line {i + 1} inherited marker preset {match["guid"]}')
+            preset = PRESETS.get(match['guid'].upper())
+            if not preset or preset['path'] != match['path']:
+                raise ValueError(f'line {i + 1} inherited marker preset {match["guid"]}')
+            inherited = preset['fields']
         start = i
         stop = block_end(lines, i)
         try:
@@ -112,10 +123,10 @@ def convert_layer(text, dev=None):
                     if not head:
                         raise ValueError('custom grouped instance')
                     end = block_end(lines, i)
-                    result.append(instance(lines[i + 1:end], (' ' + head['name']) if head['name'] else ''))
+                    result.append(instance(lines[i + 1:end], (' ' + head['name']) if head['name'] else '', inherited))
                     i = end + 1
             else:
-                result.append(instance(lines[i + 1:stop], (' ' + match['name']) if match['name'] else ''))
+                result.append(instance(lines[i + 1:stop], (' ' + match['name']) if match['name'] else '', inherited))
         except ValueError as exc:
             raise ValueError(f'line {i + 1 if match["group"] else start + 1} {exc}') from exc
         i = stop + 1

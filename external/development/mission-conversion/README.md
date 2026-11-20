@@ -347,3 +347,12 @@ Group conversion carries over authored faction, radio frequency, static waypoint
 When the known GC legacy mode prefab has no placed coordinates, the converter uses its inherited origin. The published `PS_GameMode_Lobby.et` sets that origin to zero. Authored coordinates still take precedence. A default standalone Perception Manager without overrides is handled by the same native manager already provided by the Lobby mode prefab. Custom light curves and rotated manager placements still require review.
 
 File comparison cleared 42 group placement blockers across 29 worlds, 15 omitted mode origins, and 30 default Perception Manager placements. The full staged regression reproduced all 974 prior files byte for byte and produced eight additional group layers. Tip of the Spear now retains its three NTA formations. Its placed vehicle crews and navmesh regeneration remain separate conversion gaps.
+
+
+## Marker audiences and inherited presets
+
+The marker converter keeps visibility for assigned factions independent of visibility for viewers without a faction. The native marker component can use the existing replicated allowlist even when the list is empty. This preserves listed factions plus unassigned viewers, unassigned-only markers and hidden markers. Existing authored markers retain their default audience behavior.
+
+The five entries in `marker_presets.json` come from the installed TilW Mission Framework package `61F0E6AB2D06B1C6`. Each entry records the legacy GUID, path, archive content hash and supported fields. All five inherit the PS Core EditableMarker prefab. Placement fields override the archived defaults. The group imagesets resolve through the game database or the installed Soviet Tactical Graphics provider. The converted placements use the native GC Lobby marker component.
+
+The file pass cleared marker-layer blockers in 56 worlds. Standalone staging added 32 layers with 179 icons. No previously staged icons were lost, and the 982 previously staged files reproduced byte for byte. The audience truth table matched all eight combinations of any faction, unassigned visibility and empty or nonempty faction lists. Workbench reloaded the shared Lobby scripts with zero compile errors in session `logs_2026-11-20_16-00-26`. In-world rendering, unusual phase masks and explicitly authored z-order remain open.

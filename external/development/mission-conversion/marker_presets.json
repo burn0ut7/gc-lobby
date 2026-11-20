@@ -1,0 +1,72 @@
+{
+  "63BCE30CF8B65BCE": {
+    "path": "PrefabsEditable/Markers/Group/Marker_GroupFlagsOpfor_Base.et",
+    "sha256": "c00e6aa780b9813960cf43493ff483fa0561a15194a424229e041051c9b111b9",
+    "fields": {
+      "coords": "1187.119 38 2804.437",
+      "m_sImageSet": "\"{7CD99D22C7AE8195}UI/Textures/GroupManagement/FlagIcons/GroupFlagsOpfor.imageset\"",
+      "m_sImageSetGlow": "\"\"",
+      "m_MarkerColor": "0.855 0.031 0.028 1",
+      "m_sQuadName": "\"infantry\"",
+      "m_fWorldSize": "95",
+      "m_bVisibleForEmptyFaction": "1",
+      "m_bShowForAnyFaction": "1"
+    }
+  },
+  "676B84E0291E12D6": {
+    "path": "PrefabsEditable/Markers/Group/Marker_GroupFlagsBlufor_Base.et",
+    "sha256": "1965b42fd2a2b86f15832c718b6f69bcd69b76095ff6f689ed72d1c0fdfafdb9",
+    "fields": {
+      "coords": "1187.119 38 2804.437",
+      "m_sImageSet": "\"{1228936E5DB30403}UI/Textures/GroupManagement/FlagIcons/GroupFlagsBlufor.imageset\"",
+      "m_sImageSetGlow": "\"\"",
+      "m_MarkerColor": "0.016 0.552 0.905 1",
+      "m_sQuadName": "\"infantry\"",
+      "m_fWorldSize": "95",
+      "m_bVisibleForEmptyFaction": "1",
+      "m_bShowForAnyFaction": "1"
+    }
+  },
+  "60226647F08EF462": {
+    "path": "PrefabsEditable/Markers/Group/Marker_GroupFlagsSoviet_Base.et",
+    "sha256": "ad7ca394fb71e0096c4db8c58728c93af9491ec07079b0ebf69018e52b9d533c",
+    "fields": {
+      "coords": "1187.119 38 2804.437",
+      "m_sImageSet": "\"{83B695FF662AC163}imagesets/Soviet_Tactical_Graphics.imageset\"",
+      "m_sImageSetGlow": "\"\"",
+      "m_MarkerColor": "0.855 0.031 0.028 1",
+      "m_sQuadName": "\"plt_hq\"",
+      "m_fWorldSize": "95",
+      "m_bVisibleForEmptyFaction": "1",
+      "m_bShowForAnyFaction": "1"
+    }
+  },
+  "BC5F78D7A380E856": {
+    "path": "PrefabsEditable/Markers/Group/Marker_GroupFlagsIndfor_Base.et",
+    "sha256": "2343c5f83951b69debbe9bc112b2ddb55cb682343762427de701654e74be00c3",
+    "fields": {
+      "coords": "1187.119 38 2804.437",
+      "m_sImageSet": "\"{301FC1A2A46D3E0D}UI/Textures/GroupManagement/FlagIcons/GroupFlagsIndfor.imageset\"",
+      "m_sImageSetGlow": "\"\"",
+      "m_MarkerColor": "0 0 0 1",
+      "m_sQuadName": "\"infantry\"",
+      "m_fWorldSize": "95",
+      "m_bVisibleForEmptyFaction": "1",
+      "m_bShowForAnyFaction": "1"
+    }
+  },
+  "BA3177FCACC39F3A": {
+    "path": "PrefabsEditable/Markers/Icons/Marker_Objective_Base.et",
+    "sha256": "ba25045948e4f0f1eff8a49cab192bfc65ff4d221fbf2c64bd7a998e24cc1499",
+    "fields": {
+      "coords": "0 0 0",
+      "m_sImageSetGlow": "\"\"",
+      "m_MarkerColor": "0 0 0 1",
+      "m_sQuadName": "\"objective-marker\"",
+      "m_fWorldSize": "50",
+      "m_sDescription": "\"Objective\"",
+      "m_bVisibleForEmptyFaction": "1",
+      "m_bShowForAnyFaction": "1"
+    }
+  }
+}
