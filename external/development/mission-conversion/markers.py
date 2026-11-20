@@ -13,7 +13,7 @@ FIELDS = {
 }
 TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ', 'scale'}
 AUDIENCE = {'m_aVisibleForFactions', 'm_bVisibleForEmptyFaction', 'm_bShowForAnyFaction', 'm_aHideOnGameModeStates'}
-ALLOWED = TRANSFORM | AUDIENCE | set(FIELDS)
+ALLOWED = TRANSFORM | AUDIENCE | set(FIELDS) | {'m_bringToFront'}
 DEFAULTS = {
     'coords': '1060.328 39.01 2682.178', 'angleY': '90',
     'm_sImageSet': '"{E23427CAC80DA8B7}UI/Textures/Icons/icons_mapMarkersUI.imageset"',
@@ -26,6 +26,8 @@ DEFAULTS = {
 def instance(lines, name, inherited=None):
     placed = properties(lines, ALLOWED)
     values = {**(inherited or {}), **placed}
+    if values.get('m_bringToFront', '0') != '0':
+        raise ValueError('explicit marker layering priority')
     any_side = values.get('m_bShowForAnyFaction', '0')
     unassigned = values.get('m_bVisibleForEmptyFaction', '0')
     factions = values.get('m_aVisibleForFactions', '')

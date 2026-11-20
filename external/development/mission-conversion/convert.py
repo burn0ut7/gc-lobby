@@ -9,6 +9,7 @@ from pathlib import Path, PurePosixPath
 from boundaries import convert_boundaries
 import breach
 import arc_capture
+import batch
 import bugout
 from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
@@ -57,7 +58,13 @@ def main():
     parser.add_argument('--include-irish-candidate', action='store_true', help='assemble the Irish Checkpoint playtest world')
     parser.add_argument('--include-arc-capture-candidates', action='store_true', help='assemble the reviewed Arc capture missions')
     parser.add_argument('--include-bugout-candidate', action='store_true', help='assemble the reviewed Bug Out mission')
+    parser.add_argument('--batch', action='store_true', help='stage complete drafts from common conversion rules and report blockers')
     args = parser.parse_args()
+    if args.batch:
+        if not (args.stage and args.units and args.base_database):
+            parser.error('--batch requires --stage, --units and --base-database')
+        args.include_outcomes = True
+        args.stage_marker_candidates = True
     if args.include_bugout_candidate and not (args.stage and args.units and args.base_database and args.workshop_addons):
         parser.error('Bug Out requires --stage, --units, --base-database and --workshop-addons')
     if args.include_industrial_candidate:
@@ -99,6 +106,7 @@ def main():
         report['targetUnits'] = dev_units.commit
     out = {}
     arc_areas = {}
+    batch_areas = {}
     headers_by_world = defaultdict(list)
     target_headers = set(dev.headers())
     for header in sorted(source.headers()):
@@ -248,6 +256,8 @@ def main():
                     captures, area, capture_audit = arc_capture.capture(source, world)
                     row['captureCandidate'] = capture_audit
                     arc_areas[world] = area
+                elif args.batch:
+                    captures, batch_areas[world] = batch.area_rules(source, world)
                 rules, outcome_audit, gap = compile_outcomes(source, world, captures)
                 outcome = {'events': outcome_audit}
                 if gap:
@@ -577,6 +587,8 @@ def main():
                 'Compare remote announcement delivery and issued equipment',
             ],
         }
+    if args.batch:
+        out = batch.plan(source, dev, report, out, batch_areas)
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
                         for path, contents in out.items()}

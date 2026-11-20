@@ -1,0 +1,233 @@
+"""Review legacy and Dev mission files from Git without opening Workbench."""
+import argparse
+from collections import Counter, defaultdict
+from copy import copy
+from difflib import unified_diff
+from functools import lru_cache
+from hashlib import sha1, sha256
+import json
+from pathlib import Path, PurePosixPath
+import re
+import subprocess
+
+from catalog import REF, SOURCE_TEXT, Snapshot, TYPES
+from launchers import META_NAME, WORLD_REF, launcher
+
+LEGACY = re.compile(r'^(?:TILW|PS)_')
+AREAS = {
+    'mode': re.compile(r'^(?:\$grp )?(?:\w*GameMode\w*|\w*FactionManager\w*)\b|\bm_i\w*Freeze\w*\b'),
+    'briefing': re.compile(r'\b(?:PS_MissionDescription|GC_Briefing)\b|\bm_[a-z]VisibleForFactions\b'),
+    'roster': re.compile(r'\b(?:SCR_AIGroup|PS_PlayableComponent)\b|\bm_(?:aUnitPrefabSlots|\w*Callsign\w*|bPlayable)\b'),
+    'map': re.compile(r'\b(?:PS_ManualMarker|GC_BriefingMarkerComponent|\w*MapShape\w*|\w*AOLimit\w*|ShapePoint)\b'),
+    'respawn': re.compile(r'\b(?:PS_FactionRespawnCount|\w+Respawn\w*|m_\w+Tickets\w*)\b'),
+    'events': re.compile(r'\b(?:TILW_\w+(?:TriggerEntity|Instruction|Term|Flag\w*)|TILW_MissionEvent|GC_Event|GC_\w+(?:Action|Condition))\b|\bm_\w*Delay\b'),
+    'weather': re.compile(r'\b(?:\w*TimeAndWeather\w*|\w*StartingWeather\w*|m_\w*(?:StartingHour|StartingDay|DateOverride|WindSpeed)\w*)\b'),
+    'vehicles': re.compile(r'^(?:\$grp )?Vehicle\b|\bm_sAttachmentGroupName\b'),
+}
+
+
+def closure(snapshot, world, header):
+    files = snapshot.closure(world) if world in snapshot.files else set()
+    if header in snapshot.files:
+        files.add(header)
+    files.update(path + '.meta' for path in list(files) if path + '.meta' in snapshot.files)
+    return files
+
+
+@lru_cache(maxsize=16384)
+def facts(snapshot, path):
+    if PurePosixPath(path).suffix.lower() not in SOURCE_TEXT:
+        return {}, [], []
+    text = snapshot.read(path)
+    categories = {}
+    for no, line in enumerate(text.splitlines(), 1):
+        line = line.strip()
+        if not line or line.startswith(('"', '//')):
+            continue
+        for area, pattern in AREAS.items():
+            if pattern.search(line):
+                categories.setdefault(area, []).append(no)
+    return categories, sorted(set(TYPES.findall(text))), REF.findall(text)
+
+
+def inspect(snapshot, paths):
+    areas, declarations, references = {}, set(), {}
+    for path in sorted(paths):
+        categories, kinds, refs = facts(snapshot, path)
+        for area, lines in categories.items():
+            areas.setdefault(area, {})[path] = lines
+        declarations.update(kinds)
+        for resource, name in refs:
+            references.setdefault((resource.upper(), name), set()).add(path)
+    return areas, declarations, references
+
+
+def compare_mission(source, target, header, notes, dependencies):
+    issues = []
+    try:
+        world, resource, _ = launcher(source, target, header)
+    except ValueError as exc:
+        return {'status': 'review', 'issues': [str(exc)], 'files': {}}
+    incoming = closure(source, world, header)
+    outgoing = closure(target, world, header)
+    if header not in target.files:
+        issues.append('Dev launcher missing')
+    else:
+        ref = WORLD_REF.search(target.read(header))
+        if not ref or ref[2].upper() != resource or ref[3] != world:
+            issues.append('Dev launcher points to a different world identity or path')
+    if world not in target.files:
+        issues.append('Dev world missing')
+    elif target.resources.get(resource) != [world]:
+        issues.append('Dev world metadata does not uniquely register the launcher identity')
+    before, _, _ = inspect(source, incoming)
+    after, kinds, refs = inspect(target, outgoing)
+    legacy = sorted(kind for kind in kinds if LEGACY.match(kind))
+    if legacy:
+        issues.append('Legacy declarations remain in Dev')
+    if world in target.files and not any(k.startswith('GC_') and 'Mode' in k for k in kinds):
+        issues.append('GC Lobby mode placement or native-mode exception needs review')
+    local_refs = []
+    for (guid, path), owners in sorted(refs.items()):
+        target_paths = target.resources.get(guid, dependencies.get(guid, []))
+        if (target_paths or guid in source.resources) and target_paths != [path]:
+            local_refs.append({'guid': guid, 'path': path, 'devPaths': target_paths, 'referencedBy': sorted(owners)})
+    if local_refs:
+        issues.append('Mission-owned resource identities or paths need review')
+    shared = incoming & outgoing
+    files = {
+        'same': sorted(p for p in shared if source.files[p] == target.files[p]),
+        'changed': sorted(p for p in shared if source.files[p] != target.files[p]),
+        'sourceOnly': sorted(incoming - outgoing),
+        'devOnly': sorted(outgoing - incoming),
+    }
+    return {
+        'world': world,
+        'status': 'missing' if header not in target.files or world not in target.files else 'review' if issues else 'compare',
+        'issues': issues, 'files': files, 'legacyDeclarations': legacy, 'missionResourceReferences': local_refs,
+        'areas': {area: {'source': before.get(area, {}), 'dev': after.get(area, {})}
+                  for area in AREAS if area in before or area in after},
+        'documentedGaps': notes.get(world, {}).get('playtestCandidate', {}).get('remainingBehavior', []),
+    }
+
+
+def markdown(source, target, missions):
+    counts = Counter(row['status'] for row in missions.values())
+    lines = ['# GC Missions file review', '', f'Legacy revision `{source.commit}`', f'Dev revision `{target.commit}`', '',
+             f'{len(missions)} launchers. {counts["missing"]} missing on Dev, {counts["review"]} with file checks to resolve, '
+             f'{counts["compare"]} ready for source/Dev comparison.', '',
+             '| Launcher | Status | Changed | Source only | Dev only | File checks |',
+             '| --- | --- | ---: | ---: | ---: | --- |']
+    for name, row in missions.items():
+        files = row['files']
+        issues = ', '.join(row['issues']).replace('|', '\\|')
+        lines.append(f'| `{name}` | {row["status"]} | {len(files.get("changed", []))} | '
+                     f'{len(files.get("sourceOnly", []))} | {len(files.get("devOnly", []))} | {issues} |')
+    return '\n'.join(lines) + '\n'
+
+
+def overlay(target, stage, manifest):
+    result = copy(target)
+    result.__dict__.pop('layers', None)
+    result.files = dict(target.files)
+    result.blobs = dict(target.blobs)
+    result.resources = defaultdict(list, {key: list(paths) for key, paths in target.resources.items()})
+    stage = stage.resolve()
+    for path, digest in manifest.items():
+        file = (stage / path).resolve()
+        if not file.is_relative_to(stage):
+            raise ValueError('draft path escapes staging: ' + path)
+        body = file.read_bytes()
+        if sha256(body).hexdigest() != digest:
+            raise ValueError('draft changed since generation: ' + path)
+        oid = sha1(f'blob {len(body)}\0'.encode() + body).hexdigest()
+        result.files[path] = oid
+        result.blobs[oid] = body
+        if path.endswith('.meta'):
+            resource = path[:-5]
+            for paths in result.resources.values():
+                if resource in paths:
+                    paths.remove(resource)
+            entry = META_NAME.search(body.decode('utf-8-sig'))
+            if entry:
+                result.resources[entry[2].upper()].append(resource)
+    return result
+
+
+def draft_diff(source, draft, paths):
+    result = []
+    for path in sorted(paths):
+        before = source.read_raw(path) if path in source.files else b''
+        after = draft.read_raw(path) if path in draft.files else b''
+        try:
+            old, new = before.decode('utf-8-sig'), after.decode('utf-8-sig')
+        except UnicodeDecodeError:
+            result.append(f'Binary file {path} differs\n')
+            continue
+        old_name = 'a/' + path if path in source.files else '/dev/null'
+        new_name = 'b/' + path if path in draft.files else '/dev/null'
+        for line in unified_diff(old.splitlines(keepends=True), new.splitlines(keepends=True), old_name, new_name):
+            result.append(line if line.endswith('\n') else line + '\n\\ No newline at end of file\n')
+    return ''.join(result).encode()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--missions', required=True, type=Path)
+    parser.add_argument('--source', default='origin/master')
+    parser.add_argument('--dev', default='origin/dev')
+    parser.add_argument('--inventory', type=Path, help='optional convert.py comparison for the same commits')
+    parser.add_argument('--dependency', action='append', type=Path, default=[], help='addon checkout at HEAD, such as Units')
+    parser.add_argument('--report', required=True, type=Path, help='JSON file with per-mission paths and line numbers')
+    parser.add_argument('--summary', type=Path, help='optional Markdown table')
+    parser.add_argument('--mission', action='append', help='exact legacy launcher path, repeat to select a batch')
+    parser.add_argument('--patch', type=Path, help='write the Git diff for the selected missions')
+    parser.add_argument('--draft-stage', type=Path, help='overlay and verify a batch staging directory using --inventory')
+    args = parser.parse_args()
+    if args.patch and not args.mission:
+        parser.error('--patch requires at least one --mission')
+    if args.draft_stage and not args.inventory:
+        parser.error('--draft-stage requires the batch --inventory')
+    source = Snapshot(args.missions, args.source)
+    target = Snapshot(args.missions, args.dev)
+    notes = {}
+    if args.inventory:
+        inventory = json.loads(args.inventory.read_text(encoding='utf-8'))
+        if (inventory.get('source'), inventory.get('target')) != (source.commit, target.commit):
+            parser.error('the inventory describes different commits')
+        notes = inventory['worlds']
+    if args.draft_stage:
+        try:
+            target = overlay(target, args.draft_stage, inventory['batchMigration']['sha256'])
+        except (OSError, KeyError, ValueError) as exc:
+            parser.error(str(exc))
+    headers = set(source.headers())
+    selected = set(args.mission) if args.mission else headers
+    if selected - headers:
+        parser.error('unknown launcher: ' + ', '.join(sorted(selected - headers)))
+    dependencies = defaultdict(list)
+    for addon in args.dependency:
+        for resource, paths in Snapshot(addon, 'HEAD').resources.items():
+            dependencies[resource].extend(path for path in paths if path not in dependencies[resource])
+    missions = {header: compare_mission(source, target, header, notes, dependencies) for header in sorted(selected)}
+    report = {'source': source.commit, 'target': target.commit, 'missions': missions}
+    if args.draft_stage:
+        report['includesDraft'] = True
+    args.report.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+    if args.summary:
+        args.summary.write_text(markdown(source, target, missions), encoding='utf-8')
+    if args.patch:
+        paths = {path for mission in missions.values() for status, files in mission['files'].items()
+                 if status != 'same' for path in files}
+        patch = b''
+        if paths and args.draft_stage:
+            patch = draft_diff(source, target, paths)
+        elif paths:
+            patch = subprocess.check_output(['git', '-C', str(args.missions), '--literal-pathspecs', 'diff',
+                                             '--no-ext-diff', source.commit, target.commit, '--', *sorted(paths)])
+        args.patch.write_bytes(patch)
+    print(f'Reviewed file inventory for {len(missions)} launchers')
+
+
+if __name__ == '__main__':
+    main()

@@ -9,6 +9,32 @@ python external/development/mission-conversion/convert.py --missions ../gc-refor
 
 Omit `--stage` to compare without generating files. Use a new staging directory when inputs change. Repeating the same generation verifies existing output. Copy generated resource/metadata pairs into a clean Missions Dev checkout at the same relative paths. The tool checks existing tracked Dev presets for differing content. Review those differences before replacing any edited preset.
 
+
+## Batch migration and file review
+
+Use the batch workflow for the catalog. The same rules process every legacy launcher. They assemble complete drafts when all placements and behavior in a world match supported rules. Unrecognized constructs stay in the inventory with their file, line where available and conversion rule. The inventory groups blockers by the number of worlds affected, so a shared rule can unblock several missions on the next run.
+
+Set the following paths from a GC Lobby checkout. Use a fresh staging directory when the commits or conversion rules change.
+
+    $repo = '../gc-reforger-missions'
+    $tools = 'external/development/mission-conversion'
+    $stage = "$env:TEMP/gc-missions-drafts"
+    $inventory = "$env:TEMP/gc-missions-inventory.json"
+    $base = 'C:/Program Files (x86)/Steam/steamapps/common/Arma Reforger/addons/data/resourceDatabase.rdb'
+    $workshop = "$env:USERPROFILE/Documents/My Games/ArmaReforger/addons"
+    python "$tools/convert.py" --missions $repo --dev HEAD --batch --units ../gc-reforger-units --units-dev HEAD --base-database $base --stage $stage --report $inventory
+    python "$tools/review.py" --missions $repo --dev HEAD --inventory $inventory --draft-stage $stage --dependency ../gc-reforger-units --report "$env:TEMP/gc-missions-review.json" --summary "$env:TEMP/gc-missions-review.md"
+
+The review reports unchanged, changed, source-only and Dev-only files. It locates source and Dev declarations for modes, briefings, rosters, markers and boundaries, respawns, events, weather and vehicles. It flags inconsistent launcher and mission-owned resource references. Use repeatable --mission arguments with exact launcher paths and --patch to produce a focused diff. Omit --draft-stage to compare the committed branches.
+
+Install supported drafts into the Dev checkout after file review. Use --dry-run first to validate paths, hashes, collisions and resource references against the selected addon snapshots and installed databases. Repeat without --dry-run to install. Use --mission to select a subset or omit it to install all complete drafts in that inventory.
+
+    python "$tools/install_batch.py" --missions $repo --inventory $inventory --stage $stage --dependency . --dependency ../gc-reforger-units --dependency ../gc-reforger-core --base-database $base --workshop-addons $workshop --dry-run
+
+The installer leaves Git commits and pushes to the delivery batch. It refuses to overwrite differing files. The review resolves file identities and records supported conversions. It cannot establish runtime behavior for new framework features, historical terrain revisions or inherited behavior that the file rules cannot account for. Exercise a shared feature in Workbench when needed and apply that evidence to the relevant conversion rule across missions.
+
+Desert Heat is the first installed batch draft in Missions Dev commit a07bcbdb. The installer verified every referenced GUID and path against the draft files, current addon checkouts and installed resource databases. Its existing boundary was reused and only the missing boundary was added. Two runs with different Python hash seeds reproduced the draft and inventory byte-for-byte. File review covers the full 277-launcher catalog.
+
 ## Coverage
 
 The comparison indexes mission headers, including Scenario Framework subclasses, and every committed world. It follows source-local resource GUID references and each subscene's layer tree. The per-world record includes the source header, counts of serialized declarations, authored respawn and freeze overrides, source locations for briefing gaps, and path-level differences against the specified Dev commit. Declaration counts include grouped placement headers and inherited local resources. They are not runtime entity counts. Binary assets and external provider overrides, globally registered Enforce scripts and dynamically resolved names need separate inspection.
@@ -42,7 +68,7 @@ Five headers have outdated paths and Operation Steel has a case difference. Topd
 
 Sources for the legacy contracts include Reforger Lobby Community's `PS_MissionDescription`, `PS_MissionDescriptionHeadersListUI` and `PS_GameModeCoop`, and TilW Mission Framework's `TILW_Instructions.c`, `TILW_MissionFrameworkEntity.c` and `TILW_MapShapeComponent.c`. GC Lobby contracts are in `scripts/Game/Briefing`, `scripts/Game/Map` and `scripts/Game/MissionFramework`. The converter has no runtime dependency on the old framework.
 
-A mission is ready for the launcher once its header resolves its converted world, assets and playable slots load, and the behavior checks above have recorded outcomes. Record unavailable features by mission. A preset or a successful resource load alone does not establish mission parity.
+Review each launcher, world, roster and behavior against the legacy files before delivery. Record unsupported behavior by mission and use representative live checks for new shared runtime behavior.
 
 Keep mission commits local while preparing and verifying the batch. Push substantial batches of roughly ten converted missions together with their required GC Lobby and Units changes. Count mission worlds in the batch and record the remaining behavior gaps for each one.
 
