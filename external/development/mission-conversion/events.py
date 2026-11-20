@@ -119,3 +119,88 @@ def world_events(source, world):
             except ValueError as exc:
                 audit[loc] = {'gap': str(exc)}
     return compiled, audit
+
+
+def peak_event(key, faction, ratio, delay, action):
+    action_text = '\n'.join(action)
+    name = f'{faction} reached casualty threshold'
+    return f'''    GC_Event "{{{guid(key + '/trigger')}}}" {{
+     m_sName "{name}"
+     m_aConditions {{
+      GC_CustomScriptCondition "{{{guid(key + '/condition')}}}" {{
+       m_Script GC_PeakFactionPopulationCheck "{{{guid(key + '/check')}}}" {{
+        m_sFaction "{faction}"
+        m_fRatio {ratio}
+       }}
+      }}
+     }}
+     m_aActions {{
+      GC_MessageAction "{{{guid(key + '/log')}}}" {{
+       m_sMessage "{name}"
+       m_iDelivery 2
+      }}
+     }}
+    }}
+    GC_Event "{{{guid(key + '/notify')}}}" {{
+     m_sName "{name} notification"
+     m_aConditions {{
+      GC_MissionEventCondition "{{{guid(key + '/latch')}}}" {{
+       m_sEventName "{name}"
+      }}
+     }}
+     m_Advanced GC_EventOptions "{{{guid(key + '/delay')}}}" {{
+      m_fDelay {delay}
+     }}
+     m_aActions {{
+{action_text}
+     }}
+    }}
+'''
+
+
+PEAK_FLAG = re.compile(r'^  TILW_FactionPlayersKilledFlag "\{[\da-fA-F]{16}\}" \{$')
+
+
+def peak_notifications(lines, world):
+    flags = {}
+    for start, line in enumerate(lines):
+        if not PEAK_FLAG.fullmatch(line):
+            continue
+        stop = block_end(lines, start)
+        data = properties(lines[start + 1:stop], {'m_flagName', 'm_factionKey', 'm_casualtyRatio'})
+        flag, faction = [data.get(field, '') for field in ('m_flagName', 'm_factionKey')]
+        ratio = data.get('m_casualtyRatio', '1')
+        if (flag in flags or not re.fullmatch(r'"[\w.-]+"', flag)
+                or not re.fullmatch(r'"[\w.-]+"', faction)
+                or not re.fullmatch(r'\d+(?:\.\d+)?', ratio) or not 0 <= Decimal(ratio) <= 1):
+            raise ValueError('unsupported or duplicate peak population flag')
+        flags[flag] = faction[1:-1], ratio
+
+    rules = []
+    for start, line in enumerate(lines):
+        event = EVENT.fullmatch(line)
+        if not event:
+            continue
+        stop = block_end(lines, start)
+        fields = lines[start + 1:stop]
+        if fields and re.fullmatch('   m_name ' + QUOTED, fields[0]):
+            fields = fields[1:]
+        if len(fields) < 7 or fields[0] != '   m_instructions {' or not MESSAGE.fullmatch(fields[1]):
+            continue
+        last_message = block_end(fields, 1)
+        condition = last_message + 2
+        if (len(fields) != condition + 3 or fields[last_message + 1] != '   }'
+                or not LITERAL.fullmatch(fields[condition]) or fields[-1] != '   }'):
+            continue
+        flag = fields[condition + 1].removeprefix('    m_flagName ')
+        if flag not in flags:
+            continue
+
+        faction, ratio = flags[flag]
+        key = world + '/casualty/' + event[1]
+        delay, action = message(fields[2:last_message], key + '/message')
+        rules.append({'sourceLine': start + 1, 'faction': faction, 'ratio': ratio,
+                      'delaySeconds': str(delay), 'events': peak_event(key, faction, ratio, delay, action)})
+    if len({rule['faction'] for rule in rules}) != len(rules):
+        raise ValueError('multiple peak notifications for a faction need separate trigger names')
+    return rules

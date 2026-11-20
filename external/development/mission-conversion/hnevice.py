@@ -1,9 +1,7 @@
 """Stage the Hnevice terrain, lobby mode, briefings, groups and supported AO."""
-import re
-
 from boundaries import convert_instance
 from briefings import block_end, guid
-from events import EVENT, LITERAL, MESSAGE, message
+from events import peak_notifications
 from launchers import launcher
 from markers import LEGACY, instance
 
@@ -56,61 +54,11 @@ def mission_icons(source):
 
 
 def casualty_rules(lines):
-    flags = dict(re.findall(
-        r'^  TILW_FactionPlayersKilledFlag "\{[\dA-F]+\}" \{\n'
-        r'   m_flagName "(\w+)"\n   m_factionKey "([\w]+)"\n   m_casualtyRatio 0\.8\n  }$',
-        '\n'.join(lines), re.M))
-    if flags != {'san': 'San_Serriffe', 'don': 'GC_DON'}:
-        raise ValueError('Hnevice casualty flag layout changed')
-    rules = []
-    for start, line in enumerate(lines):
-        event = EVENT.fullmatch(line)
-        if not event:
-            continue
-        stop = block_end(lines, start)
-        condition = next(i for i in range(start + 1, stop) if LITERAL.fullmatch(lines[i]))
-        flag = re.fullmatch(r'    m_flagName "(\w+)"', lines[condition + 1])[1]
-        index = next(i for i in range(start + 1, stop) if MESSAGE.fullmatch(lines[i]))
-        key = WORLD + '/casualty/' + event[1]
-        delay, action = message(lines[index + 1:block_end(lines, index)], key + '/message')
-        if delay != 5:
-            raise ValueError('Hnevice casualty notification delay changed')
-        name = f'{flags[flag]} reached casualty threshold'
-        rules.append(f'''    GC_Event "{{{guid(key + '/trigger')}}}" {{
-     m_sName "{name}"
-     m_aConditions {{
-      GC_CustomScriptCondition "{{{guid(key + '/condition')}}}" {{
-       m_Script GC_PeakFactionPopulationCheck "{{{guid(key + '/check')}}}" {{
-        m_sFaction "{flags[flag]}"
-        m_fRatio 0.8
-       }}
-      }}
-     }}
-     m_aActions {{
-      GC_MessageAction "{{{guid(key + '/log')}}}" {{
-       m_sMessage "{name}"
-       m_iDelivery 2
-      }}
-     }}
-    }}
-    GC_Event "{{{guid(key + '/notify')}}}" {{
-     m_sName "{name} notification"
-     m_aConditions {{
-      GC_MissionEventCondition "{{{guid(key + '/latch')}}}" {{
-       m_sEventName "{name}"
-      }}
-     }}
-     m_Advanced GC_EventOptions "{{{guid(key + '/delay')}}}" {{
-      m_fDelay {delay}
-     }}
-     m_aActions {{
-{chr(10).join(action)}
-     }}
-    }}
-''')
-    if len(rules) != 2:
-        raise ValueError('expected two Hnevice casualty notifications')
-    return ''.join(rules)
+    rules = peak_notifications(lines, WORLD)
+    expected = [('San_Serriffe', '0.8', '5'), ('GC_DON', '0.8', '5')]
+    if [(r['faction'], r['ratio'], r['delaySeconds']) for r in rules] != expected:
+        raise ValueError('Hnevice casualty notification layout changed')
+    return ''.join(r['events'] for r in rules)
 
 
 def assemble(source, dev, row, generated):

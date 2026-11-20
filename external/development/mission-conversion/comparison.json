@@ -2915,10 +2915,10 @@
           "gap": "parent playability requires inheritance or member review"
         },
         "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/BLUFOR/BLUFORPlayer.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "group component needs review"
         },
         "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/OPFOR/OPFORPlayer.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "legacy slot playability requires review A5F4D7FEBDB57183"
         }
       },
       "boundaryLayers": {
@@ -3987,7 +3987,7 @@
       },
       "groupLayers": {
         "worlds/Corax/IntercectingForces/IntersectingForces_Layers/Blufor.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "group field needs review: m_aStaticVehicles"
         }
       },
       "boundaryLayers": {
@@ -5942,7 +5942,7 @@
       },
       "groupLayers": {
         "worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache_Layers/Players.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "mission-owned group BB49EA4063459740"
         }
       },
       "boundaryLayers": {
@@ -6462,7 +6462,7 @@
           "gap": "group component needs review"
         },
         "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/Opfor1/OPFOR.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "legacy slot playability requires review 328AFF9E8B3F3AE9"
         }
       },
       "directBriefingsRead": 12,
@@ -6479,7 +6479,32 @@
       },
       "briefingModePreset": "worlds/Fruz/Gwotline Bling/Gwotline Bling_GC_Settings.et",
       "renumberedInSourceOrder": true,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "modeCandidate": {
+        "placementLayer": "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/default_GC_Mode.layer",
+        "casualtyNotifications": [
+          {
+            "sourceLine": 95,
+            "faction": "GC_MUJ",
+            "ratio": "0.9",
+            "delaySeconds": "5"
+          },
+          {
+            "sourceLine": 107,
+            "faction": "RHS_USAF",
+            "ratio": "0.9",
+            "delaySeconds": "5"
+          }
+        ],
+        "remainingBehavior": [
+          "Port the two starting rosters, including the mixed BLUFOR layer, and verify issued equipment",
+          "Resolve AO prefab defaults and preserve public faction color and map-only settings",
+          "Convert the markers in the ammunition layer and verify both map audiences",
+          "Transfer the custom faction callsigns and verify both starting areas",
+          "Compare the 3,900-second Time Limit event, which has no serialized condition",
+          "Verify vehicles, staging restrictions, weather and both casualty notifications in play"
+        ]
+      }
     },
     "worlds/Fruz/Korengal Vacation/Korengal Vacation.ent": {
       "sourceResourceCount": 13,
@@ -6531,7 +6556,8 @@
           "gap": "group field needs review: m_iGroupRadioFrequency"
         },
         "worlds/Fruz/Korengal Vacation/Korengal Vacation_Layers/Opfor_Units.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "playableGroups": 7,
+          "unitPrefabEntries": 49
         },
         "worlds/Fruz/Korengal Vacation/Korengal Vacation_Layers/Static.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -7933,7 +7959,7 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/Players_Soviets/OPFOR_Players.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "group field needs review: m_bPlayable"
         },
         "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/Players_UK/UK_Players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -8925,7 +8951,7 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Clearing The Path/ClearingThePath_Layers/Players_Soviets/OPFOR_Players.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "group field needs review: m_bPlayable"
         },
         "worlds/HitTheMan/Clearing The Path/ClearingThePath_Layers/Players_UK/UK_Players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -9379,7 +9405,7 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/NVA_Players/NVA_Players.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/US_Players/US_Players.layer": {
           "gap": "group field needs review: m_faction"
@@ -13065,7 +13091,7 @@
           "gap": "parent playability requires inheritance or member review"
         },
         "worlds/Huska/WindyGoat/WindyGoat_Layers/Blufor_Players.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "mission-owned slot 60E1492FD0E1529B"
         },
         "worlds/Huska/WindyGoat/WindyGoat_Layers/OpforPlayers.layer": {
           "gap": "mission-owned slot D12224DAE8AE4A10"
@@ -13595,7 +13621,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/James/JavoryPrelude/JavoryPrelude_Layers/red.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "boundaryLayers": {
@@ -14863,7 +14889,7 @@
       },
       "groupLayers": {
         "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/BLUFOR/Players.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "legacy slot playability requires review 7BB0A58F40CB2528"
         },
         "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/INDFOR/AI/Prespawned.layer": {
           "gap": "parent playability requires inheritance or member review"
@@ -16174,7 +16200,7 @@
       },
       "groupLayers": {
         "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen_Layers/Rebels/Players.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "mission-owned slot F11915C4D43ED30C"
         },
         "worlds/RedTheKnown/ChakChakChosen/ChakChakChosen_Layers/TKA/Players.layer": {
           "gap": "mission-owned slot 8786885F583CF73A"
@@ -16290,7 +16316,8 @@
           "gap": "mission-owned slot 580115E439977772"
         },
         "worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/US/players.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "playableGroups": 4,
+          "unitPrefabEntries": 38
         }
       },
       "directBriefingsRead": 10,
@@ -18620,7 +18647,7 @@
           "unitPrefabEntries": 1
         },
         "worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/OPFOR/Players.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "legacy slot playability requires review ECB5E6520057FF89"
         }
       },
       "stockPlacementLayers": {
@@ -20559,7 +20586,7 @@
           "gap": "legacy slot playability requires review FC5B6E3946BB6F48"
         },
         "worlds/Til/JunctionJab/JunctionJab_Layers/players_nva.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "boundaryLayers": {
@@ -20819,7 +20846,7 @@
       },
       "groupLayers": {
         "worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing_Layers/nva.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/KoskelankylaCrossing/KoskelankylaCrossing_Layers/uk.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -22249,7 +22276,8 @@
           "unitPrefabEntries": 25
         },
         "worlds/Wade/TheLocalFiles/TheLocalFiles_Layers/PlayersUS.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "playableGroups": 4,
+          "unitPrefabEntries": 25
         }
       },
       "directBriefingsRead": 22,
@@ -23215,7 +23243,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/anteante101/Castle Crushers/CastleCrushers_Layers/UK.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "mission-owned slot A0CDD0EEB4408066"
         }
       },
       "boundaryLayers": {
@@ -24808,7 +24836,7 @@
           "gap": "legacy slot playability requires review E227EF76A95B5198"
         },
         "worlds/arc/FactorySiegeRedux/FactorySiegeRedux_Layers/players_us.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "gap": "legacy slot playability requires review 96BC236C0E598201"
         }
       },
       "boundaryLayers": {
@@ -25606,7 +25634,8 @@
       },
       "groupLayers": {
         "worlds/arc/IndustrialMetal/IndustrialMetal_Layers/players_cdf.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "playableGroups": 4,
+          "unitPrefabEntries": 25
         },
         "worlds/arc/IndustrialMetal/IndustrialMetal_Layers/players_ru.layer": {
           "playableGroups": 9,
@@ -27054,7 +27083,8 @@
       },
       "groupLayers": {
         "worlds/arc/SoumontSawmill/SoumontSawmill_Layers/players_ru.layer": {
-          "gap": "group field needs review: m_aUnitPrefabSlots"
+          "playableGroups": 5,
+          "unitPrefabEntries": 36
         },
         "worlds/arc/SoumontSawmill/SoumontSawmill_Layers/players_sep.layer": {
           "playableGroups": 4,

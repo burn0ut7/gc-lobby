@@ -11,6 +11,7 @@ from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
 from events import world_events
 from groups import group_layer
+import gwotline
 import hnevice
 from launchers import launcher
 from markers import convert_layer as convert_markers
@@ -35,6 +36,7 @@ def main():
     parser.add_argument('--units-dev', default='origin/dev')
     parser.add_argument('--include-ruha', action='store_true', help='generate the reviewed Ruha race world')
     parser.add_argument('--include-hnevice-candidate', action='store_true', help='stage the incomplete Hnevice playtest world externally')
+    parser.add_argument('--include-gwotline-mode', action='store_true', help='stage the reviewed Gwotline Bling mode placement for assembly')
     args = parser.parse_args()
     source = Snapshot(args.missions, args.source)
     dev = Snapshot(args.missions, args.dev)
@@ -239,6 +241,17 @@ def main():
             'presentOnDev': all(path in dev.files for path in candidate),
             'remainingBehavior': hnevice.GAPS,
         }
+    if args.include_gwotline_mode:
+        if not args.stage:
+            parser.error('the Gwotline Bling mode placement requires --stage')
+        row = report['worlds'][gwotline.WORLD]
+        mode, audit = gwotline.stage_mode(source, row['briefingModePreset'])
+        path = gwotline.DEFAULT.removesuffix('.layer') + '_GC_Mode.layer'
+        if path in dev.files and dev.read(path).strip() != mode.strip():
+            parser.error(f'Dev already has differing {path}')
+        out[path] = mode
+        row['modeCandidate'] = {'placementLayer': path, 'casualtyNotifications': audit,
+                                'remainingBehavior': gwotline.GAPS}
     if args.stage:
         stage = args.stage.resolve()
         if any(stage.is_relative_to(root.resolve()) for root in ([args.missions, lobby] + ([args.units] if args.units else []))):

@@ -127,7 +127,7 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             if components:
                 out.extend([line, *components, lines[end]])
             i = end
-        elif re.fullmatch(r'm_aUnitPrefabSlots (?:\+ )?\{', token):
+        elif re.fullmatch(r'm_aUnitPrefabSlots (?:\+ ?)?\{', token):
             end = block_end(lines, i)
             def slot(match):
                 guid, path = match.groups()
