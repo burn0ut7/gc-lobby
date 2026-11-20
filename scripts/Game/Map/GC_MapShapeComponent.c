@@ -11,6 +11,8 @@ class GC_MapShapeComponent : ScriptComponent
 	protected bool m_bAutoFrameMap;
 	[Attribute("", UIWidgets.Auto, "Empty shows everyone; otherwise only these native faction keys can see the shape.", category: "Map shape")]
 	protected ref array<FactionKey> m_aFactionKeys;
+	[Attribute("0", UIWidgets.CheckBox, "Also show a faction-filtered shape to viewers with no faction.", category: "Map shape")]
+	protected bool m_bVisibleWithoutFaction;
 	[Attribute("0.2 0.5 1 1", UIWidgets.ColorPicker, "Outline color and opacity. Set opacity to zero to hide the outline.", category: "Outline")]
 	protected ref Color m_LineColor;
 	[Attribute("3", UIWidgets.EditBox, "Line width in UI pixels, independent of map zoom.", params: "1 20", category: "Outline")]
@@ -119,7 +121,9 @@ class GC_MapShapeComponent : ScriptComponent
 			return;
 		if (m_aFactionKeys && !m_aFactionKeys.IsEmpty())
 		{
-			if (!faction || !m_aFactionKeys.Contains(faction.GetFactionKey()))
+			if (faction && !m_aFactionKeys.Contains(faction.GetFactionKey()))
+				return;
+			if (!faction && !m_bVisibleWithoutFaction)
 				return;
 		}
 		array<vector> polygon = {};

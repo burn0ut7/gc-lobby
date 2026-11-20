@@ -7,6 +7,7 @@ from briefings import block_end, properties
 
 ROOT = re.compile(r'^(?P<group>\$grp )?PolylineShapeEntity(?: (?P<name>[\w.-]+))? : "\{85222A2744768C81\}[^"]+" \{$')
 DEST = '{8F470B543A20D944}Prefabs/Logic/Mission/AOLimit.et'
+MAP_SHAPE = '{8F470B543A20D963}Prefabs/Logic/Mission/MapShape.et'
 ALLOWED = {'m_killTimer', 'm_factionKeys', 'm_ignoredVehicles', 'm_visibility', 'm_defaultColor',
            'm_useFactionColor', 'm_lineWidth', 'Enabled'}
 COMPONENTS = {
@@ -83,7 +84,27 @@ def settings(lines):
     return result, overlay
 
 
-def convert_instance(lines, name):
+def convert_passive(name, placement, overlay):
+    keys = overlay.get('m_factionKeys', '')
+    empty = overlay.get('m_visibleForEmptyFaction', '1')
+    color = overlay.get('m_color', '0 0 0 0.75')
+    invert = overlay.get('m_invert', '1')
+    if (not overlay or overlay.get('m_drawArea', '1') != '1' or empty not in ('0', '1')
+            or (not keys and empty == '0') or invert not in ('0', '1')
+            or not all(0 <= x <= 1 for x in floats(color, 4))):
+        raise ValueError('unsupported passive map fill')
+    if keys and not re.fullmatch(r'(?:\s*"[\w.-]+"\s*)+', keys):
+        raise ValueError('custom passive shape faction list')
+    lines = [f'PolylineShapeEntity{name} : "{MAP_SHAPE}" {{', ' components {',
+             '  GC_MapShapeComponent "{8F470B543A20D962}" {', '   m_LineColor 0 0 0 0',
+             '   m_bFillEnabled 1', '   m_FillColor ' + color, '   m_bInvertFill ' + invert]
+    if keys:
+        lines.extend(['   m_aFactionKeys {', '    ' + keys.replace('\n', '\n    '), '   }',
+                      '   m_bVisibleWithoutFaction ' + empty])
+    return '\n'.join([*lines, '  }', ' }', *placement, '}'])
+
+
+def convert_instance(lines, name, passive_only=False):
     values, overlay = {}, {}
     placement = []
     vertices = []
@@ -135,6 +156,10 @@ def convert_instance(lines, name):
     if coords is None:
         raise ValueError('missing explicit AO transform')
     validate_polygon(vertices, floats(coords,3), yaw or 0)
+    if passive_only:
+        if values.get('Enabled') != '0':
+            raise ValueError('passive shape requires a disabled AO')
+        return convert_passive(name, placement, overlay), len(vertices)
     keys = values.get('m_factionKeys','')
     vehicles = values.get('m_ignoredVehicles','')
     if keys and not re.fullmatch(r'(?:\s*"[\w.-]+"\s*)+', keys):

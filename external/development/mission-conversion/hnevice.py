@@ -1,6 +1,7 @@
 """Stage the Hnevice terrain, lobby mode, briefings, groups and supported AO."""
 import re
 
+from boundaries import convert_instance
 from briefings import block_end, guid
 from events import EVENT, LITERAL, MESSAGE, message
 from launchers import launcher
@@ -17,7 +18,7 @@ REVIEWED = {
 GAPS = [
     'Verify the two 80% casualty notifications, including spawn/delete sampling and recovery during the delay',
     'Compare the crash site and both platoon icons before slotting and as each assigned side',
-    'Convert the disabled AO instance as a map-only polygon with US and USSR visibility',
+    'Compare the map-only polygon before slotting, as US and USSR, and as other factions',
     'Verify the 120-second staging countdown in match, on reconnect and on early match end',
     'Compare legacy freeze-end chat and elapsed mission-time presentation',
     'Verify faction loadouts, eight groups, 68 slots, 11 briefing entries and weather in play',
@@ -135,6 +136,13 @@ def assemble(source, dev, row, generated):
     if world != WORLD:
         raise ValueError('Hnevice launcher resolves to a different world')
     lines = source.read(FOLDER + 'default.layer').splitlines()
+    passive = [int(line) - 1 for line, entry in ao['instances'].items() if 'gap' in entry]
+    if len(passive) != 1:
+        raise ValueError('expected one Hnevice passive AO placement')
+    start = passive[0]
+    shape, vertices = convert_instance(lines[start + 1:block_end(lines, start)], ' GC_HneviceMapMask', passive_only=True)
+    if vertices != 4:
+        raise ValueError('Hnevice passive polygon geometry changed')
     freeze_ms = next(int(line.split()[1]) for line in lines if line.startswith(' m_iFreezeTime '))
     if freeze_ms != 120000:
         raise ValueError('Hnevice staging duration changed')
@@ -145,6 +153,11 @@ def assemble(source, dev, row, generated):
     # Core Dev has no GC_Bystrany wrapper. Its legacy layer added only the terrain map.
     files[WORLD] = 'SubScene {\n Parent "{7A888BF1C248E2E6}Worlds/Bystrany/Bystrany.ent"\n}\n'
     files[FOLDER + 'icons.layer'] = mission_icons(source)
+    files[FOLDER + 'map_mask.layer'] = shape + '\n'
+    ao['instances'][str(start + 1)] = {
+        'vertices': vertices, 'name': 'GC_HneviceMapMask',
+        'lastLine': block_end(lines, start) + 1, 'candidateLayer': FOLDER + 'map_mask.layer',
+    }
     files[FOLDER + 'map.layer'] = '''SCR_MapEntity MapEntity1 : "{731564B66F91B107}Prefabs/World/Game/MapEntity.et" {
  "Map Geometry Data" "{0C931F860C09AC4C}Worlds/Bystrany/Bystrany.topo"
  "Satellite background image" "{10EB7E9261F936BC}UI/Textures/Map/Worlds/Bystrany/Bystrany_Rasterized_Enhanced.edds"
