@@ -14,6 +14,27 @@ Start with the authored definitions, then follow their compiled forms into the r
 
 `GC_MissionScript.c` is the shared extension contract used by both custom script conditions and actions.
 
+## Porting a teleport interaction
+
+Replace TilW Mission Framework's `TILW_TeleportInteraction.et` with
+`Prefabs/Logic/Mission/TeleportInteraction.et` at the interaction point.
+Copy these values from the old user action to the new teleport component.
+
+| TilW action field | GC teleport component field |
+| --- | --- |
+| Action Name | Action Name |
+| Location Name | Destination Name (the existing world entity name) |
+| Faction Keys | Factions (empty allows every faction) |
+| Condition Flag | Required Flag (define the corresponding flag on the GC Lobby Manager) |
+
+During Match, eligible players see the action if their faction is allowed.
+A required flag disables the action until set. An empty Required Flag allows
+use even when mission events are disabled. The prefab defaults to a two-metre
+action context and a one-second hold. Copy mission-specific radius and duration
+overrides in the Actions Manager. The server resolves the destination's current
+origin on each use. The base-game teleport also moves an occupied vehicle if
+the player activates the action from inside it.
+
 ## Finding the execution path
 
 For a contested objective, add **Area Control Condition** to an event, select

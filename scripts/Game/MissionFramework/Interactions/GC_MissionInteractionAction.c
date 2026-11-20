@@ -21,7 +21,7 @@ class GC_MissionInteractionAction : ScriptedUserAction
 	//------------------------------------------------------------------------------------------------
 	override bool CanBeShownScript(IEntity user)
 	{
-		return m_Interaction && m_Interaction.CanUse(user);
+		return m_Interaction && m_Interaction.CanShow(user);
 	}
 
 	//------------------------------------------------------------------------------------------------

@@ -1,0 +1,31 @@
+GenericEntity {
+ ID "DC5CA49CDEC74D43"
+ components {
+  GC_TeleportInteractionComponent "{B3632A2C9CA24FDF}" {
+   m_sActionName "Teleport: Location"
+  }
+  ActionsManagerComponent "{F097C296BF6748C5}" {
+   ActionContexts {
+    UserActionContext "{33B86D1741F2473F}" {
+     ContextName "MissionInteraction"
+     Position PointInfo "{21B6A8BC15BF41DF}" {
+     }
+     Radius 2
+    }
+   }
+   additionalActions {
+    GC_MissionInteractionAction "{404C2C5909834FF5}" {
+     ParentContextList {
+      "MissionInteraction"
+     }
+     ActionTitle "MissionInteraction"
+     Duration 1
+    }
+   }
+  }
+  RplComponent "{B76770C16F074CD9}" {
+  }
+  Hierarchy "{3EFE0EFF64124DAB}" {
+  }
+ }
+}

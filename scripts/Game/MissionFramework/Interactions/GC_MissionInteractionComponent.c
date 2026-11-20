@@ -33,12 +33,24 @@ class GC_MissionInteractionComponent : ScriptComponent
 	//------------------------------------------------------------------------------------------------
 	bool CanUse(IEntity user)
 	{
-		GC_LobbyManager manager = GC_LobbyManager.GetManager();
-		if (!manager || manager.GetLobbyPhase() != SCR_EGameModeState.GAME || m_bUsing || !GetOwner().FindComponent(RplComponent))
+		if (!IsEligibleUser(user))
 			return false;
 		if (Replication.IsServer())
 			RefreshAvailability();
-		if (!m_bAvailable)
+		return m_bAvailable;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	bool CanShow(IEntity user)
+	{
+		return CanUse(user);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected bool IsEligibleUser(IEntity user)
+	{
+		GC_LobbyManager manager = GC_LobbyManager.GetManager();
+		if (!manager || manager.GetLobbyPhase() != SCR_EGameModeState.GAME || m_bUsing || !GetOwner().FindComponent(RplComponent))
 			return false;
 		SCR_ChimeraCharacter character = SCR_ChimeraCharacter.Cast(user);
 		if (!character || character.FindComponent(GC_LobbySpectatorBodyComponent))
@@ -63,6 +75,11 @@ class GC_MissionInteractionComponent : ScriptComponent
 			return false;
 		GC_LobbyManager manager = GC_LobbyManager.GetManager();
 		m_bUsing = true;
+		if (!PerformInteraction(user))
+		{
+			m_bUsing = false;
+			return false;
+		}
 		m_OnUsed.Invoke();
 		manager.NotifyMissionInteraction(m_sCallFlag);
 		m_bUsing = false;
@@ -71,13 +88,24 @@ class GC_MissionInteractionComponent : ScriptComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	protected bool PerformInteraction(IEntity user)
+	{
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected bool IsAvailable(GC_LobbyManager manager)
+	{
+		return manager.AreMissionInteractionsActive() && (m_sRequiredFlag.IsEmpty() || manager.GetFlag(m_sRequiredFlag));
+	}
+
+	//------------------------------------------------------------------------------------------------
 	protected void RefreshAvailability()
 	{
 		if (!Replication.IsServer())
 			return;
 		GC_LobbyManager manager = GC_LobbyManager.GetManager();
-		bool available = manager && manager.AreMissionInteractionsActive() && !m_sActionName.IsEmpty()
-			&& (m_sRequiredFlag.IsEmpty() || manager.GetFlag(m_sRequiredFlag));
+		bool available = manager && !m_sActionName.IsEmpty() && IsAvailable(manager);
 		if (available == m_bAvailable)
 			return;
 		m_bAvailable = available;
