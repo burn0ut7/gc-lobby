@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "0abd5519dd6bdcd078055207b71e881a8184726c",
+  "target": "2c9c295a0b58cbf95ac796b664c1741b166e5ce9",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -191,7 +191,7 @@
         "worlds/Corax/BlackhawkBrawl/blackhawk_brawl.ent"
       ],
       "declaredPath": "worlds/Corax/BlackhawkBrawl/blackhawk_brawl.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{F3A31F7BA3BB22ED}worlds/Corax/BlackhawkBrawl/blackhawk_brawl.ent"
     },
     "Missions/Corax/Breachandclear/BreachAndClear.conf": {
@@ -1633,7 +1633,7 @@
         "worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1.ent"
       ],
       "declaredPath": "worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{A71A1F6E8C93D4A2}worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1.ent"
     },
     "Missions/Woody/COXX_Hof_Lomelsberg_Flank.conf": {
@@ -3814,7 +3814,8 @@
     "worlds/Corax/BlackhawkBrawl/blackhawk_brawl.ent": {
       "sourceResourceCount": 5,
       "devPaths": {
-        "absent": 5
+        "changed": 4,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -3874,7 +3875,7 @@
               "gap": "unsupported boundary settings"
             }
           },
-          "placementLayer": "worlds/Corax/BlackhawkBrawl/blackhawk_brawl_Layers/default_GC_Boundaries.layer"
+          "gap": "Dev already contains the original layer path; review before adding boundary siblings"
         }
       },
       "directBriefingsRead": 12,
@@ -28083,7 +28084,8 @@
     "worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1.ent": {
       "sourceResourceCount": 7,
       "devPaths": {
-        "absent": 7
+        "changed": 6,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,

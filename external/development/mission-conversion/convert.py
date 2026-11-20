@@ -153,7 +153,8 @@ def main():
                 elif args.include_irish_candidate and layer == irish.DEFAULT:
                     ao_body, instances = irish.boundaries(text)
                 else:
-                    ao_body, instances = convert_boundaries(text, allow_public_faction_color=reviewed_tint)
+                    ao_body, instances = convert_boundaries(text, allow_public_faction_color=reviewed_tint,
+                                                            extended_shapes=args.batch)
                 if instances:
                     audit = {'instances': instances}
                     row.setdefault('boundaryLayers', {})[layer] = audit
@@ -637,7 +638,7 @@ def main():
             return group_layer(body, source_units, dev_units, stock, locally_owned, external_ai=external_ai)
 
         try:
-            asset_aliases = batch.vehicle_aliases(args.workshop_addons, dev_units)
+            asset_aliases = batch.resource_aliases(args.workshop_addons, dev_units)
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,

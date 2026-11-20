@@ -45,16 +45,22 @@ DUPLICATE_CALLSIGNS = re.compile(
 AI_WORLD_ALIASES = {
     '33A5B976E41B0A4C': ('Prefabs/AI/SCR_AIWorld_BadOrb.et', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et'),
 }
-VEHICLE_ALIASES = {
-    '6B7CD408BDFB94F5': ('TacticalFlava-TIGR_DEADC0DE00000003',
-                         'Prefabs/Vehicles/Wheeled/TIGR/GAZ_TIGR_v2_PKM_Green.et',
-                         'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM_Green.et'),
-    '6F4D5B56F4905A62': ('TacticalFlava-TIGR_DEADC0DE00000003',
-                         'Prefabs/Vehicles/Wheeled/TIGR/GAZ_TIGR_v2_Unarmed_Green.et',
-                         'Prefabs/Vehicles/Wheeled/TIGR/Unarmed/GAZ_TIGR_v2_Unarmed_Green.et'),
-    'A317D959A4248173': ('WCS_AH-6M_6273146ADFE8241D',
-                         'Prefabs/Vehicles/Helicopters/AH6M/AH6M_GAU19.et',
-                         'Prefabs/Vehicles/Helicopters/AH6M/AH6M_GAU19_X1.et'),
+WORKSHOP_RESOURCE_ALIASES = {
+    ('6B7CD408BDFB94F5', 'Prefabs/Vehicles/Wheeled/TIGR/GAZ_TIGR_v2_PKM_Green.et'): (
+        'TacticalFlava-TIGR_DEADC0DE00000003', '6B7CD408BDFB94F5',
+        'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM_Green.et'),
+    ('6F4D5B56F4905A62', 'Prefabs/Vehicles/Wheeled/TIGR/GAZ_TIGR_v2_Unarmed_Green.et'): (
+        'TacticalFlava-TIGR_DEADC0DE00000003', '6F4D5B56F4905A62',
+        'Prefabs/Vehicles/Wheeled/TIGR/Unarmed/GAZ_TIGR_v2_Unarmed_Green.et'),
+    ('A317D959A4248173', 'Prefabs/Vehicles/Helicopters/AH6M/AH6M_GAU19.et'): (
+        'WCS_AH-6M_6273146ADFE8241D', 'A317D959A4248173',
+        'Prefabs/Vehicles/Helicopters/AH6M/AH6M_GAU19_X1.et'),
+    ('77C3151F7A6E588C', 'SCR_AIWorld_Kunar.et'): (
+        'KunarProvince_5C9691EA7FD7A79F', 'E2A016456BBC697D', 'Prefabs/SCR_AIWorld_Kunar.et'),
+    ('77C3151F7A6E588C', 'Prefabs/SCR_AIWorld_Kunar.et'): (
+        'KunarProvince_5C9691EA7FD7A79F', 'E2A016456BBC697D', 'Prefabs/SCR_AIWorld_Kunar.et'),
+    ('BF5F2D022EA8CB36', 'Worlds/Bystrany/Bystrany_Map_v02.topo'): (
+        'Bystrany_6626CB89B6B9C913', '0C931F860C09AC4C', 'Worlds/Bystrany/Bystrany.topo'),
 }
 UNITS_VEHICLE_ALIASES = {
     'F503F71C08BE3F7D': ('48F288F5BFF10D8B', 'Prefabs/Vehicles/Helicopters/AUS_MH60/AUS_UH60_armed.et',
@@ -228,16 +234,16 @@ def passive_asset(source, path):
     raise ValueError('requires a resource conversion rule')
 
 
-def vehicle_aliases(workshop, units):
+def resource_aliases(workshop, units):
     aliases, databases = {}, {}
     if workshop:
-        for resource, (provider, old, current) in VEHICLE_ALIASES.items():
+        for original, (provider, guid, path) in WORKSHOP_RESOURCE_ALIASES.items():
             if provider not in databases:
-                path = workshop / provider / 'resourceDatabase.rdb'
-                databases[provider] = StockPrefabs(path) if path.is_file() else None
+                registry = workshop / provider / 'resourceDatabase.rdb'
+                databases[provider] = StockPrefabs(registry) if registry.is_file() else None
             database = databases[provider]
-            if database and database.contains(resource, current):
-                aliases[(resource, old)] = (resource, current)
+            if database and database.contains(guid, path):
+                aliases[original] = (guid, path)
     for old, (current, path, digest) in UNITS_VEHICLE_ALIASES.items():
         if (old not in units.resources and units.resources.get(current) == [path]
                 and sha256(units.read(path).strip().encode()).hexdigest() == digest):
@@ -539,6 +545,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     zones = []
     parts = {}
     boundaries = {}
+    converted_cover = False
     reused_layers = set()
     group_blocks = []
     area_names = []
@@ -594,11 +601,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 elif kind == 'PS_ManualMarker':
                     result.append(convert_layer(body, dev)[0])
                 elif 'TILW_AOLimit.et' in head or 'TILW_MapShape.et' in head:
-                    converted, audit = convert_boundaries(body, allow_public_faction_color=True)
+                    converted, audit = convert_boundaries(body, allow_public_faction_color=True, extended_shapes=True)
                     if not converted or any('gap' in item for item in audit.values()):
                         blockers.append({'rule': 'boundary or map shape', 'file': layer, 'line': line, 'detail': audit})
                     else:
                         boundaries.setdefault(layer, []).append(converted)
+                        converted_cover |= 'm_bAutoFrameMap 1' in converted
                 elif PERCEPTION.fullmatch(head) and (len(block) == 2 or
                                                      (len(block) == 3 and block[1].startswith(' coords '))):
                     continue
@@ -719,6 +727,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare delayed extraction polling and status messages in multiplayer.')
     if event_flags:
         remaining.append('Compare timing of simultaneous flag changes and their dependent event chains.')
+    if converted_cover:
+        remaining.append('Native cover framing follows map opens. Auxiliary outlines use screen width instead of metres.')
     return ({} if blockers else draft), {
         'status': 'blocked by conversion rules' if blockers else 'generated for file review',
         'blockers': blockers, 'files': sorted(draft), 'mixedLayerGroups': group_blocks,

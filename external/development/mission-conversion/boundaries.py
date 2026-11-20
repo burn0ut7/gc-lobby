@@ -3,7 +3,7 @@ import math
 import re
 from struct import pack, unpack
 
-from briefings import block_end, properties
+from briefings import block_end, guid, properties
 
 ROOT = re.compile(r'^(?P<group>\$grp )?PolylineShapeEntity(?: (?P<name>[\w.-]+))? : "\{85222A2744768C81\}[^"]+" \{$')
 DEST = '{8F470B543A20D944}Prefabs/Logic/Mission/AOLimit.et'
@@ -60,8 +60,8 @@ def validate_polygon(vertices, origin, yaw=0):
                 raise ValueError('crossing or touching polygon edges')
 
 
-def settings(lines):
-    result, overlay = {}, {}
+def settings(lines, extended_shapes):
+    result, overlay, cover = {}, {}, {}
     seen = set()
     i = 0
     while i < len(lines):
@@ -76,38 +76,78 @@ def settings(lines):
         # The standard legacy AO prefab disables both visual components.
         # An instance can store style values without enabling either component.
         elif any(l.strip().startswith('Enabled ') and l.strip() != 'Enabled 0' for l in body):
-            if head[1] != 'TILW_MapShapeComponent':
-                raise ValueError('active cover map needs separate conversion')
-            overlay = properties(body, {'Enabled', 'm_drawArea', 'm_drawLine', 'm_color', 'm_invert',
-                                        'm_visibleForEmptyFaction', 'm_factionKeys', 'm_lineWidth', 'm_lineColor'})
-            if overlay.get('Enabled') != '1' or overlay.get('m_drawLine', '0') != '0':
-                raise ValueError('zoom-dependent auxiliary outline needs separate conversion')
+            if head[1] == 'TILW_CoverMapComponent':
+                if not extended_shapes:
+                    raise ValueError('active cover map needs separate conversion')
+                cover = properties(body, {'Enabled', 'm_ratioWidth'})
+                if cover.get('Enabled') != '1':
+                    raise ValueError('unsupported active cover map')
+            else:
+                overlay = properties(body, {'Enabled', 'm_drawArea', 'm_drawLine', 'm_color', 'm_invert',
+                                            'm_visibleForEmptyFaction', 'm_factionKeys', 'm_lineWidth', 'm_lineColor'})
+                if overlay.get('Enabled') != '1':
+                    raise ValueError('unsupported auxiliary map shape')
         i = end+1
-    return result, overlay
+    if not cover and overlay.get('m_drawLine', '0') != '0':
+        raise ValueError('zoom-dependent auxiliary outline needs separate conversion')
+    return result, overlay, cover
 
 
-def convert_passive(name, placement, overlay):
+def convert_passive(name, placement, overlay, *, auto_frame=False):
     keys = overlay.get('m_factionKeys', '')
     empty = overlay.get('m_visibleForEmptyFaction', '1')
     color = overlay.get('m_color', '0 0 0 0.75')
     invert = overlay.get('m_invert', '1')
-    if (not overlay or overlay.get('m_drawArea', '1') != '1' or empty not in ('0', '1')
+    fill = overlay.get('m_drawArea', '1')
+    outline = overlay.get('m_drawLine', '0')
+    line_color = overlay.get('m_lineColor', '0 0 0 1') if outline == '1' else '0 0 0 0'
+    line_width = overlay.get('m_lineWidth', '5')
+    if (not overlay or fill != '1' or empty not in ('0', '1')
             or (not keys and empty == '0') or invert not in ('0', '1')
-            or not all(0 <= x <= 1 for x in floats(color, 4))):
+            or outline not in ('0', '1') or not all(0 <= x <= 1 for x in floats(color, 4))
+            or (outline == '1' and (not 1 <= float(line_width) <= 20
+                                   or not all(0 <= x <= 1 for x in floats(line_color, 4))))):
         raise ValueError('unsupported passive map fill')
     if keys and not re.fullmatch(r'(?:\s*"[\w.-]+"\s*)+', keys):
         raise ValueError('custom passive shape faction list')
     lines = [f'PolylineShapeEntity{name} : "{MAP_SHAPE}" {{', ' components {',
-             '  GC_MapShapeComponent "{8F470B543A20D962}" {', '   m_LineColor 0 0 0 0',
-             '   m_bFillEnabled 1', '   m_FillColor ' + color, '   m_bInvertFill ' + invert]
+             '  GC_MapShapeComponent "{8F470B543A20D962}" {', '   m_LineColor ' + line_color,
+             '   m_bFillEnabled ' + fill, '   m_FillColor ' + color, '   m_bInvertFill ' + invert]
+    if outline == '1':
+        lines.append('   m_fLineWidth ' + line_width)
+    if auto_frame:
+        lines.append('   m_bAutoFrameMap 1')
     if keys:
         lines.extend(['   m_aFactionKeys {', '    ' + keys.replace('\n', '\n    '), '   }',
                       '   m_bVisibleWithoutFaction ' + empty])
     return '\n'.join([*lines, '  }', ' }', *placement, '}'])
 
 
-def convert_instance(lines, name, passive_only=False, allow_public_faction_color=False, split_fill=True):
-    values, overlay = {}, {}
+def render_cover(coords, vertices, yaw, cover):
+    width = float(cover.get('m_ratioWidth', '1.778'))
+    if not 1 <= width < float('inf'):
+        raise ValueError('invalid cover aspect ratio')
+    cosine, sine = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+    center = [sum(p[axis] for p in vertices) / len(vertices) for axis in range(3)]
+    radius = max(math.dist(center, point) for point in vertices)
+    x, y, z = center
+    origin = (coords[0] + x*cosine + z*sine, coords[1] + y, coords[2] - x*sine + z*cosine)
+    half_width = width * radius
+    corners = [(-half_width, 0, -radius), (half_width, 0, -radius),
+               (half_width, 0, radius), (-half_width, 0, radius)]
+    validate_polygon(corners, origin)
+    key = 'map cover/' + ' '.join(f'{value:.6f}' for value in origin)
+    placement = [' coords ' + ' '.join(f'{value:.6f}' for value in origin), ' Points {']
+    for i, corner in enumerate(corners):
+        placement.extend([f'  ShapePoint "{{{guid(key + "/" + str(i))}}}" {{',
+                          '   Position ' + ' '.join(f'{value:.6f}' for value in corner), '  }'])
+    placement.extend([' }', ' IsClosed 1'])
+    return convert_passive('', placement, {'m_color': '0 0 0 1', 'm_invert': '1'}, auto_frame=True)
+
+
+def convert_instance(lines, name, passive_only=False, allow_public_faction_color=False, split_fill=True,
+                     extended_shapes=False):
+    values, overlay, cover = {}, {}, {}
     placement = []
     vertices = []
     coords = None
@@ -117,7 +157,7 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
         field = lines[i].strip()
         if field == 'components {':
             end = block_end(lines, i)
-            values, overlay = settings(lines[i+1:end])
+            values, overlay, cover = settings(lines[i+1:end], extended_shapes)
             i = end
         elif field == 'Points {':
             end = block_end(lines, i)
@@ -157,11 +197,13 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
         i += 1
     if coords is None:
         raise ValueError('missing explicit AO transform')
-    validate_polygon(vertices, floats(coords,3), yaw or 0)
-    if passive_only:
+    origin = floats(coords, 3)
+    validate_polygon(vertices, origin, yaw or 0)
+    cover_shape = render_cover(origin, vertices, yaw or 0, cover) + '\n' if cover else ''
+    if passive_only or (extended_shapes and values.get('Enabled') == '0' and overlay):
         if values.get('Enabled') != '0':
             raise ValueError('passive shape requires a disabled AO')
-        return convert_passive(name, placement, overlay), len(vertices)
+        return cover_shape + convert_passive(name, placement, overlay), len(vertices)
     keys = values.get('m_factionKeys','')
     vehicles = values.get('m_ignoredVehicles','')
     if keys and not re.fullmatch(r'(?:\s*"[\w.-]+"\s*)+', keys):
@@ -189,6 +231,9 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     fill_color = overlay.get('m_color', '0 0 0 0.75')
     invert = overlay.get('m_invert', '1')
     passive_fill = ''
+    if cover and overlay.get('m_drawLine') == '1':
+        passive_fill = convert_passive('', placement, overlay) + '\n'
+        fill = '0'
     if fill == '1':
         fill_keys = overlay.get('m_factionKeys', '')
         empty = overlay.get('m_visibleForEmptyFaction', '1')
@@ -222,10 +267,10 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
         lines.extend([' m_aFactionKeys {','  '+keys,' }'])
     if vehicles:
         lines.extend([' m_eVehicleMode EXCEPT_MATCHING',' m_aVehiclePrefabs {','  '+vehicles,' }'])
-    return passive_fill + '\n'.join([*lines,*placement,'}']), len(vertices)
+    return cover_shape + passive_fill + '\n'.join([*lines,*placement,'}']), len(vertices)
 
 
-def convert_boundaries(text, allow_public_faction_color=False, split_fill=True):
+def convert_boundaries(text, allow_public_faction_color=False, split_fill=True, *, extended_shapes=False):
     lines = text.splitlines()
     emitted, review = [], {}
     for i,line in enumerate(lines):
@@ -250,9 +295,9 @@ def convert_boundaries(text, allow_public_faction_color=False, split_fill=True):
             try:
                 body,count = convert_instance(lines[start+1:stop], ' '+name if name else '',
                                               allow_public_faction_color=allow_public_faction_color,
-                                              split_fill=split_fill)
+                                              split_fill=split_fill, extended_shapes=extended_shapes)
                 emitted.append(body)
                 review[str(start+1)] = {'vertices':count,'name':name,'lastLine':stop+1}
-            except ValueError as error:
+            except (ArithmeticError, ValueError) as error:
                 review[str(start+1)] = {'gap':str(error)}
     return '\n'.join(emitted)+'\n' if emitted else '', review
