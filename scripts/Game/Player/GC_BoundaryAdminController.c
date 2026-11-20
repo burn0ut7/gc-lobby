@@ -176,7 +176,7 @@ modded class GC_LobbyPlayerController
 		}
 		float top = 28;
 		GC_LobbyFreezeComponent freeze = GC_LobbyFreezeComponent.GetInstance();
-		if (GC_LobbyPlayerController.Cast(this).GC_SetupActive() || (freeze && freeze.AffectsPlayer(GetPlayerId())))
+		if (GC_LobbyPlayerController.Cast(this).GC_SetupActive() || (freeze && freeze.GetPresentedSeconds(GetPlayerId()) > 0))
 			top += 38;
 		FrameSlot.SetPos(m_GC_AnnouncementHud.FindAnyWidget("StagingCountdownCard"), 0, top);
 	}

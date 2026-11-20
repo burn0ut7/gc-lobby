@@ -18,7 +18,8 @@ GAPS = [
     'Verify the two 80% casualty notifications, including spawn/delete sampling and recovery during the delay',
     'Compare the crash site and both platoon icons before slotting and as each assigned side',
     'Convert the disabled AO instance as a map-only polygon with US and USSR visibility',
-    'Match the legacy 120-second staging behavior and countdown',
+    'Verify the 120-second staging countdown in match, on reconnect and on early match end',
+    'Compare legacy freeze-end chat and elapsed mission-time presentation',
     'Verify faction loadouts, eight groups, 68 slots, 11 briefing entries and weather in play',
     'Verify JIP, respawn defaults, and after-action flow against the legacy session',
 ]
@@ -134,6 +135,9 @@ def assemble(source, dev, row, generated):
     if world != WORLD:
         raise ValueError('Hnevice launcher resolves to a different world')
     lines = source.read(FOLDER + 'default.layer').splitlines()
+    freeze_ms = next(int(line.split()[1]) for line in lines if line.startswith(' m_iFreezeTime '))
+    if freeze_ms != 120000:
+        raise ValueError('Hnevice staging duration changed')
     weather_start = next(i for i, line in enumerate(lines) if line.startswith('  SCR_TimeAndWeatherHandlerComponent '))
     weather_end = block_end(lines, weather_start)
     weather = '\n'.join(lines[weather_start:weather_end + 1]).replace('5EE3229927D4D2F5', '6B71E9A8B1A8C501')
@@ -150,6 +154,7 @@ def assemble(source, dev, row, generated):
         ai_world + '\n'
         + f'GC_LobbyGameMode GC_HneviceMode : "{{{guid(WORLD + "/resource")}}}{settings}" {{\n'
         + ' components {\n' + weather + '\n'
+        + f'  GC_LobbyFreezeComponent "{{E81E75BC287148D0}}" {{\n   m_iAuthoredCountdownSeconds {freeze_ms // 1000}\n  }}\n'
         + f'  GC_PeakFactionPopulationComponent "{{{guid(WORLD + "/population")}}}" {{\n  }}\n'
         + '  GC_LobbyManager "{6A137A39106A4973}" {\n   m_aMissionEvents + {\n'
         + casualty_rules(lines)

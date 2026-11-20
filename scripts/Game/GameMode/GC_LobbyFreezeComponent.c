@@ -9,6 +9,8 @@ class GC_LobbyFreezeComponent : ScriptComponent
 {
 	[Attribute("", UIWidgets.Object, "Staging areas; author a safe center and radius for every participating faction")]
 	protected ref array<ref GC_LobbyStagingArea> m_aAreas;
+	[Attribute("0", UIWidgets.SpinBox, "Optional match-start staging countdown in seconds. This displays time without enforcing staging boundaries.", "0 3600 1")]
+	protected int m_iAuthoredCountdownSeconds;
 	[RplProp(onRplName: "OnStateChanged")]
 	protected int m_iConfiguredSeconds;
 	[RplProp(onRplName: "OnStateChanged")]
@@ -286,8 +288,10 @@ class GC_LobbyFreezeComponent : ScriptComponent
 	{
 		PlayerController player = GetGame().GetPlayerController();
 		GC_LobbyPlayerController lobbyPlayer = GC_LobbyPlayerController.Cast(player);
-		if (GetInstance() != this || RplSession.Mode() == RplMode.Dedicated || !player || !AffectsPlayer(player.GetPlayerId())
-			|| (lobbyPlayer && lobbyPlayer.GC_SetupActive()))
+		int remaining;
+		if (RplSession.Mode() != RplMode.Dedicated && player && (!lobbyPlayer || !lobbyPlayer.GC_SetupActive()))
+			remaining = GetPresentedSeconds(player.GetPlayerId());
+		if (remaining <= 0)
 		{
 			CloseCountdownPresentation();
 			return;
@@ -307,11 +311,11 @@ class GC_LobbyFreezeComponent : ScriptComponent
 				return;
 			}
 		}
-		if (m_iDisplayedSeconds == m_iRemainingSeconds)
+		if (m_iDisplayedSeconds == remaining)
 			return;
-		m_iDisplayedSeconds = m_iRemainingSeconds;
-		int minutes = m_iRemainingSeconds / 60;
-		int seconds = m_iRemainingSeconds % 60;
+		m_iDisplayedSeconds = remaining;
+		int minutes = remaining / 60;
+		int seconds = remaining % 60;
 		string minuteText = minutes.ToString();
 		string secondText = seconds.ToString();
 		if (minutes < 10)
@@ -320,6 +324,22 @@ class GC_LobbyFreezeComponent : ScriptComponent
 			secondText = "0" + secondText;
 		m_wCountdownTime.SetText(minuteText + ":" + secondText);
 		GC_CountdownHud.Fit(m_wCountdown, m_wCountdownTime);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	int GetPresentedSeconds(int playerId)
+	{
+		if (AffectsPlayer(playerId))
+			return m_iRemainingSeconds;
+		if (m_iAuthoredCountdownSeconds <= 0 || GetInstance() != this)
+			return 0;
+		GC_LobbyManager manager = GC_LobbyManager.GetManager();
+		if (!manager || manager.GetLobbyPhase() != SCR_EGameModeState.GAME)
+			return 0;
+		int elapsed = manager.GetPhaseElapsedSeconds();
+		if (elapsed < 0)
+			return 0;
+		return Math.Max(0, Math.Min(3600, m_iAuthoredCountdownSeconds) - elapsed);
 	}
 
 	//------------------------------------------------------------------------------------------------

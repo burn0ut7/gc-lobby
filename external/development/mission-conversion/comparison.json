@@ -3931,7 +3931,8 @@
           "Verify the two 80% casualty notifications, including spawn/delete sampling and recovery during the delay",
           "Compare the crash site and both platoon icons before slotting and as each assigned side",
           "Convert the disabled AO instance as a map-only polygon with US and USSR visibility",
-          "Match the legacy 120-second staging behavior and countdown",
+          "Verify the 120-second staging countdown in match, on reconnect and on early match end",
+          "Compare legacy freeze-end chat and elapsed mission-time presentation",
           "Verify faction loadouts, eight groups, 68 slots, 11 briefing entries and weather in play",
           "Verify JIP, respawn defaults, and after-action flow against the legacy session"
         ]
