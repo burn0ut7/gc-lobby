@@ -302,7 +302,8 @@ class GC_TelemetryMap
 		array<bool> inverted = {};
 		array<float> widths = {};
 		array<vector> points = {};
-		mode.GetMapShapes().GetFactionSnapshot(faction, counts, colors, fills, inverted, widths, points, sourceIndex, 1);
+	array<int> openLines = {}, worldWidthLines = {};
+	mode.GetMapShapes().GetFactionSnapshot(faction, counts, colors, fills, inverted, widths, points, sourceIndex, 1, openLines, worldWidthLines);
 		int cursor;
 		foreach (int index, int count : counts)
 		{
@@ -311,6 +312,8 @@ class GC_TelemetryMap
 			shape.m_iFillColor = fills[index];
 			shape.m_fWidth = widths[index];
 			shape.m_bInverted = inverted[index];
+		shape.m_bClosed = !openLines.Contains(index);
+		shape.m_bWorldWidth = worldWidthLines.Contains(index);
 			for (int i; i < count; i++)
 			{
 				shape.m_aPoints.Insert(points[cursor][0]);

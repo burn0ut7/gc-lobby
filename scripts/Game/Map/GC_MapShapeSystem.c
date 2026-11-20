@@ -34,7 +34,7 @@ class GC_MapShapeSystem
 	}
 
 	//------------------------------------------------------------------------------------------------
-	void GetSnapshot(int playerId, array<int> counts, array<int> colors, array<int> fills, array<bool> inverted, array<float> widths, array<vector> points, array<string> names = null, array<vector> frameBounds = null)
+	void GetSnapshot(int playerId, array<int> counts, array<int> colors, array<int> fills, array<bool> inverted, array<float> widths, array<vector> points, array<string> names = null, array<vector> frameBounds = null, array<int> openLines = null, array<int> worldWidthLines = null)
 	{
 		GC_LobbyGameMode mode = GC_LobbyGameMode.GetGameMode();
 		if (!Replication.IsServer() || !mode || mode.GetMapShapes() != this || !GC_LobbyManager.GetManager())
@@ -42,7 +42,7 @@ class GC_MapShapeSystem
 		foreach (GC_MapShapeComponent shape : m_aShapes)
 		{
 			if (shape)
-				shape.AppendSnapshot(playerId, counts, colors, fills, inverted, widths, points, frameBounds);
+				shape.AppendSnapshot(playerId, counts, colors, fills, inverted, widths, points, frameBounds, openLines, worldWidthLines);
 		}
 		if (names)
 		{
@@ -54,7 +54,7 @@ class GC_MapShapeSystem
 
 	//------------------------------------------------------------------------------------------------
 	//! Trusted recorder read. Administrative boundary hints are not player map content.
-	void GetFactionSnapshot(Faction faction, array<int> counts, array<int> colors, array<int> fills, array<bool> inverted, array<float> widths, array<vector> points, int firstShape = 0, int maximumShapes = -1)
+	void GetFactionSnapshot(Faction faction, array<int> counts, array<int> colors, array<int> fills, array<bool> inverted, array<float> widths, array<vector> points, int firstShape = 0, int maximumShapes = -1, array<int> openLines = null, array<int> worldWidthLines = null)
 	{
 		GC_LobbyGameMode mode = GC_LobbyGameMode.GetGameMode();
 		if (!Replication.IsServer() || !mode || mode.GetMapShapes() != this)
@@ -66,7 +66,7 @@ class GC_MapShapeSystem
 		{
 			GC_MapShapeComponent shape = m_aShapes[index];
 			if (shape)
-				shape.AppendFactionSnapshot(faction, counts, colors, fills, inverted, widths, points);
+				shape.AppendFactionSnapshot(faction, counts, colors, fills, inverted, widths, points, null, openLines, worldWidthLines);
 		}
 	}
 

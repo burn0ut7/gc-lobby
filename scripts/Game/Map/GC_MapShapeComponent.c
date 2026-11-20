@@ -1,4 +1,4 @@
-[ComponentEditorProps(category: "GC Lobby/Mission", description: "Passive map polygon on a closed PolylineShapeEntity. Solid fill and outline; no gameplay restriction.")]
+[ComponentEditorProps(category: "GC Lobby/Mission", description: "Passive map outline or filled polygon on a PolylineShapeEntity.")]
 class GC_MapShapeComponentClass : ScriptComponentClass
 {
 }
@@ -15,8 +15,10 @@ class GC_MapShapeComponent : ScriptComponent
 	protected bool m_bVisibleWithoutFaction;
 	[Attribute("0.2 0.5 1 1", UIWidgets.ColorPicker, "Outline color and opacity. Set opacity to zero to hide the outline.", category: "Outline")]
 	protected ref Color m_LineColor;
-	[Attribute("3", UIWidgets.EditBox, "Line width in UI pixels, independent of map zoom.", params: "1 20", category: "Outline")]
+	[Attribute("3", UIWidgets.EditBox, "Line width in UI pixels or world metres when World Line Width is enabled.", category: "Outline")]
 	protected float m_fLineWidth;
+	[Attribute("0", UIWidgets.CheckBox, "Measure line width in metres so it scales with map zoom.", category: "Outline")]
+	protected bool m_bWorldLineWidth;
 	[Attribute("0", UIWidgets.CheckBox, "Use the outline faction color. No matching faction uses Outline Color.", category: "Outline")]
 	protected bool m_bFactionColor;
 	[Attribute("", UIWidgets.Auto, "Optional faction key for outline tint, independent of visibility. Empty uses the first listed visibility faction.", category: "Outline")]
@@ -110,14 +112,14 @@ class GC_MapShapeComponent : ScriptComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! Recipient filtering happens on authority, before geometry is sent.
-	void AppendSnapshot(int playerId, array<int> counts, array<int> colors, array<int> fills, array<bool> inverted, array<float> widths, array<vector> points, array<vector> frameBounds = null)
+	void AppendSnapshot(int playerId, array<int> counts, array<int> colors, array<int> fills, array<bool> inverted, array<float> widths, array<vector> points, array<vector> frameBounds = null, array<int> openLines = null, array<int> worldWidthLines = null)
 	{
-		AppendFactionSnapshot(GC_LobbyManager.GetManager().GetPlayerFaction(playerId), counts, colors, fills, inverted, widths, points, frameBounds);
+		AppendFactionSnapshot(GC_LobbyManager.GetManager().GetPlayerFaction(playerId), counts, colors, fills, inverted, widths, points, frameBounds, openLines, worldWidthLines);
 	}
 
 	//------------------------------------------------------------------------------------------------
 	//! Same presentation rules for recorded faction perspectives, without a connected player.
-	void AppendFactionSnapshot(Faction faction, array<int> counts, array<int> colors, array<int> fills, array<bool> inverted, array<float> widths, array<vector> points, array<vector> frameBounds = null)
+	void AppendFactionSnapshot(Faction faction, array<int> counts, array<int> colors, array<int> fills, array<bool> inverted, array<float> widths, array<vector> points, array<vector> frameBounds = null, array<int> openLines = null, array<int> worldWidthLines = null)
 	{
 		if (!m_bEnabled || !m_Shape)
 			return;
@@ -129,13 +131,15 @@ class GC_MapShapeComponent : ScriptComponent
 				return;
 		}
 		array<vector> polygon = {};
+		bool closed = true;
 		if (m_AO)
 			m_AO.GetMapPolygon(polygon);
 		else if (m_aRuntimePoints)
 			polygon.Copy(m_aRuntimePoints);
 		else
 		{
-			if (!m_Shape.IsClosed())
+			closed = m_Shape.IsClosed();
+			if (!closed && (m_bFillEnabled || !openLines))
 				return;
 			m_Shape.GetPointsPositions(polygon);
 			// The shared polygon contract rejects larger shapes. Check before
@@ -145,7 +149,7 @@ class GC_MapShapeComponent : ScriptComponent
 			for (int i; i < polygon.Count(); i++)
 				polygon[i] = m_Shape.CoordToParent(polygon[i]);
 		}
-		if (!ValidPolygon(polygon))
+		if ((closed && !ValidPolygon(polygon)) || (!closed && polygon.Count() < 2))
 			return;
 		if (m_bAutoFrameMap && frameBounds)
 		{
@@ -170,11 +174,19 @@ class GC_MapShapeComponent : ScriptComponent
 		int fill;
 		if (m_bFillEnabled)
 			fill = m_FillColor.PackToInt();
+		if (!closed)
+			openLines.Insert(counts.Count());
+		bool worldWidth = m_bWorldLineWidth && worldWidthLines;
+		if (worldWidth)
+			worldWidthLines.Insert(counts.Count());
 		counts.Insert(polygon.Count());
 		colors.Insert(lineColor.PackToInt());
 		fills.Insert(fill);
-		inverted.Insert(m_bInvertFill);
-		widths.Insert(Math.Clamp(m_fLineWidth, 1, 20));
+		inverted.Insert(closed && m_bInvertFill);
+		if (worldWidth)
+			widths.Insert(Math.Max(1, m_fLineWidth));
+		else
+			widths.Insert(Math.Clamp(m_fLineWidth, 1, 20));
 		points.InsertAll(polygon);
 	}
 

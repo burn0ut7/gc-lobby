@@ -503,3 +503,10 @@ Mission-owned character prefabs can inherit playability through another mission 
 Farm is in local Missions Dev commit `58f66cad`. File review matched 73 slots, the two 90 percent casualty checks and their delayed notices, and the original willow placement. Its HESCO material and all referenced resources passed validation. The base game supplies the willow under the same resource GUID. The historical asset was unavailable for a live collision comparison.
 
 Gigantomachia now generates all 54 slots. The draft preserves the custom recon drone operator and commander prefab ancestry. The installed registries confirm the original FPV drone and buckshot GUIDs at their current paths. The installed M870 has a different GUID from the mission's Remington 870 prefab, so the shotgun reference still holds the draft.
+
+
+## Standalone map lines and shapes
+
+The batch converts the standard standalone legacy map shape prefab, including open paths with outline only. It retains the original vertices, transform, audience, line color and authored width. GC Lobby's existing map overlay supports widths in metres for these placements. The client scales the width with map zoom and leaves open paths unclosed. The recorded faction perspective retains both settings. Open shapes with fills and unfamiliar component overrides remain in the report. The legacy shape defaults and zoom formula were verified in the published TilW prefab and script through Reforger MCP.
+
+Joutus is in local Missions Dev commit `0c45ec92`. File review matched 33 playable slots and all 18 vertices of its open red LOA, with a five-metre line width and no fill. The legacy and Dev files retain the faction outcome triggers. The installer found no unresolved resources. The shared rule cleared map-shape blockers in 23 worlds. Workbench completed the final script reload with zero errors in session `logs_2026-11-20_18-11-42`. Live zoom and faction visibility still need shared checks, as do AI casualty recounts after possession or faction changes.

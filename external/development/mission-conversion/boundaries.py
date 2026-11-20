@@ -6,6 +6,9 @@ from struct import pack, unpack
 from briefings import block_end, guid, properties
 
 ROOT = re.compile(r'^(?P<group>\$grp )?PolylineShapeEntity(?: (?P<name>[\w.-]+))? : "\{85222A2744768C81\}[^"]+" \{$')
+STANDALONE_SHAPE = re.compile(
+    r'^(?P<group>\$grp )?PolylineShapeEntity(?: (?P<name>[\w.-]+))? : '
+    r'"\{A0468F86F76FCEE7\}Prefabs/Logic/Map/TILW_MapShape.et" \{$')
 DEST = '{8F470B543A20D944}Prefabs/Logic/Mission/AOLimit.et'
 MAP_SHAPE = '{8F470B543A20D963}Prefabs/Logic/Mission/MapShape.et'
 ALLOWED = {'m_killTimer', 'm_factionKeys', 'm_ignoredVehicles', 'm_visibility', 'm_defaultColor',
@@ -60,13 +63,14 @@ def validate_polygon(vertices, origin, yaw=0):
                 raise ValueError('crossing or touching polygon edges')
 
 
-def settings(lines, extended_shapes):
+def settings(lines, extended_shapes, standalone=False):
     result, overlay, cover = {}, {}, {}
+    ids = {'TILW_MapShapeComponent': '6508F5526836BC09'} if standalone else COMPONENTS
     seen = set()
     i = 0
     while i < len(lines):
         head = re.fullmatch(r'(\w+) "\{([A-Fa-f0-9]{16})\}" \{', lines[i].strip())
-        if not head or COMPONENTS.get(head[1]) != head[2].upper() or head[1] in seen:
+        if not head or ids.get(head[1]) != head[2].upper() or head[1] in seen:
             raise ValueError('custom AO component')
         seen.add(head[1])
         end = block_end(lines, i)
@@ -75,7 +79,7 @@ def settings(lines, extended_shapes):
             result = properties(body, ALLOWED)
         # The standard legacy AO prefab disables both visual components.
         # An instance can store style values without enabling either component.
-        elif any(l.strip().startswith('Enabled ') and l.strip() != 'Enabled 0' for l in body):
+        elif standalone or any(l.strip().startswith('Enabled ') and l.strip() != 'Enabled 0' for l in body):
             if head[1] == 'TILW_CoverMapComponent':
                 if not extended_shapes:
                     raise ValueError('active cover map needs separate conversion')
@@ -85,27 +89,29 @@ def settings(lines, extended_shapes):
             else:
                 overlay = properties(body, {'Enabled', 'm_drawArea', 'm_drawLine', 'm_color', 'm_invert',
                                             'm_visibleForEmptyFaction', 'm_factionKeys', 'm_lineWidth', 'm_lineColor'})
-                if overlay.get('Enabled') != '1':
+                if overlay.get('Enabled', '1' if standalone else '0') != '1':
                     raise ValueError('unsupported auxiliary map shape')
         i = end+1
-    if not cover and overlay.get('m_drawLine', '0') != '0':
+    if not standalone and not cover and overlay.get('m_drawLine', '0') != '0':
         raise ValueError('zoom-dependent auxiliary outline needs separate conversion')
     return result, overlay, cover
 
 
-def convert_passive(name, placement, overlay, *, auto_frame=False):
+def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=False):
     keys = overlay.get('m_factionKeys', '')
     empty = overlay.get('m_visibleForEmptyFaction', '1')
     color = overlay.get('m_color', '0 0 0 0.75')
-    invert = overlay.get('m_invert', '1')
+    invert = overlay.get('m_invert', '0' if standalone else '1')
     fill = overlay.get('m_drawArea', '1')
     outline = overlay.get('m_drawLine', '0')
     line_color = overlay.get('m_lineColor', '0 0 0 1') if outline == '1' else '0 0 0 0'
     line_width = overlay.get('m_lineWidth', '5')
-    if (not overlay or fill != '1' or empty not in ('0', '1')
+    if ((not overlay and not standalone) or fill not in ('0', '1')
+            or (fill == '0' and (not standalone or outline != '1')) or empty not in ('0', '1')
             or (not keys and empty == '0') or invert not in ('0', '1')
             or outline not in ('0', '1') or not all(0 <= x <= 1 for x in floats(color, 4))
-            or (outline == '1' and (not 1 <= float(line_width) <= 20
+            or (outline == '1' and (not 1 <= float(line_width) <= (math.inf if standalone else 20)
+                                   or not math.isfinite(float(line_width))
                                    or not all(0 <= x <= 1 for x in floats(line_color, 4))))):
         raise ValueError('unsupported passive map fill')
     if keys and not re.fullmatch(r'(?:\s*"[\w.-]+"\s*)+', keys):
@@ -115,6 +121,8 @@ def convert_passive(name, placement, overlay, *, auto_frame=False):
              '   m_bFillEnabled ' + fill, '   m_FillColor ' + color, '   m_bInvertFill ' + invert]
     if outline == '1':
         lines.append('   m_fLineWidth ' + line_width)
+        if standalone:
+            lines.append('   m_bWorldLineWidth 1')
     if auto_frame:
         lines.append('   m_bAutoFrameMap 1')
     if keys:
@@ -146,18 +154,19 @@ def render_cover(coords, vertices, yaw, cover):
 
 
 def convert_instance(lines, name, passive_only=False, allow_public_faction_color=False, split_fill=True,
-                     extended_shapes=False):
+                     extended_shapes=False, standalone=False):
     values, overlay, cover = {}, {}, {}
     placement = []
     vertices = []
     coords = None
     yaw = None
+    closed = None
     i = 0
     while i < len(lines):
         field = lines[i].strip()
         if field == 'components {':
             end = block_end(lines, i)
-            values, overlay, cover = settings(lines[i+1:end], extended_shapes)
+            values, overlay, cover = settings(lines[i+1:end], extended_shapes, standalone)
             i = end
         elif field == 'Points {':
             end = block_end(lines, i)
@@ -190,7 +199,12 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
                     raise ValueError('mixed rotation representations')
                 yaw = heading
             placement.append(' '+field)
-        elif field == 'IsClosed 1' or field.startswith('LineColor '):
+        elif field in ('IsClosed 1', 'IsClosed 0'):
+            if closed is not None or (field == 'IsClosed 0' and not standalone):
+                raise ValueError('invalid shape closure setting')
+            closed = field == 'IsClosed 1'
+            placement.append(' '+field)
+        elif field.startswith('LineColor '):
             placement.append(' '+field)
         else:
             raise ValueError('unsupported boundary property ' + field.split(' ')[0])
@@ -198,7 +212,14 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     if coords is None:
         raise ValueError('missing explicit AO transform')
     origin = floats(coords, 3)
-    validate_polygon(vertices, origin, yaw or 0)
+    if closed is not False:
+        validate_polygon(vertices, origin, yaw or 0)
+    elif not 2 <= len(vertices) <= 128 or overlay.get('m_drawArea', '1') != '0':
+        raise ValueError('open map shape requires 2 to 128 points and no fill')
+    if standalone:
+        if not any(line.startswith(' LineColor ') for line in placement):
+            placement.append(' LineColor 1 0 0 1')
+        return convert_passive(name, placement, overlay, standalone=True), len(vertices)
     cover_shape = render_cover(origin, vertices, yaw or 0, cover) + '\n' if cover else ''
     if passive_only or (extended_shapes and values.get('Enabled') == '0' and overlay):
         if values.get('Enabled') != '0':
@@ -274,7 +295,8 @@ def convert_boundaries(text, allow_public_faction_color=False, split_fill=True, 
     lines = text.splitlines()
     emitted, review = [], {}
     for i,line in enumerate(lines):
-        root = ROOT.fullmatch(line)
+        standalone = STANDALONE_SHAPE.fullmatch(line) if extended_shapes else None
+        root = standalone or ROOT.fullmatch(line)
         if not root:
             continue
         end = block_end(lines,i)
@@ -295,7 +317,8 @@ def convert_boundaries(text, allow_public_faction_color=False, split_fill=True, 
             try:
                 body,count = convert_instance(lines[start+1:stop], ' '+name if name else '',
                                               allow_public_faction_color=allow_public_faction_color,
-                                              split_fill=split_fill, extended_shapes=extended_shapes)
+                                              split_fill=split_fill, extended_shapes=extended_shapes,
+                                              standalone=bool(standalone))
                 emitted.append(body)
                 review[str(start+1)] = {'vertices':count,'name':name,'lastLine':stop+1}
             except (ArithmeticError, ValueError) as error:

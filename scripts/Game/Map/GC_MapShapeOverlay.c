@@ -15,6 +15,7 @@ class GC_MapShapeOverlay
 	protected ref array<int> m_aColors = {}, m_aFills = {};
 	protected ref array<bool> m_aInverted = {};
 	protected ref array<string> m_aNames = {};
+	protected ref array<int> m_aOpenLines = {}, m_aWorldWidthLines = {};
 	protected bool m_bProjectionDirty;
 	protected bool m_bGeometryDirty;
 	protected float m_fProjectedX;
@@ -75,14 +76,15 @@ class GC_MapShapeOverlay
 	}
 
 	//------------------------------------------------------------------------------------------------
-	void Receive(int generation, array<int> counts, array<int> colors, array<int> fills, array<bool> inverted, array<float> widths, array<vector> points, array<string> names = null, array<vector> frameBounds = null)
+	void Receive(int generation, array<int> counts, array<int> colors, array<int> fills, array<bool> inverted, array<float> widths, array<vector> points, array<string> names = null, array<vector> frameBounds = null, array<int> openLines = null, array<int> worldWidthLines = null)
 	{
 		if (counts.Count() != colors.Count() || counts.Count() != widths.Count() || counts.Count() != fills.Count() || counts.Count() != inverted.Count())
 			return;
 		int total;
-		foreach (int count : counts)
+		foreach (int index, int count : counts)
 		{
-			if (count < 3)
+			bool open = openLines && openLines.Contains(index);
+			if (count < 2 || (!open && count < 3) || (open && (fills[index] != 0 || inverted[index])))
 				return;
 			total += count;
 		}
@@ -101,6 +103,12 @@ class GC_MapShapeOverlay
 		m_aFrameBounds.Clear();
 		if (frameBounds)
 			m_aFrameBounds.Copy(frameBounds);
+		m_aOpenLines.Clear();
+		if (openLines)
+			m_aOpenLines.Copy(openLines);
+		m_aWorldWidthLines.Clear();
+		if (worldWidthLines)
+			m_aWorldWidthLines.Copy(worldWidthLines);
 		if (m_Canvas)
 			BuildPresentation();
 	}
@@ -147,12 +155,14 @@ class GC_MapShapeOverlay
 			if (!line)
 			{
 				line = new LineDrawCommand();
-				line.m_bShouldEnclose = true;
-				line.m_fOutlineWidth = 1;
 				line.m_iOutlineColor = 0;
 				line.m_Vertices = {};
 				m_aCommands[index * 2 + 1] = line;
 			}
+			line.m_bShouldEnclose = !m_aOpenLines.Contains(index);
+			line.m_fOutlineWidth = 1;
+			if (m_aWorldWidthLines.Contains(index))
+				line.m_fOutlineWidth = 0;
 			if (inverted[index])
 			{
 				TriMeshDrawCommand outside = TriMeshDrawCommand.Cast(m_aCommands[index * 2]);
@@ -306,7 +316,10 @@ class GC_MapShapeOverlay
 		{
 			LineDrawCommand line = LineDrawCommand.Cast(m_aCommands[index * 2 + 1]);
 			// The native transparent outline consumes stroke width; preserve its visual weight.
-			line.m_fWidth = GetGame().GetWorkspace().DPIScale(m_aWidths[index]) + 3;
+			if (m_aWorldWidthLines.Contains(index))
+				line.m_fWidth = Math.Max(1, m_aWidths[index] * zoom);
+			else
+				line.m_fWidth = GetGame().GetWorkspace().DPIScale(m_aWidths[index]) + 3;
 			for (int i; i < count; i++)
 			{
 				vector point = m_aPoints[offset + i];

@@ -170,10 +170,13 @@ modded class GC_LobbyPlayerController
 		array<vector> points = {};
 		array<string> names = {};
 		array<vector> frameBounds = {};
-		mode.GetMapShapes().GetSnapshot(GetPlayerId(), counts, colors, fills, inverted, widths, points, names, frameBounds);
+	array<int> openLines = {}, worldWidthLines = {};
+	mode.GetMapShapes().GetSnapshot(GetPlayerId(), counts, colors, fills, inverted, widths, points, names, frameBounds, openLines, worldWidthLines);
 		JsonSaveContext metadata = new JsonSaveContext();
 		metadata.WriteValue("names", names);
 		metadata.WriteValue("frameBounds", frameBounds);
+	metadata.WriteValue("openLines", openLines);
+	metadata.WriteValue("worldWidthLines", worldWidthLines);
 		string presentation = metadata.SaveToString();
 		if (GetGame().GetPlayerController() == this)
 			GC_RpcDo_MapShapes(revision, counts, colors, fills, inverted, widths, points, presentation);
@@ -192,6 +195,9 @@ modded class GC_LobbyPlayerController
 		JsonLoadContext metadata = new JsonLoadContext(false);
 		if (!metadata.LoadFromString(presentation) || !metadata.ReadValue("names", names) || !metadata.ReadValue("frameBounds", frameBounds))
 			return;
-		m_GC_MapShapes.Receive(generation, counts, colors, fills, inverted, widths, points, names, frameBounds);
+	array<int> openLines = {}, worldWidthLines = {};
+	metadata.ReadValue("openLines", openLines);
+	metadata.ReadValue("worldWidthLines", worldWidthLines);
+	m_GC_MapShapes.Receive(generation, counts, colors, fills, inverted, widths, points, names, frameBounds, openLines, worldWidthLines);
 	}
 }
