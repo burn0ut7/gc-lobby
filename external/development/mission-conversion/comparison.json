@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "fb125c6c1497b34d1a6b18bcd8503724d2ceae5b",
+  "target": "471ffbb89facbfa2e780d13ed88c0a89220fda3d",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -3721,8 +3721,8 @@
     "worlds/Corax/Breach and clear/Breach_and_Clear.ent": {
       "sourceResourceCount": 11,
       "devPaths": {
-        "absent": 6,
-        "changed": 5
+        "absent": 5,
+        "changed": 6
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -3824,6 +3824,11 @@
           "unitsParent": "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/RHS Inherits/MSV/Flora/P/Character_RHS_RF_MSV_Flora_SR_P.et",
           "legacyPlayableWithGroupOverride": false
         }
+      },
+      "rosterCandidate": {
+        "playableGroups": 7,
+        "unitPrefabEntries": 48,
+        "supportAI": 2
       }
     },
     "worlds/Corax/Green mountain/Greenmountain.ent": {

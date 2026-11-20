@@ -78,7 +78,8 @@ def legacy_member(snapshot, guid, force):
 
 
 def convert_instance(lines, guid, old, new, source_units, dev_units, stock, locally_owned,
-                     reviewed_callsigns=frozenset()):
+                     reviewed_callsigns=frozenset(), reviewed_members=None):
+    reviewed_members = reviewed_members or {}
     explicit_force = any(l.strip() == 'm_bSetPlayable 1' for l in lines)
     native_playable = any(l.strip() == 'm_bPlayable 1' for l in lines) or scalar(inheritance(dev_units, guid), 'm_bPlayable') == 1
     if not native_playable and not explicit_force:
@@ -140,14 +141,16 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             end = block_end(lines, i)
             def slot(match):
                 guid, path = match.groups()
-                if guid.upper() in locally_owned:
+                if guid.upper() in reviewed_members:
+                    path = reviewed_members[guid.upper()]
+                elif guid.upper() in locally_owned:
                     raise ValueError('mission-owned slot ' + guid)
-                if guid.upper() in source_units.resources or guid.upper() in dev_units.resources:
+                elif guid.upper() in source_units.resources or guid.upper() in dev_units.resources:
                     only_path(source_units, guid)
                     path = only_path(dev_units, guid)
                 elif not stock or not stock.contains(guid, path):
                     raise ValueError('unresolved character prefab ' + guid)
-                if not path.lower().startswith('prefabs/characters/'):
+                if guid.upper() not in reviewed_members and not path.lower().startswith('prefabs/characters/'):
                     raise ValueError('unexpected slot resource ' + path)
                 return '"{' + guid + '}' + path + '"'
             if '+' not in token:
@@ -172,6 +175,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     if not roster:
         raise ValueError('empty group roster')
     for member in roster:
+        if member.upper() in reviewed_members:
+            continue
         if not legacy_member(source_units, member, force):
             raise ValueError('legacy slot playability requires review ' + member)
         only_path(dev_units, member)
@@ -180,7 +185,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     return out + metadata, len(roster)
 
 
-def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset()):
+def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset(),
+                reviewed_members=None):
     if not re.search(r'^(?:\$grp )?SCR_AIGroup\b', text, re.M):
         return None
     lines = text.splitlines()
@@ -206,13 +212,15 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
                 if not re.fullmatch(r' (?:[\w.\-]+ )?\{', lines[j]):
                     raise ValueError('unexpected group instance')
                 last = block_end(lines, j)
-                body, members = convert_instance(lines[j+1:last], guid, old, new, source_units, dev_units, stock, locally_owned, reviewed_callsigns)
+                body, members = convert_instance(lines[j+1:last], guid, old, new, source_units,
+                                                 dev_units, stock, locally_owned, reviewed_callsigns, reviewed_members)
                 result.extend([lines[j], *body, lines[last]])
                 slots += members
                 count += 1
                 j = last + 1
         else:
-            body, members = convert_instance(lines[i+1:end], guid, old, new, source_units, dev_units, stock, locally_owned, reviewed_callsigns)
+            body, members = convert_instance(lines[i+1:end], guid, old, new, source_units,
+                                             dev_units, stock, locally_owned, reviewed_callsigns, reviewed_members)
             result.extend(body)
             slots += members
             count += 1
