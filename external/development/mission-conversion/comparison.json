@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "2314b0d43a85b00ccb5d733d059b019d46f551f6",
+  "target": "5e571911b33f85facef1f21cc62872d1a7e323de",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -3323,6 +3323,24 @@
         }
       },
       "directBriefingsRead": 3,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/Corax/SummerDays/SummerDays_Layers/default.layer:56",
+            "faction": "GC_ARG",
+            "tickets": 44,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/Corax/SummerDays/SummerDays_GC_Settings.et"
+      },
       "briefingModePreset": "worlds/Corax/SummerDays/SummerDays_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -3440,6 +3458,32 @@
         }
       },
       "directBriefingsRead": 9,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/default.layer:24",
+            "faction": "USSR",
+            "tickets": 3,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          },
+          {
+            "source": "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/default.layer:28",
+            "faction": "UK",
+            "tickets": 10,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/BLUFOR_brief.layer:1 legacy audience needs independent unaffiliated visibility",
         "worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/NOTES.layer:1 legacy audience needs independent unaffiliated visibility"
@@ -3572,6 +3616,24 @@
         }
       },
       "directBriefingsRead": 12,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_Layers/default.layer:25",
+            "faction": "UK",
+            "tickets": 20,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers_Layers/NOTES.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -3633,6 +3695,24 @@
         }
       },
       "directBriefingsRead": 10,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/Cunnah/Darwin_Hill/Darwin_Hill_Layers/default.layer:51",
+            "faction": "GC_ARG",
+            "tickets": 30,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/Cunnah/Darwin_Hill/Darwin_Hill_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/Cunnah/Darwin_Hill/Darwin_Hill_Layers/default.layer:114 legacy audience needs independent unaffiliated visibility"
       ]
@@ -3921,6 +4001,25 @@
         }
       },
       "directBriefingsRead": 16,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/Delfer/Topdown/Topdown_Layers/default.layer:16",
+            "faction": "GC_TKA",
+            "tickets": 8,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": "Respawn"
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds",
+          "Resolve the named destination at death and preserve original-slot fallback"
+        ],
+        "ticketModePreset": "worlds/Delfer/Topdown/Topdown_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/Delfer/Topdown/Topdown_Layers/Briefinggeneral.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -4639,6 +4738,22 @@
         }
       },
       "directBriefingsRead": 8,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals_Layers/default.layer:41",
+            "faction": "",
+            "tickets": 0,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [
+          "worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals_Layers/default.layer:41 unresolved faction"
+        ],
+        "remainingBehavior": []
+      },
       "briefingGaps": [
         "worlds/FloridaMan/worlds/PreciousMinerals/PreciousMinerals_Layers/briefings/common.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -5424,6 +5539,32 @@
         }
       },
       "directBriefingsRead": 13,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/default.layer:54",
+            "faction": "USSR",
+            "tickets": 30,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          },
+          {
+            "source": "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/default.layer:58",
+            "faction": "GC_CAF",
+            "tickets": 6,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/CORE/All_Brief.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -5546,6 +5687,24 @@
         }
       },
       "directBriefingsRead": 15,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/HitTheMan/BMP Incursion/BMPIncursion_Layers/default.layer:59",
+            "faction": "GC_CAF",
+            "tickets": 5,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/HitTheMan/BMP Incursion/BMPIncursion_GC_Settings.et"
+      },
       "briefingModePreset": "worlds/HitTheMan/BMP Incursion/BMPIncursion_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -5938,6 +6097,32 @@
         }
       },
       "directBriefingsRead": 11,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/default.layer:56",
+            "faction": "GC_CAF",
+            "tickets": 0,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          },
+          {
+            "source": "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/default.layer:59",
+            "faction": "USSR",
+            "tickets": 2,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_GC_Settings.et"
+      },
       "briefingModePreset": "worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -7354,6 +7539,25 @@
         }
       },
       "directBriefingsRead": 14,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_Layers/default.layer:57",
+            "faction": "USSR",
+            "tickets": 1000000000,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [
+          "USSR ticket value outside native action range"
+        ],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ]
+      },
       "briefingModePreset": "worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -7577,6 +7781,20 @@
         }
       },
       "directBriefingsRead": 9,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault_Layers/default.layer:46",
+            "faction": "GC_CAF",
+            "tickets": 0,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": []
+      },
       "briefingModePreset": "worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault_GC_Settings.et",
       "renumberedInSourceOrder": false,
       "briefingGaps": []
@@ -8028,6 +8246,20 @@
         }
       },
       "directBriefingsRead": 3,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase_Layers/Managers.layer:7",
+            "faction": "US",
+            "tickets": 0,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": []
+      },
       "briefingGaps": [
         "worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase_Layers/Briefing.layer:1 custom description layout"
       ]
@@ -8252,6 +8484,24 @@
         }
       },
       "directBriefingsRead": 0,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/default.layer:20",
+            "faction": "RHS_USAF",
+            "tickets": 20,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/Bluefor/Briefings.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -8332,6 +8582,24 @@
         }
       },
       "directBriefingsRead": 1,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/default.layer:39",
+            "faction": "GC_TKA",
+            "tickets": 14,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/GreenFor/Briefings.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -9793,6 +10061,24 @@
         }
       },
       "directBriefingsRead": 0,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/default.layer:23",
+            "faction": "US",
+            "tickets": 20,
+            "intervalMs": 60,
+            "wave": true,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore wave scheduling aligned to legacy world time"
+        ],
+        "ticketModePreset": "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/briefing.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -9911,6 +10197,25 @@
         }
       },
       "directBriefingsRead": 13,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/Jub/OperationJaws/OperationJaws_Layers/default.layer:56",
+            "faction": "GC_INSURGENT",
+            "tickets": 40,
+            "intervalMs": 60,
+            "wave": true,
+            "destination": "RU_Marker2"
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore wave scheduling aligned to legacy world time",
+          "Resolve the named destination at death and preserve original-slot fallback"
+        ],
+        "ticketModePreset": "worlds/Jub/OperationJaws/OperationJaws_GC_Settings.et"
+      },
       "briefingModePreset": "worlds/Jub/OperationJaws/OperationJaws_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -10279,6 +10584,24 @@
         }
       },
       "directBriefingsRead": 1,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/Perfk/PowerPlay/PowerPlay_Layers/default.layer:43",
+            "faction": "RHS_USAF",
+            "tickets": 10,
+            "intervalMs": 30000,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/Perfk/PowerPlay/PowerPlay_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/Perfk/PowerPlay/PowerPlay_Layers/BLUFOR/Modern/Briefing.layer:5 custom description layout",
         "worlds/Perfk/PowerPlay/PowerPlay_Layers/OPFOR/Players/Briefing.layer:1 custom description layout"
@@ -10950,6 +11273,24 @@
         }
       },
       "directBriefingsRead": 0,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/default.layer:33",
+            "faction": "GC_CDF",
+            "tickets": 20,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/TheHoserDozer/StayingSober/StayingSober_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/CDFBrief.layer:1 custom or duplicate field components",
         "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/RUBrief.layer:1 custom or duplicate field components",
@@ -11093,6 +11434,32 @@
         }
       },
       "directBriefingsRead": 7,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_Layers/default.layer:24",
+            "faction": "US",
+            "tickets": 50,
+            "intervalMs": 16,
+            "wave": true,
+            "destination": ""
+          },
+          {
+            "source": "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_Layers/default.layer:30",
+            "faction": "USSR",
+            "tickets": 50,
+            "intervalMs": 16,
+            "wave": true,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore wave scheduling aligned to legacy world time"
+        ],
+        "ticketModePreset": "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_GC_Settings.et"
+      },
       "briefingModePreset": "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -11255,6 +11622,34 @@
         }
       },
       "directBriefingsRead": 11,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/default.layer:47",
+            "faction": "UK",
+            "tickets": 25,
+            "intervalMs": 60,
+            "wave": true,
+            "destination": "FlagpoleSpawn"
+          },
+          {
+            "source": "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/default.layer:54",
+            "faction": "GC_IRAQ",
+            "tickets": 3,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": "OPFORRespawn"
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds",
+          "Restore wave scheduling aligned to legacy world time",
+          "Resolve the named destination at death and preserve original-slot fallback"
+        ],
+        "ticketModePreset": "worlds/TheLocalPub/BlockDefenders/BlockDefenders_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/TheLocalPub/BlockDefenders/BlockDefenders_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -11498,6 +11893,24 @@
         }
       },
       "directBriefingsRead": 10,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint_Layers/default.layer:27",
+            "faction": "GC_INSURGENT",
+            "tickets": 14,
+            "intervalMs": 30000,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/TheLocalPub/IraqiCheckpoint/IraqiCheckpoint_Layers/SYSTEMS/AllBriefs.layer:1 unsupported faction key list"
       ]
@@ -11572,6 +11985,24 @@
         }
       },
       "directBriefingsRead": 11,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_Layers/default.layer:27",
+            "faction": "GC_INSURGENT",
+            "tickets": 14,
+            "intervalMs": 5000,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/TheLocalPub/IraqiCheckpoint2/IraqiCheckpoint2_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -11964,6 +12395,24 @@
         }
       },
       "directBriefingsRead": 19,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/default.layer:37",
+            "faction": "GC_INSURGENT",
+            "tickets": 7,
+            "intervalMs": 60000,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/TheLocalPub/QuickReaction/QuickReactions_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/SYSTEMS/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -12233,6 +12682,24 @@
         }
       },
       "directBriefingsRead": 10,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/default.layer:28",
+            "faction": "GC_MUJ",
+            "tickets": 6,
+            "intervalMs": 10,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Systems/AllBriefs.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -12529,6 +12996,24 @@
         }
       },
       "directBriefingsRead": 2,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/default.layer:18",
+            "faction": "RHS_AFRF",
+            "tickets": 5,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -12936,6 +13421,20 @@
         }
       },
       "directBriefingsRead": 1,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/Til/FalconsFlight/FalconsFlight_Layers/default.layer:20",
+            "faction": "US",
+            "tickets": 0,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": []
+      },
       "briefingGaps": [
         "worlds/Til/FalconsFlight/FalconsFlight_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -12994,6 +13493,24 @@
         }
       },
       "directBriefingsRead": 0,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/Til/FarmDefense/FarmDefense_Layers/default.layer:37",
+            "faction": "US",
+            "tickets": 15,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/Til/FarmDefense/FarmDefense_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/Til/FarmDefense/FarmDefense_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -13655,6 +14172,24 @@
         }
       },
       "directBriefingsRead": 0,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/Til/Metalwave/Metalwave_Layers/default.layer:20",
+            "faction": "GC_CDF",
+            "tickets": 5,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/Til/Metalwave/Metalwave_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/Til/Metalwave/Metalwave_Layers/description.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -13730,6 +14265,32 @@
         }
       },
       "directBriefingsRead": 0,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/default.layer:21",
+            "faction": "GC_CDF",
+            "tickets": 5,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          },
+          {
+            "source": "worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/default.layer:25",
+            "faction": "RHS_AFRF",
+            "tickets": 10,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/Til/MetsalaAirfield/MetsalaAirfield_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/desc.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -14002,6 +14563,24 @@
         }
       },
       "directBriefingsRead": 0,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/Til/RouteRowan/RouteRowan_Layers/default.layer:23",
+            "faction": "GC_SEPARATIST",
+            "tickets": 4,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/Til/RouteRowan/RouteRowan_GC_Settings.et"
+      },
       "briefingGaps": [
         "worlds/Til/RouteRowan/RouteRowan_Layers/brief.layer:1 legacy audience needs independent unaffiliated visibility"
       ]
@@ -16377,6 +16956,24 @@
         }
       },
       "directBriefingsRead": 5,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/arc/FirstLightAtEden/FirstLightAtEden_Layers/default.layer:38",
+            "faction": "UK",
+            "tickets": 5,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/arc/FirstLightAtEden/FirstLightAtEden_GC_Settings.et"
+      },
       "briefingModePreset": "worlds/arc/FirstLightAtEden/FirstLightAtEden_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -16612,6 +17209,20 @@
         }
       },
       "directBriefingsRead": 8,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/arc/HeavenAndHell/HeavenAndHell_Layers/default.layer:22",
+            "faction": "US",
+            "tickets": 0,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": []
+      },
       "briefingModePreset": "worlds/arc/HeavenAndHell/HeavenAndHell_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -17777,6 +18388,24 @@
         }
       },
       "directBriefingsRead": 10,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/arc/StationSmashers/StationSmashers_Layers/default.layer:22",
+            "faction": "GC_INSURGENT",
+            "tickets": 1,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/arc/StationSmashers/StationSmashers_GC_Settings.et"
+      },
       "briefingModePreset": "worlds/arc/StationSmashers/StationSmashers_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -17984,6 +18613,24 @@
         }
       },
       "directBriefingsRead": 8,
+      "respawn": {
+        "factions": [
+          {
+            "source": "worlds/arc/TheOldWood2024/TheOldWood2024_Layers/default.layer:26",
+            "faction": "UK",
+            "tickets": 10,
+            "intervalMs": 0,
+            "wave": false,
+            "destination": ""
+          }
+        ],
+        "ticketGaps": [],
+        "remainingBehavior": [
+          "Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling",
+          "Restore individual death-to-respawn scheduling using the recorded interval in milliseconds"
+        ],
+        "ticketModePreset": "worlds/arc/TheOldWood2024/TheOldWood2024_GC_Settings.et"
+      },
       "briefingModePreset": "worlds/arc/TheOldWood2024/TheOldWood2024_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []

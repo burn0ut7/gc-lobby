@@ -10,6 +10,7 @@ from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
 from groups import group_layer
 from markers import convert_layer as convert_markers
+from respawns import read_respawns, ticket_event
 from scenery import StockPrefabs, placements
 from race_day import race_files, WORLD as RACE_WORLD
 
@@ -62,9 +63,13 @@ def main():
         row['headers'] = headers_by_world[world]
         report['worlds'][world] = row
         pages, gaps = [], []
+        respawns, ticket_gaps = [], []
         row['markerLayers'] = {}
         for layer in source.layers[world.lower()]:
             text = source.read(layer)
+            records, issues = read_respawns(text, layer)
+            respawns.extend(records)
+            ticket_gaps.extend(issues)
             if args.units:
                 try:
                     groups = group_layer(text, source_units, dev_units, stock, locally_owned)
@@ -113,9 +118,24 @@ def main():
                 continue
             if 'PS_MissionDescription' in source.read(path):
                 gaps.append(path + ' contains an inherited or prefab-owned briefing')
-        if pages and not gaps:
+        event = ticket_event(world, respawns, ticket_gaps)
+        if respawns or ticket_gaps:
+            follow_up = []
+            if any(r['tickets'] != 0 for r in respawns):
+                follow_up.append('Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling')
+            if any(r['tickets'] > 0 and not r['wave'] for r in respawns):
+                follow_up.append('Restore individual death-to-respawn scheduling using the recorded interval in milliseconds')
+            if any(r['tickets'] > 0 and r['wave'] for r in respawns):
+                follow_up.append('Restore wave scheduling aligned to legacy world time')
+            if any(r['tickets'] != 0 and r['destination'] for r in respawns):
+                follow_up.append('Resolve the named destination at death and preserve original-slot fallback')
+            if any(r['tickets'] == -1 for r in respawns):
+                follow_up.append('Port the ordered per-character replacement prefab list and exhaustion behavior')
+            row['respawn'] = {'factions': respawns, 'ticketGaps': ticket_gaps, 'remainingBehavior': follow_up}
+        briefing = pages if not gaps else []
+        if briefing or event:
             try:
-                body, compact = render(world, pages)
+                body, compact = render(world, briefing, event)
                 # Keep scenario settings in the owning mission directory under a unique name.
                 dest = str(PurePosixPath(world).with_suffix('')) + '_GC_Settings.et'
                 resource = guid(world + '/resource')
@@ -125,11 +145,15 @@ def main():
                 meta = template.replace(old_name, f'Name "{{{resource}}}{dest}"')
                 for path, contents in [(dest, body), (dest + '.meta', meta)]:
                     if path in dev.files and dev.read(path).strip() != contents.strip():
-                        raise ValueError('Dev already has differing ' + path)
+                        if not (path == dest and event and briefing and dev.read(path).strip() == render(world, briefing)[0].strip()):
+                            raise ValueError('Dev already has differing ' + path)
                 out[dest] = body
                 out[dest + '.meta'] = meta
-                row['briefingModePreset'] = dest
-                row['renumberedInSourceOrder'] = compact
+                if briefing:
+                    row['briefingModePreset'] = dest
+                    row['renumberedInSourceOrder'] = compact
+                if event:
+                    row['respawn']['ticketModePreset'] = dest
             except ValueError as exc:
                 gaps.append(str(exc))
         row['briefingGaps'] = gaps

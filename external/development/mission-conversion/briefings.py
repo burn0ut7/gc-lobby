@@ -115,14 +115,16 @@ def read_pages(text, path):
     return result, gaps
 
 
-def render(world, pages):
+def render(world, pages, event=()):
     pages = sorted(pages, key=lambda p: p.order)
     if len(pages) > 32:
         raise ValueError('more than 32 briefing entries')
     orders = [p.order for p in pages]
-    compact = len(set(orders)) != len(orders) or min(orders) < 0 or max(orders) > 32
+    compact = bool(orders) and (len(set(orders)) != len(orders) or min(orders) < 0 or max(orders) > 32)
     lines = [f'GC_LobbyGameMode : "{MODE}" {{', f' ID "{guid(world + "/entity")}"',
-             ' components {', '  GC_LobbyManager "{6A137A39106A4973}" {', '   m_aBriefings {']
+             ' components {', '  GC_LobbyManager "{6A137A39106A4973}" {', *event]
+    if pages:
+        lines.append('   m_aBriefings {')
     for index, p in enumerate(pages):
         order = index if compact else p.order
         lines.extend([f'    GC_Briefing "{{{guid(p.source)}}}" {{', f'     m_iOrder {order}',
@@ -130,4 +132,6 @@ def render(world, pages):
         if p.factions:
             lines.extend(['     m_aFactionKeys {', '      ' + p.factions, '     }'])
         lines.append('    }')
-    return '\n'.join(lines + ['   }', '  }', ' }', '}', '']), compact
+    if pages:
+        lines.append('   }')
+    return '\n'.join(lines + ['  }', ' }', '}', '']), compact
