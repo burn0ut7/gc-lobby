@@ -329,3 +329,12 @@ Privateering's draft also preserves 24 playable slots, six replacement waypoint 
 
 
 The installed-provider audit now accepts registered resources in both v6 and v7 databases. It resolves the Irish Checkpoint tactical graphics through its installed v6 provider. The audit still flags six previously installed launchers. Bug Out and both Foreign Exchange Students missions used the configured Longmoor terrain in earlier Workbench runs, while the installed Longmoor 3.2.1 database marks the referenced subscene path as unregistered. The two races and Breach and Clear also have unresolved authored resource references. The file review lists each path and its owner for follow-up.
+
+
+## Conditional notices and passive resources
+
+The batch event compiler retains legacy labels containing spaces and punctuation. It translates message-only events driven by a supported casualty check, capture, or compound condition with the same one-shot timing, audience and per-instruction delay as outcome events. Messages already emitted by the Match-start notification rule are reused. If several events depend on one capture flag, the generated checks use distinct serialized identities and only one publishes capture progress messages.
+
+The resource pass follows uniquely identified materials, compiled textures, image sets and the supported native light prefab format. It preserves the asset GUID and resolves stale paths to the canonical repository file when the placement or metadata establishes the identity. Resource references in materials and image sets are also included in the comparison and installation audits. Unknown prefab behavior and ambiguous GUIDs remain in the blocker report.
+
+The latest inventory translated 240 previously unhandled notifications across 236 events and cleared the framework event blocker for 19 worlds. The remaining roster, boundary, mode and resource checks still gate those worlds. For example, Two Checkpoints has all four source framework events accounted for, including its three conditional notices, but the CDF roster contains duplicate serialized callsign fields with conflicting authored values. The batch still requires a reviewed resolution for those placements.

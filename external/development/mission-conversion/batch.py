@@ -9,7 +9,7 @@ from boundaries import convert_boundaries
 from briefings import block_end, guid, properties
 from catalog import REF, SOURCE_TEXT
 from extraction import condition as extraction_condition
-from launchers import META_NAME, launcher
+from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer
 from outcomes import FRAMEWORK, leaves
 from scenery import WAYPOINT_CLASS
@@ -18,9 +18,15 @@ LEGACY = re.compile(r'\b(?:TILW|PS)_\w+')
 MODE = re.compile(r'^PS_GameModeCoop(?: [\w.-]+)? : "\{4CFD54745CD45673\}[^"]+" \{$')
 NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|SCR_AIWorld|GenericEntity|GenericTerrainEntity|StaticModelEntity|Tree|'
                     r'DecalEntity|SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
-                    r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity)\b')
+                    r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity|LightEntity)\b')
 WEATHER = re.compile(r'  SCR_TimeAndWeatherHandlerComponent "\{5EE3229927D4D2F5\}" \{')
 PERCEPTION = re.compile(r'^PerceptionManager(?: [\w.-]+)? : "\{028DAEAD63E056BE\}[^"]+" \{$')
+LIGHT = 'LightEntity : "{C274EE54AB618B04}Prefabs/Structures/Core/Lamp_LightEntity_base.et" {'
+LIGHT_COMPONENT = [
+    ' components {', '  StreetLampComponent "{55A0954A909C9109}" {', '   Enabled 0', '  }', ' }',
+]
+LIGHT_FIELDS = {'ID', 'coords', 'Color', 'LV', 'ClipEV', 'Radius', 'NearPlane', 'SpotAngle',
+                'SpotAngleAttenuation', 'DistanceAttenuation', 'LensFlareType', 'LensFlareScale'}
 
 
 def blocks(text):
@@ -69,6 +75,62 @@ def waypoint_gaps(layers, assignments):
             elif action['replaceExisting'] and f'"{name}"' in group_fields:
                 gaps.add(f'replacement waypoint {name} may already belong to {group}')
     return sorted(gaps)
+
+
+def passive_asset(source, path):
+    suffix = PurePosixPath(path).suffix.lower()
+    if suffix == '.edds':
+        return source.read_raw(path)
+    if suffix == '.imageset':
+        return source.read(path)
+    if suffix == '.emat':
+        body = source.read(path)
+        if re.match(r'MatPBR(?:Basic|Decal) \{\n', body) and not LEGACY.search(body):
+            return body
+    if suffix == '.et':
+        body = source.read(path)
+        lines = body.splitlines()
+        if (len(lines) > 8 and lines[0] == LIGHT and lines[2:7] == LIGHT_COMPONENT and lines[-1] == '}'
+                and all(line.startswith(' ') and line.strip().partition(' ')[0] in LIGHT_FIELDS
+                        and '{' not in line and '}' not in line for line in [lines[1], *lines[7:-1]])):
+            return body
+    raise ValueError('requires a resource conversion rule')
+
+
+def migrate_assets(source, dev, draft):
+    files = list(draft)
+    blockers = set()
+    for owner in files:
+        if PurePosixPath(owner).suffix.lower() not in SOURCE_TEXT:
+            continue
+
+        def relocate(ref):
+            resource, path = ref[1].upper(), ref[2]
+            paths = source.resources.get(resource, [])
+            if not paths or path in draft or path in dev.files:
+                return ref[0]
+            try:
+                if len(paths) != 1:
+                    raise ValueError('ambiguous source resource')
+                canonical = paths[0]
+                meta = canonical + '.meta'
+                identity = META_NAME.search(source.read(meta))
+                if not identity or (path != canonical and identity[3] not in (path, canonical)):
+                    raise ValueError('resource path disagrees with metadata')
+                if any(other != canonical for other in dev.resources.get(resource, [])):
+                    raise ValueError('Dev resource identity collision')
+                if canonical not in draft:
+                    draft[canonical] = passive_asset(source, canonical)
+                    draft[meta] = replace_reference(source.read(meta), META_NAME, identity[2], canonical)
+                    files.append(canonical)
+                return f'"{{{ref[1]}}}{canonical}"'
+            except ValueError as exc:
+                blockers.add((owner, path, str(exc)))
+                return ref[0]
+
+        draft[owner] = REF.sub(relocate, draft[owner])
+    return [{'rule': 'mission-owned resource', 'file': owner, 'detail': path, 'reason': reason}
+            for owner, path, reason in sorted(blockers)]
 
 
 TRIGGER = re.compile(r'(?P<group>\$grp )?TILW_(?P<kind>Extraction|Faction)TriggerEntity(?: [\w.-]+)?'
@@ -402,24 +464,7 @@ def world_draft(source, dev, world, row, staged, area_placements, convert_group_
             draft.update(files)
         except ValueError as exc:
             blockers.append({'rule': 'launcher', 'file': header, 'detail': str(exc)})
-    referenced_files = list(draft)
-    for owner in referenced_files:
-        if PurePosixPath(owner).suffix.lower() not in SOURCE_TEXT | {'.imageset'}:
-            continue
-        text = draft[owner]
-        for resource, path in REF.findall(text):
-            paths = source.resources.get(resource.upper(), [])
-            if not paths or path in draft or path in dev.files:
-                continue
-            meta = path + '.meta'
-            key = META_NAME.search(source.read(meta)) if meta in source.files else None
-            if paths == [path] and key and key[3] == path and PurePosixPath(path).suffix.lower() in ('.edds', '.imageset'):
-                image = source.read_raw(path) if path.endswith('.edds') else source.read_raw(path).decode('utf-8-sig')
-                draft[path] = image
-                draft[meta] = source.read(meta)
-                referenced_files.append(path)
-            else:
-                blockers.append({'rule': 'mission-owned resource', 'file': owner, 'detail': path})
+    blockers.extend(migrate_assets(source, dev, draft))
     for path, text in draft.items():
         if path not in dev.files:
             continue

@@ -20,7 +20,7 @@ def unresolved_resources(files, addons, databases):
             meta = META_NAME.search(body.decode('utf-8-sig'))
             if meta and meta[3] == path[:-5] and path[:-5] in files:
                 available.add((meta[2].upper(), meta[3]))
-        elif PurePosixPath(path).suffix.lower() in SOURCE_TEXT | {'.imageset'}:
+        elif PurePosixPath(path).suffix.lower() in SOURCE_TEXT:
             refs.update((guid.upper(), ref) for guid, ref in REF.findall(body.decode('utf-8-sig')))
     return unregistered_references(refs - available, databases)
 

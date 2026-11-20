@@ -38,10 +38,7 @@ def closure(snapshot, world, header):
 
 @lru_cache(maxsize=16384)
 def facts(snapshot, path):
-    suffix = PurePosixPath(path).suffix.lower()
-    if suffix == '.imageset':
-        return {}, [], REF.findall(snapshot.read_raw(path).decode('utf-8-sig'))
-    if suffix not in SOURCE_TEXT:
+    if PurePosixPath(path).suffix.lower() not in SOURCE_TEXT:
         return {}, [], []
     text = snapshot.read(path)
     categories = {}

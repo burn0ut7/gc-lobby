@@ -2497,9 +2497,9 @@
       "briefingGaps": []
     },
     "worlds/Blue/Bangalorious/Bangalorious.ent": {
-      "sourceResourceCount": 25,
+      "sourceResourceCount": 26,
       "devPaths": {
-        "absent": 25
+        "absent": 26
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -4929,9 +4929,9 @@
       "briefingGaps": []
     },
     "worlds/Cunnah/Coastal_Cappers/Coastal_Cappers.ent": {
-      "sourceResourceCount": 15,
+      "sourceResourceCount": 16,
       "devPaths": {
-        "absent": 15
+        "absent": 16
       },
       "serializedTypes": {
         "PS_FactionRespawnCount": 1,
@@ -8294,9 +8294,9 @@
       "briefingGaps": []
     },
     "worlds/HelloCam3/worlds/COOP_StashedCache/COOP_StashedCache_v2.ent": {
-      "sourceResourceCount": 25,
+      "sourceResourceCount": 31,
       "devPaths": {
-        "absent": 25
+        "absent": 31
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -20435,9 +20435,9 @@
       "briefingGaps": []
     },
     "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges.ent": {
-      "sourceResourceCount": 64,
+      "sourceResourceCount": 71,
       "devPaths": {
-        "absent": 64
+        "absent": 71
       },
       "serializedTypes": {
         "PS_FactionRespawnCount": 2,
@@ -21811,9 +21811,9 @@
       "briefingGaps": []
     },
     "worlds/TheLocalPub/OilRigRangos/OilRigRangos.ent": {
-      "sourceResourceCount": 55,
+      "sourceResourceCount": 56,
       "devPaths": {
-        "absent": 55
+        "absent": 56
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -22886,9 +22886,9 @@
       "briefingGaps": []
     },
     "worlds/TheLocalPub/TopMaloHouse/TopMalohouse.ent": {
-      "sourceResourceCount": 15,
+      "sourceResourceCount": 16,
       "devPaths": {
-        "absent": 13,
+        "absent": 14,
         "changed": 2
       },
       "serializedTypes": {
@@ -25818,9 +25818,9 @@
       "briefingGaps": []
     },
     "worlds/Til/Metalwave/Metalwave.ent": {
-      "sourceResourceCount": 9,
+      "sourceResourceCount": 10,
       "devPaths": {
-        "absent": 9
+        "absent": 10
       },
       "serializedTypes": {
         "PS_FactionRespawnCount": 1,
@@ -26874,9 +26874,9 @@
       "briefingGaps": []
     },
     "worlds/Til/TheAdjacentWave/TheAdjacentWave.ent": {
-      "sourceResourceCount": 16,
+      "sourceResourceCount": 17,
       "devPaths": {
-        "absent": 16
+        "absent": 17
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -29159,9 +29159,9 @@
       ]
     },
     "worlds/arc/BarnBusters/BarnBusters.ent": {
-      "sourceResourceCount": 9,
+      "sourceResourceCount": 10,
       "devPaths": {
-        "absent": 7,
+        "absent": 8,
         "changed": 2
       },
       "serializedTypes": {
@@ -29308,9 +29308,9 @@
       "briefingGaps": []
     },
     "worlds/arc/BarnBustersXS/BarnBustersXS.ent": {
-      "sourceResourceCount": 9,
+      "sourceResourceCount": 10,
       "devPaths": {
-        "absent": 7,
+        "absent": 8,
         "changed": 1,
         "identical": 1
       },
@@ -29513,9 +29513,9 @@
       "briefingGaps": []
     },
     "worlds/arc/BunkerBusters/BunkerBusters.ent": {
-      "sourceResourceCount": 11,
+      "sourceResourceCount": 12,
       "devPaths": {
-        "absent": 9,
+        "absent": 10,
         "changed": 1,
         "identical": 1
       },
@@ -29626,9 +29626,9 @@
       "briefingGaps": []
     },
     "worlds/arc/BunkerBustersXL/BunkerBustersXL.ent": {
-      "sourceResourceCount": 7,
+      "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 6,
+        "absent": 7,
         "changed": 1
       },
       "serializedTypes": {
@@ -29762,9 +29762,9 @@
       "briefingGaps": []
     },
     "worlds/arc/CoastalClearance/CoastalClearance.ent": {
-      "sourceResourceCount": 8,
+      "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 8
+        "absent": 9
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -29992,9 +29992,9 @@
       "briefingGaps": []
     },
     "worlds/arc/Compromised/Compromised.ent": {
-      "sourceResourceCount": 13,
+      "sourceResourceCount": 14,
       "devPaths": {
-        "absent": 12,
+        "absent": 13,
         "changed": 1
       },
       "serializedTypes": {
@@ -30111,9 +30111,9 @@
       "briefingGaps": []
     },
     "worlds/arc/CrashParty/CrashParty.ent": {
-      "sourceResourceCount": 8,
+      "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 7,
+        "absent": 8,
         "changed": 1
       },
       "serializedTypes": {
@@ -30246,9 +30246,9 @@
       "briefingGaps": []
     },
     "worlds/arc/DustyDrive/DustyDrive.ent": {
-      "sourceResourceCount": 10,
+      "sourceResourceCount": 11,
       "devPaths": {
-        "absent": 9,
+        "absent": 10,
         "changed": 1
       },
       "serializedTypes": {
@@ -30357,9 +30357,9 @@
       "briefingGaps": []
     },
     "worlds/arc/DustyDrive95/DustyDrive95.ent": {
-      "sourceResourceCount": 10,
+      "sourceResourceCount": 11,
       "devPaths": {
-        "absent": 10
+        "absent": 11
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -30837,9 +30837,9 @@
       "briefingGaps": []
     },
     "worlds/arc/ErquyEvasion/ErquyEvasion.ent": {
-      "sourceResourceCount": 10,
+      "sourceResourceCount": 11,
       "devPaths": {
-        "absent": 10
+        "absent": 11
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -31072,9 +31072,9 @@
       "briefingGaps": []
     },
     "worlds/arc/FightingRetreat/FightingRetreat.ent": {
-      "sourceResourceCount": 7,
+      "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 1,
+        "absent": 2,
         "changed": 4,
         "identical": 2
       },
@@ -31247,9 +31247,9 @@
       }
     },
     "worlds/arc/FirstLightAtEden/FirstLightAtEden.ent": {
-      "sourceResourceCount": 12,
+      "sourceResourceCount": 13,
       "devPaths": {
-        "absent": 12
+        "absent": 13
       },
       "serializedTypes": {
         "PS_FactionRespawnCount": 1,
@@ -31389,9 +31389,9 @@
       "briefingGaps": []
     },
     "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents.ent": {
-      "sourceResourceCount": 6,
+      "sourceResourceCount": 7,
       "devPaths": {
-        "absent": 1,
+        "absent": 2,
         "changed": 4,
         "identical": 1
       },
@@ -31550,9 +31550,9 @@
       }
     },
     "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII.ent": {
-      "sourceResourceCount": 7,
+      "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 1,
+        "absent": 2,
         "changed": 5,
         "identical": 1
       },
@@ -31924,9 +31924,9 @@
       "briefingGaps": []
     },
     "worlds/arc/HeavenAndHell/HeavenAndHell.ent": {
-      "sourceResourceCount": 15,
+      "sourceResourceCount": 16,
       "devPaths": {
-        "absent": 15
+        "absent": 16
       },
       "serializedTypes": {
         "PS_FactionRespawnCount": 1,
@@ -32093,9 +32093,9 @@
       "briefingGaps": []
     },
     "worlds/arc/HotBoxes/HotBoxes.ent": {
-      "sourceResourceCount": 12,
+      "sourceResourceCount": 13,
       "devPaths": {
-        "absent": 12
+        "absent": 13
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -32199,9 +32199,9 @@
       "briefingGaps": []
     },
     "worlds/arc/Hunted/Hunted.ent": {
-      "sourceResourceCount": 9,
+      "sourceResourceCount": 10,
       "devPaths": {
-        "absent": 8,
+        "absent": 9,
         "changed": 1
       },
       "serializedTypes": {
@@ -32490,9 +32490,9 @@
       }
     },
     "worlds/arc/IrishCheckpoint/IrishCheckpoint.ent": {
-      "sourceResourceCount": 7,
+      "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 1,
+        "absent": 2,
         "changed": 3,
         "identical": 3
       },
@@ -32757,9 +32757,9 @@
       "briefingGaps": []
     },
     "worlds/arc/LastBastion/LastBastion.ent": {
-      "sourceResourceCount": 7,
+      "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 1,
+        "absent": 2,
         "changed": 5,
         "identical": 1
       },
@@ -33064,9 +33064,9 @@
       "briefingGaps": []
     },
     "worlds/arc/PatrolTroubles/PatrolTroubles.ent": {
-      "sourceResourceCount": 15,
+      "sourceResourceCount": 16,
       "devPaths": {
-        "absent": 15
+        "absent": 16
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -33971,9 +33971,9 @@
       "briefingGaps": []
     },
     "worlds/arc/ReturnOfTheWac/ReturnOfTheWac.ent": {
-      "sourceResourceCount": 7,
+      "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 6,
+        "absent": 7,
         "changed": 1
       },
       "serializedTypes": {
@@ -34229,9 +34229,9 @@
       "briefingGaps": []
     },
     "worlds/arc/RocketScience/RocketScience.ent": {
-      "sourceResourceCount": 8,
+      "sourceResourceCount": 9,
       "devPaths": {
-        "absent": 7,
+        "absent": 8,
         "identical": 1
       },
       "serializedTypes": {
@@ -34356,9 +34356,9 @@
       "briefingGaps": []
     },
     "worlds/arc/SOBRUp/SOBRUp.ent": {
-      "sourceResourceCount": 11,
+      "sourceResourceCount": 12,
       "devPaths": {
-        "absent": 10,
+        "absent": 11,
         "changed": 1
       },
       "serializedTypes": {
@@ -34474,9 +34474,9 @@
       "briefingGaps": []
     },
     "worlds/arc/ShootAndScoot/ShootAndScoot.ent": {
-      "sourceResourceCount": 9,
+      "sourceResourceCount": 10,
       "devPaths": {
-        "absent": 8,
+        "absent": 9,
         "changed": 1
       },
       "serializedTypes": {
@@ -34942,9 +34942,9 @@
       "briefingGaps": []
     },
     "worlds/arc/SunnyWAC/SunnyWAC.ent": {
-      "sourceResourceCount": 10,
+      "sourceResourceCount": 11,
       "devPaths": {
-        "absent": 10
+        "absent": 11
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -35083,9 +35083,9 @@
       "briefingGaps": []
     },
     "worlds/arc/SyrianCheckpoint/SyrianCheckpoint.ent": {
-      "sourceResourceCount": 28,
+      "sourceResourceCount": 29,
       "devPaths": {
-        "absent": 28
+        "absent": 29
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -35216,9 +35216,9 @@
       "briefingGaps": []
     },
     "worlds/arc/TheBestDefense/TheBestDefense.ent": {
-      "sourceResourceCount": 9,
+      "sourceResourceCount": 10,
       "devPaths": {
-        "absent": 9
+        "absent": 10
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -36234,9 +36234,9 @@
       }
     },
     "worlds/arc/ZeroArcThirty/ZeroArcThirty.ent": {
-      "sourceResourceCount": 7,
+      "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 7
+        "absent": 8
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,

@@ -10,6 +10,7 @@ FRAMEWORK = re.compile(r'^TILW_MissionFrameworkEntity(?: [\w.-]+)? : "\{8F846D0F
 ENDING = re.compile(r'^    TILW_EndGameInstruction "\{([\da-fA-F]{16})\}" \{$')
 WAYPOINTS = re.compile(r'^    TILW_AssignWaypointsInstruction "\{([\da-fA-F]{16})\}" \{$')
 KEY = r'"[\w.-]+"'
+EVENT_LABEL = r'"[^"\\\x00-\x1f]+"'
 RESULT = {'EDITOR_FACTION_VICTORY': 1, 'EDITOR_FACTION_DEFEAT': 2, 'EDITOR_FACTION_DRAW': 3}
 TERM = re.compile(r'\s*(?:m_condition )?TILW_(Literal|Conjunction|Disjunction)Term "\{[\da-fA-F]{16}\}" \{')
 AI_FLAG = re.compile(r'^  TILW_FactionAIKilledFlag "\{[\da-fA-F]{16}\}" \{$')
@@ -84,6 +85,7 @@ def read_event(fields, key, flags, captures, ai, compound):
     actions = defaultdict(list)
     notices = []
     assignments = []
+    messages = 0
     seen = set()
     term = None
     i = 0
@@ -107,6 +109,7 @@ def read_event(fields, key, flags, captures, ai, compound):
                 waypoint_match = WAYPOINTS.fullmatch(fields[j]) if compound else None
                 if notify_match:
                     delay, body = message(fields[j + 1:last], key + '/' + notify_match[1], multiline=True)
+                    messages += 1
                 elif end_match:
                     delay, body, notice = end_action(fields[j + 1:last], key + '/' + end_match[1])
                     notices.append(notice)
@@ -118,14 +121,14 @@ def read_event(fields, key, flags, captures, ai, compound):
                 actions[delay].extend(body)
                 j = last + 1
             i = end
-        elif not re.fullmatch(r'   m_name ' + KEY, line) and line != '   m_pregameEvent 0':
+        elif not re.fullmatch(r'   m_name ' + (EVENT_LABEL if compound else KEY), line) and line != '   m_pregameEvent 0':
             raise ValueError('unsupported outcome event field ' + field)
         i += 1
-    if not term or not (notices or assignments):
+    if not term or not (notices or assignments or (compound and messages)):
         raise ValueError('missing condition or supported framework instruction')
     if assignments and term['trigger'] != 'Match start':
         raise ValueError('waypoint assignments after Match start require a separate rule')
-    return term, actions, notices, assignments
+    return term, actions, notices, assignments, messages
 
 
 def leaves(term):
@@ -136,17 +139,26 @@ def leaves(term):
         yield term
 
 
-def render_check(term, key, captures):
+def render_check(term, key, captures, capture_messages):
     trigger = term['trigger']
     if trigger == 'area capture':
-        # Each occurrence needs its own serialized subtree IDs.
+        flag = '"' + term['flag'] + '"'
+        lines = captures[flag]
+        # Each occurrence needs its own subtree IDs. A legacy trigger emits status only once.
+        if capture_messages is not None:
+            for index, line in enumerate(lines):
+                if line.lstrip().startswith('m_Messages '):
+                    if flag in capture_messages:
+                        lines = lines[:index] + lines[block_end(lines, index) + 1:]
+                    capture_messages.add(flag)
+                    break
         return [re.sub(r'"\{([0-9A-F]{16})\}"', lambda match: '"{' + guid(key + '/' + match[1]) + '}"', line)
-                for line in captures['"' + term['flag'] + '"']]
+                for line in lines]
     if trigger in ('all', 'any'):
         result = [f'      GC_ConditionGroup "{{{guid(key + "/group")}}}" {{',
                   f'       m_iMatch {int(trigger == "any")}', '       m_aConditions {']
         for index, child in enumerate(term['operands']):
-            result.extend('  ' + line for line in render_check(child, f'{key}/{index}', captures))
+            result.extend('  ' + line for line in render_check(child, f'{key}/{index}', captures, capture_messages))
         return result + ['       }', '      }']
     check = 'GC_LivingAndDeadAICheck' if trigger == 'AI loss' else 'GC_PeakFactionPopulationCheck'
     result = [f'      GC_CustomScriptCondition "{{{guid(key + "/condition")}}}" {{',
@@ -156,14 +168,14 @@ def render_check(term, key, captures):
     return result + [f'        m_fRatio {term["ratio"]}', '       }', '      }']
 
 
-def render(key, name, term, actions, captures):
+def render(key, name, term, actions, captures, capture_messages):
     condition = term['trigger'] != 'Match start'
     result = []
     if condition:
-        if term['trigger'] == 'area capture':
+        if term['trigger'] == 'area capture' and capture_messages is None:
             check = captures['"' + term['flag'] + '"']
         else:
-            check = render_check(term, key, captures)
+            check = render_check(term, key, captures, capture_messages)
         result.extend([
             f'    GC_Event "{{{guid(key + "/trigger")}}}" {{', f'     m_sName "{name}"',
             '     m_aConditions {', *check, '     }',
@@ -183,8 +195,9 @@ def render(key, name, term, actions, captures):
     return result
 
 
-def compile_outcomes(source, world, captures=None, *, compound=False):
+def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None):
     captures = captures or {}
+    notification_audit = notification_audit or {}
     layers = source.layers[world.lower()]
     owners = [(path, source.read(path)) for path in layers if 'TILW_MissionFrameworkEntity' in source.read(path)]
     if len(owners) != 1:
@@ -208,28 +221,38 @@ def compile_outcomes(source, world, captures=None, *, compound=False):
         return [], {}, 'ambiguous AI casualty faction tracking'
     compiled, audit = [], {}
     names = set()
+    capture_messages = set() if compound else None
     for i, line in enumerate(body):
         event = EVENT.fullmatch(line)
         if not event:
             continue
         fields = body[i + 1:block_end(body, i)]
-        if not any(ENDING.fullmatch(item) or (compound and WAYPOINTS.fullmatch(item)) for item in fields):
+        loc = f'{path}:{i + base + 2}'
+        if 'notificationDelaysSeconds' in notification_audit.get(loc, {}):
+            continue
+        if not any(ENDING.fullmatch(item) or (compound and (WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item)))
+                   for item in fields):
             continue
         name = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
-        if not re.fullmatch(KEY, name):
+        if not re.fullmatch(EVENT_LABEL if compound else KEY, name):
             name = '"Outcome ' + event[1] + '"'
         name = name[1:-1]
-        loc = f'{path}:{i + base + 2}'
         try:
-            if name in names:
-                raise ValueError('duplicate outcome name')
-            term, actions, notices, assignments = read_event(fields, world + '/' + event[1], flags, captures, ai, compound)
-            compiled.extend(render(world + '/' + event[1], name, term, actions, captures))
+            term, actions, notices, assignments, messages = read_event(
+                fields, world + '/' + event[1], flags, captures, ai, compound)
+            emitted_names = {f'{name} ({delay:f}s)' for delay in actions}
+            if term['trigger'] != 'Match start':
+                emitted_names.add(name)
+            if emitted_names & names:
+                raise ValueError('duplicate generated event name')
+            compiled.extend(render(world + '/' + event[1], name, term, actions, captures, capture_messages))
             audit[loc] = {**term, 'name': name, 'announcements': notices,
                           'instructionDelaysSeconds': [f'{delay:f}' for delay in actions]}
             if assignments:
                 audit[loc]['waypointAssignments'] = assignments
-            names.add(name)
+            if messages and not (notices or assignments):
+                audit[loc]['notificationCount'] = messages
+            names.update(emitted_names)
         except ValueError as exc:
             audit[loc] = {'name': name, 'gap': str(exc)}
     return compiled, audit, None

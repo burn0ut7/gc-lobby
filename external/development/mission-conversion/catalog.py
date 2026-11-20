@@ -12,7 +12,7 @@ NAME = re.compile(r'^\s*Name\s+"\{([0-9A-Fa-f]{16})\}', re.M)
 # Match typed declarations, excluding quoted descriptions, resource paths and entity names.
 TYPES = re.compile(r'^[ \t]*(?:\$grp )?(?:(?:m_\w+) )?((?:TILW|PS|GC)_\w+|\w*GameMode\w*|SCR_AIGroup)\b[^\n]*\{[ \t]*$', re.M)
 VEHICLE_LINK = re.compile(r'^\s*m_sAttachmentGroupName\s+"([^"\r\n]+)"\s*$')
-SOURCE_TEXT = {'.ent', '.layer', '.et', '.conf', '.layout', '.ptc'}
+SOURCE_TEXT = {'.ent', '.layer', '.et', '.conf', '.layout', '.ptc', '.emat', '.imageset'}
 
 
 class Snapshot:

@@ -251,8 +251,9 @@ def main():
         if review:
             row['frameworkEvents'] = review
         has_outcomes = row['serializedTypes'].get('TILW_EndGameInstruction')
-        has_waypoints = args.batch and row['serializedTypes'].get('TILW_AssignWaypointsInstruction')
-        if args.include_outcomes and (has_outcomes or has_waypoints):
+        has_event_actions = args.batch and any(row['serializedTypes'].get(kind) for kind in
+                                              ('TILW_AssignWaypointsInstruction', 'TILW_SendMessageInstruction'))
+        if args.include_outcomes and (has_outcomes or has_event_actions):
             try:
                 captures = {}
                 if world in arc_worlds:
@@ -261,7 +262,8 @@ def main():
                     arc_areas[world] = area
                 elif args.batch:
                     captures, batch_areas[world] = batch.area_rules(source, world)
-                rules, outcome_audit, gap = compile_outcomes(source, world, captures, compound=args.batch)
+                rules, outcome_audit, gap = compile_outcomes(
+                    source, world, captures, compound=args.batch, notification_audit=review)
                 outcome = {'events': outcome_audit}
                 if gap:
                     outcome['gap'] = gap
