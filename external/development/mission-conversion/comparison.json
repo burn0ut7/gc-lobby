@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "1a38c897ecb0fc98efd92eb1b6d4e9284d334f6e",
+  "target": "47b2a66b6b86f4c70637ff00e18d20a14de94815",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1321,7 +1321,7 @@
         "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{5FA57D3946DD4A89}worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress.ent"
     },
     "Missions/TheLocalPub/WetFeet.conf": {
@@ -14923,7 +14923,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/GreenFor/GreenTeam.layer": {
-          "gap": "legacy slot playability requires review 7FED7EB98736CBC1"
+          "playableGroups": 5,
+          "unitPrefabEntries": 32
         }
       },
       "stockPlacementLayers": {
@@ -15224,7 +15225,8 @@
       },
       "groupLayers": {
         "worlds/HotMic/VehicleInterdictionCOOPKunar/VehicleInterdictionCOOPKunar_Layers/GreenTeam.layer": {
-          "gap": "legacy slot playability requires review 7FED7EB98736CBC1"
+          "playableGroups": 2,
+          "unitPrefabEntries": 14
         }
       },
       "directBriefingsRead": 6,
@@ -23043,8 +23045,9 @@
     "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress.ent": {
       "sourceResourceCount": 11,
       "devPaths": {
-        "absent": 10,
-        "changed": 1
+        "absent": 4,
+        "changed": 6,
+        "identical": 1
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -23086,7 +23089,8 @@
           "unitPrefabEntries": 24
         },
         "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress_Layers/OPFOR/Players.layer": {
-          "gap": "legacy slot playability requires review BDDF016F45B7851F"
+          "playableGroups": 1,
+          "unitPrefabEntries": 7
         }
       },
       "boundaryLayers": {
@@ -28630,7 +28634,7 @@
           "unitPrefabEntries": 18
         },
         "worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/Howlers.layer": {
-          "gap": "legacy slot playability requires review 63892DDB3954C8A5"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "directBriefingsRead": 0,
@@ -36910,7 +36914,8 @@
       },
       "groupLayers": {
         "worlds/chllboy/Makeup/Makeup_Layers/Indfor.layer": {
-          "gap": "legacy slot playability requires review BDDF016F45B7851F"
+          "playableGroups": 4,
+          "unitPrefabEntries": 27
         },
         "worlds/chllboy/Makeup/Makeup_Layers/Opfor.layer": {
           "gap": "mixed layer or custom group declaration"

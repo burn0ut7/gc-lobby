@@ -75,7 +75,7 @@ def blocks(text):
         index = end + 1
 
 
-def interaction_rules(source, world):
+def interaction_rules(source, world, stock):
     placements, audit = {}, {}
     names, flags = set(), set()
     for path in source.layers[world.lower()]:
@@ -87,7 +87,7 @@ def interaction_rules(source, world):
                 continue
             location = f'{path}:{line}'
             try:
-                native, details = convert_interaction_block(block, location)
+                native, details = convert_interaction_block(block, location, stock, source.resources)
                 if not details or LEGACY.search(native):
                     raise ValueError('unconverted interaction component or side effect')
                 objectives = [record['flag'] for record in details]
@@ -388,7 +388,7 @@ def restriction_zones(block, base):
 
 
 def faction_overrides(lines):
-    if (len(lines) < 7 or not re.fullmatch(r'  SCR_FactionManager "[\da-fA-F]{16}" \{', lines[1])
+    if (len(lines) < 7 or not re.fullmatch(r'  SCR_FactionManager(?: "[\da-fA-F]{16}")? \{', lines[1])
             or lines[2:4] != ['   ID "5ED9088735FF2D8B"', '   Factions {']
             or lines[-3:] != ['   }', '  }', ' }']):
         raise ValueError('custom legacy mode child entities')

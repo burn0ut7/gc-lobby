@@ -2,16 +2,20 @@
 import re
 
 from briefings import QUOTED, block_end, guid, properties
+from catalog import REF
 
-OBJECT = re.compile(r'GenericEntity ([\w.-]+)(?: : "[^"]+")? \{')
+OBJECT = re.compile(r'GenericEntity(?: ([\w.-]+))?(?: : "[^"]+")? \{')
 MEMBER = re.compile(r' ([\w.-]+) \{')
 ACTION = re.compile(r'\s*TILW_BaseInteraction "\{[\da-fA-F]{16}\}" \{')
 KEY = r'"[\w.-]+"'
 NATIVE_FIELDS = {'ParentContextList', 'UIInfo', 'ActionTitle', 'VisibilityRange', 'Duration'}
 LEGACY_FIELDS = {'m_actionName', 'm_factionKeys', 'm_flagName', 'm_singleUse', 'm_conditionFlag', 'm_deleteParent'}
+REPLICATED_PREFABS = {
+    ('EF070B8345288C8B', 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/Dst/CrateStack_01_Dst_2_base.et'),
+}
 
 
-def convert_object(lines, name, key):
+def convert_object(lines, name, key, inherited_replication=False):
     actions = [i for i, line in enumerate(lines) if ACTION.fullmatch(line)]
     if not actions:
         return lines, None
@@ -21,7 +25,12 @@ def convert_object(lines, name, key):
         raise ValueError('requires one interaction on a replicated object')
     components = lines.index(indent + 'components {')
     component_end = block_end(lines, components)
-    if not any(line.startswith(indent + ' RplComponent ') for line in lines[components + 1:component_end]):
+    replication = [index for index in range(components + 1, component_end)
+                   if lines[index].startswith(indent + ' RplComponent ')]
+    if (len(replication) > 1
+            or (replication and any(line.strip() == 'Enabled 0'
+                                    for line in lines[replication[0] + 1:block_end(lines, replication[0])]))
+            or (not replication and not inherited_replication)):
         raise ValueError('interaction object needs a root replication component')
     start = actions[0]
     end = block_end(lines, start)
@@ -65,13 +74,17 @@ def convert_object(lines, name, key):
     return placement, {'entity': name, 'flag': flag[1:-1], 'singleUse': once == '1'}
 
 
-def convert_block(lines, key):
+def convert_block(lines, key, stock=None, local_resources=()):
     group = lines[0].startswith('$grp GenericEntity')
     root = OBJECT.fullmatch(lines[0])
     if not root and not group:
-        raise ValueError('interaction is not on a named generic object')
+        raise ValueError('interaction is not on a generic object')
     if root:
-        placement, details = convert_object(lines, root[1], key)
+        prefab = REF.search(lines[0])
+        resource = (prefab[1].upper(), prefab[2]) if prefab else None
+        inherited = (stock is not None and resource in REPLICATED_PREFABS
+                     and resource[0] not in local_resources and stock.contains(*resource))
+        placement, details = convert_object(lines, root[1] or key, key, inherited)
         return '\n'.join(placement) + '\n', [details] if details else []
     output, details = [lines[0]], []
     index = 1

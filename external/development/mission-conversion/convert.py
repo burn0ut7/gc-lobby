@@ -265,7 +265,7 @@ def main():
         objective_flags = ()
         if args.batch and row['serializedTypes'].get('TILW_BaseInteraction'):
             try:
-                objective_flags, interaction_placements, audit = batch.interaction_rules(source, world)
+                objective_flags, interaction_placements, audit = batch.interaction_rules(source, world, stock)
                 batch_interactions[world] = (objective_flags, interaction_placements)
                 row['interactionCandidate'] = audit
             except ValueError as exc:

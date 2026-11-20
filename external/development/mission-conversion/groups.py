@@ -27,6 +27,7 @@ LEGACY_PLAYABLE_PARENTS = {
     ('B889387E9A33D667',
      'Prefabs/Characters/Factions/BLUFOR/RHS_USAF/RHS_USAF_Army/Character_RHS_USA_BaseLoadout.et'),
     ('EDCFF009262F881C', 'Prefabs/Characters/Factions/OPFOR/RHS_AFRF/Character_RHS_AFRF_Base.et'),
+    ('7A9EE19AB67B298B', 'Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_base.et'),
 }
 RHS_AI_ROLES = {
     '1701B425406974A0': 'SL', '234A37EC8608DFAC': 'Rifleman', '727CB9BA48D9407A': 'SR_GL',

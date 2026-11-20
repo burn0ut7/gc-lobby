@@ -434,3 +434,11 @@ The roster converter recognizes a duplicate legacy callsign component when the f
 The installer can apply this repair to an existing Dev layer when removing the redundant numeric triplets reproduces the generated layer. Use `--replace-reviewed` after reviewing the reported paths. The installer checks the original file hash and requires the target layer to be unmodified in Git. Two Checkpoints is in Missions Dev commit `1a38c897`. The file review matched its 73 slots, both squad labels and the conditional capture and casualty notices. Resource checks passed. Live display and notification timing remain shared runtime checks.
 
 The asset converter also carries over simple mesh material overrides on destructible scenery and follows the referenced material by its registered GUID. Farm now generates all 73 slots and resolves the authored HESCO prefab and material. The draft remains held on the unregistered collision-specific willow prefab `23C0BE9D80929DBD`. Preserve its collision behavior when restoring that asset.
+
+## Inherited interaction replication and faction labels
+
+The batch now converts unnamed objective placements when their root replication is authored or inherited from a verified stock prefab. The Bunker Busters XL cache uses the stock destructible crate with an enabled inherited replication component. The conversion preserves the 60-second hold, RHS USAF restriction, single-use action and `US_CAP` outcome. The draft still references the retired wirecutters GUID `8554ED3F088BADA6`. Its launcher advertises 64 players and the current roster contains 56 entries. The resource identity and source roster count still need review before installation.
+
+Legacy faction manager overrides may be unnamed. The converter still requires the known inherited manager ID and preserves the authoritative faction record. It keeps the presentation overrides on that record in GC Lobby. The playable roster pass now also recognizes the reviewed base FIA character ancestry.
+
+We Hate Stairs Express is in local Missions Dev commit `47b2a66b`. The file review matched all 31 ordered slots, the Angry Miners faction label, the 10-second countdown, the time and date and the two casualty notices. The draft passed the installed resource audit. Live faction labels and casualty timings still need shared runtime coverage.
