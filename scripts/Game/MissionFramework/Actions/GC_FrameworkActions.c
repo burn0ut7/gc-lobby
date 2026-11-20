@@ -106,12 +106,16 @@ class GC_EndMissionAction : GC_ActionBase
 	[Attribute("", UIWidgets.EditBox, "Optional ending description, up to 512 characters. Shown beneath the result heading in a notification and retained in the debrief and mission history. Blank means no notification.")]
 	string m_sMessage;
 
+	[Attribute("0", UIWidgets.CheckBox, "Announce the faction result to all players and leave Match active.")]
+	bool m_bAnnounceOnly;
+
 	//------------------------------------------------------------------------------------------------
 	override GC_RuleAction BuildAction()
 	{
 		GC_RuleAction action = new GC_RuleAction();
 		action.m_eDo = GC_ERuleAction.END_MISSION;
 		action.m_iOperation = m_iResult;
+		action.m_bAnnounceResultOnly = m_bAnnounceOnly;
 		action.m_sEndMessage = m_sMessage;
 		action.m_sEndMessage.TrimInPlace();
 		action.m_aFlagNames = {};

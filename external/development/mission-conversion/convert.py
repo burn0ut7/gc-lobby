@@ -14,8 +14,10 @@ from events import world_events
 from groups import group_layer
 import gwotline
 import hnevice
+import industrial
 from launchers import launcher
 from markers import convert_layer as convert_markers
+from outcomes import compile_outcomes
 from respawns import read_respawns, ticket_event
 from scenery import StockPrefabs, placements
 from race_ruha import ruha_files, WORLD as RUHA_WORLD
@@ -47,7 +49,13 @@ def main():
     parser.add_argument('--include-wetfeet-scene', action='store_true', help='stage WetFeet scenery, equipment and cleanup')
     parser.add_argument('--include-wetfeet-candidate', action='store_true', help='assemble the WetFeet playtest world externally')
     parser.add_argument('--workshop-addons', type=Path, help='installed Workshop addon directory for provider resource checks')
+    parser.add_argument('--include-outcomes', action='store_true', help='audit and stage supported legacy outcome rule fragments')
+    parser.add_argument('--include-industrial-candidate', action='store_true', help='assemble the Industrial Metal playtest world')
     args = parser.parse_args()
+    if args.include_industrial_candidate:
+        if not args.stage or not args.units or not args.workshop_addons or not args.base_database:
+            parser.error('Industrial Metal requires --stage, --units, --workshop-addons and --base-database')
+        args.include_outcomes = True
     if args.include_wetfeet_candidate:
         args.include_wetfeet_scene = args.include_wetfeet_rosters = True
     if args.include_breach_candidate:
@@ -102,7 +110,8 @@ def main():
                 if args.include_gwotline_mode and layer == gwotline.AO:
                     ao_body, instances = gwotline.stage_boundaries(source)
                 else:
-                    ao_body, instances = convert_boundaries(text)
+                    reviewed_tint = args.include_industrial_candidate and layer == industrial.DEFAULT
+                    ao_body, instances = convert_boundaries(text, allow_public_faction_color=reviewed_tint)
                 if instances:
                     audit = {'instances': instances}
                     row.setdefault('boundaryLayers', {})[layer] = audit
@@ -119,6 +128,8 @@ def main():
                         ) or (
                             args.include_wetfeet_candidate and world == wetfeet.WORLD
                             and layer == wetfeet.PUBLIC_MARKERS
+                        ) or (
+                            args.include_industrial_candidate and layer == industrial.DEFAULT
                         )
                         if layer in dev.files and not reviewed_candidate:
                             audit['gap'] = 'Dev already contains the original layer path; review before adding boundary siblings'
@@ -126,7 +137,9 @@ def main():
                             existing = target_paths.get(dest.casefold())
                             if existing and (existing != dest or dev.read(dest).strip() != ao_body.strip()):
                                 previous, _ = convert_boundaries(text, split_fill=False)
-                                if existing != dest or dev.read(dest).strip() != previous.strip():
+                                old_partial, _ = convert_boundaries(text)
+                                reviewed_upgrade = reviewed_tint and dev.read(dest).strip() == old_partial.strip()
+                                if existing != dest or (dev.read(dest).strip() != previous.strip() and not reviewed_upgrade):
                                     audit['gap'] = 'Dev has differing boundary output'
                             if 'gap' not in audit:
                                 out[dest] = ao_body
@@ -200,6 +213,21 @@ def main():
         messages, review = ([], {}) if world in (RACE_WORLD, RUHA_WORLD) else world_events(source, world)
         if review:
             row['frameworkEvents'] = review
+        if args.include_outcomes and row['serializedTypes'].get('TILW_EndGameInstruction'):
+            try:
+                rules, outcome_audit, gap = compile_outcomes(source, world)
+                outcome = {'events': outcome_audit}
+                if gap:
+                    outcome['gap'] = gap
+                if rules:
+                    fragment = str(PurePosixPath(world).with_suffix('')) + '_GC_OutcomeRules.inc'
+                    if fragment.casefold() in source_paths or fragment.casefold() in target_paths:
+                        raise ValueError('outcome rules fragment collides with an addon file')
+                    out[fragment] = '\n'.join(rules) + '\n'
+                    outcome['stagedFragment'] = fragment
+                row['outcomeCandidate'] = outcome
+            except ValueError as exc:
+                row['outcomeCandidate'] = {'gap': str(exc)}
         mode_events = event
         if messages:
             mode_events = ['   m_aMissionEvents + {', *event[1:-1], *messages, '   }']
@@ -398,6 +426,29 @@ def main():
                 'Restore the legacy BRDM preview and locked-vehicle removal for BRDMCrew',
                 'Compare match-start tree cleanup with the legacy world-initialization deletion',
                 'Compare zoom-dependent legacy outline to the native three-pixel overlay',
+            ],
+        }
+    if args.include_industrial_candidate:
+        row = report['worlds'][industrial.WORLD]
+        outcome = row['outcomeCandidate']
+        if len(outcome.get('events', {})) != 3 or any('gap' in event for event in outcome['events'].values()):
+            parser.error('Industrial Metal needs all three reviewed source outcome events')
+        rules = out[outcome['stagedFragment']]
+        candidate, audit = industrial.assemble(source, dev, stock, args.workshop_addons,
+                                                row['briefingModePreset'], rules, out)
+        for path, body in candidate.items():
+            if path in dev.files and dev.read(path).strip() != body.strip():
+                if path != industrial.BOUNDARIES or out.get(path) != body:
+                    parser.error(f'Dev already has differing {path}')
+            out[path] = body
+        row['playtestCandidate'] = {
+            'presentOnDev': all(path in dev.files and dev.read(path).strip() == body.strip()
+                                for path, body in candidate.items()),
+            'boundaries': audit, 'icons': 2,
+            'remainingBehavior': [
+                'Compare live casualty thresholds, timeout notices and delivery to remote clients',
+                'Compare both boundary audiences, the staging-zone restriction and release',
+                'Check vehicle handling, loadout contents and original callsign labels',
             ],
         }
     if args.stage:

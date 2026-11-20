@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "db7ec956f5509d86144913558387d04a7664be34",
+  "target": "f793b765f34f9cc4c06177ada21e9d34098f6fd1",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1929,7 +1929,7 @@
         "worlds/arc/IndustrialMetal/IndustrialMetal.ent"
       ],
       "declaredPath": "worlds/arc/IndustrialMetal/IndustrialMetal.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{B875983503E5A1AB}worlds/arc/IndustrialMetal/IndustrialMetal.ent"
     },
     "Missions/arc/IrishCheckpoint.conf": {
@@ -2387,6 +2387,14 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Aurelas/Spearhead Air Support/SpearheadAirSupport_Layers/default.layer:184": {
+            "name": "Outcome 669A6D45940742B9",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/Aurelas/Spearhead Air Support/SpearheadAirSupport_GC_Settings.et",
       "renumberedInSourceOrder": false,
       "briefingGaps": []
@@ -2565,6 +2573,18 @@
           ]
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Blue/Bangalorious/Bangalorious_Layers/default.layer:79": {
+            "name": "Outcome 68D6E21812D4BA8B",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Blue/Bangalorious/Bangalorious_Layers/default.layer:98": {
+            "name": "Outcome 68D6E218B9DD7F60",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "notificationModePreset": "worlds/Blue/Bangalorious/Bangalorious_GC_Settings.et",
       "briefingGaps": [
         "worlds/Blue/Bangalorious/Bangalorious_Layers/RU/RUBrief.layer:1 unsupported serialized briefing string"
@@ -2638,6 +2658,22 @@
         },
         "worlds/Blue/DirectionFound/DirectionFound_Layers/CORE.layer:156": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Blue/DirectionFound/DirectionFound_Layers/CORE.layer:124": {
+            "name": "Outcome 64CF77A0AF831DA4",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Blue/DirectionFound/DirectionFound_Layers/CORE.layer:140": {
+            "name": "Outcome 64CF77A0F77C5F04",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Blue/DirectionFound/DirectionFound_Layers/CORE.layer:156": {
+            "name": "Outcome 64CF77A71886D634",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/Blue/DirectionFound/DirectionFound_GC_Settings.et",
@@ -2962,6 +2998,30 @@
           "gap": "instruction needs conversion: TILW_SetFlagInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/default.layer:163": {
+            "name": "Outcome 649528DC63A2DB39",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/default.layer:179": {
+            "name": "Outcome 649528DEE1592CEA",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/default.layer:205": {
+            "name": "Outcome 649528DF8480A3F7",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/default.layer:232": {
+            "name": "Outcome 649528D066B7FA67",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/default.layer:248": {
+            "name": "Outcome 6496BAF5B8044742",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/Blue/SimonsAbatis/SimonsAbatis_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -3045,6 +3105,10 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {},
+        "gap": "instance ends the mission and needs a separate runtime port"
+      },
       "briefingModePreset": "worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -3124,6 +3188,22 @@
         },
         "worlds/Burger4606/Hush/Hush_Layers/default.layer:158": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Burger4606/Hush/Hush_Layers/default.layer:115": {
+            "name": "EXFIL",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/Burger4606/Hush/Hush_Layers/default.layer:141": {
+            "name": "Outcome 6446F3549539FD18",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Burger4606/Hush/Hush_Layers/default.layer:158": {
+            "name": "Outcome 6446F35548CE8CED",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/Burger4606/Hush/Hush_GC_Settings.et",
@@ -3788,6 +3868,32 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Corax/Breach and clear/Breach_and_Clear_Layers/Fixtures.layer:379": {
+            "trigger": "peak player loss",
+            "flag": "ruloss",
+            "faction": "RHS_AFRF",
+            "ratio": "1",
+            "name": "Outcome 6508D983AB223731",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "10"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "10"
+            ]
+          },
+          "worlds/Corax/Breach and clear/Breach_and_Clear_Layers/Fixtures.layer:390": {
+            "name": "Outcome 6508D983AB010064",
+            "gap": "unresolved or unsupported outcome flag \"usloss\""
+          }
+        },
+        "stagedFragment": "worlds/Corax/Breach and clear/Breach_and_Clear_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/Corax/Breach and clear/Breach_and_Clear_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": [],
@@ -4092,6 +4198,32 @@
           "gap": "depends on a mission flag"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Corax/IntercectingForces/IntersectingForces_Layers/default.layer:197": {
+            "trigger": "peak player loss",
+            "flag": "bluforkill",
+            "faction": "US",
+            "ratio": "0.8",
+            "name": "Outcome 6536AA4788DFF721",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "125"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "125"
+            ]
+          },
+          "worlds/Corax/IntercectingForces/IntersectingForces_Layers/default.layer:209": {
+            "name": "Outcome 6536AA47F9162732",
+            "gap": "unresolved or unsupported outcome flag \"vdvkill\""
+          }
+        },
+        "stagedFragment": "worlds/Corax/IntercectingForces/IntersectingForces_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/Corax/IntercectingForces/IntersectingForces_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -4334,6 +4466,32 @@
         "worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1_Layers/default.layer:146": {
           "gap": "depends on a mission flag"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1_Layers/default.layer:122": {
+            "name": "Handover",
+            "gap": "unresolved or unsupported outcome flag \"Handover\""
+          },
+          "worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1_Layers/default.layer:134": {
+            "trigger": "peak player loss",
+            "flag": "CasualtyLimit",
+            "faction": "RHS_USAF",
+            "ratio": "0.9",
+            "name": "Casaulties",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "5"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1_GC_OutcomeRules.inc"
       },
       "briefingGaps": [
         "worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1_Layers/Briefing.layer:1 unsupported faction key list"
@@ -4579,6 +4737,36 @@
         "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/default.layer:364": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/default.layer:321": {
+            "trigger": "Match start",
+            "name": "Timer",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "3005"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "2400",
+              "2700",
+              "3000",
+              "3005"
+            ]
+          },
+          "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/default.layer:348": {
+            "name": "Outcome 650CCC36A43886A2",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/default.layer:364": {
+            "name": "Outcome 650CCC3512D0408A",
+            "gap": "unsupported outcome event field m_name"
+          }
+        },
+        "stagedFragment": "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -4989,6 +5177,18 @@
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Cunnah/Local_Problems/Local_Problems_Layers/default.layer:202": {
+            "name": "Extraction",
+            "gap": "unresolved or unsupported outcome flag \"Garrison_Extracted\""
+          },
+          "worlds/Cunnah/Local_Problems/Local_Problems_Layers/default.layer:221": {
+            "name": "Outcome 6522D4E596FC568E",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/Cunnah/Local_Problems/Local_Problems_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -5070,6 +5270,26 @@
         },
         "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/default.layer:150": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/default.layer:99": {
+            "name": "Outcome 64E8DED82492270D",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/default.layer:116": {
+            "name": "Outcome 64E8DED74569C3A1",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/default.layer:133": {
+            "name": "Outcome 64E8DED7A580E4B3",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/default.layer:150": {
+            "name": "Outcome 64E8DED268F85132",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/Cunnah/Rocky_Start/Rocky_Start_GC_Settings.et",
@@ -5454,6 +5674,49 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Elite/ConcreteJungle/ConcreteJungle_Layers/default.layer:43": {
+            "trigger": "peak player loss",
+            "flag": "Opfor_Players_Killed",
+            "faction": "RHS_AFRF",
+            "ratio": "0.9",
+            "name": "Blufor_Victory",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/Elite/ConcreteJungle/ConcreteJungle_Layers/default.layer:59": {
+            "name": "Opfor_Victory",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/Elite/ConcreteJungle/ConcreteJungle_Layers/default.layer:82": {
+            "trigger": "Match start",
+            "name": "Time_Limit",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "5410"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "4800",
+              "5400",
+              "5410"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/Elite/ConcreteJungle/ConcreteJungle_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/Elite/ConcreteJungle/ConcreteJungle_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -5521,6 +5784,60 @@
         "worlds/Elite/DesertHeat/DesertHeat_Layers/default.layer:86": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Elite/DesertHeat/DesertHeat_Layers/default.layer:62": {
+            "trigger": "peak player loss",
+            "flag": "Blufor_Killed",
+            "faction": "US",
+            "ratio": "1",
+            "name": "Opfor_Victory",
+            "announcements": [
+              {
+                "faction": "GC_INSURGENT",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "15"
+            ]
+          },
+          "worlds/Elite/DesertHeat/DesertHeat_Layers/default.layer:74": {
+            "trigger": "peak player loss",
+            "flag": "Opfor_Killed",
+            "faction": "GC_INSURGENT",
+            "ratio": "0.9",
+            "name": "Blufor_Victory",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "15"
+            ]
+          },
+          "worlds/Elite/DesertHeat/DesertHeat_Layers/default.layer:86": {
+            "trigger": "Match start",
+            "name": "Time_Limit",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "5400"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5400",
+              "4800"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/Elite/DesertHeat/DesertHeat_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/Elite/DesertHeat/DesertHeat_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5606,6 +5923,63 @@
           "gap": "instruction needs conversion: TILW_DeleteEntitiesInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/default.layer:99": {
+            "trigger": "Match start",
+            "name": "Time_Limit",
+            "announcements": [
+              {
+                "faction": "GC_CAF",
+                "result": "EDITOR_FACTION_DRAW",
+                "delaySeconds": "5410"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5410",
+              "4800",
+              "5400"
+            ]
+          },
+          "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/default.layer:122": {
+            "trigger": "peak player loss",
+            "flag": "Opfor_Killed",
+            "faction": "USSR",
+            "ratio": "0.9",
+            "name": "Blufor_Victory",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "15",
+              "5"
+            ]
+          },
+          "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/default.layer:138": {
+            "trigger": "peak player loss",
+            "flag": "Blufor_Killed",
+            "faction": "US",
+            "ratio": "0.9",
+            "name": "Opfor_Victory",
+            "announcements": [
+              {
+                "faction": "USSR",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "15",
+              "5"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/Elite/PonderingThyOrb/PonderingThyOrb_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/Elite/PonderingThyOrb/PonderingThyOrb_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -5667,6 +6041,9 @@
         "worlds/FSM/Worlds/Co55EntreDeux_attack/CO_55EntreDeux_attack_Layers/hIDE.layer:250": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "gap": "unsupported or duplicate peak population flag"
       },
       "briefingModePreset": "worlds/FSM/Worlds/Co55EntreDeux_attack/CO_55EntreDeux_attack_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -5741,6 +6118,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "gap": "unsupported or duplicate peak population flag"
+      },
       "briefingModePreset": "worlds/FSM/Worlds/TVT62ForestTrouble/TVT62ForestTrouble_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -5811,6 +6191,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "gap": "unsupported or duplicate peak population flag"
+      },
       "briefingModePreset": "worlds/FSM/Worlds/TVT66BlockBusters/TVT66BlockBusters_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -5878,6 +6261,9 @@
         "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache_Layers/Framework.layer:401": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "gap": "unsupported or duplicate peak population flag"
       },
       "briefingModePreset": "worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -5952,6 +6338,9 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "gap": "unsupported or duplicate peak population flag"
+      },
       "briefingModePreset": "worlds/FSM/Worlds/TVTBarrackHoldout/TVT67BarrackHoldout_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -6023,6 +6412,9 @@
         "worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache_Layers/default.layer:210": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "gap": "unsupported or duplicate peak population flag"
       },
       "briefingModePreset": "worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -6192,6 +6584,14 @@
         },
         "worlds/FloridaMan/worlds/CounterTheCounter/CounterTheCounter_Layers/default.layer:272": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/FloridaMan/worlds/CounterTheCounter/CounterTheCounter_Layers/default.layer:272": {
+            "name": "Outcome 65C703C443C40959",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingGaps": [
@@ -7455,6 +7855,18 @@
           "gap": "depends on a mission flag"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HelloCam3/worlds/COOP_StashedCache/COOP_StashedCache_v2_Layers/default.layer:500": {
+            "name": "Outcome 68EE98A566708208",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/HelloCam3/worlds/COOP_StashedCache/COOP_StashedCache_v2_Layers/default.layer:517": {
+            "name": "Outcome 68EC9247F3D3DB53",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/HelloCam3/worlds/COOP_StashedCache/COOP_StashedCache_v2_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -7537,6 +7949,14 @@
           "gap": "message formatting or length needs review"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_Layers/default.layer:873": {
+            "name": "Outcome 6506E408139E95AC",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_GC_Settings.et",
       "renumberedInSourceOrder": false,
       "briefingGaps": []
@@ -7617,6 +8037,14 @@
         },
         "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/default.layer:842": {
           "gap": "message formatting or length needs review"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/default.layer:810": {
+            "name": "Outcome 6506E408139E95AC",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_GC_Settings.et",
@@ -7869,6 +8297,14 @@
         },
         "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol_Layers/default.layer:315": {
           "gap": "depends on a mission flag"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol_Layers/default.layer:283": {
+            "name": "Outcome 6506E408139E95AC",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/HitTheMan/Anti Insurgency Patrol/AntiInsurgencyPatrol_GC_Settings.et",
@@ -8207,6 +8643,14 @@
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/default.layer:467": {
+            "name": "Outcome 6506E408139E95AC",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/HitTheMan/Battle For Rasman/BattleForRasman_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -8302,6 +8746,14 @@
         },
         "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/default.layer:503": {
           "gap": "message formatting or length needs review"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_Layers/default.layer:471": {
+            "name": "Outcome 6506E408139E95AC",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/HitTheMan/Battle For Zarichne US ATK/BattleForZarichneUSATK_GC_Settings.et",
@@ -8718,6 +9170,14 @@
         },
         "worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay_Layers/default.layer:396": {
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay_Layers/default.layer:325": {
+            "name": "Outcome 6506E408139E95AC",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay_GC_Settings.et",
@@ -9363,6 +9823,14 @@
           "gap": "message formatting or length needs review"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HitTheMan/Encircled NVA/EncircledNVA_Layers/default.layer:351": {
+            "name": "Outcome 6506E408139E95AC",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/HitTheMan/Encircled NVA/EncircledNVA_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -9447,6 +9915,14 @@
         },
         "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon_Layers/default.layer:559": {
           "gap": "message formatting or length needs review"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon_Layers/default.layer:527": {
+            "name": "Outcome 6506E408139E95AC",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/HitTheMan/Fate of 2nd Platoon/FateOf2ndPlatoon_GC_Settings.et",
@@ -9721,6 +10197,14 @@
           "gap": "message formatting or length needs review"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HitTheMan/Green Hill Assault/GreenHillAssault_Layers/default.layer:569": {
+            "name": "Outcome 6506E408139E95AC",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/HitTheMan/Green Hill Assault/GreenHillAssault_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -9978,6 +10462,14 @@
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HitTheMan/Leaf and The Saw/Leaf and Saw_Layers/Core.layer:393": {
+            "name": "Outcome 6506E408139E95AC",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/HitTheMan/Leaf and The Saw/Leaf and Saw_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -10053,6 +10545,14 @@
         },
         "worlds/HitTheMan/Leaf and Two Bridges/Leaf and Two Bridges_Layers/Core.layer:474": {
           "gap": "message formatting or length needs review"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HitTheMan/Leaf and Two Bridges/Leaf and Two Bridges_Layers/Core.layer:442": {
+            "name": "Outcome 6506E408139E95AC",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/HitTheMan/Leaf and Two Bridges/Leaf and Two Bridges_GC_Settings.et",
@@ -10521,6 +11021,14 @@
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HitTheMan/River Crossing Leaf/River Crossing Leaf_Layers/Core.layer:372": {
+            "name": "Outcome 6506E408139E95AC",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/HitTheMan/River Crossing Leaf/River Crossing Leaf_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -10692,6 +11200,14 @@
         },
         "worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/default.layer:403": {
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/default.layer:342": {
+            "name": "Outcome 6506E408139E95AC",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingGaps": [
@@ -12048,6 +12564,14 @@
           "gap": "message formatting or length needs review"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack_Layers/default.layer:386": {
+            "name": "Outcome 6506E408139E95AC",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/HitTheMan/Woody's Horse Track/WoodysHorseTrack_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -12157,6 +12681,9 @@
         "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/framework.layer:615": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "gap": "unsupported or duplicate peak population flag"
       },
       "briefingModePreset": "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -12321,6 +12848,10 @@
         "worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase_Layers/Managers.layer:1085": {
           "gap": "multiple framework layers or event control instructions"
         }
+      },
+      "outcomeCandidate": {
+        "events": {},
+        "gap": "has legacy event control instructions"
       },
       "briefingGaps": [
         "worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase_Layers/Briefing.layer:1 custom description layout"
@@ -12714,6 +13245,9 @@
           "gap": "depends on a mission flag"
         }
       },
+      "outcomeCandidate": {
+        "gap": "unsupported or duplicate peak population flag"
+      },
       "briefingGaps": [
         "worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/Bluefor/Briefings.layer:1 custom description layout"
       ]
@@ -12846,6 +13380,10 @@
         "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/default.layer:388": {
           "gap": "multiple framework layers or event control instructions"
         }
+      },
+      "outcomeCandidate": {
+        "events": {},
+        "gap": "has legacy event control instructions"
       },
       "briefingGaps": [
         "worlds/HotMic/StopTheFOODMarketAtKunar/StopTheFOODMarketAtKunar_Layers/GreenFor/Briefings.layer:1 custom description layout"
@@ -12990,6 +13528,26 @@
           "gap": "empty notification"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/default.layer:430": {
+            "name": "Outcome 65C749517D83AB0A",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/default.layer:446": {
+            "name": "Outcome 65C7495171808F32",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/default.layer:494": {
+            "name": "Outcome 660F791B9CAD0D16",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/default.layer:511": {
+            "name": "Outcome 660F791BCE41269A",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingGaps": [
         "worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/Briefing.layer:1 custom description layout"
       ]
@@ -13078,6 +13636,10 @@
           "gap": "multiple framework layers or event control instructions"
         }
       },
+      "outcomeCandidate": {
+        "events": {},
+        "gap": "has legacy event control instructions"
+      },
       "briefingGaps": [
         "worlds/HotMic/VehicleInterdictionCOOPKunar/VehicleInterdictionCOOPKunar_Layers/Briefings.layer:1 custom description layout"
       ]
@@ -13151,6 +13713,18 @@
         },
         "worlds/Huska/MortonBay/MortonBay_Layers/default.layer:130": {
           "gap": "message formatting or length needs review"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Huska/MortonBay/MortonBay_Layers/default.layer:110": {
+            "name": "Outcome 6546EA40DD995B51",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Huska/MortonBay/MortonBay_Layers/default.layer:130": {
+            "name": "Outcome 655700EFA96E7818",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/Huska/MortonBay/MortonBay_GC_Settings.et",
@@ -13507,6 +14081,18 @@
           "gap": "message formatting or length needs review"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs_Layers/default.layer:243": {
+            "name": "Outcome 659268EEEABAA133",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs_Layers/default.layer:255": {
+            "name": "Outcome 659268EEC926BEFE",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/James/BootnecksAndBTRs/BootnecksAndBTRs_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -13667,6 +14253,18 @@
         },
         "worlds/James/IDidntStealThisConcept/IDidntStealThisConcept_Layers/Misc.layer:191": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/James/IDidntStealThisConcept/IDidntStealThisConcept_Layers/Misc.layer:173": {
+            "name": "Outcome 648E5A70281B043F",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/James/IDidntStealThisConcept/IDidntStealThisConcept_Layers/Misc.layer:191": {
+            "name": "Outcome 648E5A73EEAB8417",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/James/IDidntStealThisConcept/IDidntStealThisConcept_GC_Settings.et",
@@ -13928,6 +14526,18 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/James/LacourtManor/LacourtManor_Layers/misc.layer:230": {
+            "name": "Outcome 64D05DC9BA12C215",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/James/LacourtManor/LacourtManor_Layers/misc.layer:247": {
+            "name": "Outcome 64D05DC9BBE17FA4",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/James/LacourtManor/LacourtManor_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -14021,6 +14631,22 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/James/LehtoTussle/LehtoTussle_Layers/default.layer:214": {
+            "name": "Outcome 65C83543435D2AEB",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/James/LehtoTussle/LehtoTussle_Layers/default.layer:225": {
+            "name": "Outcome 65C8354344981AF0",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/James/LehtoTussle/LehtoTussle_Layers/default.layer:248": {
+            "name": "Outcome 65D9513A8E1C0871",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/James/LehtoTussle/LehtoTussle_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -14109,6 +14735,18 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/James/OrbSturm/OrbSturm_Layers/default.layer:275": {
+            "name": "Outcome 6596803AA7FA6390",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/James/OrbSturm/OrbSturm_Layers/default.layer:287": {
+            "name": "Outcome 6596803A1E924826",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/James/OrbSturm/OrbSturm_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -14189,6 +14827,22 @@
         },
         "worlds/James/RichahlamRumble/RichahlamRumble_Layers/default.layer:281": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/James/RichahlamRumble/RichahlamRumble_Layers/default.layer:259": {
+            "name": "Outcome 659CD7C96B553524",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/James/RichahlamRumble/RichahlamRumble_Layers/default.layer:270": {
+            "name": "Outcome 659CD7C96CD30D1E",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/James/RichahlamRumble/RichahlamRumble_Layers/default.layer:281": {
+            "name": "Outcome 659CD7C96DE945A2",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/James/RichahlamRumble/RichahlamRumble_GC_Settings.et",
@@ -14532,6 +15186,36 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Jub/CobrasBite/Cobras_bite_Layers/default.layer:787": {
+            "name": "US_VICTORY",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/Jub/CobrasBite/Cobras_bite_Layers/default.layer:810": {
+            "name": "EXTRACT_LOST",
+            "gap": "unresolved or unsupported outcome flag \"EXTRACT_LOST\""
+          },
+          "worlds/Jub/CobrasBite/Cobras_bite_Layers/default.layer:827": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.8",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "5"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/Jub/CobrasBite/Cobras_bite_GC_OutcomeRules.inc"
+      },
       "briefingGaps": [
         "worlds/Jub/CobrasBite/Cobras_bite_Layers/briefing.layer:1 unexpected grouped instance"
       ]
@@ -14625,6 +15309,32 @@
         "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/default.layer:994": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/default.layer:951": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.8",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "5"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5"
+            ]
+          },
+          "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/default.layer:994": {
+            "name": "exfil",
+            "gap": "unsupported faction outcome or delay"
+          }
+        },
+        "stagedFragment": "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_GC_OutcomeRules.inc"
       },
       "briefingGaps": [
         "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/briefing.layer:1 unexpected grouped instance"
@@ -14934,6 +15644,66 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Jub/OpSteel/OpSteel_Layers/default.layer:159": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.9",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/Jub/OpSteel/OpSteel_Layers/default.layer:175": {
+            "name": "RU_CAP",
+            "gap": "unresolved or unsupported outcome flag \"RU_CAP\""
+          },
+          "worlds/Jub/OpSteel/OpSteel_Layers/default.layer:191": {
+            "trigger": "peak player loss",
+            "flag": "RU_KIA",
+            "faction": "RHS_AFRF",
+            "ratio": "0.9",
+            "name": "RU_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/Jub/OpSteel/OpSteel_Layers/default.layer:207": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "3610"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "3600",
+              "3610"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/Jub/OpSteel/OpSteel_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/Jub/OpSteel/OpSteel_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -15033,6 +15803,10 @@
         "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_Layers/default.layer:402": {
           "gap": "multiple framework layers or event control instructions"
         }
+      },
+      "outcomeCandidate": {
+        "events": {},
+        "gap": "has legacy event control instructions"
       },
       "briefingModePreset": "worlds/Jub/OperationArrowheadIronCipher/OperationArrowheadIronCipher_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -15219,6 +15993,28 @@
         "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles_Layers/default.layer:392": {
           "gap": "message formatting or length needs review"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles_Layers/default.layer:376": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.8",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "5"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles_GC_OutcomeRules.inc"
       },
       "briefingGaps": [
         "worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles_Layers/briefing.layer:1 unexpected grouped instance"
@@ -16516,6 +17312,18 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid_layers/fw.layer:172": {
+            "name": "Outcome 6458B09B56B45933",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid_layers/fw.layer:201": {
+            "name": "Outcome 6458B09ABC05D187",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid_GC_Settings.et",
       "renumberedInSourceOrder": false,
       "briefingGaps": []
@@ -16687,6 +17495,59 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_Layers/GameLogic.layer:68": {
+            "name": "BLUFOR_WIN_CAP",
+            "gap": "unresolved or unsupported outcome flag \"FLAG_BLUFOR_CAPTURED\""
+          },
+          "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_Layers/GameLogic.layer:84": {
+            "name": "OPFOR_WIN_CAP",
+            "gap": "unresolved or unsupported outcome flag \"FLAG_OPFOR_CAPTURED\""
+          },
+          "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_Layers/GameLogic.layer:100": {
+            "trigger": "peak player loss",
+            "flag": "FLAG_OPFOR_DEAD",
+            "faction": "USSR",
+            "ratio": "1",
+            "name": "BLUFOR_WIN_OPFOR_DEAD",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "20"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "20"
+            ]
+          },
+          "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_Layers/GameLogic.layer:116": {
+            "trigger": "peak player loss",
+            "flag": "FLAG_BLUFOR_DEAD",
+            "faction": "UK",
+            "ratio": "1",
+            "name": "OPFOR_WIN_BLUFOR_DEAD",
+            "announcements": [
+              {
+                "faction": "USSR",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "20"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "20"
+            ]
+          },
+          "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_Layers/GameLogic.layer:132": {
+            "name": "TIME_LIMIT",
+            "gap": "unsupported faction outcome or delay"
+          }
+        },
+        "stagedFragment": "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/StatusRed/GetToTheChopTank/GetToTheChopTank_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -16767,6 +17628,26 @@
         },
         "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_Layers/Logic.layer:190": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_Layers/Logic.layer:115": {
+            "name": "Outcome 66FB09BEA515C0CC",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_Layers/Logic.layer:141": {
+            "name": "Outcome 66FB09BD221F0D86",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_Layers/Logic.layer:167": {
+            "name": "Outcome 66FB09BDE3CF819F",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_Layers/Logic.layer:190": {
+            "name": "Outcome 66FB09BCE5D96499",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_GC_Settings.et",
@@ -16901,6 +17782,18 @@
         },
         "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/default.layer:153": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/default.layer:116": {
+            "name": "Outcome 650323ECCBF9581A",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/TheHoserDozer/StayingSober/StayingSober_Layers/default.layer:153": {
+            "name": "END",
+            "gap": "unsupported outcome event field m_condition"
+          }
         }
       },
       "briefingGaps": [
@@ -17140,6 +18033,59 @@
           "gap": "instruction needs conversion: TILW_EditRespawnTicketsInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_Layers/default.layer:63": {
+            "name": "Outcome 632EA9A6A58D496B",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_Layers/default.layer:92": {
+            "name": "RedCapzoneCaptured",
+            "gap": "unresolved or unsupported outcome flag \"RedCaptured\""
+          },
+          "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_Layers/default.layer:112": {
+            "name": "BlueCapzoneCaptured",
+            "gap": "unresolved or unsupported outcome flag \"BlueCaptured\""
+          },
+          "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_Layers/default.layer:132": {
+            "trigger": "peak player loss",
+            "flag": "RedDead",
+            "faction": "USSR",
+            "ratio": "0.9",
+            "name": "RedCasualties",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "1",
+              "15"
+            ]
+          },
+          "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_Layers/default.layer:154": {
+            "trigger": "peak player loss",
+            "flag": "BlueDead",
+            "faction": "US",
+            "ratio": "0.9",
+            "name": "BlueCasualties",
+            "announcements": [
+              {
+                "faction": "USSR",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "1",
+              "15"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/TheLocalPub/BattleOfTheBulges/BattleOfTheBulges_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -17270,6 +18216,45 @@
         "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_Layers/default.layer:620": {
           "gap": "message formatting or length needs review"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_Layers/default.layer:283": {
+            "trigger": "peak player loss",
+            "flag": "UKDead",
+            "faction": "UK",
+            "ratio": "0.85",
+            "name": "BLUFORDEAD",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "17"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "17"
+            ]
+          },
+          "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_Layers/default.layer:494": {
+            "name": "Outcome 65D8C926D52108FE",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_Layers/default.layer:536": {
+            "name": "Outcome 65D8C9274E5738FE",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_Layers/default.layer:578": {
+            "name": "Outcome 65D8C927A47CC6F9",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_Layers/default.layer:620": {
+            "name": "Outcome 65D8C927CE960E11",
+            "gap": "unsupported outcome event field m_name"
+          }
+        },
+        "stagedFragment": "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/TheLocalPub/BebbleIslandRaid/BebbleIslandRaid_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -18038,6 +19023,31 @@
         "worlds/TheLocalPub/LamentinLosers/LamentinLosers_Layers/default.layer:513": {
           "gap": "instruction needs conversion: TILW_SpawnGroupInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/TheLocalPub/LamentinLosers/LamentinLosers_Layers/default.layer:50": {
+            "name": "Outcome 62E2FD7F502B8A74",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/TheLocalPub/LamentinLosers/LamentinLosers_Layers/default.layer:71": {
+            "trigger": "Match start",
+            "name": "Timelimit",
+            "announcements": [
+              {
+                "faction": "USSR",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "1800"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "1630",
+              "1740",
+              "1800"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/TheLocalPub/LamentinLosers/LamentinLosers_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/TheLocalPub/LamentinLosers/LamentinLosers_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -19109,6 +20119,48 @@
           "gap": "message formatting or length needs review"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/TheLocalPub/TopMaloHouse/TopMalohouse_Layers/default.layer:74": {
+            "trigger": "peak player loss",
+            "flag": "Bludead",
+            "faction": "UK",
+            "ratio": "0.95",
+            "name": "OPFORCasWin",
+            "announcements": [
+              {
+                "faction": "GC_ARG",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/TheLocalPub/TopMaloHouse/TopMalohouse_Layers/default.layer:93": {
+            "trigger": "Match start",
+            "name": "OPFORTimeWin",
+            "announcements": [
+              {
+                "faction": "GC_ARG",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "2040"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "2025",
+              "2040"
+            ]
+          },
+          "worlds/TheLocalPub/TopMaloHouse/TopMalohouse_Layers/default.layer:113": {
+            "name": "BLUFORWIN",
+            "gap": "unsupported outcome event field m_condition"
+          }
+        },
+        "stagedFragment": "worlds/TheLocalPub/TopMaloHouse/TopMalohouse_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/TheLocalPub/TopMaloHouse/TopMalohouse_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -19602,6 +20654,22 @@
         },
         "worlds/Til/AndresBeacon/AndresBeacon_Layers/default.layer:180": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/AndresBeacon/AndresBeacon_Layers/default.layer:141": {
+            "name": "Outcome 62BB3402EB5A6A2E",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/AndresBeacon/AndresBeacon_Layers/default.layer:164": {
+            "name": "Outcome 62BB3402B95475FE",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/AndresBeacon/AndresBeacon_Layers/default.layer:180": {
+            "name": "Outcome 64AE2A4407FCA632",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/Til/AndresBeacon/AndresBeacon_GC_Settings.et",
@@ -20385,6 +21453,18 @@
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/GoreyRaid/GoreyRaid_Layers/fw.layer:51": {
+            "name": "Outcome 62D9654110655EC9",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/GoreyRaid/GoreyRaid_Layers/fw.layer:82": {
+            "name": "Outcome 62D9654111FA047C",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/Til/GoreyRaid/GoreyRaid_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -20462,6 +21542,22 @@
           "gap": "event field needs conversion: m_condition"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/GreenScreen/GreenScreen_Layers/default.layer:291": {
+            "name": "Outcome 659370B0AF440442",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/GreenScreen/GreenScreen_Layers/default.layer:322": {
+            "name": "Outcome 659370A2CD478268",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/GreenScreen/GreenScreen_Layers/default.layer:339": {
+            "name": "Outcome 659370A2C37135BB",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/Til/GreenScreen/GreenScreen_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -20528,6 +21624,22 @@
         },
         "worlds/Til/GullBayGuns/GullBayGuns_Layers/default.layer:119": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/GullBayGuns/GullBayGuns_Layers/default.layer:66": {
+            "name": "Outcome 61FA84772C3CEE49",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/GullBayGuns/GullBayGuns_Layers/default.layer:83": {
+            "name": "Outcome 61FA847735EB0369",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/GullBayGuns/GullBayGuns_Layers/default.layer:119": {
+            "name": "Outcome 61FA847735D4AFFF",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/Til/GullBayGuns/GullBayGuns_GC_Settings.et",
@@ -20605,6 +21717,22 @@
         },
         "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_Layers/default.layer:74": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_Layers/default.layer:41": {
+            "name": "Outcome 61F5014B16E22F55",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_Layers/default.layer:58": {
+            "name": "Outcome 61F5014B4E4D34C9",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_Layers/default.layer:74": {
+            "name": "Outcome 61F9609663B94D97",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/Til/HeatherBayHarbor/HeatherBayHarbor_GC_Settings.et",
@@ -20691,6 +21819,34 @@
         },
         "worlds/Til/HueyHill/HueyHill_Layers/default.layer:252": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/HueyHill/HueyHill_Layers/default.layer:132": {
+            "name": "Outcome 626139971209DF48",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/HueyHill/HueyHill_Layers/default.layer:149": {
+            "name": "Outcome 626139974C543D3B",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/HueyHill/HueyHill_Layers/default.layer:166": {
+            "name": "Outcome 62613986CC8F29C5",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/HueyHill/HueyHill_Layers/default.layer:190": {
+            "name": "Outcome 62613986EFE7C18A",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/HueyHill/HueyHill_Layers/default.layer:215": {
+            "name": "Outcome 62613987261B2827",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/HueyHill/HueyHill_Layers/default.layer:252": {
+            "name": "Outcome 62613986F753DF36",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/Til/HueyHill/HueyHill_GC_Settings.et",
@@ -21035,6 +22191,10 @@
           "gap": "multiple framework layers or event control instructions"
         }
       },
+      "outcomeCandidate": {
+        "events": {},
+        "gap": "has legacy event control instructions"
+      },
       "briefingModePreset": "worlds/Til/KasselbergClamber/KasselbergClamber_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -21274,6 +22434,22 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/Metalwave/Metalwave_Layers/default.layer:218": {
+            "name": "Outcome 62F6E925891B6137",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/Metalwave/Metalwave_Layers/default.layer:234": {
+            "name": "Outcome 62F6E92592847477",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/Metalwave/Metalwave_Layers/default.layer:250": {
+            "name": "Outcome 62F6E9259B1B3365",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingGaps": [
         "Dev already has differing worlds/Til/Metalwave/Metalwave_GC_Settings.et"
       ]
@@ -21497,6 +22673,26 @@
           "gap": "instruction needs conversion: TILW_DeleteEntitiesInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/OwlsPrey/OwlsPrey_Layers/default.layer:126": {
+            "name": "Outcome 64D8E2547453F2DE",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/OwlsPrey/OwlsPrey_Layers/default.layer:146": {
+            "name": "Outcome 64D8E25444B5996F",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/OwlsPrey/OwlsPrey_Layers/default.layer:173": {
+            "name": "Outcome 64D8E2547C46CB14",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/OwlsPrey/OwlsPrey_Layers/default.layer:196": {
+            "name": "Outcome 64D8E2547851578B",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/Til/OwlsPrey/OwlsPrey_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -21577,6 +22773,18 @@
         },
         "worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/default.layer:151": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/default.layer:124": {
+            "name": "Outcome 62672C5BC30A9373",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/default.layer:151": {
+            "name": "Outcome 62672C5BBE7BDE7B",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/Til/PerelleBayPeril/PerelleBayPeril_GC_Settings.et",
@@ -21701,6 +22909,26 @@
         },
         "worlds/Til/RoutePierre/RoutePierre_Layers/default.layer:434": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/RoutePierre/RoutePierre_Layers/default.layer:356": {
+            "name": "Outcome 6257285907D1EDC0",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/RoutePierre/RoutePierre_Layers/default.layer:379": {
+            "name": "Outcome 625728599ADB58F2",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/RoutePierre/RoutePierre_Layers/default.layer:406": {
+            "name": "Outcome 62572859E625F2A7",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/RoutePierre/RoutePierre_Layers/default.layer:434": {
+            "name": "Outcome 62572859359136B7",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/Til/RoutePierre/RoutePierre_GC_Settings.et",
@@ -21964,6 +23192,26 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/SteelPastures/SteelPastures_Layers/default.layer:206": {
+            "name": "Outcome 62D567D7909D6067",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/SteelPastures/SteelPastures_Layers/default.layer:222": {
+            "name": "Outcome 62D567D79E3B779C",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/SteelPastures/SteelPastures_Layers/default.layer:238": {
+            "name": "Outcome 62D567D79E16D86C",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/SteelPastures/SteelPastures_Layers/default.layer:261": {
+            "name": "Outcome 62D567D7EEBC8BAD",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/Til/SteelPastures/SteelPastures_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -22024,6 +23272,22 @@
         },
         "worlds/Til/TerminalTakeover/TerminalTakeover_Layers/default.layer:180": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/TerminalTakeover/TerminalTakeover_Layers/default.layer:148": {
+            "name": "Outcome 61FB3D0790300137",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/TerminalTakeover/TerminalTakeover_Layers/default.layer:164": {
+            "name": "Outcome 61FB3D07950A3608",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/TerminalTakeover/TerminalTakeover_Layers/default.layer:180": {
+            "name": "Outcome 61FB3D0575FC6D43",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/Til/TerminalTakeover/TerminalTakeover_GC_Settings.et",
@@ -22121,6 +23385,22 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/default.layer:126": {
+            "name": "Outcome 6306F6796CA30AC4",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/default.layer:142": {
+            "name": "Outcome 6306F679784CA8B3",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/TheAdjacentWave/TheAdjacentWave_Layers/default.layer:158": {
+            "name": "Outcome 6306F679435404BB",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/Til/TheAdjacentWave/TheAdjacentWave_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -22215,6 +23495,26 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/default.layer:251": {
+            "name": "Outcome 650ACC9EADBC8B77",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/default.layer:285": {
+            "name": "Outcome 651736E602E14F6C",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/default.layer:318": {
+            "name": "Outcome 650ACC9E8640338D",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_Layers/default.layer:334": {
+            "name": "Outcome 650ACC9EF322D1B0",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/Til/TopolnikiTriangle/TopolnikiTriangle_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -22292,6 +23592,18 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/TrenchAssault/TrenchAssault_Layers/default.layer:77": {
+            "name": "Outcome 64A31974D2A4A899",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/TrenchAssault/TrenchAssault_Layers/default.layer:93": {
+            "name": "Outcome 64A3197561AC1C3C",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/Til/TrenchAssault/TrenchAssault_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -22367,6 +23679,37 @@
         "worlds/Til/TyroneThrust/TyroneThrust_Layers/default.layer:179": {
           "gap": "instruction needs conversion: TILW_SpawnVehicleInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Til/TyroneThrust/TyroneThrust_Layers/default.layer:122": {
+            "name": "Outcome 61FAD93FEC314647",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Til/TyroneThrust/TyroneThrust_Layers/default.layer:145": {
+            "name": "Victory",
+            "gap": "unresolved or unsupported outcome flag \"TYRONE_TAKEN\""
+          },
+          "worlds/Til/TyroneThrust/TyroneThrust_Layers/default.layer:162": {
+            "trigger": "peak player loss",
+            "flag": "PLAYERS_DEAD",
+            "faction": "RHS_AFRF",
+            "ratio": "0.9",
+            "name": "Defeat",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "20"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "20"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/Til/TyroneThrust/TyroneThrust_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/Til/TyroneThrust/TyroneThrust_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -22447,6 +23790,9 @@
         "worlds/Wade/NightSeizure/NightSeizure_Layers/default.layer:143": {
           "gap": "depends on a mission flag"
         }
+      },
+      "outcomeCandidate": {
+        "gap": "unsupported or duplicate peak population flag"
       },
       "briefingModePreset": "worlds/Wade/NightSeizure/NightSeizure_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -22634,6 +23980,22 @@
         },
         "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/framework.layer:28": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/framework.layer:4": {
+            "name": "Outcome 655B3E0598C728AD",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/framework.layer:16": {
+            "name": "Outcome 655B3E059F0B3585",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_Layers/framework.layer:28": {
+            "name": "Outcome 655B3E0594C1A952",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/Woody/COTVTXX_Karachinar_Crashout/COTVTXX_Karachinar_Crashout_GC_Settings.et",
@@ -22842,6 +24204,22 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Woody/COTVTXX_Zavarak_Farmland/COTVTXX_Zavarak_Farmland_Layers/framework.layer:34": {
+            "name": "Outcome 655B3E0598C728AD",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Woody/COTVTXX_Zavarak_Farmland/COTVTXX_Zavarak_Farmland_Layers/framework.layer:46": {
+            "name": "Outcome 655B3E059F0B3585",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Woody/COTVTXX_Zavarak_Farmland/COTVTXX_Zavarak_Farmland_Layers/framework.layer:58": {
+            "name": "Outcome 655B3E0594C1A952",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/Woody/COTVTXX_Zavarak_Farmland/COTVTXX_Zavarak_Farmland_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -22970,6 +24348,18 @@
         },
         "worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1_Layers/framework.layer:77": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1_Layers/framework.layer:59": {
+            "name": "Outcome 65FB7A713F622F96",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1_Layers/framework.layer:77": {
+            "name": "Outcome 65FB7A71335B61F4",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/Woody/COXX_Heely_Co_Peter_Raid_Part_1/COXX_Heely_Co_Peter_Raid_Part_1_GC_Settings.et",
@@ -23103,6 +24493,18 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Woody/COXX_Landay_Haul/COXX_Landay_Haul_Layers/framework.layer:42": {
+            "name": "Outcome 655E040783D08067",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Woody/COXX_Landay_Haul/COXX_Landay_Haul_Layers/framework.layer:59": {
+            "name": "Outcome 655E04361AF29676",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingModePreset": "worlds/Woody/COXX_Landay_Haul/COXX_Landay_Haul_GC_Settings.et",
       "renumberedInSourceOrder": false,
       "briefingGaps": []
@@ -23169,6 +24571,18 @@
         },
         "worlds/Woody/COXX_Torske_Crossing/COXX_Torske_Crossing_Layers/default.layer:115": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
+        }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/Woody/COXX_Torske_Crossing/COXX_Torske_Crossing_Layers/default.layer:98": {
+            "name": "Outcome 659A891A05834072",
+            "gap": "unsupported outcome event field m_name"
+          },
+          "worlds/Woody/COXX_Torske_Crossing/COXX_Torske_Crossing_Layers/default.layer:115": {
+            "name": "Outcome 659A89142E428430",
+            "gap": "unsupported outcome event field m_name"
+          }
         }
       },
       "briefingModePreset": "worlds/Woody/COXX_Torske_Crossing/COXX_Torske_Crossing_GC_Settings.et",
@@ -23508,6 +24922,14 @@
           "gap": "empty notification"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/anteante101/Castle Crushers/CastleCrushers_Layers/framework.layer:100": {
+            "name": "Outcome 68F118C3CFBFC80E",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingGaps": [
         "worlds/anteante101/Castle Crushers/CastleCrushers_Layers/BRIEF.layer:1 custom or duplicate field {",
         "worlds/anteante101/Castle Crushers/CastleCrushers_Layers/BRIEF.layer nested description"
@@ -23589,6 +25011,25 @@
         "worlds/anteante101/Its all uphill from here/Its all uphill from here_Layers/default.layer:66": {
           "gap": "empty notification"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/anteante101/Its all uphill from here/Its all uphill from here_Layers/default.layer:54": {
+            "trigger": "Match start",
+            "name": "ending",
+            "announcements": [
+              {
+                "faction": "GC_INSURGENT",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "2200"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "2200"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/anteante101/Its all uphill from here/Its all uphill from here_GC_OutcomeRules.inc"
       },
       "briefingGaps": [
         "worlds/anteante101/Its all uphill from here/Its all uphill from here_Layers/brief.layer:1 custom or duplicate field {",
@@ -23927,6 +25368,14 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/anteante101/South wind is blowing/South wind is blowing_Layers/default.layer:68": {
+            "name": "Outcome 6931271D5E2F1AFB",
+            "gap": "unsupported outcome event field m_name"
+          }
+        }
+      },
       "briefingGaps": [
         "worlds/anteante101/South wind is blowing/South wind is blowing_Layers/BRIEF.layer:1 custom or duplicate field {",
         "worlds/anteante101/South wind is blowing/South wind is blowing_Layers/BRIEF.layer nested description"
@@ -24017,6 +25466,66 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/BarnBusters/BarnBusters_Layers/default.layer:199": {
+            "name": "US_CAP",
+            "gap": "unresolved or unsupported outcome flag \"US_CAP\""
+          },
+          "worlds/arc/BarnBusters/BarnBusters_Layers/default.layer:215": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.85",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "GC_SEPARATIST",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/BarnBusters/BarnBusters_Layers/default.layer:231": {
+            "trigger": "peak player loss",
+            "flag": "SEP_KIA",
+            "faction": "GC_SEPARATIST",
+            "ratio": "1",
+            "name": "SEP_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/BarnBusters/BarnBusters_Layers/default.layer:247": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "GC_SEPARATIST",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "4815"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "4805",
+              "4815"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/BarnBusters/BarnBusters_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/BarnBusters/BarnBusters_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -24081,6 +25590,48 @@
         "worlds/arc/BarnBustersXS/BarnBustersXS_Layers/default.layer:142": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/BarnBustersXS/BarnBustersXS_Layers/default.layer:99": {
+            "name": "US_CAP",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/BarnBustersXS/BarnBustersXS_Layers/default.layer:125": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.85",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/BarnBustersXS/BarnBustersXS_Layers/default.layer:142": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "4815"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "4805",
+              "4815"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/BarnBustersXS/BarnBustersXS_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/BarnBustersXS/BarnBustersXS_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -24239,6 +25790,51 @@
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/BunkerBusters/BunkerBusters_Layers/default.layer:59": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.8",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/BunkerBusters/BunkerBusters_Layers/default.layer:76": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.8",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "3615"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "3605",
+              "3615"
+            ]
+          },
+          "worlds/arc/BunkerBusters/BunkerBusters_Layers/default.layer:94": {
+            "name": "US_CAP",
+            "gap": "unsupported outcome event field m_condition"
+          }
+        },
+        "stagedFragment": "worlds/arc/BunkerBusters/BunkerBusters_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/BunkerBusters/BunkerBusters_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -24312,6 +25908,69 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/BunkerBustersXL/BunkerBustersXL_Layers/default.layer:135": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.9",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "GC_SEPARATIST",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/BunkerBustersXL/BunkerBustersXL_Layers/default.layer:151": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.9",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "GC_SEPARATIST",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "3915"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "3905",
+              "3915"
+            ]
+          },
+          "worlds/arc/BunkerBustersXL/BunkerBustersXL_Layers/default.layer:168": {
+            "name": "US_CAP",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/BunkerBustersXL/BunkerBustersXL_Layers/default.layer:188": {
+            "trigger": "peak player loss",
+            "flag": "SEP_KIA",
+            "faction": "GC_SEPARATIST",
+            "ratio": "0.95",
+            "name": "SEP_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/BunkerBustersXL/BunkerBustersXL_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/BunkerBustersXL/BunkerBustersXL_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -24376,6 +26035,33 @@
         "worlds/arc/CoastalClearance/CoastalClearance_Layers/default.layer:131": {
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/CoastalClearance/CoastalClearance_Layers/default.layer:92": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "US",
+            "ratio": "1",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "20"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "20"
+            ]
+          },
+          "worlds/arc/CoastalClearance/CoastalClearance_Layers/default.layer:112": {
+            "name": "US_VICTORY",
+            "gap": "unresolved or unsupported outcome flag \"TRUCK_DESTROYED\""
+          }
+        },
+        "stagedFragment": "worlds/arc/CoastalClearance/CoastalClearance_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/CoastalClearance/CoastalClearance_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -24458,6 +26144,62 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/CommandosReforged/CommandosReforged_Layers/default.layer:276": {
+            "trigger": "peak player loss",
+            "flag": "RU_KIA",
+            "faction": "RHS_AFRF",
+            "ratio": "1",
+            "name": "RU_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/CommandosReforged/CommandosReforged_Layers/default.layer:292": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.9",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/CommandosReforged/CommandosReforged_Layers/default.layer:308": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "4815"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "4805",
+              "4815"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/CommandosReforged/CommandosReforged_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/CommandosReforged/CommandosReforged_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -24534,6 +26276,48 @@
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/Compromised/Compromised_Layers/default.layer:118": {
+            "trigger": "peak player loss",
+            "flag": "UK_KIA",
+            "faction": "UK",
+            "ratio": "0.9",
+            "name": "UK_KIA",
+            "announcements": [
+              {
+                "faction": "USSR",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/Compromised/Compromised_Layers/default.layer:134": {
+            "name": "UK_EXTRACT",
+            "gap": "unresolved or unsupported outcome flag \"UK_EXTRACT\""
+          },
+          "worlds/arc/Compromised/Compromised_Layers/default.layer:151": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "USSR",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "5415"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5405",
+              "5415"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/Compromised/Compromised_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/Compromised/Compromised_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -24609,6 +26393,66 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/CrashParty/CrashParty_Layers/default.layer:121": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "US",
+            "ratio": "0.9",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "GC_INSURGENT",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/CrashParty/CrashParty_Layers/default.layer:137": {
+            "trigger": "peak player loss",
+            "flag": "INS_KIA",
+            "faction": "GC_INSURGENT",
+            "ratio": "0.9",
+            "name": "INS_KIA",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/CrashParty/CrashParty_Layers/default.layer:153": {
+            "name": "INS_CAP",
+            "gap": "unresolved or unsupported outcome flag \"INS_CAP\""
+          },
+          "worlds/arc/CrashParty/CrashParty_Layers/default.layer:169": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "3015"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "3005",
+              "3015"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/CrashParty/CrashParty_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/CrashParty/CrashParty_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -24677,6 +26521,48 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/DustyDrive/DustyDrive_Layers/default.layer:149": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.8",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/DustyDrive/DustyDrive_Layers/default.layer:166": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "4515"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "4505",
+              "4515"
+            ]
+          },
+          "worlds/arc/DustyDrive/DustyDrive_Layers/default.layer:280": {
+            "name": "VICTORY",
+            "gap": "unsupported outcome event field m_condition"
+          }
+        },
+        "stagedFragment": "worlds/arc/DustyDrive/DustyDrive_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/DustyDrive/DustyDrive_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -24742,6 +26628,48 @@
         "worlds/arc/DustyDrive95/DustyDrive95_Layers/default.layer:318": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/DustyDrive95/DustyDrive95_Layers/default.layer:187": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "US",
+            "ratio": "0.8",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/DustyDrive95/DustyDrive95_Layers/default.layer:204": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "4515"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "4505",
+              "4515"
+            ]
+          },
+          "worlds/arc/DustyDrive95/DustyDrive95_Layers/default.layer:318": {
+            "name": "VICTORY",
+            "gap": "unsupported outcome event field m_condition"
+          }
+        },
+        "stagedFragment": "worlds/arc/DustyDrive95/DustyDrive95_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/DustyDrive95/DustyDrive95_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -24898,6 +26826,66 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/EFPStragglers/EFPStragglers_Layers/default.layer:95": {
+            "trigger": "peak player loss",
+            "flag": "UK_KIA",
+            "faction": "UK",
+            "ratio": "0.9",
+            "name": "UK_KIA",
+            "announcements": [
+              {
+                "faction": "GC_SEPARATIST",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/EFPStragglers/EFPStragglers_Layers/default.layer:111": {
+            "name": "SEP_CAP",
+            "gap": "unresolved or unsupported outcome flag \"SEP_CAP\""
+          },
+          "worlds/arc/EFPStragglers/EFPStragglers_Layers/default.layer:127": {
+            "trigger": "peak player loss",
+            "flag": "SEP_KIA",
+            "faction": "GC_SEPARATIST",
+            "ratio": "0.9",
+            "name": "SEP_KIA",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/EFPStragglers/EFPStragglers_Layers/default.layer:143": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "3610"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "3600",
+              "3610"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/EFPStragglers/EFPStragglers_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/EFPStragglers/EFPStragglers_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -24961,6 +26949,48 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/EasternEnvelopment/EasternEnvelopment_Layers/default.layer:143": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "4515"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "4505",
+              "4515"
+            ]
+          },
+          "worlds/arc/EasternEnvelopment/EasternEnvelopment_Layers/default.layer:161": {
+            "trigger": "peak player loss",
+            "flag": "RU_KIA",
+            "faction": "RHS_AFRF",
+            "ratio": "0.8",
+            "name": "RU_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/EasternEnvelopment/EasternEnvelopment_Layers/default.layer:178": {
+            "name": "SEP_KIA",
+            "gap": "unresolved or unsupported outcome flag \"SEP_KIA\""
+          }
+        },
+        "stagedFragment": "worlds/arc/EasternEnvelopment/EasternEnvelopment_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/EasternEnvelopment/EasternEnvelopment_GC_Settings.et",
       "renumberedInSourceOrder": false,
       "briefingGaps": []
@@ -25016,6 +27046,66 @@
         "worlds/arc/ErquyEvasion/ErquyEvasion_Layers/default.layer:191": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/ErquyEvasion/ErquyEvasion_Layers/default.layer:114": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "3615"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "3605",
+              "3615"
+            ]
+          },
+          "worlds/arc/ErquyEvasion/ErquyEvasion_Layers/default.layer:159": {
+            "name": "USSR_EXTRACT",
+            "gap": "unresolved or unsupported outcome flag \"USSR_EXTRACT\""
+          },
+          "worlds/arc/ErquyEvasion/ErquyEvasion_Layers/default.layer:175": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "US",
+            "ratio": "1",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "USSR",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "20"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "20"
+            ]
+          },
+          "worlds/arc/ErquyEvasion/ErquyEvasion_Layers/default.layer:191": {
+            "trigger": "peak player loss",
+            "flag": "USSR_KIA",
+            "faction": "USSR",
+            "ratio": "1",
+            "name": "USSR_KIA",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "20"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "20"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/ErquyEvasion/ErquyEvasion_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/ErquyEvasion/ErquyEvasion_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -25190,6 +27280,66 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/FightingRetreat/FightingRetreat_Layers/default.layer:107": {
+            "name": "US_EXTRACT",
+            "gap": "unresolved or unsupported outcome flag \"US_EXTRACT\""
+          },
+          "worlds/arc/FightingRetreat/FightingRetreat_Layers/default.layer:123": {
+            "trigger": "peak player loss",
+            "flag": "RU_KIA",
+            "faction": "RHS_AFRF",
+            "ratio": "0.9",
+            "name": "RU_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/FightingRetreat/FightingRetreat_Layers/default.layer:139": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.8",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/FightingRetreat/FightingRetreat_Layers/default.layer:155": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "5535"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5525",
+              "5535"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/FightingRetreat/FightingRetreat_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/FightingRetreat/FightingRetreat_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -25290,6 +27440,48 @@
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/FirstLightAtEden/FirstLightAtEden_Layers/default.layer:214": {
+            "trigger": "peak player loss",
+            "flag": "UK_KIA",
+            "faction": "UK",
+            "ratio": "1",
+            "name": "UK_KIA",
+            "announcements": [
+              {
+                "faction": "USSR",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "20"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "20"
+            ]
+          },
+          "worlds/arc/FirstLightAtEden/FirstLightAtEden_Layers/default.layer:230": {
+            "name": "UK_VICTORY",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/FirstLightAtEden/FirstLightAtEden_Layers/default.layer:265": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "USSR",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "5420"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5405",
+              "5420"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/FirstLightAtEden/FirstLightAtEden_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/FirstLightAtEden/FirstLightAtEden_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -25349,6 +27541,66 @@
         "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents_Layers/default.layer:131": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents_Layers/default.layer:83": {
+            "trigger": "peak player loss",
+            "flag": "UK_KIA",
+            "faction": "UK",
+            "ratio": "0.9",
+            "name": "UK_KIA",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents_Layers/default.layer:99": {
+            "name": "US_CAP",
+            "gap": "unresolved or unsupported outcome flag \"US_CAP\""
+          },
+          "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents_Layers/default.layer:115": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "US",
+            "ratio": "0.9",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents_Layers/default.layer:131": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "1995"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "1985",
+              "1995"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/ForeignExchangeStudents/ForeignExchangeStudents_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -25429,6 +27681,70 @@
         "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/default.layer:167": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/default.layer:103": {
+            "trigger": "peak player loss",
+            "flag": "UK_KIA",
+            "faction": "UK",
+            "ratio": "0.9",
+            "name": "UK_KIA",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/default.layer:119": {
+            "name": "US_CAP",
+            "gap": "unresolved or unsupported outcome flag \"US_CAP\""
+          },
+          "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/default.layer:135": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "US",
+            "ratio": "0.9",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/default.layer:151": {
+            "name": "UK_CAP",
+            "gap": "unresolved or unsupported outcome flag \"UK_CAP\""
+          },
+          "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_Layers/default.layer:167": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_DRAW",
+                "delaySeconds": "1935"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "1925",
+              "1935"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/ForeignExchangeStudentsII/ForeignExchangeStudentsII_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -25536,6 +27852,51 @@
         "worlds/arc/HappyCampers/HappyCampers_Layers/default.layer:347": {
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/HappyCampers/HappyCampers_Layers/default.layer:246": {
+            "trigger": "peak player loss",
+            "flag": "UK_KIA",
+            "faction": "UK",
+            "ratio": "0.9",
+            "name": "UK_KIA",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "5"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5"
+            ]
+          },
+          "worlds/arc/HappyCampers/HappyCampers_Layers/default.layer:262": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "3615"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "3605",
+              "3615"
+            ]
+          },
+          "worlds/arc/HappyCampers/HappyCampers_Layers/default.layer:280": {
+            "name": "EXTRACTED",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/HappyCampers/HappyCampers_Layers/default.layer:330": {
+            "name": "HOS_KIA",
+            "gap": "unresolved or unsupported outcome flag \"HOS_KIA\""
+          }
+        },
+        "stagedFragment": "worlds/arc/HappyCampers/HappyCampers_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/HappyCampers/HappyCampers_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -25664,6 +28025,48 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/HeavenAndHell/HeavenAndHell_Layers/default.layer:241": {
+            "name": "US_VICTORY",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/HeavenAndHell/HeavenAndHell_Layers/default.layer:270": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "US",
+            "ratio": "0.9",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/HeavenAndHell/HeavenAndHell_Layers/default.layer:287": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "7215"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "7205",
+              "7215"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/HeavenAndHell/HeavenAndHell_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/HeavenAndHell/HeavenAndHell_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -25727,6 +28130,48 @@
         "worlds/arc/HotBoxes/HotBoxes_Layers/default.layer:164": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/HotBoxes/HotBoxes_Layers/default.layer:88": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "US",
+            "ratio": "0.9",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/HotBoxes/HotBoxes_Layers/default.layer:105": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "5415"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5405",
+              "5415"
+            ]
+          },
+          "worlds/arc/HotBoxes/HotBoxes_Layers/default.layer:164": {
+            "name": "VICTORY",
+            "gap": "unsupported outcome event field m_condition"
+          }
+        },
+        "stagedFragment": "worlds/arc/HotBoxes/HotBoxes_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/HotBoxes/HotBoxes_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -25809,6 +28254,56 @@
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/Hunted/Hunted_Layers/default.layer:89": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "1",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/Hunted/Hunted_Layers/default.layer:106": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "4515"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "4505",
+              "4515"
+            ]
+          },
+          "worlds/arc/Hunted/Hunted_Layers/default.layer:124": {
+            "name": "US_EXTRACT_1",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/Hunted/Hunted_Layers/default.layer:156": {
+            "name": "US_EXTRACT_2",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/Hunted/Hunted_Layers/default.layer:203": {
+            "name": "US_EXTRACT_3",
+            "gap": "unsupported outcome event field m_condition"
+          }
+        },
+        "stagedFragment": "worlds/arc/Hunted/Hunted_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/Hunted/Hunted_GC_Settings.et",
       "renumberedInSourceOrder": false,
       "briefingGaps": []
@@ -25816,8 +28311,9 @@
     "worlds/arc/IndustrialMetal/IndustrialMetal.ent": {
       "sourceResourceCount": 8,
       "devPaths": {
-        "absent": 7,
-        "changed": 1
+        "absent": 2,
+        "changed": 4,
+        "identical": 2
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -25855,7 +28351,9 @@
         "worlds/arc/IndustrialMetal/IndustrialMetal_Layers/default.layer": {
           "instances": {
             "27": {
-              "gap": "public outline colored by a restricted faction"
+              "vertices": 4,
+              "name": null,
+              "lastLine": 50
             },
             "51": {
               "vertices": 4,
@@ -25888,9 +28386,86 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/IndustrialMetal/IndustrialMetal_Layers/default.layer:77": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "GC_CDF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "2895"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "2885",
+              "2895"
+            ]
+          },
+          "worlds/arc/IndustrialMetal/IndustrialMetal_Layers/default.layer:94": {
+            "trigger": "peak player loss",
+            "flag": "RU_KIA",
+            "faction": "RHS_AFRF",
+            "ratio": "0.9",
+            "name": "RU_KIA",
+            "announcements": [
+              {
+                "faction": "GC_CDF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/IndustrialMetal/IndustrialMetal_Layers/default.layer:110": {
+            "trigger": "peak player loss",
+            "flag": "CDF_KIA",
+            "faction": "GC_CDF",
+            "ratio": "0.9",
+            "name": "CDF_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/IndustrialMetal/IndustrialMetal_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/IndustrialMetal/IndustrialMetal_GC_Settings.et",
       "renumberedInSourceOrder": true,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "playtestCandidate": {
+        "presentOnDev": true,
+        "boundaries": {
+          "27": {
+            "vertices": 4,
+            "name": null,
+            "lastLine": 50
+          },
+          "51": {
+            "vertices": 4,
+            "name": null,
+            "lastLine": 72
+          }
+        },
+        "icons": 2,
+        "remainingBehavior": [
+          "Compare live casualty thresholds, timeout notices and delivery to remote clients",
+          "Compare both boundary audiences, the staging-zone restriction and release",
+          "Check vehicle handling, loadout contents and original callsign labels"
+        ]
+      }
     },
     "worlds/arc/IrishCheckpoint/IrishCheckpoint.ent": {
       "sourceResourceCount": 7,
@@ -25958,6 +28533,62 @@
         "worlds/arc/IrishCheckpoint/IrishCheckpoint_Layers/default.layer:162": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/IrishCheckpoint/IrishCheckpoint_Layers/default.layer:129": {
+            "trigger": "peak player loss",
+            "flag": "IRA_KIA",
+            "faction": "GC_IRA",
+            "ratio": "0.9",
+            "name": "IRA_KIA",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/IrishCheckpoint/IrishCheckpoint_Layers/default.layer:145": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "1995"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "1985",
+              "1995"
+            ]
+          },
+          "worlds/arc/IrishCheckpoint/IrishCheckpoint_Layers/default.layer:162": {
+            "trigger": "peak player loss",
+            "flag": "UK_KIA",
+            "faction": "UK",
+            "ratio": "1",
+            "name": "UK_KIA",
+            "announcements": [
+              {
+                "faction": "GC_IRA",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/IrishCheckpoint/IrishCheckpoint_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/IrishCheckpoint/IrishCheckpoint_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -26029,6 +28660,48 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/JEFRMCWAC/JEFRMCWAC_Layers/default.layer:82": {
+            "name": "RU_KIA",
+            "gap": "unresolved or unsupported outcome flag \"RU_KIA\""
+          },
+          "worlds/arc/JEFRMCWAC/JEFRMCWAC_Layers/default.layer:98": {
+            "trigger": "peak player loss",
+            "flag": "UK_KIA",
+            "faction": "UK",
+            "ratio": "0.9",
+            "name": "UK_KIA",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/JEFRMCWAC/JEFRMCWAC_Layers/default.layer:115": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "4515"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "4505",
+              "4515"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/JEFRMCWAC/JEFRMCWAC_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/JEFRMCWAC/JEFRMCWAC_GC_Settings.et",
       "renumberedInSourceOrder": false,
       "briefingGaps": []
@@ -26092,6 +28765,66 @@
         "worlds/arc/LastBastion/LastBastion_Layers/default.layer:132": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/LastBastion/LastBastion_Layers/default.layer:84": {
+            "trigger": "peak player loss",
+            "flag": "USSR_KIA",
+            "faction": "USSR",
+            "ratio": "1",
+            "name": "USSR_KIA",
+            "announcements": [
+              {
+                "faction": "FIA",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "20"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "20"
+            ]
+          },
+          "worlds/arc/LastBastion/LastBastion_Layers/default.layer:100": {
+            "trigger": "peak player loss",
+            "flag": "FIA_KIA",
+            "faction": "FIA",
+            "ratio": "1",
+            "name": "FIA_KIA",
+            "announcements": [
+              {
+                "faction": "USSR",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/LastBastion/LastBastion_Layers/default.layer:116": {
+            "name": "USSR_CAP",
+            "gap": "unresolved or unsupported outcome flag \"USSR_CAP\""
+          },
+          "worlds/arc/LastBastion/LastBastion_Layers/default.layer:132": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "FIA",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "3615"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "3605",
+              "3615"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/LastBastion/LastBastion_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/LastBastion/LastBastion_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -26344,6 +29077,74 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/PatrolTroubles/PatrolTroubles_Layers/default.layer:131": {
+            "name": "UK_MAJOR",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/PatrolTroubles/PatrolTroubles_Layers/default.layer:170": {
+            "name": "UK_MINOR",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/PatrolTroubles/PatrolTroubles_Layers/default.layer:214": {
+            "name": "IRA_MINOR",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/PatrolTroubles/PatrolTroubles_Layers/default.layer:258": {
+            "trigger": "peak player loss",
+            "flag": "IRA_KIA",
+            "faction": "GC_IRA",
+            "ratio": "1",
+            "name": "IRA_KIA",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/PatrolTroubles/PatrolTroubles_Layers/default.layer:274": {
+            "trigger": "peak player loss",
+            "flag": "UK_KIA",
+            "faction": "UK",
+            "ratio": "0.75",
+            "name": "UK_KIA",
+            "announcements": [
+              {
+                "faction": "GC_IRA",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/PatrolTroubles/PatrolTroubles_Layers/default.layer:290": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "GC_IRA",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "4215"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "4205",
+              "4215"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/PatrolTroubles/PatrolTroubles_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/PatrolTroubles/PatrolTroubles_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -26424,6 +29225,48 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/PirateRadio/PirateRadio_Layers/default.layer:126": {
+            "trigger": "peak player loss",
+            "flag": "CDF_KIA",
+            "faction": "GC_CDF",
+            "ratio": "0.9",
+            "name": "CDF_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/PirateRadio/PirateRadio_Layers/default.layer:142": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "2895"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "2885",
+              "2895"
+            ]
+          },
+          "worlds/arc/PirateRadio/PirateRadio_Layers/default.layer:159": {
+            "name": "CDF_CAP",
+            "gap": "unsupported outcome event field m_condition"
+          }
+        },
+        "stagedFragment": "worlds/arc/PirateRadio/PirateRadio_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/PirateRadio/PirateRadio_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -26499,6 +29342,52 @@
         "worlds/arc/Privateering/Privateering_Layers/default.layer:168": {
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/Privateering/Privateering_Layers/default.layer:89": {
+            "name": "IRA_KIA",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/Privateering/Privateering_Layers/default.layer:112": {
+            "name": "UK_CAP",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/Privateering/Privateering_Layers/default.layer:135": {
+            "trigger": "peak player loss",
+            "flag": "UK_KIA",
+            "faction": "UK",
+            "ratio": "0.8",
+            "name": "UK_KIA",
+            "announcements": [
+              {
+                "faction": "GC_IRA",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/Privateering/Privateering_Layers/default.layer:151": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "GC_IRA",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "3015"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "3005",
+              "3015"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/Privateering/Privateering_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/Privateering/Privateering_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -26680,6 +29569,37 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/QuickReaction/QuickReaction_Layers/default.layer:287": {
+            "name": "TIME_LIMIT",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/QuickReaction/QuickReaction_Layers/default.layer:311": {
+            "trigger": "peak player loss",
+            "flag": "CDF_KIA",
+            "faction": "GC_CDF",
+            "ratio": "0.8",
+            "name": "CDF_KIA",
+            "announcements": [
+              {
+                "faction": "GC_CDF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/QuickReaction/QuickReaction_Layers/default.layer:328": {
+            "name": "CDF_VICTORY",
+            "gap": "unsupported outcome event field m_condition"
+          }
+        },
+        "stagedFragment": "worlds/arc/QuickReaction/QuickReaction_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/QuickReaction/QuickReaction_GC_Settings.et",
       "renumberedInSourceOrder": false,
       "briefingGaps": []
@@ -26763,6 +29683,70 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/RavineRuckus/RavineRuckus_Layers/default.layer:87": {
+            "trigger": "peak player loss",
+            "flag": "CDF_KIA",
+            "faction": "GC_CDF",
+            "ratio": "0.9",
+            "name": "CDF_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/RavineRuckus/RavineRuckus_Layers/default.layer:103": {
+            "name": "RU_CAP",
+            "gap": "unresolved or unsupported outcome flag \"RU_CAP\""
+          },
+          "worlds/arc/RavineRuckus/RavineRuckus_Layers/default.layer:119": {
+            "trigger": "peak player loss",
+            "flag": "RU_KIA",
+            "faction": "RHS_AFRF",
+            "ratio": "0.9",
+            "name": "RU_KIA",
+            "announcements": [
+              {
+                "faction": "GC_CDF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/RavineRuckus/RavineRuckus_Layers/default.layer:135": {
+            "name": "CDF_CAP",
+            "gap": "unresolved or unsupported outcome flag \"CDF_CAP\""
+          },
+          "worlds/arc/RavineRuckus/RavineRuckus_Layers/default.layer:151": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "GC_CDF",
+                "result": "EDITOR_FACTION_DRAW",
+                "delaySeconds": "2835"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "2825",
+              "2835"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/RavineRuckus/RavineRuckus_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/RavineRuckus/RavineRuckus_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -26836,6 +29820,48 @@
         "worlds/arc/Retribution/Retribution_Layers/default.layer:165": {
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/Retribution/Retribution_Layers/default.layer:101": {
+            "name": "VICTORY",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/Retribution/Retribution_Layers/default.layer:130": {
+            "trigger": "peak player loss",
+            "flag": "RU_KIA",
+            "faction": "RHS_AFRF",
+            "ratio": "0.8",
+            "name": "DEFEAT_1",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/Retribution/Retribution_Layers/default.layer:147": {
+            "trigger": "Match start",
+            "name": "DEFEAT_2",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "4515"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "4505",
+              "4515"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/Retribution/Retribution_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/Retribution/Retribution_GC_Settings.et",
       "renumberedInSourceOrder": false,
@@ -26915,6 +29941,48 @@
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/ReturnOfTheWac/ReturnOfTheWac_Layers/default.layer:99": {
+            "trigger": "peak player loss",
+            "flag": "UK_KIA",
+            "faction": "UK",
+            "ratio": "1",
+            "name": "UK_KIA",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "20"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "20"
+            ]
+          },
+          "worlds/arc/ReturnOfTheWac/ReturnOfTheWac_Layers/default.layer:116": {
+            "name": "UK_CAPPED",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/ReturnOfTheWac/ReturnOfTheWac_Layers/default.layer:145": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "3620"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "3600",
+              "3620"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/ReturnOfTheWac/ReturnOfTheWac_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/ReturnOfTheWac/ReturnOfTheWac_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -26992,6 +30060,66 @@
         "worlds/arc/RidgeRumble/RidgeRumble_Layers/default.layer:151": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/RidgeRumble/RidgeRumble_Layers/default.layer:103": {
+            "trigger": "peak player loss",
+            "flag": "UK_KIA",
+            "faction": "UK",
+            "ratio": "0.8",
+            "name": "UK_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/RidgeRumble/RidgeRumble_Layers/default.layer:119": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.8",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/RidgeRumble/RidgeRumble_Layers/default.layer:135": {
+            "name": "US_CAP",
+            "gap": "unresolved or unsupported outcome flag \"US_CAP\""
+          },
+          "worlds/arc/RidgeRumble/RidgeRumble_Layers/default.layer:151": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "2895"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "2885",
+              "2895"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/RidgeRumble/RidgeRumble_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/RidgeRumble/RidgeRumble_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -27095,6 +30223,30 @@
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/RocketScience/RocketScience_Layers/default.layer:126": {
+            "name": "USSR_EXTRACTED",
+            "gap": "unresolved or unsupported outcome flag \"USSR_EXTRACTED\""
+          },
+          "worlds/arc/RocketScience/RocketScience_Layers/default.layer:142": {
+            "name": "UK_EXTRACTED",
+            "gap": "unresolved or unsupported outcome flag \"UK_EXTRACTED\""
+          },
+          "worlds/arc/RocketScience/RocketScience_Layers/default.layer:158": {
+            "name": "USSR_KIA",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/RocketScience/RocketScience_Layers/default.layer:181": {
+            "name": "UK_KIA",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/RocketScience/RocketScience_Layers/default.layer:204": {
+            "name": "TIME_LIMIT",
+            "gap": "unsupported faction outcome or delay"
+          }
+        }
+      },
       "briefingModePreset": "worlds/arc/RocketScience/RocketScience_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -27169,6 +30321,48 @@
         "worlds/arc/SOBRUp/SOBRUp_Layers/default.layer:133": {
           "gap": "depends on a mission flag"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/SOBRUp/SOBRUp_Layers/default.layer:50": {
+            "trigger": "peak player loss",
+            "flag": "RU_KIA",
+            "faction": "RHS_AFRF",
+            "ratio": "0.9",
+            "name": "RU_KIA",
+            "announcements": [
+              {
+                "faction": "GC_SEPARATIST",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/SOBRUp/SOBRUp_Layers/default.layer:66": {
+            "name": "RU_VICTORY",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/SOBRUp/SOBRUp_Layers/default.layer:92": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "GC_SEPARATIST",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "2715"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "2705",
+              "2715"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/SOBRUp/SOBRUp_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/SOBRUp/SOBRUp_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -27257,6 +30451,36 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/ShootAndScoot/ShootAndScoot_Layers/default.layer:238": {
+            "name": "US_VICTORY",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/ShootAndScoot/ShootAndScoot_Layers/default.layer:261": {
+            "name": "EXTRACT_LOST",
+            "gap": "unresolved or unsupported outcome flag \"EXTRACT_LOST\""
+          },
+          "worlds/arc/ShootAndScoot/ShootAndScoot_Layers/default.layer:278": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.8",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "5"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/ShootAndScoot/ShootAndScoot_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/ShootAndScoot/ShootAndScoot_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -27339,6 +30563,66 @@
         "worlds/arc/SoumontSawmill/SoumontSawmill_Layers/default.layer:200": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/SoumontSawmill/SoumontSawmill_Layers/default.layer:151": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "GC_SEPARATIST",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "2895"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "2885",
+              "2895"
+            ]
+          },
+          "worlds/arc/SoumontSawmill/SoumontSawmill_Layers/default.layer:168": {
+            "trigger": "peak player loss",
+            "flag": "RU_KIA",
+            "faction": "RHS_AFRF",
+            "ratio": "0.9",
+            "name": "RU_KIA",
+            "announcements": [
+              {
+                "faction": "GC_SEPARATIST",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/SoumontSawmill/SoumontSawmill_Layers/default.layer:184": {
+            "trigger": "peak player loss",
+            "flag": "SEP_KIA",
+            "faction": "GC_SEPARATIST",
+            "ratio": "0.9",
+            "name": "SEP_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/SoumontSawmill/SoumontSawmill_Layers/default.layer:200": {
+            "name": "RU_CAP",
+            "gap": "unresolved or unsupported outcome flag \"RU_CAP\""
+          }
+        },
+        "stagedFragment": "worlds/arc/SoumontSawmill/SoumontSawmill_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/SoumontSawmill/SoumontSawmill_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -27474,6 +30758,34 @@
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/StationSmashers/StationSmashers_Layers/default.layer:132": {
+            "name": "INS_MAJOR",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/StationSmashers/StationSmashers_Layers/default.layer:155": {
+            "name": "INS_MINOR",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/StationSmashers/StationSmashers_Layers/default.layer:178": {
+            "name": "US_MAJOR_1",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/StationSmashers/StationSmashers_Layers/default.layer:210": {
+            "name": "US_MINOR_1",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/StationSmashers/StationSmashers_Layers/default.layer:240": {
+            "name": "US_MAJOR_2",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/StationSmashers/StationSmashers_Layers/default.layer:272": {
+            "name": "US_MINOR_2",
+            "gap": "unsupported outcome event field m_condition"
+          }
+        }
+      },
       "briefingModePreset": "worlds/arc/StationSmashers/StationSmashers_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -27569,6 +30881,52 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/SunnyWAC/SunnyWAC_Layers/default.layer:299": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "US",
+            "ratio": "0.8",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/SunnyWAC/SunnyWAC_Layers/default.layer:316": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "7215"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "7205",
+              "7215"
+            ]
+          },
+          "worlds/arc/SunnyWAC/SunnyWAC_Layers/default.layer:334": {
+            "name": "MINOR_VICTORY",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/SunnyWAC/SunnyWAC_Layers/default.layer:400": {
+            "name": "MAJOR_VICTORY",
+            "gap": "unsupported outcome event field m_condition"
+          }
+        },
+        "stagedFragment": "worlds/arc/SunnyWAC/SunnyWAC_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/SunnyWAC/SunnyWAC_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -27642,6 +31000,66 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/SyrianCheckpoint/SyrianCheckpoint_Layers/default.layer:155": {
+            "trigger": "peak player loss",
+            "flag": "SAA_KIA",
+            "faction": "SAA",
+            "ratio": "0.9",
+            "name": "SAA_KIA",
+            "announcements": [
+              {
+                "faction": "HTS",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/SyrianCheckpoint/SyrianCheckpoint_Layers/default.layer:171": {
+            "trigger": "peak player loss",
+            "flag": "HTS_KIA",
+            "faction": "HTS",
+            "ratio": "0.9",
+            "name": "HTS_KIA",
+            "announcements": [
+              {
+                "faction": "SAA",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/SyrianCheckpoint/SyrianCheckpoint_Layers/default.layer:187": {
+            "name": "HTS_CAP",
+            "gap": "unresolved or unsupported outcome flag \"HTS_CAP\""
+          },
+          "worlds/arc/SyrianCheckpoint/SyrianCheckpoint_Layers/default.layer:203": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "SAA",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "1995"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "1985",
+              "1995"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/SyrianCheckpoint/SyrianCheckpoint_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/SyrianCheckpoint/SyrianCheckpoint_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -27700,6 +31118,48 @@
         "worlds/arc/TheBestDefense/TheBestDefense_Layers/default.layer:336": {
           "gap": "instruction needs conversion: TILW_AssignWaypointsInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/TheBestDefense/TheBestDefense_Layers/default.layer:173": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "US",
+            "ratio": "0.8",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/TheBestDefense/TheBestDefense_Layers/default.layer:190": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "US",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "4515"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "4505",
+              "4515"
+            ]
+          },
+          "worlds/arc/TheBestDefense/TheBestDefense_Layers/default.layer:208": {
+            "name": "US_CAP",
+            "gap": "unsupported outcome instruction TILW_SpawnVehicleInstruction"
+          }
+        },
+        "stagedFragment": "worlds/arc/TheBestDefense/TheBestDefense_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/TheBestDefense/TheBestDefense_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -27812,6 +31272,52 @@
           "gap": "instruction needs conversion: TILW_SetFlagInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/TheOldWood2024/TheOldWood2024_Layers/default.layer:113": {
+            "name": "UK_CAP",
+            "gap": "unsupported outcome instruction TILW_AssignWaypointsInstruction"
+          },
+          "worlds/arc/TheOldWood2024/TheOldWood2024_Layers/default.layer:169": {
+            "trigger": "peak player loss",
+            "flag": "UK_KIA",
+            "faction": "UK",
+            "ratio": "0.9",
+            "name": "UK_KIA",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/TheOldWood2024/TheOldWood2024_Layers/default.layer:186": {
+            "name": "USSR_CAP",
+            "gap": "unresolved or unsupported outcome flag \"USSR_CAP\""
+          },
+          "worlds/arc/TheOldWood2024/TheOldWood2024_Layers/default.layer:203": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "UK",
+                "result": "EDITOR_FACTION_DEFEAT",
+                "delaySeconds": "5415"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5405",
+              "5415"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/TheOldWood2024/TheOldWood2024_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/TheOldWood2024/TheOldWood2024_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -27919,6 +31425,48 @@
         "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/default.layer:283": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/default.layer:244": {
+            "name": "INS_KIA",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/default.layer:267": {
+            "trigger": "peak player loss",
+            "flag": "US_KIA",
+            "faction": "RHS_USAF",
+            "ratio": "0.8",
+            "name": "US_KIA",
+            "announcements": [
+              {
+                "faction": "GC_INSURGENT",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/TipOfTheSpear/TipOfTheSpear_Layers/default.layer:283": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "GC_INSURGENT",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "2815"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "2885",
+              "2815"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/TipOfTheSpear/TipOfTheSpear_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/TipOfTheSpear/TipOfTheSpear_GC_Settings.et",
       "renumberedInSourceOrder": true,
@@ -28119,6 +31667,48 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/UrbanTroubles/UrbanTroubles_Layers/default.layer:418": {
+            "name": "UK_VICTORY",
+            "gap": "unsupported outcome event field m_condition"
+          },
+          "worlds/arc/UrbanTroubles/UrbanTroubles_Layers/default.layer:454": {
+            "trigger": "peak player loss",
+            "flag": "UK_KIA",
+            "faction": "UK",
+            "ratio": "0.8",
+            "name": "UK_KIA",
+            "announcements": [
+              {
+                "faction": "GC_IRA",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/UrbanTroubles/UrbanTroubles_Layers/default.layer:470": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "GC_IRA",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "3915"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "3905",
+              "3915"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/UrbanTroubles/UrbanTroubles_GC_OutcomeRules.inc"
+      },
       "briefingModePreset": "worlds/arc/UrbanTroubles/UrbanTroubles_GC_Settings.et",
       "renumberedInSourceOrder": true,
       "briefingGaps": []
@@ -28280,6 +31870,66 @@
         "worlds/arc/WateryGrave/WateryGrave_Layers/default.layer:173": {
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
+      },
+      "outcomeCandidate": {
+        "events": {
+          "worlds/arc/WateryGrave/WateryGrave_Layers/default.layer:125": {
+            "name": "RU_CAP",
+            "gap": "unresolved or unsupported outcome flag \"RU_CAP\""
+          },
+          "worlds/arc/WateryGrave/WateryGrave_Layers/default.layer:141": {
+            "trigger": "peak player loss",
+            "flag": "CDF_KIA",
+            "faction": "GC_CDF",
+            "ratio": "1",
+            "name": "CDF_KIA",
+            "announcements": [
+              {
+                "faction": "RHS_AFRF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/WateryGrave/WateryGrave_Layers/default.layer:157": {
+            "trigger": "peak player loss",
+            "flag": "RU_KIA",
+            "faction": "RHS_AFRF",
+            "ratio": "1",
+            "name": "RU_KIA",
+            "announcements": [
+              {
+                "faction": "GC_CDF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
+          },
+          "worlds/arc/WateryGrave/WateryGrave_Layers/default.layer:173": {
+            "trigger": "Match start",
+            "name": "TIME_LIMIT",
+            "announcements": [
+              {
+                "faction": "GC_CDF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "3015"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "3005",
+              "3015"
+            ]
+          }
+        },
+        "stagedFragment": "worlds/arc/WateryGrave/WateryGrave_GC_OutcomeRules.inc"
       },
       "briefingModePreset": "worlds/arc/WateryGrave/WateryGrave_GC_Settings.et",
       "renumberedInSourceOrder": true,

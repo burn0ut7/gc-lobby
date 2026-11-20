@@ -252,6 +252,18 @@ modded class GC_LobbyManager
 		ref SCR_GameModeEndData data = GC_MissionResult.Build(action.m_iOperation, action.m_aFlagNames);
 		if (!data)
 			return false;
+		if (action.m_bAnnounceResultOnly)
+		{
+			Faction faction = GetGame().GetFactionManager().GetFactionByKey(action.m_aFlagNames[0]);
+			if (!faction)
+				return false;
+			string result = GC_MissionResult.Reason(data.GetEndReason());
+			result.ToLower();
+			GC_RuleAction notice = new GC_RuleAction();
+			notice.m_sMessageTitle = "MISSION END";
+			notice.m_sTextOrName = "End conditions have been met:\n" + WidgetManager.Translate(faction.GetFactionName()) + " " + result + ".";
+			return GC_SendMissionMessage(notice);
+		}
 		return EnterPostGame(data, action.m_sEndMessage);
 	}
 

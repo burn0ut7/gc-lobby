@@ -168,7 +168,7 @@ def latched_script_event(key, name, condition, delay, action):
 PEAK_FLAG = re.compile(r'^  TILW_FactionPlayersKilledFlag "\{[\da-fA-F]{16}\}" \{$')
 
 
-def peak_notifications(lines, world):
+def peak_flags(lines):
     flags = {}
     for start, line in enumerate(lines):
         if not PEAK_FLAG.fullmatch(line):
@@ -182,7 +182,11 @@ def peak_notifications(lines, world):
                 or not re.fullmatch(r'\d+(?:\.\d+)?', ratio) or not 0 <= Decimal(ratio) <= 1):
             raise ValueError('unsupported or duplicate peak population flag')
         flags[flag] = faction[1:-1], ratio
+    return flags
 
+
+def peak_notifications(lines, world):
+    flags = peak_flags(lines)
     rules = []
     for start, line in enumerate(lines):
         event = EVENT.fullmatch(line)
