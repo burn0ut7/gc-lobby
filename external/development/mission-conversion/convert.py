@@ -8,6 +8,7 @@ from pathlib import Path, PurePosixPath
 
 from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
+from events import world_events
 from groups import group_layer
 from markers import convert_layer as convert_markers
 from respawns import read_respawns, ticket_event
@@ -135,9 +136,15 @@ def main():
                 follow_up.append('Port the ordered per-character replacement prefab list and exhaustion behavior')
             row['respawn'] = {'factions': respawns, 'ticketGaps': ticket_gaps, 'remainingBehavior': follow_up}
         briefing = pages if not gaps else []
-        if briefing or event:
+        messages, review = ([], {}) if world in (RACE_WORLD, RUHA_WORLD) else world_events(source, world)
+        if review:
+            row['frameworkEvents'] = review
+        mode_events = event
+        if messages:
+            mode_events = ['   m_aMissionEvents + {', *event[1:-1], *messages, '   }']
+        if briefing or mode_events:
             try:
-                body, compact = render(world, briefing, event)
+                body, compact = render(world, briefing, mode_events)
                 # Keep scenario settings in the owning mission directory under a unique name.
                 dest = str(PurePosixPath(world).with_suffix('')) + '_GC_Settings.et'
                 resource = guid(world + '/resource')
@@ -147,13 +154,16 @@ def main():
                 meta = template.replace(old_name, f'Name "{{{resource}}}{dest}"')
                 for path, contents in [(dest, body), (dest + '.meta', meta)]:
                     if path in dev.files and dev.read(path).strip() != contents.strip():
-                        if not (path == dest and event and briefing and dev.read(path).strip() == render(world, briefing)[0].strip()):
+                        prior_versions = [render(world, briefing, event)[0], render(world, briefing)[0]]
+                        if path != dest or dev.read(path).strip() not in (v.strip() for v in prior_versions):
                             raise ValueError('Dev already has differing ' + path)
                 out[dest] = body
                 out[dest + '.meta'] = meta
                 if briefing:
                     row['briefingModePreset'] = dest
                     row['renumberedInSourceOrder'] = compact
+                if messages:
+                    row['notificationModePreset'] = dest
                 if event:
                     row['respawn']['ticketModePreset'] = dest
             except ValueError as exc:
