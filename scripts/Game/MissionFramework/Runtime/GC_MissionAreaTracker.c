@@ -157,7 +157,8 @@ class GC_MissionAreaObservation
 	{
 		if (m_Definition.m_bLocalFactionShare != other.m_bLocalFactionShare)
 			return false;
-		if (m_Definition.m_bLocalFactionShare && !SameKeys(m_Definition.m_aIgnoredFactions, other.m_aIgnoredFactions))
+		if (m_Definition.m_bLocalFactionShare && (m_Definition.m_bShareWholeMission != other.m_bShareWholeMission
+			|| !SameKeys(m_Definition.m_aIgnoredFactions, other.m_aIgnoredFactions)))
 			return false;
 		if (m_Definition.m_bAreaAnywhere != other.m_bAreaAnywhere || m_Definition.m_sAreaName != other.m_sAreaName || m_Definition.m_iAreaTargets != other.m_iAreaTargets)
 			return false;
@@ -244,7 +245,8 @@ class GC_MissionAreaObservation
 				array<string> factions = m_Definition.m_aAreaFactions;
 				if (m_Definition.m_bLocalFactionShare)
 				{
-					if (character.m_sFaction.IsEmpty() || (m_Definition.m_aIgnoredFactions && m_Definition.m_aIgnoredFactions.Contains(character.m_sFaction)))
+					if ((!m_Definition.m_bShareWholeMission && character.m_sFaction.IsEmpty())
+						|| (m_Definition.m_aIgnoredFactions && m_Definition.m_aIgnoredFactions.Contains(character.m_sFaction)))
 						continue;
 					bool local = m_Area.ContainsEntity(character.m_Entity, character.m_vPosition);
 					total++;
@@ -303,10 +305,13 @@ class GC_MissionAreaObservation
 				selected = m_iSelectedTotal - selected;
 				local = m_iTotal - local;
 			}
-			if (local == 0)
+			int denominator = local;
+			if (check.m_bShareWholeMission)
+				denominator = m_iTotal;
+			if (denominator == 0)
 				return check.m_bShareAtMost;
 			float share = selected;
-			share /= local;
+			share /= denominator;
 			if (check.m_bShareAtMost)
 				return share <= check.m_fAreaProportion;
 			return share >= check.m_fAreaProportion;

@@ -72,6 +72,7 @@ class GC_RuleCondition
 	bool m_bAreaProportion;
 	float m_fAreaProportion;
 	bool m_bLocalFactionShare;
+	bool m_bShareWholeMission;
 	bool m_bAreaMajority;
 	bool m_bShareAtMost;
 	ref array<string> m_aIgnoredFactions;

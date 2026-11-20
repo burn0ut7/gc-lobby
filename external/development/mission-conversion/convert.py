@@ -9,6 +9,7 @@ from pathlib import Path, PurePosixPath
 from boundaries import convert_boundaries
 import breach
 import arc_capture
+import bugout
 from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
 from events import world_events
@@ -55,7 +56,10 @@ def main():
     parser.add_argument('--include-industrial-candidate', action='store_true', help='assemble the Industrial Metal playtest world')
     parser.add_argument('--include-irish-candidate', action='store_true', help='assemble the Irish Checkpoint playtest world')
     parser.add_argument('--include-arc-capture-candidates', action='store_true', help='assemble the reviewed Arc capture missions')
+    parser.add_argument('--include-bugout-candidate', action='store_true', help='assemble the reviewed Bug Out mission')
     args = parser.parse_args()
+    if args.include_bugout_candidate and not (args.stage and args.units and args.base_database and args.workshop_addons):
+        parser.error('Bug Out requires --stage, --units, --base-database and --workshop-addons')
     if args.include_industrial_candidate:
         if not args.stage or not args.units or not args.workshop_addons or not args.base_database:
             parser.error('Industrial Metal requires --stage, --units, --workshop-addons and --base-database')
@@ -554,6 +558,25 @@ def main():
         if legacy_vehicle_groups:
             row['playtestCandidate']['legacyVehicleGroups'] = legacy_vehicle_groups
             row['playtestCandidate']['remainingBehavior'].append('Restore legacy vehicle previews and locked-vehicle removal')
+    if args.include_bugout_candidate:
+        row = report['worlds'][bugout.WORLD]
+        try:
+            candidate, audit = bugout.assemble(source, dev, dev_units, stock, args.workshop_addons, row, out)
+        except ValueError as exc:
+            parser.error(str(exc))
+        for path, body in candidate.items():
+            if path in dev.files and dev.read(path).strip() != body.strip():
+                parser.error(f'Dev already has differing {path}')
+            out[path] = body
+        row['playtestCandidate'] = {
+            **audit,
+            'presentOnDev': all(path in dev.files for path in candidate),
+            'remainingBehavior': [
+                'Compare initial deployment and route against historical Longmoor Extended',
+                'Compare all pursuit and reinforcement waypoints, flare appearance and occupied-side casualties',
+                'Compare remote announcement delivery and issued equipment',
+            ],
+        }
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
                         for path, contents in out.items()}

@@ -5,6 +5,7 @@ from decimal import Decimal
 from boundaries import convert_boundaries
 from briefings import block_end, guid, properties, QUOTED
 from catalog import REF
+from extraction import condition as extraction_condition
 from industrial import outcome_mode
 from groups import group_layer
 from launchers import launcher
@@ -12,6 +13,12 @@ from markers import convert_layer
 from scenery import StockPrefabs
 
 RECIPES = {
+    'FightingRetreat': {
+        'world': 'c69a1a6413d4e2ef2c218b62f35eba72947189b9',
+        'default.layer': '66aa9379c0287ab6c4abb1976e5583bfda789440',
+        'briefing.layer': '034d31b09569d1cfeadff565e8d1e098ce674f74',
+        'vehicles.layer': '34f072225b08fa532c8a47ecfaa9bf945e3bf159',
+    },
     'ForeignExchangeStudentsII': {
         'world': '0a102de61ea639b9ec5e070426ab77e100c693dc',
         'default.layer': 'a0d1ba960261082dae380644b627871bf48132f7',
@@ -45,10 +52,12 @@ RECIPES = {
 }
 WORLDS = {f'worlds/arc/{name}/{name}.ent': name for name in RECIPES}
 PROVIDERS = {
+    '00AED68EFBF251BA': 'RHS-StatusQuo_595F2BF2F44836FB',
     '447CFE8D73F95C3E': 'RHS-StatusQuo_595F2BF2F44836FB',
     '62F304402A707F68': 'ACETacticalLadderDev_65AD7CB89F219E38',
     '7BC76F92B882889D': 'TacticalFlava-TIGR_DEADC0DE00000003',
     '8A08A0B2463F5137': 'ArmaTerrainCore_60B524F7A5AE96A8',
+    'B0534A120633D08D': 'RHS-StatusQuo_595F2BF2F44836FB',
     'FA6820A9A52CD05B': 'RHS-StatusQuo_595F2BF2F44836FB',
 }
 STOCK_US_ROLES = {
@@ -103,6 +112,25 @@ def capture(source, world):
     if source.files.get(layer) != RECIPES[WORLDS[world]]['default.layer']:
         raise ValueError('Arc capture source changed: ' + layer)
     lines = source.read(layer).splitlines()
+    if WORLDS[world] == 'FightingRetreat':
+        trigger = 'TILW_ExtractionTriggerEntity : "{192ABD6B9232E064}Prefabs/Logic/Triggers/TILW_ExtractionTrigger.et" {'
+        index = lines.index(trigger)
+        data = properties(lines[index + 1:block_end(lines, index)], {
+            'coords', 'm_queryRadius', 'm_flagName', 'm_stopAfterFirstChange', 'm_factionKey', 'm_ratioThreshold',
+        })
+        if data['m_stopAfterFirstChange'] != '1':
+            raise ValueError('Fighting Retreat extraction must latch')
+        flag = data['m_flagName']
+        condition = extraction_condition(world, flag[1:-1], 'GC_ArcCapture', data['m_factionKey'], data['m_ratioThreshold'])
+        area = f'''GC_RadiusAreaEntity GC_ArcCapture : "{{2C4447C53A1E450B}}Prefabs/Logic/Mission/RadiusArea.et" {{
+ coords {data['coords']}
+ m_fRadius {data['m_queryRadius']}
+}}
+'''
+        audit = {'faction': data['m_factionKey'][1:-1], 'seconds': 0, 'radiusMeters': int(data['m_queryRadius']),
+                 'requiredShare': float(data['m_ratioThreshold']), 'population': 'living players across the mission',
+                 'stopsAfterFirstChange': True}
+        return {flag: ['      ' + line for line in condition.splitlines()]}, area, audit
     trigger = 'TILW_FactionTriggerEntity : "{8C576D46F6579229}Prefabs/Logic/Triggers/TILW_FactionTrigger.et" {'
     if WORLDS[world] != 'ForeignExchangeStudentsII':
         index = lines.index(trigger)
@@ -223,7 +251,7 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
         raise ValueError(name + ' launcher resolves to a different world')
     files[world] = source.read(world)
     rosters = row.get('groupLayers', {})
-    slots = {'ForeignExchangeStudents': 46, 'ForeignExchangeStudentsII': 57}.get(name, 60)
+    slots = {'ForeignExchangeStudents': 46, 'ForeignExchangeStudentsII': 57, 'FightingRetreat': 72}.get(name, 60)
     if sum(info.get('unitPrefabEntries', 0) for info in rosters.values()) != slots or any(path not in staged for path in rosters):
         raise ValueError(f'{name} needs the complete {slots}-slot roster')
     files.update((path, staged[path]) for path in rosters)
@@ -265,7 +293,8 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
     boundary_path = folder + 'default_GC_Boundaries.layer'
     text = source.read(default)
     files[boundary_path], audit = convert_boundaries(text, allow_public_faction_color=True)
-    boundaries = {'EFPStragglers': 1, 'ForeignExchangeStudents': 0, 'ForeignExchangeStudentsII': 1}.get(name, 2)
+    boundaries = {'EFPStragglers': 1, 'ForeignExchangeStudents': 0,
+                  'ForeignExchangeStudentsII': 1, 'FightingRetreat': 1}.get(name, 2)
     if len(audit) != boundaries or any('gap' in entry for entry in audit.values()):
         raise ValueError(name + ' AO polygons need review')
     if not boundaries:
@@ -273,6 +302,8 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
     children = ''
     terrain = None
     environment = ''
+    if name == 'FightingRetreat':
+        terrain = StockPrefabs(workshop / 'Zarichne2025_65EA8C9C25882838' / 'resourceDatabase.rdb')
     if name == 'EFPStragglers':
         terrain = StockPrefabs(workshop / 'Ruha_653CB36244ADBE0F' / 'resourceDatabase.rdb')
         text = text.replace('m_bUseSpecifiedDate 1', 'm_bDateOverride 1\n   m_iDay 1')
@@ -289,19 +320,9 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
 {fields}
   }}
 '''
+    faction_ids = {'WateryGrave': ('5978B9CE6585BBE8',),
+                   'FightingRetreat': ('5978B9CE6585BBE8', '5CC8DE37E1FF0F7A')}
     if name == 'WateryGrave':
-        lines = text.splitlines()
-        start = lines.index('    SCR_Faction "{5978B9CE6585BBE8}" {')
-        faction = '\n'.join(lines[start:block_end(lines, start) + 1])
-        children = f''' {{
-  SCR_FactionManager {{
-   ID "6ADC9BB66394BE46"
-   Factions + {{
-{faction}
-   }}
-  }}
- }}
-'''
         files[header] = files[header].replace('m_iPlayerCount 45', 'm_iPlayerCount 60')
     longmoor = name in ('ForeignExchangeStudents', 'ForeignExchangeStudentsII')
     if longmoor:
@@ -313,8 +334,11 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
         # The GC Lobby prefab supplies mission perception.
         mode_start = next(i for i, line in enumerate(lines) if line.startswith('PS_GameModeCoop '))
         text = '\n'.join(lines[mode_start:]) + '\n'
+        faction_ids[name] = ('56DEAC40D2DBC8B1', '61500924662B6062')
+    if name in faction_ids:
+        lines = text.splitlines()
         factions = []
-        for identifier in ('56DEAC40D2DBC8B1', '61500924662B6062'):
+        for identifier in faction_ids[name]:
             start = lines.index(f'    SCR_Faction "{{{identifier}}}" {{')
             factions.extend(lines[start:block_end(lines, start) + 1])
         faction_blocks = '\n'.join(factions)

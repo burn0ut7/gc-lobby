@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "9027ee2de31e1f518a42b21d0f5cfa94b91bc0c2",
+  "target": "d9308b9881c71e2a9654f9f8c459274c745cc902",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -1185,7 +1185,7 @@
         "worlds/TheLocalPub/BugOut/BugOut.ent"
       ],
       "declaredPath": "worlds/TheLocalPub/BugOut/BugOut.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{2DFFB74F07D51C97}worlds/TheLocalPub/BugOut/BugOut.ent"
     },
     "Missions/TheLocalPub/CimicHouse.conf": {
@@ -1865,7 +1865,7 @@
         "worlds/arc/FightingRetreat/FightingRetreat.ent"
       ],
       "declaredPath": "worlds/arc/FightingRetreat/FightingRetreat.ent",
-      "devHeaderAtSamePath": false,
+      "devHeaderAtSamePath": true,
       "destinationWorld": "{99ACA238B8AAB7C7}worlds/arc/FightingRetreat/FightingRetreat.ent"
     },
     "Missions/arc/FirstLightAtEden.conf": {
@@ -20951,9 +20951,9 @@
     "worlds/TheLocalPub/BugOut/BugOut.ent": {
       "sourceResourceCount": 13,
       "devPaths": {
-        "absent": 11,
-        "changed": 1,
-        "identical": 1
+        "absent": 2,
+        "changed": 6,
+        "identical": 5
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -21013,7 +21013,126 @@
       },
       "briefingModePreset": "worlds/TheLocalPub/BugOut/BugOut_GC_Settings.et",
       "renumberedInSourceOrder": false,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "playtestCandidate": {
+        "icons": 2,
+        "triggers": {
+          "UK_Extracted": {
+            "faction": "UK",
+            "radiusMeters": 30,
+            "seconds": 5.0,
+            "share": 0.75,
+            "population": "living players across the mission",
+            "ignoredFactions": []
+          },
+          "UKArrived": {
+            "faction": "UK",
+            "radiusMeters": 30,
+            "seconds": 0.1,
+            "share": 0.1,
+            "population": "living players across the mission",
+            "ignoredFactions": []
+          },
+          "UK_left": {
+            "faction": "UK",
+            "radiusMeters": 700,
+            "seconds": 0.0,
+            "share": 0.001,
+            "population": "local living players and AI",
+            "ignoredFactions": [
+              "GC_ARG"
+            ]
+          },
+          "UK_left2": {
+            "faction": "UK",
+            "radiusMeters": 700,
+            "seconds": 0.0,
+            "share": 0.001,
+            "population": "local living players and AI",
+            "ignoredFactions": [
+              "GC_ARG"
+            ]
+          }
+        },
+        "reinforcements": {
+          "OPFOR_RIFLE2": {
+            "delaySeconds": 180,
+            "requires": "",
+            "waypoints": [
+              "WP_FLW2"
+            ]
+          },
+          "OPFOR_RIFLE3": {
+            "delaySeconds": 180,
+            "requires": "",
+            "waypoints": [
+              "WP_FLW1"
+            ]
+          },
+          "OPFOR_RIFLE4": {
+            "delaySeconds": 0,
+            "requires": "UK_left",
+            "waypoints": [
+              "WP_SD1"
+            ]
+          },
+          "OPFOR_RIFLE5": {
+            "delaySeconds": 0,
+            "requires": "UK_left",
+            "waypoints": [
+              "WP_SD2"
+            ]
+          },
+          "OPFOR_RIFLE6": {
+            "delaySeconds": 0,
+            "requires": "UK_left",
+            "waypoints": [
+              "WP_SD3"
+            ]
+          },
+          "OPFOR_RIFLE7": {
+            "delaySeconds": 0,
+            "requires": "UK_left2",
+            "waypoints": [
+              "WP_SD4"
+            ]
+          },
+          "OPFOR_RIFLE8": {
+            "delaySeconds": 300,
+            "requires": "UKArrived",
+            "waypoints": [
+              "WP_M4",
+              "WP_ATK2"
+            ]
+          },
+          "OPFOR_RIFLE9": {
+            "delaySeconds": 180,
+            "requires": "UKArrived",
+            "waypoints": [
+              "WP_M5",
+              "WP_ATK2"
+            ]
+          }
+        },
+        "flareDelaysSeconds": [
+          10,
+          70,
+          80,
+          140,
+          150,
+          210,
+          220,
+          280,
+          290,
+          350
+        ],
+        "presentOnDev": true,
+        "remainingBehavior": [
+          "Compare initial deployment and route against historical Longmoor Extended",
+          "Compare all pursuit and reinforcement waypoints, flare appearance and occupied-side casualties",
+          "Compare remote announcement delivery and issued equipment"
+        ]
+      }
     },
     "worlds/TheLocalPub/CimicHouse/CimicHouse.ent": {
       "sourceResourceCount": 20,
@@ -30939,8 +31058,9 @@
     "worlds/arc/FightingRetreat/FightingRetreat.ent": {
       "sourceResourceCount": 7,
       "devPaths": {
-        "absent": 5,
-        "changed": 2
+        "absent": 1,
+        "changed": 4,
+        "identical": 2
       },
       "serializedTypes": {
         "PS_GameModeCoop": 1,
@@ -31010,11 +31130,31 @@
           "gap": "instruction needs conversion: TILW_EndGameInstruction"
         }
       },
+      "captureCandidate": {
+        "faction": "RHS_USAF",
+        "seconds": 0,
+        "radiusMeters": 50,
+        "requiredShare": 0.9,
+        "population": "living players across the mission",
+        "stopsAfterFirstChange": true
+      },
       "outcomeCandidate": {
         "events": {
           "worlds/arc/FightingRetreat/FightingRetreat_Layers/default.layer:107": {
+            "trigger": "area capture",
+            "flag": "US_EXTRACT",
             "name": "US_EXTRACT",
-            "gap": "unresolved or unsupported outcome flag \"US_EXTRACT\""
+            "announcements": [
+              {
+                "faction": "RHS_USAF",
+                "result": "EDITOR_FACTION_VICTORY",
+                "delaySeconds": "15"
+              }
+            ],
+            "instructionDelaysSeconds": [
+              "5",
+              "15"
+            ]
           },
           "worlds/arc/FightingRetreat/FightingRetreat_Layers/default.layer:123": {
             "trigger": "peak player loss",
@@ -31072,7 +31212,23 @@
       },
       "briefingModePreset": "worlds/arc/FightingRetreat/FightingRetreat_GC_Settings.et",
       "renumberedInSourceOrder": true,
-      "briefingGaps": []
+      "briefingGaps": [],
+      "playtestCandidate": {
+        "presentOnDev": true,
+        "boundaries": {
+          "87": {
+            "vertices": 4,
+            "name": null,
+            "lastLine": 103
+          }
+        },
+        "icons": 4,
+        "remainingBehavior": [
+          "Compare live capture, interrupted and contested capture, and remote notifications",
+          "Compare staging-zone enforcement, release and long timeout notices",
+          "Compare callsign labels, issued equipment and vehicle handling"
+        ]
+      }
     },
     "worlds/arc/FirstLightAtEden/FirstLightAtEden.ent": {
       "sourceResourceCount": 12,
