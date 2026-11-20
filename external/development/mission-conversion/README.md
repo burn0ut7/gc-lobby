@@ -211,3 +211,11 @@ Watery Grave registered eight groups, 60 slots, six briefing pages, two icons, t
 Local Missions Dev commit `fcf587f5` restores both authored Senior Riflemen to their original playable groups and updates the launcher from 49 to 50 players. The legacy Senior Rifleman inherits the RHS Flora base loadout, which inherits the RHS faction base and `Character_Base`. The installed legacy GC Lobby overlay provides `PS_PlayableComponent` on that base character, and both source rifle squads set `m_bSetPlayable 1`. The earlier Units-only inspection stopped at the RHS boundary and incorrectly treated those two roles as AI. The source-versus-output check now matches the exact ordered roster GUIDs, including both Senior Riflemen, with no added AI groups.
 
 Workbench session `logs_2026-11-20_13-40-04` registered seven groups and all 50 slots after the correction. The local player claimed a slot and advanced to Briefing. The run did not inspect individually issued Senior Rifleman gear.
+
+## Capture timing and WetFeet date
+
+Local Missions Dev commit `eed4e392` enables elapsed-time capture for Soumont Sawmill, Watery Grave and WetFeet. The legacy trigger adds the elapsed duration between checks. GC Lobby's default adds at most a single configured interval, which discarded the recurring fractional overrun in the original conversions. The opt-in uses elapsed mission time and still evaluates the area once per check. The legacy trigger used system ticks, so behavior with a paused or time-scaled world still needs comparison.
+
+Workbench session `logs_2026-11-20_13-55-35` exercised a 300-second capture with 1.05-second sampling. The opt-in completed at the expected sample, while the default kept 286 seconds of progress. A separate check showed that the one-sample interruption deducted 1.5 seconds and held the remaining four seconds. In the live Soumont run, the trigger fired 120.3 seconds after a player entered the area, compared with 124.7 seconds on the prior port. The full Watery Grave and WetFeet timers still need a live rerun with this option.
+
+WetFeet's source date fields came from the legacy weather overlay. The converter now writes the native date override and preserves the source rainy preset and random weather setting. Workbench read July 23, 2021 from WetFeet's active Time and Weather Manager.

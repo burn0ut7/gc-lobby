@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "fcf587f5623e665d718fb8f84745c6bc80f71a48",
+  "target": "eed4e392ecad5dc8346ffa4ec9c8690dc79a3928",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -23114,7 +23114,8 @@
           "radiusMeters": "93.2",
           "seconds": "360",
           "ownerFaction": "UK",
-          "requiredLocalShare": 1
+          "requiredLocalShare": 1,
+          "timing": "elapsed mission seconds"
         },
         "casualties": {
           "BritDead": {
@@ -34330,7 +34331,8 @@
         "location": "the sawmill",
         "seconds": 120,
         "radiusMeters": 30,
-        "requiredLocalShare": 1
+        "requiredLocalShare": 1,
+        "timing": "elapsed mission seconds"
       },
       "outcomeCandidate": {
         "events": {
@@ -35771,7 +35773,8 @@
         "location": "the CDF command post",
         "seconds": 300,
         "radiusMeters": 15,
-        "requiredLocalShare": 1
+        "requiredLocalShare": 1,
+        "timing": "elapsed mission seconds"
       },
       "outcomeCandidate": {
         "events": {

@@ -58,6 +58,7 @@ def capture(source, world):
        }}
        m_Capture GC_AreaCaptureOptions "{{{guid(key + '/timer')}}}" {{
         m_fSeconds {data['m_captureTime']}
+        m_bUseElapsedTime 1
         m_iInterruption 3
         m_bStopAfterFirstChange 1
         m_Messages GC_CaptureMessages "{{{guid(key + '/messages')}}}" {{
@@ -82,6 +83,7 @@ def capture(source, world):
         'seconds': int(data['m_captureTime']),
         'radiusMeters': int(data['m_queryRadius']),
         'requiredLocalShare': 1,
+        'timing': 'elapsed mission seconds',
     }
     return {data['m_flagName']: condition.splitlines()}, area, audit
 

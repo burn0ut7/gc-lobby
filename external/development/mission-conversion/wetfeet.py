@@ -15,6 +15,7 @@ WORLD = 'worlds/TheLocalPub/WetFeet/WetFeet.ent'
 HEADER = 'Missions/TheLocalPub/WetFeet.conf'
 LAYERS = WORLD.removesuffix('.ent') + '_Layers/'
 DEFAULT = LAYERS + 'default.layer'
+PRIOR_DEFAULT = '4d3e09baeec88adae8e2ebfc8c57a1ba0a17c6cf'
 TRIGGER = LAYERS + 'SYSTEMS/MISC.layer'
 PUBLIC_MARKERS = LAYERS + 'SYSTEMS/AllMarkers.layer'
 MODE = LAYERS + 'default_GC_Mode.layer'
@@ -282,6 +283,7 @@ def capture(source):
        }}
        m_Capture GC_AreaCaptureOptions "{{{guid(key + '/timer')}}}" {{
         m_fSeconds {fields['m_captureTime']}
+        m_bUseElapsedTime 1
         m_iInterruption 3
         m_Messages GC_CaptureMessages "{{{guid(key + '/status')}}}" {{
          m_sLocation {fields['m_locationName']}
@@ -296,6 +298,7 @@ def capture(source):
     return fields['m_flagName'], condition, area, {
         'name': 'CAPZone', 'radiusMeters': fields['m_queryRadius'], 'seconds': fields['m_captureTime'],
         'ownerFaction': fields['m_ownerFactionKey'][1:-1], 'requiredLocalShare': 1,
+        'timing': 'elapsed mission seconds',
     }
 
 
@@ -397,7 +400,15 @@ def stage_mode(source, preset, cleanup=''):
     if cleanup:
         rules += '\n' + cleanup
     start = next(i for i, line in enumerate(lines) if line.startswith('PS_GameModeCoop '))
-    weather = '\n'.join(lines[start + 2:block_end(lines, start + 1)]).replace('5EE3229927D4D2F5', '6B71E9A8B1A8C501')
+    weather = '\n'.join(lines[start + 2:block_end(lines, start + 1)])
+    for old, new in {
+        '5EE3229927D4D2F5': '6B71E9A8B1A8C501',
+        'm_bUseSpecifiedDate': 'm_bDateOverride',
+        'm_iSetDay': 'm_iDay',
+        'm_iSetMonth': 'm_iMonth',
+        'm_iSetYear': 'm_iYear',
+    }.items():
+        weather = weather.replace(old, new)
     transform = lines[block_end(lines, start) - 1]
     mode = f'''GC_LobbyGameMode GC_WetFeetMode : "{{{guid(WORLD + '/resource')}}}{preset}" {{
  components {{

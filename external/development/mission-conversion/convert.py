@@ -438,7 +438,8 @@ def main():
         files, audit = wetfeet.assemble(source, dev, stock, out, out.pop(wetfeet.MODE))
         for path, body in files.items():
             if path in dev.files and dev.read(path).strip() != body.strip():
-                parser.error(f'Dev already has differing {path}')
+                if path != wetfeet.DEFAULT or dev.files[path] != wetfeet.PRIOR_DEFAULT:
+                    parser.error(f'Dev already has differing {path}')
             out[path] = body
         row['modeCandidate']['placementLayer'] = wetfeet.DEFAULT
         row['playtestCandidate'] = {
@@ -515,7 +516,9 @@ def main():
             if path in dev.files and dev.read(path).strip() != body.strip():
                 boundary_path = world.removesuffix('.ent') + '_Layers/default_GC_Boundaries.layer'
                 prior_vehicles = legacy_vehicle_groups and path.endswith('/Vehicles.layer') and dev.files[path] == source.files[path]
-                if not prior_vehicles and (path != boundary_path or out.get(path) != body):
+                prior_timing = (path.endswith('/default.layer')
+                                and dev.read(path).strip() == body.replace('        m_bUseElapsedTime 1\n', '').strip())
+                if not prior_vehicles and not prior_timing and (path != boundary_path or out.get(path) != body):
                     parser.error(f'Dev already has differing {path}')
             out[path] = body
         row['playtestCandidate'] = {
