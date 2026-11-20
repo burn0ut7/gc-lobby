@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "ee444dbd2c2209f640e2e91796b1136ad5d21024",
+  "target": "2593cc4849ba86b3064a9984a8c78fb11139a602",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -3767,7 +3767,9 @@
         "worlds/Corax/Breach and clear/Breach_and_Clear_Layers/default.layer": {
           "instances": {
             "196": {
-              "gap": "separate unassigned map fill audience"
+              "vertices": 12,
+              "name": "bluforAO",
+              "lastLine": 254
             },
             "255": {
               "vertices": 4,
@@ -8129,7 +8131,7 @@
         "worlds/HitTheMan/Battle For Rasman/BattleForRasman_Layers/default.layer": {
           "instances": {
             "168": {
-              "gap": "separate unassigned map fill audience"
+              "gap": "map fill and outline target different factions"
             },
             "309": {
               "vertices": 20,
@@ -19208,12 +19210,17 @@
         "worlds/TheLocalPub/WetFeet/WetFeet_Layers/SYSTEMS/AllMarkers.layer": {
           "instances": {
             "2": {
-              "gap": "separate unassigned map fill audience"
+              "vertices": 53,
+              "name": "AOLimitUK",
+              "lastLine": 181
             },
             "182": {
-              "gap": "separate unassigned map fill audience"
+              "vertices": 115,
+              "name": "AOLimitSep",
+              "lastLine": 547
             }
-          }
+          },
+          "placementLayer": "worlds/TheLocalPub/WetFeet/WetFeet_Layers/SYSTEMS/AllMarkers_GC_Boundaries.layer"
         }
       },
       "directBriefingsRead": 10,

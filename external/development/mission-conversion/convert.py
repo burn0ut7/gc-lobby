@@ -103,11 +103,15 @@ def main():
                         )
                         if layer in dev.files and not reviewed_candidate:
                             audit['gap'] = 'Dev already contains the original layer path; review before adding boundary siblings'
-                        elif dest.casefold() in target_paths and (target_paths[dest.casefold()] != dest or dev.read(dest).strip() != ao_body.strip()):
-                            audit['gap'] = 'Dev has differing boundary output'
                         else:
-                            out[dest] = ao_body
-                            audit['placementLayer'] = dest
+                            existing = target_paths.get(dest.casefold())
+                            if existing and (existing != dest or dev.read(dest).strip() != ao_body.strip()):
+                                previous, _ = convert_boundaries(text, split_fill=False)
+                                if existing != dest or dev.read(dest).strip() != previous.strip():
+                                    audit['gap'] = 'Dev has differing boundary output'
+                            if 'gap' not in audit:
+                                out[dest] = ao_body
+                                audit['placementLayer'] = dest
             records, issues = read_respawns(text, layer)
             respawns.extend(records)
             ticket_gaps.extend(issues)
