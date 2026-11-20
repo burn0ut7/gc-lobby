@@ -517,6 +517,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     reused_layers = set()
     group_blocks = []
     objective_flags, interaction_placements = interactions
+    event_flags = {action['setsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
+                   if 'setsFlag' in action}
+    unresolved_event_flags = {term['flag'] for term in terms if term['trigger'] == 'event flag'} - event_flags
+    if unresolved_event_flags:
+        blockers.append({'rule': 'framework events', 'file': world,
+                         'detail': {'missingConvertedFlagProducers': sorted(unresolved_event_flags)}})
     unused_flags = []
     for layer in source.layers[world.lower()]:
         if layer in staged:
@@ -591,7 +597,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                              'detail': 'legacy instruction deletes its own game mode'})
         try:
             layer, index = mode_index
-            rendered = render_mode(world, mode, preset or '', rule_text, zones, ai_faction, objective_flags)
+            rendered = render_mode(world, mode, preset or '', rule_text, zones, ai_faction,
+                                   set(objective_flags) | event_flags)
             if preset:
                 parts[layer][index] = rendered
         except ValueError as exc:
@@ -675,6 +682,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                          'Compare possession, faction changes and delayed recounts separately.')
     if delayed:
         remaining.append('Compare delayed extraction polling and status messages in multiplayer.')
+    if event_flags:
+        remaining.append('Compare timing of simultaneous flag changes and their dependent event chains.')
     return ({} if blockers else draft), {
         'status': 'blocked by conversion rules' if blockers else 'generated for file review',
         'blockers': blockers, 'files': sorted(draft), 'mixedLayerGroups': group_blocks,

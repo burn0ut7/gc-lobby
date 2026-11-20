@@ -299,7 +299,9 @@ def main():
                     captures.update(delayed.conditions)
                 rules, outcome_audit, gap = compile_outcomes(
                     source, world, captures, compound=args.batch, notification_audit=review,
-                    objective_flags=objective_flags, extraction_spawns=delayed.spawns if delayed else None)
+                    objective_flags=objective_flags, extraction_spawns=delayed.spawns if delayed else None,
+                    scripts=batch.script_text(source) if args.batch and
+                    row['serializedTypes'].get('TILW_SetFlagInstruction') else None)
                 outcome = {'events': outcome_audit}
                 if gap:
                     outcome['gap'] = gap

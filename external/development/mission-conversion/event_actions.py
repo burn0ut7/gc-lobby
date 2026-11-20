@@ -96,6 +96,15 @@ def edit_map_items(data, key):
                     'factions': {faction[1:-1]: value for faction, value in factions.items()}}
 
 
+def set_flag(data, _key):
+    flag = data.get('m_flagName', '')
+    if not re.fullmatch(r'"[\w.-]+"', flag):
+        raise ValueError('invalid mission flag name')
+    return ['       m_sFlagName ' + flag, '       m_iOperation 1', '       m_iAmount 1'], {
+        'setsFlag': flag[1:-1],
+    }
+
+
 ACTIONS = {
     'TILW_DeleteEntitiesInstruction': ('GC_DeleteEntitiesAction', delete_entities, {'m_entityNames'}),
     'TILW_ServiceVehiclesInstruction': (
@@ -109,6 +118,7 @@ ACTIONS = {
     'TILW_EditMapItemInstruction': (
         'GC_MapMarkerVisibilityAction', edit_map_items, {'m_itemNames', 'm_factionVisibility', 'm_visibleForEmpty'},
     ),
+    'TILW_SetFlagInstruction': ('GC_FlagAction', set_flag, {'m_flagName'}),
 }
 
 

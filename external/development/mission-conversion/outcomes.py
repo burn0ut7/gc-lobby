@@ -1,9 +1,11 @@
 """Stage independently scheduled actions for supported legacy framework events."""
 from collections import defaultdict
 from decimal import Decimal
+from pathlib import PurePosixPath
 import re
 
 from briefings import block_end, guid, properties
+from catalog import SOURCE_TEXT
 from delayed_extraction import SPAWN, render_spawn
 from event_actions import compile_action, recognized
 from events import EVENT, LITERAL, MESSAGE, message, peak_flags
@@ -16,6 +18,38 @@ EVENT_LABEL = r'"[^"\\\x00-\x1f]+"'
 RESULT = {'EDITOR_FACTION_VICTORY': 1, 'EDITOR_FACTION_DEFEAT': 2, 'EDITOR_FACTION_DRAW': 3}
 TERM = re.compile(r'\s*(?:m_condition )?TILW_(Literal|Conjunction|Disjunction)Term "\{[\da-fA-F]{16}\}" \{')
 AI_FLAG = re.compile(r'^  TILW_FactionAIKilledFlag "\{[\da-fA-F]{16}\}" \{$')
+SET_FLAG = re.compile(r'^    TILW_SetFlagInstruction "\{[\da-fA-F]{16}\}" \{$')
+FLAG_FIELD = re.compile(r'^\s+m_flagName (' + KEY + r')\s*$')
+
+
+def instruction_flags(source, world, framework_path, lines, scripts):
+    """Find monotonic flags whose complete authored use stays inside event rules."""
+    flags = set()
+    known_uses = defaultdict(int)
+    for start, line in enumerate(lines):
+        is_set = SET_FLAG.fullmatch(line)
+        is_literal = line.startswith('   ') and TERM.fullmatch(line)
+        if not is_set and (not is_literal or is_literal[1] != 'Literal'):
+            continue
+        end = block_end(lines, start)
+        body = lines[start + 1:end]
+        names = [match[1] for item in body if (match := FLAG_FIELD.fullmatch(item))]
+        if len(names) != 1:
+            continue
+        if is_set:
+            flags.add(names[0])
+        elif any(item.strip() != 'm_invertTerm 0' for item in body if not FLAG_FIELD.fullmatch(item)):
+            continue
+        known_uses[names[0]] += 1
+    legacy_flag_apis = ('AdjustMissionFlag', 'IsMissionFlag', 'GetFlagSetCopy', 'm_flagSet')
+    if not flags or any(api in scripts for api in legacy_flag_apis):
+        return ()
+    corpus = '\n'.join('\n'.join(line for line in source.read(path).splitlines()
+                                if not (path == framework_path and line.startswith('   m_name ')))
+                       for path in sorted(source.closure(world))
+                       if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+    return tuple(sorted(flag[1:-1] for flag in flags
+                        if flag[1:-1] not in scripts and corpus.count(flag) == known_uses[flag]))
 
 
 def end_action(lines, key, allow_neutral=False):
@@ -58,7 +92,7 @@ def waypoint_action(lines, key):
     return Decimal(delay), [*body, '      }'], details
 
 
-def read_term(lines, flags, captures, ai, objective_flags, depth=0):
+def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0):
     match = TERM.fullmatch(lines[0])
     if not match or depth > 8:
         raise ValueError('unsupported outcome term')
@@ -78,20 +112,22 @@ def read_term(lines, flags, captures, ai, objective_flags, depth=0):
             return {'trigger': 'area capture', 'flag': flag[1:-1]}
         if invert == '0' and flag[1:-1] in objective_flags:
             return {'trigger': 'interaction flag', 'flag': flag[1:-1]}
+        if invert == '0' and flag[1:-1] in event_flags:
+            return {'trigger': 'event flag', 'flag': flag[1:-1]}
         raise ValueError('unresolved or unsupported outcome flag ' + flag)
     if len(lines) < 4 or lines[1].strip() != 'm_operands {' or block_end(lines, 1) != len(lines) - 2:
         raise ValueError('unsupported compound outcome term fields')
     index, operands = 2, []
     while index < len(lines) - 2:
         end = block_end(lines, index)
-        operands.append(read_term(lines[index:end + 1], flags, captures, ai, objective_flags, depth + 1))
+        operands.append(read_term(lines[index:end + 1], flags, captures, ai, objective_flags, event_flags, depth + 1))
         index = end + 1
     if not 1 <= len(operands) <= 64:
         raise ValueError('unsupported number of outcome operands')
     return {'trigger': 'all' if match[1] == 'Conjunction' else 'any', 'operands': operands}
 
 
-def read_event(fields, key, flags, captures, ai, compound, objective_flags, extraction_spawns):
+def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -109,7 +145,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, extr
         seen.add(field)
         if LITERAL.fullmatch(line) or (compound and field == 'm_condition' and TERM.fullmatch(line)):
             end = block_end(fields, i)
-            term = read_term(fields[i:end + 1], flags, captures, ai, objective_flags)
+            term = read_term(fields[i:end + 1], flags, captures, ai, objective_flags, event_flags)
             i = end
         elif line == '   m_instructions {':
             end = block_end(fields, i)
@@ -132,6 +168,9 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, extr
                     assignments.append(assignment)
                 elif action_match:
                     delay, body, details = compile_action(action_match, fields[j + 1:last], key)
+                    if 'setsFlag' in details and details['setsFlag'] not in event_flags:
+                        raise ValueError('flag has another producer, an inverted check or an unsupported use: '
+                                         + details['setsFlag'])
                     converted_actions.append(details)
                 elif spawn_match and spawn_match[1] in extraction_spawns:
                     details = extraction_spawns[spawn_match[1]]
@@ -171,7 +210,7 @@ def leaves(term):
 
 def render_check(term, key, captures, capture_messages):
     trigger = term['trigger']
-    if trigger == 'interaction flag':
+    if trigger in ('interaction flag', 'event flag'):
         return [f'      GC_MissionFlagCondition "{{{guid(key + "/objective")}}}" {{',
                 f'       m_sFlagName "{term["flag"]}"', '      }']
     if trigger == 'area capture':
@@ -229,7 +268,7 @@ def render(key, name, term, actions, captures, capture_messages):
 
 
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
-                     extraction_spawns=None):
+                     extraction_spawns=None, scripts=None):
     captures = captures or {}
     notification_audit = notification_audit or {}
     extraction_spawns = extraction_spawns or {}
@@ -256,6 +295,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         return [], {}, 'ambiguous AI casualty faction tracking'
     if set(objective_flags) & {key[1:-1] for key in (*flags, *ai, *captures)}:
         return [], {}, 'ambiguous interaction flag producer'
+    event_flags = instruction_flags(source, world, path, body, scripts) if scripts is not None else ()
     compiled, audit = [], {}
     names = set()
     capture_messages = set() if compound else None
@@ -279,7 +319,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         name = name[1:-1]
         try:
             term, actions, details = read_event(
-                fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, spawns)
+                fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns)
             emitted_names = {f'{name} ({delay:f}s)' for delay in actions}
             if term['trigger'] != 'Match start':
                 emitted_names.add(name)
