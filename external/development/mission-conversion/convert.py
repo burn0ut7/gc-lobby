@@ -87,7 +87,11 @@ def main():
                         dest = str(PurePosixPath(layer).with_suffix('')) + '_GC_Boundaries.layer'
                         if dest.casefold() in source_paths:
                             raise ValueError('boundary output collides with source: ' + dest)
-                        if layer in dev.files:
+                        reviewed_candidate = (
+                            args.include_hnevice_candidate and world == hnevice.WORLD
+                            and layer == hnevice.FOLDER + 'default.layer'
+                        )
+                        if layer in dev.files and not reviewed_candidate:
                             audit['gap'] = 'Dev already contains the original layer path; review before adding boundary siblings'
                         elif dest.casefold() in target_paths and (target_paths[dest.casefold()] != dest or dev.read(dest).strip() != ao_body.strip()):
                             audit['gap'] = 'Dev has differing boundary output'
@@ -226,11 +230,15 @@ def main():
         if not args.stage or not args.units:
             parser.error('the Hnevice playtest candidate requires --stage and --units')
         row = report['worlds'][hnevice.WORLD]
-        for path, data in hnevice.assemble(source, dev, row, out).items():
+        candidate = hnevice.assemble(source, dev, row, out)
+        for path, data in candidate.items():
             if path in dev.files and dev.read(path).strip() != data.strip():
                 parser.error(f'Dev already has differing {path}')
             out[path] = data
-        row['playtestCandidate'] = {'remainingBehavior': hnevice.GAPS}
+        row['playtestCandidate'] = {
+            'presentOnDev': all(path in dev.files for path in candidate),
+            'remainingBehavior': hnevice.GAPS,
+        }
     if args.stage:
         stage = args.stage.resolve()
         if any(stage.is_relative_to(root.resolve()) for root in ([args.missions, lobby] + ([args.units] if args.units else []))):

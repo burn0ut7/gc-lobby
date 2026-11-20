@@ -158,13 +158,14 @@ def assemble(source, dev, row, generated):
         'vertices': vertices, 'name': 'GC_HneviceMapMask',
         'lastLine': block_end(lines, start) + 1, 'candidateLayer': FOLDER + 'map_mask.layer',
     }
-    files[FOLDER + 'map.layer'] = '''SCR_MapEntity MapEntity1 : "{731564B66F91B107}Prefabs/World/Game/MapEntity.et" {
+    # The native marker manager reads the map singleton during mode initialization.
+    map_entity = '''SCR_MapEntity MapEntity1 : "{731564B66F91B107}Prefabs/World/Game/MapEntity.et" {
  "Map Geometry Data" "{0C931F860C09AC4C}Worlds/Bystrany/Bystrany.topo"
  "Satellite background image" "{10EB7E9261F936BC}UI/Textures/Map/Worlds/Bystrany/Bystrany_Rasterized_Enhanced.edds"
 }
 '''
     files[FOLDER + 'default.layer'] = (
-        ai_world + '\n'
+        ai_world + '\n' + map_entity
         + f'GC_LobbyGameMode GC_HneviceMode : "{{{guid(WORLD + "/resource")}}}{settings}" {{\n'
         + ' components {\n' + weather + '\n'
         + f'  GC_LobbyFreezeComponent "{{E81E75BC287148D0}}" {{\n   m_iAuthoredCountdownSeconds {freeze_ms // 1000}\n  }}\n'
