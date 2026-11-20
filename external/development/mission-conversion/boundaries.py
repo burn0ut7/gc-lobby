@@ -194,16 +194,16 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
         empty = overlay.get('m_visibleForEmptyFaction', '1')
         if fill_keys and not re.fullmatch(r'(?:\s*"[\w.-]+"\s*)+', fill_keys):
             raise ValueError('invalid map fill audience')
-        if visible and set(re.findall(r'"([^"]+)"', fill_keys)) != set(re.findall(r'"([^"]+)"', map_keys)):
-            raise ValueError('map fill and outline target different factions')
-        if not visible:
-            color, map_keys = '0 0 0 0', fill_keys
         if invert not in ('0', '1') or not all(0 <= x <= 1 for x in floats(fill_color, 4)):
             raise ValueError('invalid map fill style')
-        if empty != ('0' if fill_keys else '1'):
+        different_factions = visible and set(re.findall(r'"([^"]+)"', fill_keys)) != set(re.findall(r'"([^"]+)"', map_keys))
+        different_unassigned = empty != ('0' if fill_keys else '1')
+        if not visible:
+            color, map_keys = '0 0 0 0', fill_keys
+        if different_factions or different_unassigned:
             if not split_fill:
-                raise ValueError('separate unassigned map fill audience')
-            # A passive fill can include unassigned viewers independently of the AO outline.
+                raise ValueError('map fill and outline target different factions' if different_factions
+                                 else 'separate unassigned map fill audience')
             passive_fill = convert_passive('', placement, overlay) + '\n'
             fill = '0'
     lines = [f'GC_AOLimitEntity{name} : "{DEST}" {{',' components {',

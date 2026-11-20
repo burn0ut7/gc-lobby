@@ -14,7 +14,7 @@ import bugout
 from briefings import guid, read_pages, render
 from catalog import Snapshot, WORLD, compare
 from events import world_events
-from groups import group_layer
+from groups import group_layer, rhs_ai_characters
 import gwotline
 import hnevice
 import industrial
@@ -100,6 +100,14 @@ def main():
     report = {'source': source.commit, 'target': dev.commit, 'headers': {}, 'worlds': {}}
     if stock:
         report['baseResourceDatabaseSHA256'] = sha256(stock.data).hexdigest()
+    external_ai = {}
+    if args.batch and args.workshop_addons:
+        try:
+            external_ai, rhs_database = rhs_ai_characters(args.workshop_addons)
+        except (OSError, ValueError) as exc:
+            parser.error(str(exc))
+        if rhs_database:
+            report['rhsResourceDatabaseSHA256'] = sha256(rhs_database.data).hexdigest()
     if args.units:
         source_units = Snapshot(args.units, args.units_source)
         dev_units = Snapshot(args.units, args.units_dev)
@@ -186,7 +194,7 @@ def main():
                     if (arc_worlds.get(world), PurePosixPath(layer).name) in arc_capture.FOREIGN_ROLE_LAYERS:
                         groups = arc_capture.foreign_roster(source, source_units, dev_units, stock, locally_owned, layer)
                     else:
-                        groups = group_layer(text, source_units, dev_units, stock, locally_owned)
+                        groups = group_layer(text, source_units, dev_units, stock, locally_owned, external_ai=external_ai)
                     if groups:
                         body, count, slots = groups
                         if layer in dev.files and dev.read(layer).strip() != body.strip():
@@ -594,7 +602,7 @@ def main():
         }
     if args.batch:
         def convert_group_block(body):
-            return group_layer(body, source_units, dev_units, stock, locally_owned)
+            return group_layer(body, source_units, dev_units, stock, locally_owned, external_ai=external_ai)
 
         out = batch.plan(source, dev, report, out, batch_areas, convert_group_block)
     if args.stage:

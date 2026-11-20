@@ -6,6 +6,7 @@ import re
 
 from briefings import block_end
 from catalog import REF
+from scenery import StockPrefabs
 
 ROOT = re.compile(r'^(?P<group>\$grp )?SCR_AIGroup(?: [\w.\-]+)? : "\{(?P<guid>[A-Fa-f0-9]{16})\}[^"]+\.et" \{$')
 CALL = re.compile(r'^\s*PS_GroupCallsignAssigner "\{([\da-f]{16})\}" \{$', re.I)
@@ -17,6 +18,22 @@ NATIVE_GROUP_FIELD = re.compile(r'm_faction "[\w.-]+"|m_iGroupRadioFrequency \d+
 STATIC_LINK_FIELDS = {'m_aStaticWaypoints {', 'm_aStaticVehicles {'}
 FORMATION = re.compile(r'AIFormationComponent "\{[\da-fA-F]{16}\}" \{')
 WRAPPERS = json.loads(Path(__file__).with_name('stock_wrappers.json').read_text(encoding='utf-8'))
+RHS_AI_ROLES = {
+    '1701B425406974A0': 'SL', '234A37EC8608DFAC': 'Rifleman', '727CB9BA48D9407A': 'SR_GL',
+    'A5548567111B86FD': 'AR', 'AFF07941936347BB': 'AAT', 'F11CCA20FCC74AA3': 'AT',
+}
+
+
+def rhs_ai_characters(workshop):
+    database = workshop / 'RHS-StatusQuo_595F2BF2F44836FB/resourceDatabase.rdb'
+    if not database.is_file():
+        return {}, None
+    registry = StockPrefabs(database)
+    root = 'Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Demiseason/'
+    characters = {guid: root + f'RandomSoldiers/Character_RHS_RF_MSV_VKPO_DS_{role}_Random.et'
+                  for guid, role in RHS_AI_ROLES.items()}
+    characters['0848BAB1B94FCBBA'] = root + 'Character_RHS_RF_MSV_VKPO_DS_Crew.et'
+    return {guid: path for guid, path in characters.items() if registry.contains(guid, path)}, registry
 
 
 def only_path(snapshot, guid):
@@ -135,12 +152,15 @@ def native_group_field_end(lines, index):
     return None
 
 
-def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned):
+def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai):
     old_chain = compare_ai_parents(source_units, dev_units, guid)
     checked = set()
 
     def member(match):
         resource = match[1].upper()
+        if (resource not in locally_owned and resource not in source_units.resources and resource not in dev_units.resources
+                and external_ai.get(resource) == match[2]):
+            return match[0]
         if resource not in checked:
             path = only_path(source_units, resource)
             character = source_units.read(path)
@@ -184,12 +204,12 @@ def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned):
 
 
 def convert_instance(lines, guid, old, new, source_units, dev_units, stock, locally_owned,
-                     reviewed_callsigns=frozenset(), reviewed_members=None):
+                     reviewed_callsigns=frozenset(), reviewed_members=None, external_ai=None):
     reviewed_members = reviewed_members or {}
     explicit_force = any(l.strip() == 'm_bSetPlayable 1' for l in lines)
     native_playable = any(l.strip() == 'm_bPlayable 1' for l in lines) or scalar(inheritance(dev_units, guid), 'm_bPlayable') == 1
     if not native_playable and not explicit_force:
-        return convert_ai_instance(lines, guid, source_units, dev_units, locally_owned)
+        return convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai or {})
     replace_slots = any(l.strip() == 'm_aUnitPrefabSlots {' for l in lines)
     roster = []
     converted_wrappers = set()
@@ -336,7 +356,7 @@ def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_
 
 
 def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset(),
-                reviewed_members=None):
+                reviewed_members=None, external_ai=None):
     if not re.search(r'^(?:\$grp )?SCR_AIGroup\b', text, re.M):
         return None
     lines = text.splitlines()
@@ -365,7 +385,8 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
             resource = guid
             convert = partial(convert_instance, guid=guid, old=old, new=new, source_units=source_units,
                               dev_units=dev_units, stock=stock, locally_owned=locally_owned,
-                              reviewed_callsigns=reviewed_callsigns, reviewed_members=reviewed_members)
+                              reviewed_callsigns=reviewed_callsigns, reviewed_members=reviewed_members,
+                              external_ai=external_ai)
         result.append(REF.sub(lambda _: '"{' + resource + '}' + dest + '"', lines[i], count=1))
         end = block_end(lines, i)
         if match['group']:

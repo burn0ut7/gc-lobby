@@ -22,7 +22,7 @@ Set the following paths from a GC Lobby checkout. Use a fresh staging directory 
     $inventory = "$env:TEMP/gc-missions-inventory.json"
     $base = 'C:/Program Files (x86)/Steam/steamapps/common/Arma Reforger/addons/data/resourceDatabase.rdb'
     $workshop = "$env:USERPROFILE/Documents/My Games/ArmaReforger/addons"
-    python "$tools/convert.py" --missions $repo --dev HEAD --batch --units ../gc-reforger-units --units-dev HEAD --base-database $base --stage $stage --report $inventory
+    python "$tools/convert.py" --missions $repo --dev HEAD --batch --units ../gc-reforger-units --units-dev HEAD --base-database $base --workshop-addons $workshop --stage $stage --report $inventory
     python "$tools/review.py" --missions $repo --dev HEAD --inventory $inventory --draft-stage $stage --dependency . --dependency ../gc-reforger-units --dependency ../gc-reforger-core --base-database $base --workshop-addons $workshop --report "$env:TEMP/gc-missions-review.json" --summary "$env:TEMP/gc-missions-review.md"
 
 The review reports unchanged, changed, source-only and Dev-only files. It locates source and Dev declarations for modes, briefings, rosters, markers and boundaries, respawns, events, weather and vehicles. It flags inconsistent launcher and mission-owned resource references. With --workshop-addons it also names unresolved resource references and the files that use them, using the same installed databases as the installer. Use repeatable --mission arguments with exact launcher paths and --patch to produce a focused diff. Omit --draft-stage to compare the committed branches.
@@ -356,3 +356,12 @@ The marker converter keeps visibility for assigned factions independent of visib
 The five entries in `marker_presets.json` come from the installed TilW Mission Framework package `61F0E6AB2D06B1C6`. Each entry records the legacy GUID, path, archive content hash and supported fields. All five inherit the PS Core EditableMarker prefab. Placement fields override the archived defaults. The group imagesets resolve through the game database or the installed Soviet Tactical Graphics provider. The converted placements use the native GC Lobby marker component.
 
 The file pass cleared marker-layer blockers in 56 worlds. Standalone staging added 32 layers with 179 icons. No previously staged icons were lost, and the 982 previously staged files reproduced byte for byte. The audience truth table matched all eight combinations of any faction, unassigned visibility and empty or nonempty faction lists. Workbench reloaded the shared Lobby scripts with zero compile errors in session `logs_2026-11-20_16-00-26`. In-world rendering, unusual phase masks and explicitly authored z-order remain open.
+
+
+## Independent boundary audiences and RHS AI
+
+When an AO outline and its map fill target different viewers, the batch writes the fill as a passive native polygon. It retains the original vertices, transform, color and audience. The enforcement polygon retains its own faction filters, outline and grace period. Previously staged Battle for Rasman output now also includes the missing pair of native shapes for its BLUFOR boundary. Its earlier OPFOR shape reproduced byte for byte.
+
+With --workshop-addons the batch verifies the exact GUID and resource paths of six RHS Status Quo VKPO demi-season randomized roles and the matching crew prefab. This allowlist applies to AI-only groups with matching Units ancestry. Mission-owned and Units-owned overrides still need their normal checks. The inventory records the SHA-256 of the provider database used for these checks.
+
+Trench Assault is in local Missions Dev commit `69edea1f`. File comparison verified 18 playable slots, both six-member AI sections and their ordered waypoints, random starting weather and a 90-second staging release. The Russian and CDF outcomes retain their casualty thresholds and the five- and fifteen-second announcements. Its two enforcement polygons retain their original geometry and grace periods. The CDF-only outline and public inverted fill are separate native shapes. The draft passed the resource audit, and a second batch run reproduced its files and inventory byte for byte. Occupied-side casualty timing and map rendering remain open for shared verification.
