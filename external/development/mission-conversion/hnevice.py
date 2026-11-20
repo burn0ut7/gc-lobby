@@ -1,5 +1,8 @@
 """Stage the Hnevice terrain, lobby mode, briefings, groups and supported AO."""
+import re
+
 from briefings import block_end, guid
+from events import EVENT, LITERAL, MESSAGE, message
 from launchers import launcher
 from markers import LEGACY, instance
 
@@ -12,7 +15,7 @@ REVIEWED = {
     'briefing.layer': '180e8cad25296a3a5470ab73ed701c326c5c166c',
 }
 GAPS = [
-    'Convert the two 80% casualty notifications with legacy peak-population semantics',
+    'Verify the two 80% casualty notifications, including spawn/delete sampling and recovery during the delay',
     'Compare the crash site and both platoon icons before slotting and as each assigned side',
     'Convert the disabled AO instance as a map-only polygon with US and USSR visibility',
     'Match the legacy 120-second staging behavior and countdown',
@@ -48,6 +51,64 @@ def mission_icons(source):
     if len(output) != 3:
         raise ValueError('expected three Hnevice icons')
     return '\n'.join(output) + '\n'
+
+
+def casualty_rules(lines):
+    flags = dict(re.findall(
+        r'^  TILW_FactionPlayersKilledFlag "\{[\dA-F]+\}" \{\n'
+        r'   m_flagName "(\w+)"\n   m_factionKey "([\w]+)"\n   m_casualtyRatio 0\.8\n  }$',
+        '\n'.join(lines), re.M))
+    if flags != {'san': 'San_Serriffe', 'don': 'GC_DON'}:
+        raise ValueError('Hnevice casualty flag layout changed')
+    rules = []
+    for start, line in enumerate(lines):
+        event = EVENT.fullmatch(line)
+        if not event:
+            continue
+        stop = block_end(lines, start)
+        condition = next(i for i in range(start + 1, stop) if LITERAL.fullmatch(lines[i]))
+        flag = re.fullmatch(r'    m_flagName "(\w+)"', lines[condition + 1])[1]
+        index = next(i for i in range(start + 1, stop) if MESSAGE.fullmatch(lines[i]))
+        key = WORLD + '/casualty/' + event[1]
+        delay, action = message(lines[index + 1:block_end(lines, index)], key + '/message')
+        if delay != 5:
+            raise ValueError('Hnevice casualty notification delay changed')
+        name = f'{flags[flag]} reached casualty threshold'
+        rules.append(f'''    GC_Event "{{{guid(key + '/trigger')}}}" {{
+     m_sName "{name}"
+     m_aConditions {{
+      GC_CustomScriptCondition "{{{guid(key + '/condition')}}}" {{
+       m_Script GC_PeakFactionPopulationCheck "{{{guid(key + '/check')}}}" {{
+        m_sFaction "{flags[flag]}"
+        m_fRatio 0.8
+       }}
+      }}
+     }}
+     m_aActions {{
+      GC_MessageAction "{{{guid(key + '/log')}}}" {{
+       m_sMessage "{name}"
+       m_iDelivery 2
+      }}
+     }}
+    }}
+    GC_Event "{{{guid(key + '/notify')}}}" {{
+     m_sName "{name} notification"
+     m_aConditions {{
+      GC_MissionEventCondition "{{{guid(key + '/latch')}}}" {{
+       m_sEventName "{name}"
+      }}
+     }}
+     m_Advanced GC_EventOptions "{{{guid(key + '/delay')}}}" {{
+      m_fDelay {delay}
+     }}
+     m_aActions {{
+{chr(10).join(action)}
+     }}
+    }}
+''')
+    if len(rules) != 2:
+        raise ValueError('expected two Hnevice casualty notifications')
+    return ''.join(rules)
 
 
 def assemble(source, dev, row, generated):
@@ -88,6 +149,10 @@ def assemble(source, dev, row, generated):
     files[FOLDER + 'default.layer'] = (
         ai_world + '\n'
         + f'GC_LobbyGameMode GC_HneviceMode : "{{{guid(WORLD + "/resource")}}}{settings}" {{\n'
-        + ' components {\n' + weather + '\n }\n coords 2161.418 14.603 -3370.065\n}\n'
+        + ' components {\n' + weather + '\n'
+        + f'  GC_PeakFactionPopulationComponent "{{{guid(WORLD + "/population")}}}" {{\n  }}\n'
+        + '  GC_LobbyManager "{6A137A39106A4973}" {\n   m_aMissionEvents + {\n'
+        + casualty_rules(lines)
+        + '   }\n  }\n }\n coords 2161.418 14.603 -3370.065\n}\n'
     )
     return files
