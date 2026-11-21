@@ -240,6 +240,12 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/blackskimask/ZarichneFront.conf': (
+        'b543004e58932c8a1864fa33d592c074a27f332b',
+        (('worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/players_ru.layer', 'ae2d0e8f28285129561a0b7d9d9330f38272a45d'),
+         ('worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/players_uk.layer', '2cc29592391afecab4ed0f0ce8990321323f9d23')),
+        65, 67,
+    ),
     'Missions/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov.conf': (
         '81f0da74b2f471ccca064ebce5f9cc5b5c94117a',
         (('worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov_Layers/BLUFOR_Players/BLUFOR_Players.layer',
@@ -1348,13 +1354,17 @@ CORE_INITIAL_DAMAGE = re.compile(
     r'm_bDamageManagerEnabled 1\nm_aHitzonesData \{\n'
     r'PK_HitzoneData "\{[\da-fA-F]{16}\}" \{\nm_fHealthPercentage 0\n\}\n\}\n\}\n\}'
 )
+LEGACY_SENTRY_TREE = 'OverrideAIBehaviorData "{1E81FF0F3EC49323}AI/BehaviorTrees/Chimera/Soldier/TILW_StaticAI.bt"'
+PLACED_CHARACTER = re.compile(
+    r'(?P<group>\$grp )?SCR_ChimeraCharacter(?: (?P<name>[\w.-]+))? : ' + REF.pattern + r' \{')
+SENTRY_CONTROL = re.compile(
+    r'^(?P<indent> +)(?P<header>ChimeraAIControlComponent "\{520EA1D2DB109F34\}" \{)\n'
+    r'(?P=indent) ' + re.escape(LEGACY_SENTRY_TREE) + r'\n(?P=indent) EnableAI 1\n(?P=indent)\}$', re.M)
 
 
 def placed_core_character(block, resolve_character):
     """Keep a verified Core character and its original default-zone startup modifier."""
-    head = re.fullmatch(
-        r'(?P<group>\$grp )?SCR_ChimeraCharacter(?: (?P<name>[\w.-]+))? : '
-        + REF.pattern + r' \{', block[0])
+    head = PLACED_CHARACTER.fullmatch(block[0])
     if not head:
         return None
     members = polygon_capture.members(block, head['group'], head['name'])
@@ -1370,6 +1380,32 @@ def placed_core_character(block, resolve_character):
     reference = resolve_character(prefab[1].upper(), prefab[2], allow_legacy_playable=False)
     header = block[0].replace(prefab[0], reference, 1)
     return native_placement([header, *block[1:]], reviewed_character=True)
+
+
+def placed_static_sentries(block, resolve_character):
+    head = PLACED_CHARACTER.fullmatch(block[0])
+    if not head:
+        raise ValueError('unsupported sentry placement')
+    members = polygon_capture.members(block, head['group'], head['name'])
+    expected = [' components {', '  ChimeraAIControlComponent "{520EA1D2DB109F34}" {',
+                '   ' + LEGACY_SENTRY_TREE, '   EnableAI 1', '  }', ' }']
+    if not members:
+        raise ValueError('sentry placement has no members')
+    for _, fields in members:
+        if (not any(field.startswith(' coords ') for field in fields)
+                or [field for field in fields if not FIELD.fullmatch(field[1:])] != expected):
+            raise ValueError('unsupported authored sentry fields')
+    prefab = REF.search(block[0])
+    reference = resolve_character(prefab[1].upper(), prefab[2], allow_legacy_playable=False)
+    component = guid('migration/static sentry')
+    replacement = (r'\g<indent>\g<header>\n\g<indent> EnableAI 1\n\g<indent>}\n'
+                   + rf'\g<indent>GC_StaticSentryComponent "{{{component}}}" {{\n\g<indent>}}')
+    fields, count = SENTRY_CONTROL.subn(replacement, '\n'.join(block[1:]))
+    header = block[0].replace(prefab[0], reference, 1)
+    result = native_placement([header, *fields.splitlines()], reviewed_character=True)
+    if count != len(members) or result is None:
+        raise ValueError('sentry placement has another legacy declaration')
+    return result
 
 
 def restore_rhib_mounts(block, aliases, source_blob):
@@ -3919,6 +3955,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                              'detail': 'unverified Core startup modifier'})
                         else:
                             result.append(converted)
+                elif kind == 'SCR_ChimeraCharacter' and LEGACY_SENTRY_TREE in body:
+                    result.append(placed_static_sentries(block, resolve_crew))
                 elif NATIVE.match(head):
                     try:
                         if f'{{{BLOODY_GARRISON}}}' in head:
@@ -4316,6 +4354,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare damage flags at the authored hit zone state during Match.')
     if any('initialHealth' in record for record in row.get('damageFlagCandidates', {}).values()):
         remaining.append('Compare initial hit zone health and subsequent repairs.')
+    if any(isinstance(text, str) and 'GC_StaticSentryComponent ' in text for text in draft.values()):
+        remaining.append('Compare stationary sentry firing, danger response, and control when a player possesses and releases a sentry.')
     if teleport_targets:
         remaining.append('Compare authored teleport choices, reach, faction visibility and destinations in Match.')
     if required_teleport_flags:

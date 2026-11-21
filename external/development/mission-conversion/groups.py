@@ -194,7 +194,7 @@ def rhs_ai_characters(workshop):
                             f'Character_RHS_RF_MSV_VKPO_S_{role}_Random.et')
     characters.update({guid: path for group in RHS_AI_GROUPS.values() for guid, path in group['slots']})
     for guid, role in {'9D7859DE5E1DA3AB': 'AR', '8DE84439090A3D21': 'SR', '918062BE34F7C4D7': 'CC',
-                       'E0E062BD23185D62': 'AMG'}.items():
+                       'E0E062BD23185D62': 'AMG', 'E1EAB80D1FE2C5FE': 'Sergeant'}.items():
         characters[guid] = root + f'Character_RHS_RF_MSV_VKPO_DS_{role}.et'
     return {guid: path for guid, path in characters.items() if registry.contains(guid, path)}, registry
 
