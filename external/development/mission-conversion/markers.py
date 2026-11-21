@@ -144,16 +144,43 @@ def convert_instance(lines, name, inherited, draw_order, depth=0):
     while index < stop:
         head = lines[index].removeprefix(indent + ' ')
         child = LEGACY.fullmatch(head)
-        if not child or child['group']:
+        if not child:
             raise ValueError('unsupported child of marker: ' + head.strip().partition(' ')[0])
         end = block_end(lines, index)
-        nested, nested_count = convert_instance(lines[index + 1:end],
-                                                (' ' + child['name']) if child['name'] else '',
-                                                marker_fields(child), draw_order, depth + 1)
+        if end >= stop:
+            raise ValueError('marker placement extends outside the child list')
+        nested, nested_count = convert_placement(lines, index, end, child, draw_order, depth + 1)
         children.extend('  ' + line for line in nested.splitlines())
         count += nested_count
         index = end + 1
     return '\n'.join([*marker[:-1], ' {', *children, ' }', marker[-1]]), count
+
+
+def convert_placement(lines, start, stop, match, draw_order, depth=0):
+    inherited = marker_fields(match)
+    if not match['group']:
+        name = ' ' + match['name'] if match['name'] else ''
+        return convert_instance(lines[start + 1:stop], name, inherited, draw_order, depth)
+    indent = len(lines[start]) - len(lines[start].lstrip())
+    member = re.compile(r' ' * (indent + 1) + r'(?:(?P<name>[\w.\-]+) )?\{')
+    result = []
+    count = 0
+    index = start + 1
+    while index < stop:
+        head = member.fullmatch(lines[index])
+        if not head:
+            raise ValueError('custom grouped marker instance')
+        end = block_end(lines, index)
+        if end >= stop:
+            raise ValueError('marker placement extends outside the group')
+        name = ' ' + head['name'] if head['name'] else ''
+        converted, members = convert_instance(lines[index + 1:end], name, inherited, draw_order, depth)
+        result.append(converted)
+        count += members
+        index = end + 1
+    if not result:
+        raise ValueError('empty marker group')
+    return '\n'.join(result), count
 
 
 def convert_layer(text, dev=None, *, draw_order=False):
@@ -171,29 +198,13 @@ def convert_layer(text, dev=None, *, draw_order=False):
         match = LEGACY.fullmatch(lines[i])
         if not match:
             raise ValueError(f'line {i + 1} mixed or custom placement')
-        start = i
         stop = block_end(lines, i)
         try:
-            inherited = marker_fields(match)
-            if match['group']:
-                i += 1
-                while i < stop:
-                    head = re.fullmatch(r' (?:(?P<name>[\w.\-]+) )?\{', lines[i])
-                    if not head:
-                        raise ValueError('custom grouped instance')
-                    end = block_end(lines, i)
-                    rendered, converted = convert_instance(lines[i + 1:end], (' ' + head['name']) if head['name'] else '',
-                                                           inherited, draw_order)
-                    result.append(rendered)
-                    count += converted
-                    i = end + 1
-            else:
-                rendered, converted = convert_instance(lines[i + 1:stop], (' ' + match['name']) if match['name'] else '',
-                                                       inherited, draw_order)
-                result.append(rendered)
-                count += converted
+            rendered, converted = convert_placement(lines, i, stop, match, draw_order)
         except ValueError as exc:
-            raise ValueError(f'line {i + 1 if match["group"] else start + 1} {exc}') from exc
+            raise ValueError(f'line {i + 1} {exc}') from exc
+        result.append(rendered)
+        count += converted
         i = stop + 1
     output = '\n'.join(result) + '\n'
     return (relocate_images(output, dev) if dev else output), count

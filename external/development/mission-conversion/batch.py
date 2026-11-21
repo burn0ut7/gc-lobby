@@ -17,7 +17,7 @@ from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, MISSING_STATUS, cond
 from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, inheritance
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
-from markers import convert_layer
+from markers import DEST as MAP_MARKER_PREFAB, convert_layer
 from outcomes import FRAMEWORK, SCRIPT_FLAG_APIS, leaves, render as render_outcome, render_capture_trackers
 import polygon_capture
 from respawns import authored_respawn_fields, read_respawns
@@ -80,6 +80,7 @@ DAMAGE_TARGETS = {
     'CB4D4CF7E887B2D0': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HEDP.et',
     'DDDD9B51F1234DF3': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed.et',
     '21E9A875C0A3C409': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HE.et',
+    '3133602B406D131C': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HEDP_sharkNose.et',
     '7BD282AF716ED639': 'Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed.et',
 }
 DAMAGE_FLAG_NAME = re.compile(r'"[\w .-]+"')
@@ -626,7 +627,7 @@ def script_text(source):
 
 def damage_flag_rules(source, world, stock, local_resources, source_units, dev_units, rhs=None):
     placements, audit, candidates = {}, {}, defaultdict(list)
-    grouped = {}
+    observed = {}
     layers = source.layers[world.lower()]
     for path in layers:
         text = source.read(path)
@@ -638,7 +639,7 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                 if not any('TILW_Flag_EntityDamage' in part for part in block):
                     continue
                 try:
-                    grouped[(path, line)] = grouped_damage_placement(
+                    observed[(path, line)] = grouped_damage_placement(
                         block, stock, local_resources, source_units, dev_units, rhs)
                 except ValueError as exc:
                     audit[location] = {'gap': str(exc)}
@@ -666,7 +667,8 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                     raise ValueError('unsupported initial hit zone health')
                 initial_health = Decimal(health) < 1
                 stock_default = (zone == '""' and DAMAGE_TARGETS.get(resource) == ref[2]
-                                 and stock.contains(*ref.groups()))
+                                 and stock.contains(*ref.groups())
+                                 and resource not in source_units.resources and resource not in dev_units.resources)
                 verified_zone = (resource, ref[2], zone) in REVIEWED_HIT_ZONES
                 if not (is_group or stock_default or verified_zone):
                     raise ValueError('unverified damage objective prefab or component placement')
@@ -683,6 +685,15 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                         raise ValueError('initial health target has another legacy component')
                     placements[(path, line)] = converted
                     audit[location] = {'initialHealth': health, 'hitZone': zone[1:-1]}
+                    continue
+                if (stock_default and not is_group and not initial_health
+                        and (data.get('m_targetState', '2') not in ('2', 'DESTROYED')
+                             or data.get('m_continuous', '0') != '0')):
+                    converted, observed_flag = damage_state_flag_placement(block, allow_multiple_states=True)
+                    native = native_placement(converted)
+                    if not native:
+                        raise ValueError('damage objective has another legacy component')
+                    observed[(path, line)] = (native, [observed_flag])
                     continue
                 if (not DAMAGE_FLAG_NAME.fullmatch(flag) or not flag[1:-1].strip() or len(flag.encode()) > 130
                         or data.get('m_targetState', '2') not in ('2', 'DESTROYED')
@@ -717,12 +728,13 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
             except ValueError as exc:
                 audit[location] = {'gap': str(exc)}
     flags = {}
-    if not candidates and not grouped:
+    if not candidates and not observed:
         return flags, placements, audit
     references = '\n'.join(damage_flag_reference_text(source.read(path)) for path in sorted(source.closure(world))
                            if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+    spawner_reads = placed_spawner_flag_reads(source, layers)
     for flag, entries in candidates.items():
-        count = literal_flag_reads(references, flag)
+        count = literal_flag_reads(references, flag) + spawner_reads[flag]
         if len(entries) != 1 or references.count(f'"{flag}"') != count + 1 or flag in script_text(source):
             for path, line, *_ in entries:
                 audit[f'{path}:{line}'] = {'gap': 'damage flag has another producer or unsupported use'}
@@ -733,16 +745,16 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
         audit[f'{path}:{line}'] = {'flag': flag, 'entity': name, 'condition': 'default damage area destroyed'}
         if health is not None:
             audit[f'{path}:{line}']['initialHealth'] = health
-    for (path, line), (native, group_flags) in grouped.items():
+    for (path, line), (native, observed_flags) in observed.items():
         scripts = script_text(source)
-        if (any(api in scripts for api in SCRIPT_FLAG_APIS) or len(group_flags) != len(set(group_flags)) or any(
-                references.count(f'"{flag}"') != literal_flag_reads(references, flag) + 1
-                or f'"{flag}"' in scripts for flag in group_flags)):
-            audit[f'{path}:{line}'] = {'gap': 'grouped damage flag has another producer or unsupported use'}
+        if (any(api in scripts for api in SCRIPT_FLAG_APIS) or len(observed_flags) != len(set(observed_flags)) or any(
+                references.count(f'"{flag}"') != literal_flag_reads(references, flag) + spawner_reads[flag] + 1
+                or f'"{flag}"' in scripts for flag in observed_flags)):
+            audit[f'{path}:{line}'] = {'gap': 'observed damage flag has another producer or unsupported use'}
             continue
         placements[(path, line)] = native
-        flags.update(dict.fromkeys(group_flags))
-        audit[f'{path}:{line}'] = {'placedDestructionFlags': group_flags}
+        flags.update(dict.fromkeys(observed_flags))
+        audit[f'{path}:{line}'] = {'placedDestructionFlags': observed_flags}
     return flags, placements, audit
 
 
@@ -807,6 +819,28 @@ def literal_flag_reads(text, flag):
         rf'(?m)^( +)(?:m_(?:condition|definition) )?TILW_LiteralTerm {SERIALIZED_ID} \{{\n'
         r'(?:\1 m_invertTerm [01]\n)?\1 m_flagName "'
         + re.escape(flag) + r'"\n(?:\1 m_invertTerm [01]\n)?\1\}$', text))
+
+
+def placed_spawner_flag_reads(source, layers):
+    """Count direct consumers that the placed spawner rule must also convert."""
+    flags = Counter()
+    for path in layers:
+        text = source.read(path)
+        if 'm_conditionFlag ' not in text or 'TILW_PrefabSpawnerEntity ' not in text:
+            continue
+        for _, block in blocks(text):
+            match = PLACED_SPAWNER.fullmatch(block[0])
+            if not match:
+                continue
+            try:
+                members = list(polygon_capture.members(block, match['group'], match['name']))
+            except ValueError:
+                continue
+            for _, fields in members:
+                for line in fields:
+                    if flag := re.fullmatch(r' m_conditionFlag "([\w.-]+)"', line):
+                        flags[flag[1]] += 1
+    return flags
 
 
 def unused_flag_sampling(source, world, path, line, framework):
@@ -2316,6 +2350,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare destruction of a spawned objective, including pre-Match damage and the Match outcome.')
     if any(record.get('placedDestructionFlags') for record in row.get('damageFlagCandidates', {}).values()):
         remaining.append('Compare grouped objective destruction, including pre-Match damage and the Match outcome.')
+    if any(isinstance(text, str) and 'm_eTargetState ' in text and 'GC_DestroyedEntityFlagComponent ' in text
+           for text in draft.values()):
+        remaining.append('Compare damage flags at the authored hit zone state during Match.')
     if any('initialHealth' in record for record in row.get('damageFlagCandidates', {}).values()):
         remaining.append('Compare initial hit zone health and subsequent repairs.')
     if teleport_targets:
@@ -2350,6 +2387,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare group simulation as players cross the authored LOD distance.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Compare framing and zoom against the legacy cover.')
+    if any(' IsClosed 0' in body for bodies in boundaries.values() for body in bodies):
+        remaining.append('Compare open briefing map outlines as zoom and faction view change.')
+    if any(path.endswith('.layer') and isinstance(body, str)
+           and re.search(r'^ {2,}GenericEntity(?: [\w.-]+)? : "' + re.escape(MAP_MARKER_PREFAB), body, re.M)
+           for path, body in draft.items()):
+        remaining.append('Compare nested marker positions, audience and drawing order.')
     if status_areas:
         remaining.append('Compare capture and loss notices for areas with no outcome rule.')
     if any('GC_NavmeshRebuildComponent' in body for bodies in boundaries.values() for body in bodies):

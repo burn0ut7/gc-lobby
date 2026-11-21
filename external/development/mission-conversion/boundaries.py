@@ -225,7 +225,7 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
                 raise ValueError('invalid boundary scale')
             placement.append(' '+field)
         elif field in ('IsClosed 1', 'IsClosed 0'):
-            if closed is not None or (field == 'IsClosed 0' and not standalone):
+            if closed is not None:
                 raise ValueError('invalid shape closure setting')
             closed = field == 'IsClosed 1'
             placement.append(' '+field)
@@ -242,17 +242,19 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
         raise ValueError('tilted AO needs world-space validation')
     if scale is not None:
         vertices = [tuple(axis * scale for axis in point) for point in vertices]
+    passive_overlay = extended_shapes and values.get('Enabled') == '0' and bool(overlay)
     if closed is not False:
         world_origin = tuple(local + parent for local, parent in zip(origin, parent_origin))
         validate_polygon(vertices, world_origin, yaw, pitch, roll)
-    elif not 2 <= len(vertices) <= 128 or overlay.get('m_drawArea', '1') != '0':
-        raise ValueError('open map shape requires 2 to 128 points and no fill')
+    elif (not (standalone or passive_overlay) or cover
+          or not 2 <= len(vertices) <= 128 or overlay.get('m_drawArea', '1') != '0'):
+        raise ValueError('open map shape requires a passive outline with 2 to 128 points')
     if standalone:
         if not any(line.startswith(' LineColor ') for line in placement):
             placement.append(' LineColor 1 0 0 1')
         return convert_passive(name, placement, overlay, standalone=True, navmesh=navmesh), len(vertices)
     cover_shape = render_cover(origin, vertices, yaw, cover, pitch, roll) + '\n' if cover else ''
-    if passive_only or (extended_shapes and values.get('Enabled') == '0' and overlay):
+    if passive_only or passive_overlay:
         if values.get('Enabled') != '0':
             raise ValueError('passive shape requires a disabled AO')
         return cover_shape + convert_passive(name, placement, overlay, world_width=extended_shapes), len(vertices)
