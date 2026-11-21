@@ -912,11 +912,11 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
                 raise ValueError('construction progress setting outside supported range: ' + field)
             fields.append(f'    {native} {value}\n')
         layout = '{96A8B496A076F1C0}scripts/Game/Building/CampaignBuildingCompositionOutline.conf'
-        settings += f'''  SCR_CampaignBuildingManagerComponent "{{{guid(world + '/construction')}}}" {{
+        settings += f'''  SCR_CampaignBuildingManagerComponent "{{60EC2158F48C679A}}" {{
    m_sFreeRoamBuildingClientTrigger "{{5E191CEAF4B95816}}Prefabs/MP/FreeRoamBuildingClientTrigger.et"
    m_BudgetType CAMPAIGN
    m_iCompositionRefundPercentage 100
-   m_OutlineManager GC_ConstructionOutlineManager "{{{guid(world + '/construction outlines')}}}" : "{layout}" {{
+   m_OutlineManager GC_ConstructionOutlineManager "{{60EC2158E10CB829}}" : "{layout}" {{
 {''.join(fields)}   }}
    m_sPrefabsToBuildResource "{{D2527D9AA5B4A33E}}Configs/Editor/PlaceableEntities/Compositions/Compositions_FreeRoamBuilding.conf"
   }}
