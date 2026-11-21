@@ -8,7 +8,7 @@ import re
 
 from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURRENT_PARENT,
                          LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, capture_status_texts, faction_keys)
-from boundaries import ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE, convert_boundaries
+from boundaries import ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE, convert_boundaries, spline_map_component
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import REF, SOURCE_TEXT
 from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, render_crew_config, render_spawn, spawn_details
@@ -957,6 +957,75 @@ def static_spline_placement(block):
             and any(line.strip() == 'Points {' for line in block)
             and all(FIELD.fullmatch(line.strip()) or SPLINE_RECORD.fullmatch(line.strip())
                     for line in block[1:-1]))
+
+
+SCENERY_MAP_PARENT = re.compile(
+    r'(?:\$grp )?(?P<kind>SplineShapeEntity|(?:StaticModel|PrefabGenerator|RoadGenerator|WallGenerator)Entity)'
+    r'(?: [\w.-]+)?(?: : ' + REF.pattern + r')? \{'
+)
+SPLINE_MAP_COMPONENT = re.compile(r'  TILW_MapShapeComponent "\{([\da-fA-F]{16})\}" \{')
+
+
+def scenery_map_placement(block, dev):
+    """Replace opt-in map content without rebuilding native scenery or generator children."""
+    text = '\n'.join(block) + '\n'
+    if not LEGACY.search(text):
+        return text
+    head = block[0]
+    if head.startswith(('PS_ManualMarker ', '$grp PS_ManualMarker ')):
+        return convert_layer(text, dev, draw_order=True)[0]
+    if STANDALONE_SHAPE.fullmatch(head):
+        converted, audit = convert_boundaries(text, extended_shapes=True)
+        if not converted or any('gap' in item for item in audit.values()):
+            raise ValueError(next((item['gap'] for item in audit.values() if 'gap' in item), 'no scenery map shape'))
+        return converted
+    parent = SCENERY_MAP_PARENT.fullmatch(head)
+    if not parent:
+        raise ValueError('unsupported map attachment on ' + head.removeprefix('$grp ').split()[0])
+
+    def convert_member(fields):
+        result = []
+        index = 0
+        while index < len(fields):
+            line = fields[index]
+            if line == ' {':
+                end = block_end(fields, index)
+                children = '\n'.join(child[2:] for child in fields[index + 1:end])
+                result.append(line)
+                for _, child in blocks(children):
+                    result.extend('  ' + row for row in scenery_map_placement(child, dev).splitlines())
+                result.append(fields[end])
+                index = end + 1
+            elif line == ' components {' and parent['kind'] == 'SplineShapeEntity':
+                end = block_end(fields, index)
+                components = fields[index + 1:end]
+                if any(LEGACY.search(row) for row in components):
+                    match = SPLINE_MAP_COMPONENT.fullmatch(components[0])
+                    if not match or block_end(components, 0) != len(components) - 1:
+                        raise ValueError('spline has custom map components')
+                    result.extend(spline_map_component(components, match[1]))
+                else:
+                    result.extend(fields[index:end + 1])
+                index = end + 1
+            else:
+                result.append(line)
+                index += 1
+        return result
+
+    if head.startswith('$grp '):
+        converted = [head]
+        for name, fields in polygon_capture.members(block, True, None):
+            converted.append(f' {name} {{' if name else ' {')
+            converted.extend(' ' + line for line in convert_member(fields))
+            converted.append(' }')
+        if len(converted) == 1:
+            raise ValueError('empty scenery group')
+    else:
+        converted = [head, *convert_member(block[1:-1])]
+    output = '\n'.join([*converted, '}', ''])
+    if LEGACY.search(output):
+        raise ValueError('scenery has legacy content outside a supported map attachment')
+    return output
 
 
 CORE_INITIAL_DAMAGE = re.compile(
@@ -2934,6 +3003,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     converted_cover = False
     converted_passive_cover = False
     converted_bare_map = False
+    converted_scenery_map = False
     reused_layers = set()
     group_blocks = []
     area_names = []
@@ -3089,6 +3159,15 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append(restore_placed_wirecutters(block, asset_aliases, source.files[layer]))
                 elif kind == 'SplineShapeEntity' and static_spline_placement(block):
                     result.append(body)
+                elif kind in ('SplineShapeEntity', 'StaticModelEntity') and LEGACY.search(body) and (
+                        'PS_ManualMarker' in body or 'TILW_MapShape' in body):
+                    try:
+                        converted = scenery_map_placement(block, dev)
+                    except ValueError as exc:
+                        blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
+                    else:
+                        result.append(converted)
+                        converted_scenery_map = True
                 elif kind == 'SCR_ChimeraCharacter' and 'PK_EntityModifierComponent' in body:
                     try:
                         converted = placed_core_character(block, resolve_crew)
@@ -3497,6 +3576,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare group simulation as players cross the authored LOD distance.')
     if converted_bare_map:
         remaining.append('Compare authored map fill, outline and faction visibility, including unassigned viewers.')
+    if converted_scenery_map:
+        remaining.append('Compare attached scenery markers and spline outlines across zoom and faction assignment.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Compare framing and zoom against the legacy cover.')
     if converted_passive_cover:

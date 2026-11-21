@@ -26,7 +26,7 @@ class GC_MapShapePreview
 	}
 
 	//------------------------------------------------------------------------------------------------
-	void Update(PolylineShapeEntity owner, int lineColor, float width, int fillColor, bool inverted)
+	void Update(ShapeEntity owner, int lineColor, float width, int fillColor, bool inverted)
 	{
 		if (!IsSelected(owner))
 		{
@@ -69,7 +69,8 @@ class GC_MapShapePreview
 		}
 		if (System.GetTickCount(m_iLastPointChange) < 250)
 			return;
-		bool closed = owner.IsClosed();
+		bool splineOutline = fillColor == 0 && !inverted && SplineShapeEntity.Cast(owner);
+		bool closed = owner.IsClosed() && (!splineOutline || points.Count() > 2);
 		// Refresh the finite outside-fill canvas after edits settle.
 		vector minimum = m_vMinimum;
 		vector maximum = m_vMaximum;
@@ -104,9 +105,10 @@ class GC_MapShapePreview
 		if (points.Count() >= 2)
 		{
 			bool valid = closed && GC_MapPolygon.IsValid(points);
-			if (closed && !valid && !m_bReportedInvalid)
+			bool invalidPolygon = closed && !valid && !splineOutline;
+			if (invalidPolygon && !m_bReportedInvalid)
 				Print("GC | Map preview | Invalid polygon: use 3-128 points without crossed or overlapping edges.", LogLevel.WARNING);
-			m_bReportedInvalid = closed && !valid;
+			m_bReportedInvalid = invalidPolygon;
 			if (valid && (fillColor & 0xFF000000) != 0)
 				BuildFill(points, minimum, maximum, height, fillColor, inverted);
 			if ((lineColor & 0xFF000000) != 0)

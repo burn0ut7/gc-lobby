@@ -1,4 +1,4 @@
-[ComponentEditorProps(category: "GC Lobby/Mission", description: "Passive map outline or filled polygon on a PolylineShapeEntity.")]
+[ComponentEditorProps(category: "GC Lobby/Mission", description: "Passive map outline or filled polygon using a shape's control points.")]
 class GC_MapShapeComponentClass : ScriptComponentClass
 {
 }
@@ -13,6 +13,8 @@ class GC_MapShapeComponent : ScriptComponent
 	protected ref array<FactionKey> m_aFactionKeys;
 	[Attribute("0", UIWidgets.CheckBox, "Also show a faction-filtered shape to viewers with no faction.", category: "Map shape")]
 	protected bool m_bVisibleWithoutFaction;
+	[Attribute("0", UIWidgets.CheckBox, "Require faction assignment even when the faction list is empty.", category: "Map shape")]
+	protected bool m_bRequireFaction;
 	[Attribute("0.2 0.5 1 1", UIWidgets.ColorPicker, "Outline color and opacity. Set opacity to zero to hide the outline.", category: "Outline")]
 	protected ref Color m_LineColor;
 	[Attribute("3", UIWidgets.EditBox, "Line width in UI pixels or world metres when World Line Width is enabled.", category: "Outline")]
@@ -29,7 +31,7 @@ class GC_MapShapeComponent : ScriptComponent
 	protected bool m_bInvertFill;
 	[Attribute("0.2 0.5 1 0.2", UIWidgets.ColorPicker, "Solid fill color and opacity. Low opacity keeps terrain and grid readable.", category: "Fill")]
 	protected ref Color m_FillColor;
-	protected PolylineShapeEntity m_Shape;
+	protected ShapeEntity m_Shape;
 	protected GC_AOLimitEntity m_AO;
 	protected GC_MapShapeSystem m_System;
 	protected ref array<vector> m_aRuntimePoints;
@@ -123,6 +125,8 @@ class GC_MapShapeComponent : ScriptComponent
 	{
 		if (!m_bEnabled || !m_Shape)
 			return;
+		if (!faction && m_bRequireFaction)
+			return;
 		if (m_aFactionKeys && !m_aFactionKeys.IsEmpty())
 		{
 			if (faction && !m_aFactionKeys.Contains(faction.GetFactionKey()))
@@ -132,6 +136,7 @@ class GC_MapShapeComponent : ScriptComponent
 		}
 		array<vector> polygon = {};
 		bool closed = true;
+		bool splineOutline = false;
 		if (m_AO)
 			m_AO.GetMapPolygon(polygon);
 		else if (m_aRuntimePoints)
@@ -141,15 +146,22 @@ class GC_MapShapeComponent : ScriptComponent
 			closed = m_Shape.IsClosed();
 			if (!closed && (m_bFillEnabled || !openLines))
 				return;
+			splineOutline = !m_bFillEnabled && !m_bInvertFill && SplineShapeEntity.Cast(m_Shape);
 			m_Shape.GetPointsPositions(polygon);
-			// The shared polygon contract rejects larger shapes. Check before
-			// transforming every point of an invalid authored polyline.
+			// Apply the map snapshot point limit before projecting authored points.
 			if (polygon.Count() > 128)
 				return;
+			if (splineOutline && polygon.Count() == 2)
+			{
+				if (!openLines)
+					return;
+				closed = false;
+			}
 			for (int i; i < polygon.Count(); i++)
 				polygon[i] = m_Shape.CoordToParent(polygon[i]);
 		}
-		if ((closed && !ValidPolygon(polygon)) || (!closed && polygon.Count() < 2))
+		// Spline outlines can cross themselves because they never need triangulation.
+		if (polygon.Count() < 2 || (closed && !splineOutline && !ValidPolygon(polygon)))
 			return;
 		if (m_bAutoFrameMap && frameBounds)
 		{
@@ -215,13 +227,13 @@ class GC_MapShapeComponent : ScriptComponent
 		GC_LobbyGameMode mode = GC_LobbyGameMode.GetGameMode();
 		if (!mode || !Replication.IsServer())
 			return;
-		m_Shape = PolylineShapeEntity.Cast(GetOwner());
+		m_Shape = ShapeEntity.Cast(GetOwner());
 		m_AO = GC_AOLimitEntity.Cast(GetOwner());
 		m_System = mode.GetMapShapes();
 		if (m_Shape && m_System)
 			m_System.Register(this);
 		else
-			Print("GC | Map shape | Requires a PolylineShapeEntity and active GC Lobby map system", LogLevel.ERROR);
+			Print("GC | Map shape | Requires a ShapeEntity and active GC Lobby map system", LogLevel.ERROR);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -261,7 +273,7 @@ class GC_MapShapeComponent : ScriptComponent
 	//------------------------------------------------------------------------------------------------
 	override void _WB_AfterWorldUpdate(IEntity owner, float timeSlice)
 	{
-		PolylineShapeEntity shape = PolylineShapeEntity.Cast(owner);
+		ShapeEntity shape = ShapeEntity.Cast(owner);
 		if (!m_bEnabled || !GC_MapShapePreview.IsSelected(shape))
 		{
 			m_EditorPreview = null;

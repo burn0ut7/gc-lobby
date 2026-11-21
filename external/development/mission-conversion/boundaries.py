@@ -140,7 +140,8 @@ def settings(lines, extended_shapes, standalone=False, passive_cover=False, *, b
     return result, overlay, cover, navmesh
 
 
-def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=False, world_width=False, navmesh=()):
+def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=False, world_width=False,
+                    navmesh=(), require_assigned=False):
     keys = overlay.get('m_factionKeys', '')
     if '""' in keys and re.fullmatch(r'(?:\s*"[\w.-]*"\s*)+', keys):
         assigned = re.findall(r'"[\w.-]+"', keys)
@@ -157,7 +158,7 @@ def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=Fa
     world_width = world_width or standalone
     if ((not overlay and not standalone) or fill not in ('0', '1')
             or (fill == '0' and (not world_width or outline != '1')) or empty not in ('0', '1')
-            or (not keys and empty == '0') or invert not in ('0', '1')
+            or (not keys and empty == '0' and not require_assigned) or invert not in ('0', '1')
             or outline not in ('0', '1') or not all(0 <= x <= 1 for x in floats(color, 4))
             or (outline == '1' and (not 1 <= float(line_width) <= (math.inf if world_width else 20)
                                    or not math.isfinite(float(line_width))
@@ -179,7 +180,19 @@ def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=Fa
     if keys:
         lines.extend(['   m_aFactionKeys {', '    ' + keys.replace('\n', '\n    '), '   }',
                       '   m_bVisibleWithoutFaction ' + empty])
+    elif empty == '0':
+        lines.append('   m_bRequireFaction 1')
     return '\n'.join([*lines, '  }', *navmesh, ' }', *placement, '}'])
+
+
+def spline_map_component(lines, key):
+    values, overlay, cover, extra = settings(lines, True, standalone=True, bare=True)
+    if (values or cover or extra or overlay.get('m_drawArea') != '0' or overlay.get('m_drawLine') != '1'
+            or overlay.get('m_invert', '0') != '0'):
+        raise ValueError('spline map shape needs a passive outline')
+    converted = convert_passive('', [], overlay, standalone=True, require_assigned=True).splitlines()
+    converted[2] = f'  GC_MapShapeComponent "{{{key}}}" {{'
+    return converted[1:-1]
 
 
 def render_cover(coords, vertices, yaw, cover, pitch=0, roll=0):
