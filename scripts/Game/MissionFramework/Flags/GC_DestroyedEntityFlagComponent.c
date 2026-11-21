@@ -14,6 +14,9 @@ class GC_DestroyedEntityFlagComponent : ScriptComponent
 	[Attribute("0", UIWidgets.CheckBox, "Keep listening after the first match and clear the flag when the hit zone leaves the target state.")]
 	protected bool m_bTrackChanges;
 
+	[Attribute("0", UIWidgets.CheckBox, "Clear the shared flag on a non-target state while this producer is still listening.")]
+	protected bool m_bClearOnMismatch;
+
 	protected SCR_HitZone m_HitZone;
 
 	override protected void OnPostInit(IEntity owner)
@@ -56,7 +59,7 @@ class GC_DestroyedEntityFlagComponent : ScriptComponent
 			if ((value || lobby.CallFlag(m_sFlag)) && !m_bTrackChanges)
 				StopObserving();
 		}
-		else if (m_bTrackChanges && value)
+		else if ((m_bTrackChanges || m_bClearOnMismatch) && value)
 			lobby.ResetFlag(m_sFlag);
 	}
 

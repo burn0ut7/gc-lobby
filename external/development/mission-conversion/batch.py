@@ -982,14 +982,18 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
             audit[f'{path}:{line}']['initialHealth'] = health
     for (path, line), (native, observed_flags) in observed.items():
         scripts = script_text(source)
-        if (any(api in scripts for api in SCRIPT_FLAG_APIS) or len(observed_flags) != len(set(observed_flags)) or any(
-                references.count(f'"{flag}"') != literal_flag_reads(references, flag) + spawner_reads[flag] + 1
-                or f'"{flag}"' in scripts for flag in observed_flags)):
+        producer_counts = Counter(observed_flags)
+        if (any(api in scripts for api in SCRIPT_FLAG_APIS) or any(
+                references.count(f'"{flag}"') != literal_flag_reads(references, flag) + spawner_reads[flag] + count
+                or f'"{flag}"' in scripts for flag, count in producer_counts.items())):
             audit[f'{path}:{line}'] = {'gap': 'observed damage flag has another producer or unsupported use'}
             continue
         placements[(path, line)] = native
         flags.update(dict.fromkeys(observed_flags))
         audit[f'{path}:{line}'] = {'placedDestructionFlags': observed_flags}
+        shared = {flag: count for flag, count in producer_counts.items() if count > 1}
+        if shared:
+            audit[f'{path}:{line}']['sharedDamageFlags'] = shared
         if re.match(r'^(?:\$grp )?SCR_ChimeraCharacter ', native):
             audit[f'{path}:{line}']['placedCharacterDamage'] = True
     return flags, placements, audit
@@ -1028,12 +1032,21 @@ def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs):
     if (is_character != path.startswith('Prefabs/Characters/')
             or not (stock_target or not is_character and verified_rhs_damage(resource, path, source_units, dev_units, rhs))):
         raise ValueError('unverified grouped damage objective prefab')
-    lines, flags = [block[0]], []
+    members, flags = [], []
     for name, fields in polygon_capture.members(block, True, None):
         member = ['{', *fields, '}']
+        flag = None
         if any('TILW_Flag_EntityDamage' in line for line in fields):
             member, flag = damage_state_flag_placement(member, allow_multiple_states=True)
             flags.append(flag)
+        members.append((name, member, flag))
+    shared = Counter(flags)
+    lines = [block[0]]
+    for name, member, flag in members:
+        if shared[flag] > 1:
+            # Each legacy producer could clear the shared flag before its own first match.
+            setting = member.index(f'   m_sFlag "{flag}"')
+            member.insert(setting + 1, '   m_bClearOnMismatch 1')
         lines.extend([f' {name} {{' if name else ' {', *(' ' + part for part in member[1:-1]), ' }'])
     native = native_placement([*lines, block[-1]], reviewed_character=is_character)
     if not native or not flags:
@@ -2950,6 +2963,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare grouped objective destruction, including pre-Match damage and the Match outcome.')
     if any(record.get('placedCharacterDamage') for record in row.get('damageFlagCandidates', {}).values()):
         remaining.append('Compare character damage flags as the default hit zone changes, including death and removal.')
+    if any(record.get('sharedDamageFlags') for record in row.get('damageFlagCandidates', {}).values()):
+        remaining.append('Compare shared damage flags as separate producers reach or leave their target states.')
+    if any(action.get('instruction') == 'TILW_DeleteEntitiesInstruction'
+           for event in rules.values() if event.get('trigger') == 'startup choice'
+           for action in event.get('convertedActions', ())):
+        remaining.append('Compare both startup branches and confirm that only the unwanted entity is removed.')
     if any(isinstance(text, str) and 'm_eTargetState ' in text and 'GC_DestroyedEntityFlagComponent ' in text
            for text in draft.values()):
         remaining.append('Compare damage flags at the authored hit zone state during Match.')

@@ -268,6 +268,9 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
                 return {'trigger': 'area capture', 'flag': flag[1:-1]}
             if invert == '1' and any(line.strip() == 'm_bStopAfterFirstChange 1' for line in captures[flag]):
                 return {'trigger': 'area capture', 'flag': flag[1:-1], 'inverted': True}
+            if invert == '1' and depth and any(line.strip() == 'm_fSeconds 0' for line in captures[flag]):
+                return {'trigger': 'area capture', 'flag': flag[1:-1], 'inverted': True,
+                        'liveCapture': True, 'requiresMatch': True}
         if invert in ('0', '1') and flag[1:-1] in objective_flags:
             return {'trigger': 'interaction flag', 'flag': flag[1:-1], **({'inverted': True} if invert == '1' else {})}
         if invert in ('0', '1') and flag[1:-1] in event_flags:
@@ -324,7 +327,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
 
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
                resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None,
-               log_only=False, named_events=(), inactive=()):
+               log_only=False, named_events=(), inactive=(), binary_startup=None):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -346,8 +349,13 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
             end = block_end(fields, i)
             literal = LITERAL.fullmatch(line)
             literal_flag = fields[i + 1].strip().removeprefix('m_flagName ') if literal and end == i + 2 else ''
+            binary = (properties(fields[i + 1:end], {'m_flagName', 'm_invertTerm'})
+                      if binary_startup and literal else {})
             if literal_flag in startup_flags:
                 term = {'trigger': 'startup choice', 'flag': literal_flag[1:-1]}
+            elif binary and binary.get('m_flagName') == binary_startup[0] and binary.get('m_invertTerm', '0') in ('0', '1'):
+                choice = binary_startup[int(binary.get('m_invertTerm', '0'))]
+                term = {'trigger': 'startup choice', 'flag': choice[1:-1]}
             elif literal_flag == dormant_flag:
                 term = {'trigger': 'dormant', 'flag': literal_flag[1:-1], 'reason': 'no legacy flag producer'}
             else:
@@ -422,8 +430,11 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         raise ValueError('missing condition or supported framework instruction')
     if pregame != (term['trigger'] == 'startup choice'):
         raise ValueError('pregame event requires a reviewed startup selection')
+    startup_actions = {'TILW_SpawnPrefabInstruction', 'TILW_EditMapItemInstruction'}
+    if binary_startup:
+        startup_actions.add('TILW_DeleteEntitiesInstruction')
     if pregame and (notices or assignments or delayed_areas or messages
-                    or any(action['instruction'] not in ('TILW_SpawnPrefabInstruction', 'TILW_EditMapItemInstruction')
+                    or any(action['instruction'] not in startup_actions
                            for action in converted_actions)):
         raise ValueError('unsupported pregame action')
     if assignments and not waypoint_trigger(term):
@@ -477,12 +488,18 @@ def render_check(term, key, captures, capture_messages, tracked_areas):
         if capture_messages is not None:
             for index, line in enumerate(lines):
                 if line.lstrip().startswith('m_Messages '):
-                    if flag in capture_messages:
+                    if flag in capture_messages or term.get('liveCapture'):
                         lines = lines[:index] + lines[block_end(lines, index) + 1:]
-                    capture_messages.add(flag)
+                    if not term.get('liveCapture'):
+                        capture_messages.add(flag)
                     break
-        return [re.sub(r'"\{([0-9A-F]{16})\}"', lambda match: '"{' + guid(key + '/' + match[1]) + '}"', line)
-                for line in lines]
+        check = [re.sub(r'"\{([0-9A-F]{16})\}"', lambda match: '"{' + guid(key + '/' + match[1]) + '}"', line)
+                 for line in lines]
+        if term.get('liveCapture'):
+            return [f'      GC_ConditionGroup "{{{guid(key + "/invert capture")}}}" {{',
+                    '       m_iMatch 2', '       m_aConditions {', *('  ' + line for line in check),
+                    '       }', '      }']
+        return check
     if trigger in ('all', 'any', 'count'):
         if trigger == 'count':
             result = [f'      GC_ConditionCount "{{{guid(key + "/group")}}}" {{',
@@ -662,6 +679,47 @@ def startup_samples(source, world, owner, body, scripts, spawner_reads):
     return samples
 
 
+def startup_binary_flag(source, world, owner, body, scripts):
+    """Recognize a fair draw used by one affirmative and one negative pregame branch."""
+    roots = [i for i, line in enumerate(body) if line == ' m_randomFlags {']
+    if len(roots) != 1 or any(api in scripts for api in SCRIPT_FLAG_APIS):
+        return None
+    start = roots[0] + 1
+    if not re.fullmatch(r'  TILW_RandomFlag "\{[\da-fA-F]{16}\}" \{', body[start]):
+        return None
+    try:
+        stop = block_end(body, start)
+        if stop + 1 != block_end(body, roots[0]):
+            return None
+        data = properties(body[start + 1:stop], {'m_flagName', 'm_chance'})
+        flag = data.get('m_flagName', '')
+        if not re.fullmatch(KEY, flag) or not re.fullmatch(r'0\.50*', data.get('m_chance', '0.5')):
+            return None
+        branches = Counter()
+        for index, line in enumerate(body):
+            if not EVENT.fullmatch(line):
+                continue
+            fields = body[index + 1:block_end(body, index)]
+            if '   m_pregameEvent 1' not in fields:
+                continue
+            for position, field in enumerate(fields):
+                if LITERAL.fullmatch(field):
+                    values = properties(fields[position + 1:block_end(fields, position)],
+                                        {'m_flagName', 'm_invertTerm'})
+                    if values.get('m_flagName') == flag:
+                        branches[values.get('m_invertTerm', '0')] += 1
+        if branches != {'0': 1, '1': 1}:
+            return None
+    except ValueError:
+        return None
+    negated = f'"GC_MigrationNot_{flag[1:-1]}"'
+    if (source.read(owner).count(flag) != 3 or flag in scripts or negated in scripts
+            or any(negated in source.read(path) or (path != owner and flag in source.read(path))
+                   for path in source.closure(world) if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)):
+        return None
+    return flag, negated
+
+
 def startup_conditions(key):
     lines = ['     m_aConditions {', f'      GC_ConditionGroup "{{{guid(key + "/phases")}}}" {{',
              '       m_iMatch 1', '       m_aConditions {']
@@ -766,11 +824,14 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             derived_gap = str(exc)
     if derived and derived_audit is not None:
         derived_audit.extend(flag[1:-1] for flag in derived)
-    samples, startup = [], ()
+    samples, startup, binary_startup = [], (), None
     if compound and resolve_spawn:
         samples = startup_samples(source, world, path, body, scripts or '', spawner_reads)
         if not samples:
             startup = startup_flags(source, world, path, body, scripts or '')
+            if not startup:
+                binary_startup = startup_binary_flag(source, world, path, body, scripts or '')
+                startup = binary_startup or ()
     sampled_flags = {flag for sample in samples for flag in sample['flags']}
     event_flags = {*event_flags, *sampled_flags}
     inactive = inactive_flags(source, world, path, scripts) if compound else ()
@@ -812,7 +873,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns,
                 resolve_spawn, resolve_crew, startup, hidden_briefings,
                 DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived,
-                log_only=log_only, named_events=source_names, inactive=inactive)
+                log_only=log_only, named_events=source_names, inactive=inactive, binary_startup=binary_startup)
             if any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
                 term['requiresMatch'] = True
             suffixes = {f' ({delay:f}s)' for delay in actions}
@@ -872,8 +933,12 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             return [], audit, 'generated startup sampling name collides with a mission event'
         if startup_samples_audit is not None:
             startup_samples_audit.extend(samples)
-    tracked = {item['flag'] for _, _, _, term, _ in parsed for item in leaves(term)
-               if item['trigger'] == 'area capture' and item.get('inverted')}
+    capture_terms = [item for _, _, _, term, _ in parsed for item in leaves(term)
+                     if item['trigger'] == 'area capture']
+    live_negations = {item['flag'] for item in capture_terms if item.get('liveCapture')}
+    if not live_negations <= {item['flag'] for item in capture_terms if not item.get('inverted')}:
+        return [], audit, 'a live capture negation needs a positive capture consumer'
+    tracked = {item['flag'] for item in capture_terms if item.get('inverted') and not item.get('liveCapture')}
     tracked_areas = {
         flag: 'GC_MigrationCapture_' + (flag if len(flag.encode()) <= 100 and re.fullmatch(r'[\w.-]+', flag)
                                        else guid(world + '/capture tracker name/' + flag))
