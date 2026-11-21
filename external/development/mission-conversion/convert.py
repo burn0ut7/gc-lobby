@@ -916,7 +916,8 @@ def main():
         ai_loadouts = local_loadouts.collect_ai(source, dev, source_units, dev_units, stock)
         native_ai_members = {guid: asset[0] for guid, asset in ai_loadouts.items()}
         try:
-            restored = (verified_roles(dev_units, stock) | verified_msv85_wrappers(source_units, dev_units)
+            historical_roles = verified_roles(dev_units, stock)
+            restored = (historical_roles | verified_msv85_wrappers(source_units, dev_units)
                         | verified_aircrew_roles(source_units, dev_units, stock, locally_owned)
                         | verified_soviet_aircrew_roles(source_units, dev_units, stock, locally_owned))
         except (OSError, ValueError, CalledProcessError) as exc:
@@ -927,7 +928,7 @@ def main():
         loadouts = local_loadouts.collect(
             source, dev, source_units, dev_units, stock,
             normalize_references=lambda body: batch.replace_registered_paths(body, source, dev, asset_aliases),
-            unavailable=unavailable)
+            unavailable=unavailable, historical_parents=historical_roles)
         reviewed_members = {guid: asset[0] for guid, asset in loadouts.items()}
         local_groups = batch.reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed_members)
 

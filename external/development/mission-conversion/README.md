@@ -141,6 +141,10 @@ The ten Roulette worlds share the authored `GC_R_Manager` and map-specific scena
 
 The mission-owned APC crew characters in Heaven and Hell and Hot Boxes, plus the gunner in Abad Day in Kunar US TVT, share the unresolved DCU rifleman parent `EA6EF9C87D023B9B`. The installed Units archive registers the similarly named playable wrapper as `62DF528A4FF16F25`. Units commit `ffb3a751` confirms that wrapper already inherited the missing parent. Redirecting the reference to the wrapper would leave the underlying appearance and equipment unresolved. The exact parent or a verified equivalent remains necessary to clear these roles.
 
+The batch audit now links unresolved parent references to the exact mission-owned roster slots they block. It reports the affected worlds and identifies when one parent accounts for every reported blocker in a world. The DCU rifleman is the only reported blocker for Heaven and Hell and one of several for the other two missions. Workbench session `logs_2026-11-21_14-36-12` also returned an invalid resource for the DCU parent.
+
+The same Workbench session resolved the stale Bootnecks and BTRs Runner parent to the current `A491F9108F01E180` Units rifleman and rejected the missing deputy platoon leader parent. The converter keeps the Runner's resolved loadout and uses the exact archived deputy parent already recovered in Units Dev. The original groups expressly force both characters playable. The file check preserved their authored equipment references and the Runner label. Bootnecks and BTRs still requires staging protection. All 254 existing draft files stayed byte-identical.
+
 Five HotMic missions define numbered framework callbacks directly in their legacy `default.layer`. The published TilW framework dispatches these callbacks through `RequestRunScript` and applies its per-number rerun setting. Their authored effects require native replacements before the event converter can clear them.
 
 | Mission | Authored callback behavior |

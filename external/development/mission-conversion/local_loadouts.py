@@ -35,6 +35,8 @@ REVIEWED_FORCED_CHARACTERS = {
     '6AA3A930760964BD': 'c5f18445f33dca9310e720073b48b4a04f0ff9a52abb363a2cc1451c9466e4ba',
     '899712E13A601488': '4c4f34ec51a307bfee86f7153626906af9a3cfe21064e540408a82bb2f9fa1ff',
     'DADA3692BC2D3EE1': 'e2f4d1d7c1b1ec926064f5832a5d9fde9e7899438fb6df189137655a1f821892',
+    '3C6B7D7C2498DCE2': '51f6edaa998b7bca611a2a9542c5d467359de7ecda6e6d4517afda3f40ac2e8f',
+    '83B790D1347823FF': '3353228d0031557ccbd8691da331a5242d4949606a0db5852cb1795bd8892203',
 }
 
 
@@ -101,7 +103,8 @@ def unchanged_units_parent(source_units, dev_units, resource):
     return reviewed_native_ancestry(tuple(native_before), after, dev_units)
 
 
-def collect(source, dev, source_units, dev_units, stock, *, normalize_references=None, unavailable=()):
+def collect(source, dev, source_units, dev_units, stock, *, normalize_references=None, unavailable=(),
+            historical_parents=None):
     """Return approved asset bodies by unique source GUID."""
     approved = {}
     owned = source.resources.keys() | dev.resources.keys()
@@ -124,6 +127,9 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
         parent = REF.search(first)
         resource, parent_path = parent[1].upper(), parent[2]
         parent_asset = evaluate(resource, seen | {guid}) if resource in source.resources else None
+        historical = None
+        if verified_forced and resource not in owned and resource not in source_units.resources:
+            historical = (historical_parents or {}).get((resource, parent_path))
         inherited_playable = bool(parent_asset) or legacy_member(source_units, resource, False)
         try:
             body, removed = migrate_playability(text, inherited_playable=inherited_playable or verified_forced)
@@ -141,6 +147,8 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
         elif resource in dev.resources or not parent_path.removeprefix('GitHub/gc-reforger-units/').lower().startswith(
                 'prefabs/characters/'):
             return None
+        elif historical and historical[0] not in owned and dev_units.resources.get(historical[0]) == [historical[1]]:
+            body = first.replace(parent[0], f'"{{{historical[0]}}}{historical[1]}"', 1) + body[len(first):]
         elif resource in source_units.resources or resource in dev_units.resources:
             stock_wrapper = stock_wrapper_ancestry_matches(source_units, dev_units, resource, stock, owned)
             if not stock_wrapper and not unchanged_units_parent(source_units, dev_units, resource):

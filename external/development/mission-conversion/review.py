@@ -21,6 +21,7 @@ from terrain_parents import LONGMOOR_PARENT, LONGMOOR_PROVIDER, has_reviewed_lon
 LEGACY = re.compile(r'^(?:TILW|PS)_')
 UNRESOLVED_OUTCOME_FLAG = re.compile(r'unresolved or unsupported outcome flag ("[^"]*")')
 SERIALIZED_FLAG_FIELD = re.compile(r'(m_\w*[Ff]lag\w*) ("[^"]+")')
+MISSION_OWNED_SLOT = re.compile(r'mission-owned slot ([0-9A-F]{16})')
 LEGACY_PRESENTATION_RESOURCES = {
     ('3136BE42592F3B1B', 'PrefabsEditable/MissionDescription/EditableMissionDescription.et'),
     ('CD85ADE9E0F54679', 'PrefabsEditable/Markers/EditableMarker.et'),
@@ -298,6 +299,41 @@ def source_dependency_leads(source, missions, notes, dependencies, databases, pr
     return external_resource_review(rows, databases, providers, reference_field='legacyInputs')
 
 
+def blocked_loadout_parents(source, missions, notes, leads):
+    """Tie an unresolved direct character parent to the roster checks it stopped."""
+    rows = []
+    for lead in leads:
+        parent = (lead['guid'], lead['path'])
+        impacts = {}
+        for header, owners in lead['launchers'].items():
+            world = missions[header]['world']
+            blockers = notes[world]['batchDraft'].get('blockers', [])
+            slots = {}
+            for owner in owners:
+                head = source.read(owner).partition('\n')[0]
+                reference = REF.search(head)
+                if (not head.startswith('SCR_ChimeraCharacter : ') or not reference
+                        or (reference[1].upper(), reference[2]) != parent):
+                    continue
+                if owner + '.meta' not in source.files:
+                    continue
+                identity = META_NAME.search(source.read(owner + '.meta'))
+                if identity and source.resources.get(identity[2].upper()) == [owner]:
+                    slots[identity[2].upper()] = owner
+            matched = [blocker for blocker in blockers if blocker['rule'] == 'SCR_AIGroup'
+                       and isinstance(blocker.get('detail'), str)
+                       and (match := MISSION_OWNED_SLOT.fullmatch(blocker.get('detail', '')))
+                       and match[1] in slots]
+            if matched:
+                impacts[world] = {'rolePrefabs': sorted({slots[b['detail'].split()[-1]] for b in matched}),
+                                  'onlyReportedBlocker': len(matched) == len(blockers)}
+        if impacts:
+            rows.append({'guid': lead['guid'], 'path': lead['path'], 'worlds': impacts,
+                         'registrations': lead['registrations'], 'samePathRegistrations': lead['samePathRegistrations']})
+    return sorted(rows, key=lambda row: (-sum(w['onlyReportedBlocker'] for w in row['worlds'].values()),
+                                         -len(row['worlds']), row['path']))
+
+
 def outcome_flag_leads(source, notes, worlds):
     """Locate literal source references for the flags that stopped outcome conversion."""
     results = {}
@@ -425,8 +461,9 @@ def main():
         report['unavailableDependencyIds'] = unavailable
         report['unresolvedResources'] = external_resource_review(missions, databases, providers)
         if notes:
-            report['sourceDependencyLeads'] = source_dependency_leads(
-                source, missions, notes, dependencies, databases, providers)
+            leads = source_dependency_leads(source, missions, notes, dependencies, databases, providers)
+            report['sourceDependencyLeads'] = leads
+            report['blockedLoadoutParents'] = blocked_loadout_parents(source, missions, notes, leads)
     args.report.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     if args.summary:
         args.summary.write_text(markdown(source, target, missions), encoding='utf-8')

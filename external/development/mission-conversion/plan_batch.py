@@ -268,6 +268,7 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         'outcomeFlagLeads': review.get('outcomeFlagLeads', {}),
         'resourceRecoveryQueue': resource_recovery_queue(review.get('unresolvedResources', []), held),
         'dependencyRecoveryQueue': dependency_recovery_queue(review.get('unresolvedResources', []), held),
+        'blockedLoadoutParents': review.get('blockedLoadoutParents', []),
         'unavailableDependencyIds': review.get('unavailableDependencyIds', []),
         'rules': ranked_blockers(priority, 'rule'),
         'specificBlockers': ranked_blockers(specific, 'blocker'),
@@ -374,6 +375,16 @@ def markdown(plan):
             registered = 'Yes' if entry['registeredInDevGraph'] else 'No'
             lines.append(f"| `{entry['reference']}` | {len(entry['onlyMissingAsset'])} | "
                          f"{len(entry['worlds'])} | {registered} |")
+    if parents := plan.get('blockedLoadoutParents'):
+        lines.extend(['', '## Missing parents of mission loadouts', '',
+                      'These exact parent references occur in the local character prefabs named by failed roster checks. '
+                      'Confirm the original equipment and parent ancestry before approving an alternative registration.', '',
+                      '| Legacy parent | Worlds with only this reported blocker | Affected worlds | Installed same-ID paths |',
+                      '| --- | ---: | ---: | ---: |'])
+        for entry in parents:
+            only = sum(world['onlyReportedBlocker'] for world in entry['worlds'].values())
+            lines.append(f"| `{{{entry['guid']}}}{entry['path']}` | {only} | {len(entry['worlds'])} | "
+                         f"{len(entry['registrations'])} |")
     resources = plan['unresolvedResources']
     if resources:
         lines.extend(['', '## Unresolved resource registrations', '',
