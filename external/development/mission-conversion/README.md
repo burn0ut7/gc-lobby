@@ -794,3 +794,9 @@ The batch preserves the authored starting health of verified vehicle hit zones. 
 For verified AI-only groups, the converter retains the native deletion setting, AI skill, and custom group name. Assault of Thirty Palms now renders for file review and remains held on its 48-player listing versus 46 converted slots. Clearing Out Gorshkovo remains held on its 110-player listing versus 35 converted slots.
 
 Two catalog runs reproduced 277 output files byte for byte. Workbench MCP compiled the initial health component with zero errors in session `logs_2026-11-20_22-33-50`. Representative runtime checks remain for initial engine and hull health, repair, and the AI group settings.
+
+## Stock vehicle destruction objectives
+
+The damage flag rule now covers verified Ural command and tanker trucks, four M923A1 MERDC service variants, and the stock transport and HEDP Hueys. The installed prefab chains inherit the native wheeled or helicopter damage manager. The converter retains the original prefab, placement and one-shot destroyed condition and counts a literal as a consumer regardless of the order of its inversion and name fields. It still holds multiple producers and unsupported consumers. The legacy source contract is the published TilW Mission Framework's TILW_EntityDamageFlag. The catalog pass translated 13 additional destruction flags in six worlds. Other conversion gaps still hold those worlds, and the destruction-to-event sequence still needs a representative Match check.
+
+Assault of Thirty Palms is in Missions Dev commit `40a35ed5`. The original Marine platoon HQ has seven slots and the three rifle squads have 13 each. The insurgent groups are AI only. The installer preserves the published 48-player listing and the 46 selectable slots. The committed-file comparison and resource audit passed. Two full runs reproduced 277 outputs byte for byte.

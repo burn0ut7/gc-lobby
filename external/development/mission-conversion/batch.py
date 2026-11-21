@@ -56,7 +56,17 @@ NAVMESH_COMPONENT = re.compile(rf' +TILW_NavmeshRegenComponent {SERIALIZED_ID} \
 DAMAGE_COMPONENT = re.compile(rf'  TILW_Flag_EntityDamage {SERIALIZED_ID} \{{')
 DAMAGE_TARGETS = {
     '78CCABFAE4DC21EF': 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/Dst/CrateStack_01_Dst_2_dark.et',
+    # The installed truck variants inherit SCR_WheeledDamageManagerComponent.
+    '1BABF6B33DA0AEB6': 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_command.et',
+    '4C81D7ED8F8C0D87': 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker.et',
     '36BDCC88B17B3BFA': 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_command.et',
+    '38186F12F27A61C6': 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_command_MERDC.et',
+    '26013123314183EA': 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_tanker_MERDC.et',
+    'C8656AECF5DF41D9': 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_repair_MERDC.et',
+    'EC657C9B3C73E192': 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_ammo_MERDC.et',
+    # Both Huey chains inherit the damage manager on UH1H_base.et.
+    '70BAEEFC2D3FEE64': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H.et',
+    'CB4D4CF7E887B2D0': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HEDP.et',
 }
 REVIEWED_HIT_ZONES = {
     ('5CFD8CB5C3E55A4E', 'Prefabs/Vehicles/Tracked/BFV/M2A2_MERDC.et', '"Engine_01"'),
@@ -71,6 +81,16 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/Sasha20k_pro/Assault of thirty palms.conf': (
+        '05531d2a0fc40bdc0cd36b570db1bff7ddf6cedc',
+        (('worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/Players_us.layer',
+          'f4fdb7d55ee5eff19868fa908f0e31eca0660ecc'),
+         ('worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/AI_Units.layer',
+          'e1ca2d7eb3835b417793ee7fda5bc32d76c45c22'),
+         ('worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/Insurgent_AI_Groups.layer',
+          '4ca1d9c447c4c2b306176ec1331a89edb3af7460')),
+        48, 46,
+    ),
     'Missions/Til/FalconsFlight.conf': (
         'c7b8968d8bae440cc329ac49db91f89e6c64307b',
         (('worlds/Til/FalconsFlight/FalconsFlight_Layers/nva.layer',
@@ -530,11 +550,13 @@ def damage_flag_rules(source, world, stock, local_resources, source_units):
     if not candidates:
         return flags, placements, audit
     references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
-                           if path.lower().endswith(('.layer', '.ent', '.et')))
+                           if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
     for flag, entries in candidates.items():
-        # Every use must be this producer or the immediate field of a literal condition.
-        count = len(re.findall(r'(?m)^ +(?:m_condition )?TILW_LiteralTerm [^\n]+\n +m_flagName "'
-                               + re.escape(flag) + r'"$', references))
+        # Literal inversion may be serialized before or after the name.
+        count = len(re.findall(
+            rf'(?m)^( +)(?:m_condition )?TILW_LiteralTerm {SERIALIZED_ID} \{{\n'
+            r'(?:\1 m_invertTerm [01]\n)?\1 m_flagName "'
+            + re.escape(flag) + r'"\n(?:\1 m_invertTerm [01]\n)?\1\}$', references))
         if len(entries) != 1 or references.count(f'"{flag}"') != count + 1 or flag in script_text(source):
             for path, line, *_ in entries:
                 audit[f'{path}:{line}'] = {'gap': 'damage flag has another producer or unsupported use'}
