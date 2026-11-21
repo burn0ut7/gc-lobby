@@ -37,7 +37,7 @@ CONSTRUCTION_FIELDS = {
 LEGACY_JIP_MODES = {'Deny': 'DISABLED', 'Auto': 'AUTO', 'Manual': 'MANUAL',
                     '0': 'DISABLED', '1': 'AUTO', '2': 'MANUAL'}
 NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|RHS_Tank|Turret|SCR_AIWorld|GameEntity|GenericEntity|GenericTerrainEntity|GenericWorldFogEntity|StaticModelEntity|Tree|'
-                    r'DecalEntity|SCR_DestructibleEntity|SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
+                    r'DecalEntity|SCR_DestructibleEntity|SCR_DestructibleTreeV2|SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
                     r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity|LightEntity|Projectile)\b')
 WEATHER = re.compile(r'  SCR_TimeAndWeatherHandlerComponent "\{5EE3229927D4D2F5\}" \{')
 INIT_WEATHER = '  SCR_InitWeatherComponent "{61B68227C35BFE9A}" {'
@@ -360,6 +360,8 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Props/Wrecks/UAZ469_wreck/UAZ469_wreck_static.et',
     ('B90E5414AB7C325B', 'Prefabs/Props/Wrecks/BTR70_wreck_static.et'):
         'Prefabs/Props/Wrecks/BTR70_Wreck/BTR70_wreck_static.et',
+    ('388B774519BD6294', 'Prefabs/Props/Wrecks/T62_wreck.et'):
+        'Prefabs/Props/Wrecks/T62_wreck/T62_wreck.et',
     ('F849217AB3BA88BE', 'Prefabs/Items/Equipment/Maps/PaperMap_01_folded_USSR.et'):
         'Prefabs/Items/Equipment/Maps/Map_Paper_01/PaperMap_01_folded_USSR.et',
     ('35D7F1189BE00E94', 'Prefabs/Items/Equipment/BalisticTable/BalisticTable.et'):
@@ -504,6 +506,9 @@ WORKSHOP_RESOURCE_ALIASES = {
         'Prefabs/Structures/Bulding/Military/fort_rampart_ep1.et'),
 }
 UNITS_PREFAB_ALIASES = {
+    ('2CE3925D1803A664', 'Prefabs/Vehicles/Wheeled/M998/M1025_armed_BGM-71_MERDC.et'): (
+        '2CE3925D1803A664', 'Prefabs/Vehicles/Wheeled/M998/M1046_armed_BGM-71_MERDC.et',
+        '0a545c5d39ebf2ef49440561ee0f1bda70276b58561e2a7bb6e7b44b333eeaf9'),
     ('BC07885176C7FF8A', 'GitHub/gc-reforger-units/Prefabs/Vehicles/Tracked/T-72A/T72A_base.et'): (
         'BC07885176C7FF8A', 'Prefabs/Vehicles/Tracked/T-72A/T72A_base.et',
         '2ec90305fa151423829093e490029d2a994c655b6b70b47ef1291b2b1207674d'),

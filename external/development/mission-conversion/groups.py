@@ -30,6 +30,7 @@ AI_CONFIG_FIELD = re.compile(r'(?:Enabled|m_Enable(?:Movement|DangerEvents|Perce
                             r'Communication)) [01]|m_Skill (?:0(?:\.\d+)?|1(?:\.0+)?)')
 EDITABLE_GROUP = 'SCR_EditableGroupComponent "{50D291F6C83FA532}" {'
 EDITABLE_UI = 'm_UIInfo SCR_EditableGroupUIInfo "{5298E609432D192D}" {'
+EMPTY_VARIANT = re.compile(r'm_VariantData SCR_EditableEntityVariantData "\{[\da-fA-F]{16}\}" \{')
 EDITABLE_UI_FIELD = re.compile(r'(?:Name|Description) "[^"\n]*"|(?:m_sFaction|IconSetName) "[\w.-]+"|m_Image ' + REF.pattern)
 GROUP_IDENTITY = 'SCR_GroupIdentityComponent "{56366C5C50AD3CF2}" {'
 MILITARY_SYMBOL = re.compile(r'm_MilitarySymbol SCR_MilitarySymbol "\{[\dA-Fa-f]{16}\}" \{')
@@ -354,7 +355,11 @@ def native_group_component(lines, start, end):
         return all(AI_CONFIG_FIELD.fullmatch(line.strip()) for line in lines[start + 1:end])
     if header == GROUP_IDENTITY:
         return native_group_symbol(lines, start + 1, end - 1)
-    if header != EDITABLE_GROUP or end < start + 3 or lines[start + 1].strip() != EDITABLE_UI:
+    if header != EDITABLE_GROUP or end < start + 3:
+        return False
+    if end == start + 3 and EMPTY_VARIANT.fullmatch(lines[start + 1].strip()):
+        return lines[start + 2].strip() == '}'
+    if lines[start + 1].strip() != EDITABLE_UI:
         return False
     if block_end(lines, start + 1) != end - 1:
         return False
