@@ -151,10 +151,19 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
                 return None
             native = stock_character(resource, parent_path, stock)
             if native:
-                if (native[0] in source.resources or native[0] in dev.resources
-                        or native[0] in source_units.resources or native[0] in dev_units.resources):
+                native_id, native_path = native
+                if native_id in source.resources or native_id in dev.resources:
                     return None
-                body = first.replace(parent[0], f'"{{{native[0]}}}{native[1]}"', 1) + body[len(first):]
+                if native_id in source_units.resources or native_id in dev_units.resources:
+                    # Removing a playability-only wrapper keeps the same Units override.
+                    registration = f'"{{{native_id}}}{native_path}"'
+                    if not unchanged_units_parent(source_units, dev_units, native_id):
+                        return None
+                    for units in (source_units, dev_units):
+                        path_in_units, = units.resources[native_id]
+                        if not re.search(r'^ Name ' + re.escape(registration) + r'$', units.read(path_in_units + '.meta'), re.M):
+                            return None
+                body = first.replace(parent[0], f'"{{{native_id}}}{native_path}"', 1) + body[len(first):]
             else:
                 if not (removed or verified_forced) or not stock.contains(resource, parent_path):
                     return None

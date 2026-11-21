@@ -153,6 +153,14 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/Ruinous Defence/RuinousDefence.conf': (
+        '12c18581f4294fceffa122fb22f2706091352f33',
+        (('worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/BLUFOR_Players/BLUFOR_Players.layer',
+          '2fe91c9b992fd00f479253a7ddbb9aed4ec1d18d'),
+         ('worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/OPFOR_Players/OPFOR_Players.layer',
+          '5e4b74a93c6dcfef1c90e4b63c46b30f8dd22598')),
+        70, 72,
+    ),
     'Missions/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence.conf': (
         '1ff8bffb54d8c0c63ecaacc7bc7e54230b289737',
         (('worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence_Layers/BLUFOR_Players/BLUFOR_Players.layer',
