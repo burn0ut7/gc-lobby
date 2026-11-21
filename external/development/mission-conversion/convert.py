@@ -16,7 +16,7 @@ import local_loadouts
 from restore_units_roles import verified_roles
 import vehicle_crew
 import bugout
-from briefings import BriefingAudience, guid, indexed_pages, read_pages, render
+from briefings import BriefingAudience, STANDARD_LAYOUTS, guid, indexed_pages, read_pages, render
 from catalog import REF, Snapshot, WORLD, compare
 from delayed_extraction import collect as collect_delayed_extraction
 from event_actions import ACTIONS
@@ -98,6 +98,11 @@ def main():
         args.include_gwotline_mode = True
     source = Snapshot(args.missions, args.source)
     dev = Snapshot(args.missions, args.dev)
+    briefing_layouts = set(STANDARD_LAYOUTS)
+    perfk_layout = 'worlds/Perfk/UI/MissionDescription/DescriptionEditableScrollable_size18.layout'
+    if (source.files.get(perfk_layout) == '4808df7fdfd404e8ea0d0df16f7ddd93aac464bd'
+            and source.resources.get('E7AB311330BF986C') == [perfk_layout]):
+        briefing_layouts.add('{E7AB311330BF986C}' + perfk_layout)
     stock = StockPrefabs(args.base_database) if args.base_database else None
     locally_owned = set(source.resources) | set(dev.resources)
     source_paths = {p.casefold() for p in source.files}
@@ -273,7 +278,7 @@ def main():
                 text = re.sub(r'^<<<<<<< Updated upstream\n.*?^=======\n(.*?)^>>>>>>> Stashed changes\n',
                               r'\1', text, count=1, flags=re.M | re.S)
                 row['briefingResolution'] = 'Expanded notes introduced in 9a681ab9'
-            found, issues = read_pages(text, layer)
+            found, issues = read_pages(text, layer, briefing_layouts)
             pages.extend(found)
             gaps.extend(issues)
         row['directBriefingsRead'] = len(pages)

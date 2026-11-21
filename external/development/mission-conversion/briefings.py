@@ -8,6 +8,10 @@ import re
 # The Core overlay for the common description sets only the standard layout.
 BASE = '{3136BE42592F3B1B}'
 LAYOUT = '{B6DE04F7CF7A95DA}'
+STANDARD_LAYOUTS = {
+    LAYOUT + 'UI/MissionDescription/DescriptionEditableScrollable.layout',
+    '{41DAF7B7061DC0BC}UI/MissionDescription/DescriptionEditable.layout',
+}
 MODE = '{A79C4E0A43DEB821}Prefabs/MP/Modes/GC_LobbyGameMode.et'
 QUOTED = r'"(?:[^"\\\n]|\\.|"")*"'
 PLACEMENT = re.compile(r'^(?P<group>\$grp )?PS_MissionDescription\b(?P<head>[^\n]*)\{[ \t]*$', re.M)
@@ -70,20 +74,35 @@ def properties(lines, allowed):
     return values
 
 
-def page(lines, origin, name=''):
-    values = properties(lines, ALLOWED)
-    if 'm_sDescriptionLayout' in values and not values['m_sDescriptionLayout'].startswith('"' + LAYOUT):
-        raise ValueError('custom description layout')
+def page(lines, origin, name='', layouts=STANDARD_LAYOUTS):
+    content = []
+    i = 0
+    while i < len(lines):
+        if re.fullmatch(r' +editor EntityEditorProps "\{[\da-fA-F]{16}\}" \{', lines[i]):
+            stop = block_end(lines, i)
+            if stop != i + 1:
+                raise ValueError('custom briefing editor properties')
+            i = stop + 1
+            continue
+        content.append(lines[i])
+        i += 1
+    values = properties(content, ALLOWED)
+    if 'm_sDescriptionLayout' in values:
+        layout = values['m_sDescriptionLayout']
+        if not re.fullmatch(QUOTED, layout) or layout[1:-1] not in layouts:
+            raise ValueError('custom description layout')
     for key in ['m_bShowForAnyFaction', 'm_bEmptyFactionVisibility']:
         if values.get(key, '0') not in ('0', '1'):
             raise ValueError('unknown visibility value')
     any_side = values.get('m_bShowForAnyFaction') == '1'
     empty = values.get('m_bEmptyFactionVisibility') == '1'
     factions = values.get('m_aVisibleForFactions', '')
-    keys = re.findall(r'"([^"]+)"', factions)
-    if factions and (not re.fullmatch(r'(?:\s*"[^"]+"\s*)+', factions) or
+    keys = [key for key in re.findall(r'"([^"]*)"', factions) if key]
+    if factions and (not re.fullmatch(r'(?:\s*"[^"]*"\s*)+', factions) or
                      len(keys) > 16 or len(set(keys)) != len(keys)):
         raise ValueError('unsupported faction key list')
+    if '""' in factions:
+        factions = ' '.join(f'"{key}"' for key in keys)
     audience = BriefingAudience.DEFAULT
     if any_side:
         if not empty:
@@ -103,7 +122,7 @@ def page(lines, origin, name=''):
     return Page(int(values.get('m_iOrder', 0)), title, body, '' if any_side else factions, origin, audience, name)
 
 
-def description_placement(lines, path, start, result, covered, depth=0):
+def description_placement(lines, path, start, result, covered, depth=0, *, layouts=STANDARD_LAYOUTS):
     indent = len(lines[start]) - len(lines[start].lstrip(' '))
     match = PLACEMENT.fullmatch(lines[start][indent:])
     if not match or BASE not in match['head']:
@@ -113,25 +132,26 @@ def description_placement(lines, path, start, result, covered, depth=0):
     stop = block_end(lines, start)
     covered.add(start)
     if not match['group']:
-        name = re.match(r'\s*([\w.-]+)\s*(?=:|$)', match['head'])
-        description_instance(lines, path, start, stop, name[1] if name else '', result, covered, depth)
+        name = re.match(r'\s*(?:"([\w.-]+)"|([\w.-]+))\s*(?=:|$)', match['head'])
+        description_instance(lines, path, start, stop, (name[1] or name[2]) if name else '', result, covered, depth, layouts)
         return stop
     i = start + 1
     while i < stop:
-        member = re.fullmatch(r' ' * (indent + 1) + r'(?:([^{}"]+?)\s+)?\{\s*', lines[i])
+        member = re.fullmatch(r' ' * (indent + 1) + r'(?:(?:"([\w.-]+)"|([^{}"]+?))\s+)?\{\s*', lines[i])
         if not member:
             raise ValueError('unexpected grouped instance')
         end = block_end(lines, i)
-        name = member[1] if member[1] and re.fullmatch(r'[\w.-]+', member[1]) else ''
-        description_instance(lines, path, i, end, name, result, covered, depth)
+        label = member[1] or member[2] or ''
+        name = label if re.fullmatch(r'[\w.-]+', label) else ''
+        description_instance(lines, path, i, end, name, result, covered, depth, layouts)
         i = end + 1
     return stop
 
 
-def description_instance(lines, path, start, stop, name, result, covered, depth):
+def description_instance(lines, path, start, stop, name, result, covered, depth, layouts):
     indent = len(lines[start]) - len(lines[start].lstrip(' ')) + 1
     children = next((i for i in range(start + 1, stop) if lines[i] == ' ' * indent + '{'), None)
-    result.append(page(lines[start + 1:children if children is not None else stop], f'{path}:{start + 1}', name))
+    result.append(page(lines[start + 1:children if children is not None else stop], f'{path}:{start + 1}', name, layouts))
     if children is None:
         return
     if block_end(lines, children) != stop - 1 or children == stop - 2:
@@ -141,18 +161,18 @@ def description_instance(lines, path, start, stop, name, result, covered, depth)
         if (lines[i][:indent + 1] != ' ' * (indent + 1)
                 or not PLACEMENT.fullmatch(lines[i][indent + 1:])):
             raise ValueError('non-description child under briefing at line ' + str(i + 1))
-        end = description_placement(lines, path, i, result, covered, depth + 1)
+        end = description_placement(lines, path, i, result, covered, depth + 1, layouts=layouts)
         i = end + 1
 
 
-def read_pages(text, path):
+def read_pages(text, path, layouts=STANDARD_LAYOUTS):
     lines = text.split('\n')
     result, gaps, covered = [], [], set()
     for start, line in enumerate(lines):
         if not PLACEMENT.fullmatch(line):
             continue
         try:
-            description_placement(lines, path, start, result, covered)
+            description_placement(lines, path, start, result, covered, layouts=layouts)
         except ValueError as exc:
             gaps.append(f'{path}:{start + 1} {exc}')
     if any(i not in covered and line != line.lstrip() and PLACEMENT.fullmatch(line.lstrip())
