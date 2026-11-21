@@ -40,12 +40,25 @@ def on_edge(a, b, p):
             and min(a[1], b[1]) <= p[1] <= max(a[1], b[1]))
 
 
-def validate_polygon(vertices, origin, yaw=0):
+def rotate_point(point, yaw, pitch, roll):
+    x, y, z = point
+    # Match the Enfusion AnglesToMatrix basis vectors (yaw, pitch, roll).
+    yaw, pitch, roll = map(math.radians, (yaw, -pitch, -roll))
+    x, y = x * math.cos(roll) - y * math.sin(roll), x * math.sin(roll) + y * math.cos(roll)
+    y, z = y * math.cos(pitch) - z * math.sin(pitch), y * math.sin(pitch) + z * math.cos(pitch)
+    return x * math.cos(yaw) + z * math.sin(yaw), y, -x * math.sin(yaw) + z * math.cos(yaw)
+
+
+def validate_polygon(vertices, origin, yaw=0, pitch=0, roll=0):
     if not 3 <= len(vertices) <= 128:
         raise ValueError('native polygon requires 3 to 128 points')
-    cosine, sine = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
-    ring = [(single_precision(origin[0] + p[0]*cosine + p[2]*sine),
-             single_precision(origin[2] - p[0]*sine + p[2]*cosine)) for p in vertices]
+    if pitch or roll:
+        ring = [(single_precision(origin[0] + x), single_precision(origin[2] + z))
+                for x, _, z in (rotate_point(point, yaw, pitch, roll) for point in vertices)]
+    else:
+        cosine, sine = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+        ring = [(single_precision(origin[0] + p[0]*cosine + p[2]*sine),
+                 single_precision(origin[2] - p[0]*sine + p[2]*cosine)) for p in vertices]
     edges = list(zip(ring, ring[1:] + ring[:1]))
     if abs(sum(cross(ring[0], a, b) for a, b in edges)) <= 0.01:
         raise ValueError('zero polygon area')
@@ -92,12 +105,12 @@ def settings(lines, extended_shapes, standalone=False):
                 if overlay.get('Enabled', '1' if standalone else '0') != '1':
                     raise ValueError('unsupported auxiliary map shape')
         i = end+1
-    if not standalone and not cover and overlay.get('m_drawLine', '0') != '0':
+    if not standalone and not extended_shapes and not cover and overlay.get('m_drawLine', '0') != '0':
         raise ValueError('zoom-dependent auxiliary outline needs separate conversion')
     return result, overlay, cover
 
 
-def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=False):
+def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=False, world_width=False):
     keys = overlay.get('m_factionKeys', '')
     empty = overlay.get('m_visibleForEmptyFaction', '1')
     color = overlay.get('m_color', '0 0 0 0.75')
@@ -106,11 +119,12 @@ def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=Fa
     outline = overlay.get('m_drawLine', '0')
     line_color = overlay.get('m_lineColor', '0 0 0 1') if outline == '1' else '0 0 0 0'
     line_width = overlay.get('m_lineWidth', '5')
+    world_width = world_width or standalone
     if ((not overlay and not standalone) or fill not in ('0', '1')
-            or (fill == '0' and (not standalone or outline != '1')) or empty not in ('0', '1')
+            or (fill == '0' and (not world_width or outline != '1')) or empty not in ('0', '1')
             or (not keys and empty == '0') or invert not in ('0', '1')
             or outline not in ('0', '1') or not all(0 <= x <= 1 for x in floats(color, 4))
-            or (outline == '1' and (not 1 <= float(line_width) <= (math.inf if standalone else 20)
+            or (outline == '1' and (not 1 <= float(line_width) <= (math.inf if world_width else 20)
                                    or not math.isfinite(float(line_width))
                                    or not all(0 <= x <= 1 for x in floats(line_color, 4))))):
         raise ValueError('unsupported passive map fill')
@@ -121,7 +135,7 @@ def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=Fa
              '   m_bFillEnabled ' + fill, '   m_FillColor ' + color, '   m_bInvertFill ' + invert]
     if outline == '1':
         lines.append('   m_fLineWidth ' + line_width)
-        if standalone:
+        if world_width:
             lines.append('   m_bWorldLineWidth 1')
     if auto_frame:
         lines.append('   m_bAutoFrameMap 1')
@@ -131,15 +145,18 @@ def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=Fa
     return '\n'.join([*lines, '  }', ' }', *placement, '}'])
 
 
-def render_cover(coords, vertices, yaw, cover):
+def render_cover(coords, vertices, yaw, cover, pitch=0, roll=0):
     width = float(cover.get('m_ratioWidth', '1.778'))
     if not 1 <= width < float('inf'):
         raise ValueError('invalid cover aspect ratio')
     cosine, sine = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
     center = [sum(p[axis] for p in vertices) / len(vertices) for axis in range(3)]
     radius = max(math.dist(center, point) for point in vertices)
-    x, y, z = center
-    origin = (coords[0] + x*cosine + z*sine, coords[1] + y, coords[2] - x*sine + z*cosine)
+    if pitch or roll:
+        origin = tuple(offset + local for offset, local in zip(coords, rotate_point(center, yaw, pitch, roll)))
+    else:
+        x, y, z = center
+        origin = (coords[0] + x*cosine + z*sine, coords[1] + y, coords[2] - x*sine + z*cosine)
     half_width = width * radius
     corners = [(-half_width, 0, -radius), (half_width, 0, -radius),
                (half_width, 0, radius), (-half_width, 0, radius)]
@@ -159,7 +176,8 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     placement = []
     vertices = []
     coords = None
-    yaw = None
+    angles = {}
+    scale = None
     closed = None
     i = 0
     while i < len(lines):
@@ -186,18 +204,19 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
             placement.append(' '+field)
         elif field.startswith(('angleY ', 'angles ', 'angleX ', 'angleZ ')):
             axis, value = field.split(' ', 1)
+            if axis in angles or 'angles' in angles or (axis == 'angles' and angles):
+                raise ValueError('mixed or duplicate rotation representations')
             if axis == 'angles':
-                pitch, heading, roll = floats(value, 3)
-                if pitch or roll:
-                    raise ValueError('tilted AO needs world-space validation')
+                angles[axis] = floats(value, 3)
             else:
-                heading, = floats(value, 1)
-                if axis != 'angleY' and heading:
-                    raise ValueError('tilted AO needs world-space validation')
-            if axis in ('angles', 'angleY'):
-                if yaw is not None:
-                    raise ValueError('mixed rotation representations')
-                yaw = heading
+                angles[axis], = floats(value, 1)
+            placement.append(' '+field)
+        elif extended_shapes and field.startswith('scale '):
+            if scale is not None:
+                raise ValueError('duplicate boundary scale')
+            scale, = floats(field.removeprefix('scale '), 1)
+            if scale <= 0:
+                raise ValueError('invalid boundary scale')
             placement.append(' '+field)
         elif field in ('IsClosed 1', 'IsClosed 0'):
             if closed is not None or (field == 'IsClosed 0' and not standalone):
@@ -212,19 +231,24 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     if coords is None:
         raise ValueError('missing explicit AO transform')
     origin = floats(coords, 3)
+    pitch, yaw, roll = angles.get('angles', tuple(angles.get(axis, 0) for axis in ('angleX', 'angleY', 'angleZ')))
+    if (pitch or roll) and not extended_shapes:
+        raise ValueError('tilted AO needs world-space validation')
+    if scale is not None:
+        vertices = [tuple(axis * scale for axis in point) for point in vertices]
     if closed is not False:
-        validate_polygon(vertices, origin, yaw or 0)
+        validate_polygon(vertices, origin, yaw, pitch, roll)
     elif not 2 <= len(vertices) <= 128 or overlay.get('m_drawArea', '1') != '0':
         raise ValueError('open map shape requires 2 to 128 points and no fill')
     if standalone:
         if not any(line.startswith(' LineColor ') for line in placement):
             placement.append(' LineColor 1 0 0 1')
         return convert_passive(name, placement, overlay, standalone=True), len(vertices)
-    cover_shape = render_cover(origin, vertices, yaw or 0, cover) + '\n' if cover else ''
+    cover_shape = render_cover(origin, vertices, yaw, cover, pitch, roll) + '\n' if cover else ''
     if passive_only or (extended_shapes and values.get('Enabled') == '0' and overlay):
         if values.get('Enabled') != '0':
             raise ValueError('passive shape requires a disabled AO')
-        return cover_shape + convert_passive(name, placement, overlay), len(vertices)
+        return cover_shape + convert_passive(name, placement, overlay, world_width=extended_shapes), len(vertices)
     keys = values.get('m_factionKeys','')
     vehicles = values.get('m_ignoredVehicles','')
     if keys and not re.fullmatch(r'(?:\s*"[\w.-]+"\s*)+', keys):
@@ -252,8 +276,8 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     fill_color = overlay.get('m_color', '0 0 0 0.75')
     invert = overlay.get('m_invert', '1')
     passive_fill = ''
-    if cover and overlay.get('m_drawLine') == '1':
-        passive_fill = convert_passive('', placement, overlay) + '\n'
+    if (cover or extended_shapes) and overlay.get('m_drawLine') == '1':
+        passive_fill = convert_passive('', placement, overlay, world_width=extended_shapes) + '\n'
         fill = '0'
     if fill == '1':
         fill_keys = overlay.get('m_factionKeys', '')
