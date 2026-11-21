@@ -2245,6 +2245,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(path.endswith('.layer') and 'GC_VehicleCrewComponent' in body
            for path, body in draft.items() if isinstance(body, str)):
         remaining.append('Compare placed crew arrival at Match start, compartment order and gunner dismount policy.')
+    if any('m_bShareIdleGunnerGroup 1' in body for body in draft.values() if isinstance(body, str)):
+        remaining.append('Compare boarding, idle turret grouping and delayed waypoints for spawned vehicle crews.')
     if any(item['trigger'] == 'peak player loss' and item.get('inverted')
            for rule in rules.values() if 'trigger' in rule for item in leaves(rule)):
         remaining.append('Compare victory notices below and at the authored casualty threshold after the first sample.')

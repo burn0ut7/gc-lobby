@@ -267,12 +267,12 @@ def render_legacy_crew(data, key, resolve_character):
     if (idle not in ('0', '1')
             or (waypoints and (not re.fullmatch(NUMBER, waypoint_delay) or Decimal(waypoint_delay) > 86400))):
         raise ValueError('unsupported crew order delay or configuration')
-    if waypoints and idle == '1' and flags['Turret'] == '1':
-        raise ValueError('separate idle gunner groups need separate conversion')
     flags_native = zip(SEAT_TYPES, ('Driver', 'Gunners', 'Passengers'))
     fields = ['        m_aCrewGroups {', f'         GC_SpawnCrewGroup "{{{guid(key + "/crew")}}}" {{',
               *(f'          m_b{native} 0' for legacy, native in flags_native if flags[legacy] == '0'),
               '          m_aCharacters {', *('           ' + role for role in roles), '          }']
+    if idle == '1' and flags['Turret'] == '1':
+        fields.append('          m_bShareIdleGunnerGroup 1')
     if waypoints:
         if Decimal(waypoint_delay):
             fields.append('          m_fWaypointDelay ' + waypoint_delay)

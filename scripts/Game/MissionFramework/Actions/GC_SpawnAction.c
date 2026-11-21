@@ -216,7 +216,8 @@ class GC_SpawnCrewStation
 	}
 
 	//------------------------------------------------------------------------------------------------
-	bool FillStation(array<BaseCompartmentSlot> slots, GC_SpawnAttempt attempt, inout AIGroup group, bool seated, bool idleGunners)
+	bool FillStation(array<BaseCompartmentSlot> slots, GC_SpawnAttempt attempt, inout AIGroup group,
+		bool seated, bool idleGunners, bool shareIdleGroup, inout AIGroup idleGroup)
 	{
 		int characterIndex;
 		bool custom = m_aCharacters && !m_aCharacters.IsEmpty();
@@ -246,12 +247,16 @@ class GC_SpawnCrewStation
 			AIGroup seatGroup;
 			if (!idle)
 				seatGroup = group;
+			else if (shareIdleGroup)
+				seatGroup = idleGroup;
 			IEntity occupant = slot.SpawnCharacterInCompartment(character, seatGroup);
 			attempt.Track(occupant, seatGroup);
 			if (!occupant || !seatGroup)
 				return false;
 			if (!idle)
 				group = seatGroup;
+			else if (shareIdleGroup)
+				idleGroup = seatGroup;
 			if (seated && type == ECompartmentType.TURRET)
 			{
 				SCR_AICombatComponent combat = SCR_AICombatComponent.Cast(occupant.FindComponent(SCR_AICombatComponent));
@@ -276,6 +281,8 @@ class GC_SpawnCrewGroup : GC_SpawnCrewStation
 	bool m_bKeepGunnersSeated;
 	[Attribute("0", UIWidgets.CheckBox, "Put each gunner in a separate AI group if waypoints are assigned.")]
 	bool m_bSeparateOrderedGunners;
+	[Attribute("0", UIWidgets.CheckBox, "Keep the gunners together in a separate group without waypoint orders.")]
+	bool m_bShareIdleGunnerGroup;
 
 	override bool IsValid()
 	{
@@ -310,16 +317,17 @@ class GC_SpawnCrewGroup : GC_SpawnCrewStation
 	bool Fill(array<BaseCompartmentSlot> slots, GC_SpawnAttempt attempt)
 	{
 		AIGroup group;
-		bool idle = m_bSeparateOrderedGunners && m_aWaypoints && !m_aWaypoints.IsEmpty();
+		AIGroup idleGroup;
+		bool idle = m_bShareIdleGunnerGroup || (m_bSeparateOrderedGunners && m_aWaypoints && !m_aWaypoints.IsEmpty());
 		if (m_aStations && !m_aStations.IsEmpty())
 		{
 			foreach (GC_SpawnCrewStation station : m_aStations)
 			{
-				if (!station.FillStation(slots, attempt, group, m_bKeepGunnersSeated, idle))
+				if (!station.FillStation(slots, attempt, group, m_bKeepGunnersSeated, idle, m_bShareIdleGunnerGroup, idleGroup))
 					return false;
 			}
 		}
-		else if (!FillStation(slots, attempt, group, m_bKeepGunnersSeated, idle))
+		else if (!FillStation(slots, attempt, group, m_bKeepGunnersSeated, idle, m_bShareIdleGunnerGroup, idleGroup))
 			return false;
 		return !group || attempt.AssignOrders(group, m_aWaypoints, m_fWaypointDelay);
 	}
