@@ -1,4 +1,4 @@
-[ComponentEditorProps(category: "GC Lobby/Mission", description: "Set a mission flag from the owner's main hit zone.")]
+[ComponentEditorProps(category: "GC Lobby/Mission", description: "Set a mission flag from an owner's hit zone.")]
 class GC_DestroyedEntityFlagComponentClass : ScriptComponentClass
 {
 }
@@ -16,6 +16,15 @@ class GC_DestroyedEntityFlagComponent : ScriptComponent
 
 	[Attribute("0", UIWidgets.CheckBox, "Clear the shared flag on a non-target state while this producer is still listening.")]
 	protected bool m_bClearOnMismatch;
+
+	[Attribute("", UIWidgets.EditBox, "Hit zone name. Leave empty for the default zone.")]
+	protected string m_sHitZoneName;
+
+	[Attribute("1", UIWidgets.Slider, "Initial health fraction. Leave at 1 to keep prefab health.", "0 1 0.01")]
+	protected float m_fInitialHealth;
+
+	[Attribute("0", UIWidgets.CheckBox, "Sample initial state after other mission hit-zone initializers on this entity.")]
+	protected bool m_bDeferInitialSample;
 
 	protected SCR_HitZone m_HitZone;
 
@@ -36,10 +45,23 @@ class GC_DestroyedEntityFlagComponent : ScriptComponent
 		SCR_DamageManagerComponent damage = SCR_DamageManagerComponent.Cast(owner.FindComponent(SCR_DamageManagerComponent));
 		if (!damage)
 			return;
-		m_HitZone = SCR_HitZone.Cast(damage.GetDefaultHitZone());
+		if (m_sHitZoneName.IsEmpty())
+			m_HitZone = SCR_HitZone.Cast(damage.GetDefaultHitZone());
+		else
+			m_HitZone = SCR_HitZone.Cast(damage.GetHitZoneByName(m_sHitZoneName));
 		if (!m_HitZone)
 			return;
 		m_HitZone.GetOnDamageStateChanged().Insert(OnDamageStateChanged);
+		if (m_fInitialHealth >= 0 && m_fInitialHealth < 1)
+			m_HitZone.SetHealthScaled(m_fInitialHealth);
+		if (m_bDeferInitialSample)
+			GetGame().GetCallqueue().Call(SampleDamageState);
+		else
+			SampleDamageState();
+	}
+
+	protected void SampleDamageState()
+	{
 		OnDamageStateChanged(m_HitZone);
 	}
 
@@ -73,6 +95,7 @@ class GC_DestroyedEntityFlagComponent : ScriptComponent
 	override void OnDelete(IEntity owner)
 	{
 		GetGame().GetCallqueue().Remove(ObserveDamage);
+		GetGame().GetCallqueue().Remove(SampleDamageState);
 		StopObserving();
 		super.OnDelete(owner);
 	}

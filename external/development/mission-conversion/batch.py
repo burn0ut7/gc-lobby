@@ -202,6 +202,9 @@ UNITS_DAMAGE_TARGETS = {
 REVIEWED_HIT_ZONES = {
     ('5CFD8CB5C3E55A4E', 'Prefabs/Vehicles/Tracked/BFV/M2A2_MERDC.et', '"Engine_01"'),
 }
+REVIEWED_DAMAGE_FLAG_ZONES = {
+    ('70BAEEFC2D3FEE64', 'Prefabs/Vehicles/Helicopters/UH1H/UH1H.et'): {'"Engine_01"', '"Hull"'},
+}
 # The published CIV group chain and base group have no damage manager.
 DAMAGELESS_GROUPS = {
     '0C8BEF088C9D62CA': ('Prefabs/Groups/CIV/Generic/P/Group_CIV_Generic_P.et',
@@ -1416,7 +1419,22 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                 continue
             try:
                 ref = REF.search(block[0])
-                if len(components) != 1 or not ref or not stock or ref[1].upper() in local_resources:
+                if not ref or not stock or ref[1].upper() in local_resources:
+                    raise ValueError('unverified damage objective prefab or component placement')
+                authored = (ref[1].upper(), ref[2])
+                if (zones := REVIEWED_DAMAGE_FLAG_ZONES.get(authored)) and any(
+                        field.strip().startswith('m_targetZone ') for field in block):
+                    if (not stock.contains(*authored)
+                            or any(authored[0] in units.resources for units in (source_units, dev_units))):
+                        raise ValueError('unverified named damage objective prefab')
+                    converted, observed_flags = damage_state_flag_placements(
+                        block, allow_multiple_states=True, verified_zones=zones)
+                    native = native_placement(converted)
+                    if not native:
+                        raise ValueError('named damage objective has another legacy component')
+                    observed[(path, line)] = (native, observed_flags)
+                    continue
+                if len(components) != 1:
                     raise ValueError('unverified damage objective prefab or component placement')
                 is_group = block[0].startswith('SCR_AIGroup ')
                 is_character = block[0].startswith('SCR_ChimeraCharacter ')
@@ -1528,6 +1546,8 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
         placements[(path, line)] = native
         flags.update(dict.fromkeys(observed_flags))
         audit[f'{path}:{line}'] = {'placedDestructionFlags': observed_flags}
+        if zones := re.findall(r'^   m_sHitZoneName "([^"]+)"$', native, re.M):
+            audit[f'{path}:{line}']['namedDamageZones'] = zones
         shared = {flag: count for flag, count in producer_counts.items() if count > 1}
         if shared:
             audit[f'{path}:{line}']['sharedDamageFlags'] = shared
@@ -1927,7 +1947,7 @@ def damage_state_flag_placement(block, *, allow_multiple_states=False, clear_on_
     return lines, flags[0]
 
 
-def damage_state_flag_placements(block, *, allow_multiple_states, clear_on_mismatch=False):
+def damage_state_flag_placements(block, *, allow_multiple_states, clear_on_mismatch=False, verified_zones=()):
     starts = [i for i, line in enumerate(block) if DAMAGE_COMPONENT.fullmatch(line)]
     if not starts or block.count(' components {') != 1:
         raise ValueError('expected authored damage producers in root components')
@@ -1945,10 +1965,13 @@ def damage_state_flag_placements(block, *, allow_multiple_states, clear_on_misma
         flag = data.get('m_flagName', '')
         state = data.get('m_targetState', '2')
         continuous = data.get('m_continuous', '0')
+        zone = data.get('m_targetZone', '""')
+        health = data.get('m_initialHealth', '1')
         if (not re.fullmatch(FLAG_NAME, flag) or len(flag.encode()) > 130 or state not in allowed
-                or data.get('m_targetZone', '""') != '""' or continuous not in ('0', '1')
+                or (zone != '""' and zone not in verified_zones) or continuous not in ('0', '1')
                 or (continuous == '1' and not allow_multiple_states)
-                or data.get('m_initialHealth', '1') != '1'):
+                or (health != '1' and (not verified_zones or not re.fullmatch(NUMBER, health)
+                                       or not 0 <= Decimal(health) <= 1))):
             raise ValueError('unsupported destruction state or flag')
         lines.extend(block[cursor:start])
         lines.extend([block[start].replace('TILW_Flag_EntityDamage', 'GC_DestroyedEntityFlagComponent'),
@@ -1957,8 +1980,14 @@ def damage_state_flag_placements(block, *, allow_multiple_states, clear_on_misma
             lines.append('   m_eTargetState ' + state)
         if continuous == '1':
             lines.append('   m_bTrackChanges 1')
-        elif clear_on_mismatch:
+        elif clear_on_mismatch or verified_zones:
             lines.append('   m_bClearOnMismatch 1')
+        if verified_zones:
+            if zone != '""':
+                lines.append('   m_sHitZoneName ' + zone)
+            if health != '1':
+                lines.append('   m_fInitialHealth ' + health)
+            lines.append('   m_bDeferInitialSample 1')
         flags.append(flag[1:-1])
         cursor = stop
     return [*lines, *block[cursor:]], flags
@@ -3418,7 +3447,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append(convert_layer(body, dev, draw_order=True)[0])
                 elif kind == 'PS_ManuaMarkerRender':
                     result.append(convert_hover_camera(block, f'{layer}:{line}'))
-                elif BARE_SHAPE.fullmatch(head) and 'PG_MarkerGenerator_Base.et' in body:
+                elif BARE_SHAPE.fullmatch(head) and 'Prefabs/WEGenerators/Markers/PG_MarkerGenerator_' in body:
                     result.append(convert_baked_marker_generator(block, source, dev))
                     converted_scenery_map = True
                 elif ('TILW_AOLimit.et' in head or 'TILW_MapShape.et' in head or PASSIVE_COVER.fullmatch(head)
@@ -3819,6 +3848,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare destruction of a spawned objective, including pre-Match damage and the Match outcome.')
     if any(record.get('placedDestructionFlags') for record in row.get('damageFlagCandidates', {}).values()):
         remaining.append('Compare grouped objective destruction, including pre-Match damage and the Match outcome.')
+    if any(record.get('namedDamageZones') for record in row.get('damageFlagCandidates', {}).values()):
+        remaining.append('Compare initial health, named hit-zone repair flags and destruction before and during Match.')
     if any(record.get('placedCharacterDamage') for record in row.get('damageFlagCandidates', {}).values()):
         remaining.append('Compare character damage flags as the default hit zone changes, including death and removal.')
     if any(record.get('sharedDamageFlags') for record in row.get('damageFlagCandidates', {}).values()):

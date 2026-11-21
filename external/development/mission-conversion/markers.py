@@ -55,12 +55,29 @@ BAKED_MARKER_GENERATOR = re.compile(
     r'   m_fDistance [\d.]+\n   \{\n    \$grp PS_ManualMarker : (?P=reference) \{\n'
     r'(?P<members>.*?)\n    \}\n   \}\n  \}\n \}\n\}', re.S)
 BAKED_MARKER_MEMBER = re.compile(r'     \{\n      coords ([^\n]+)\n      angles ([^\n]+)\n     \}')
+BAKED_OPFOR_LIMIT = re.compile(
+    r'PolylineShapeEntity FLET \{\n coords (?P<origin>[^\n]+)\n Points \{\n'
+    r'(?:  ShapePoint "\{[\da-fA-F]{16}\}" \{\n   Position [^\n]+\n  \}\n)+'
+    r' \}\n LineColor 0 0 0 0\n \{\n'
+    r'  PrefabGeneratorEntity : "\{6B59CE9ABF067E0A\}Prefabs/WEGenerators/Markers/PG_MarkerGenerator_AOLimit_OPFOR.et" \{\n'
+    r'   Flags 1048579\n   coords 0 0 0\n   \{\n'
+    r'    \$grp PS_ManualMarker : "\{5F773B024F23FD0F\}PrefabsEditable/Markers/AOLimit/Marker_AOLimit_OPFOR.et" \{\n'
+    r'(?P<members>.*?)\n    \}\n   \}\n  \}\n \}\n\}', re.S)
+BAKED_OPFOR_LIMIT_MEMBER = re.compile(r'     \{\n      coords ([^\n]+)\n      m_sDescription ("FLET")\n     \}')
+# TilW ef141d7 removed the generator and both marker templates. These are their inherited display fields.
+OPFOR_LIMIT_FIELDS = {'m_sImageSetGlow': '""', 'm_MarkerColor': '0.502 0 0 1', 'm_sQuadName': '"dot"',
+                      'm_fWorldSize': '75', 'm_bVisibleForEmptyFaction': '1', 'm_bShowForAnyFaction': '1'}
 
 
 def convert_baked_marker_generator(block, source, dev):
     """Keep saved runtime arrows from a native editor-only shape and generator."""
     match = BAKED_MARKER_GENERATOR.fullmatch('\n'.join(block))
-    if not match or source.resources.get(match['guid'].upper()) != [match['path']]:
+    if not match:
+        limit = BAKED_OPFOR_LIMIT.fullmatch('\n'.join(block))
+        if limit:
+            return render_baked_markers(limit, BAKED_OPFOR_LIMIT_MEMBER, 'm_sDescription', OPFOR_LIMIT_FIELDS, dev)
+        raise ValueError('unverified baked marker generator')
+    if source.resources.get(match['guid'].upper()) != [match['path']]:
         raise ValueError('unverified baked marker generator')
     template = source.read(match['path']).splitlines()
     if len(template) < 3:
@@ -72,17 +89,21 @@ def convert_baked_marker_generator(block, source, dev):
     inherited = properties(template[2:-1], ALLOWED)
     if TRANSFORM.intersection(inherited) != {'coords', 'angles'}:
         raise ValueError('baked marker template has additional transforms')
+    return render_baked_markers(match, BAKED_MARKER_MEMBER, 'angles', inherited, dev)
+
+
+def render_baked_markers(match, pattern, member_field, inherited, dev):
     origin = match['origin']
     members = match['members']
-    if not FIELD.fullmatch('coords ' + origin) or BAKED_MARKER_MEMBER.sub('', members).strip():
+    if not FIELD.fullmatch('coords ' + origin) or pattern.sub('', members).strip():
         raise ValueError('invalid saved marker transforms')
     output = []
-    for coords, angles in BAKED_MARKER_MEMBER.findall(members):
-        if not FIELD.fullmatch('coords ' + coords) or not FIELD.fullmatch('angles ' + angles):
+    for coords, value in pattern.findall(members):
+        if not FIELD.fullmatch('coords ' + coords) or (member_field == 'angles' and not FIELD.fullmatch('angles ' + value)):
             raise ValueError('invalid saved marker transforms')
         absolute = ' '.join(format(Decimal(parent) + Decimal(child), 'f')
                             for parent, child in zip(origin.split(), coords.split()))
-        output.append(instance([' coords ' + absolute, ' angles ' + angles], '', inherited, draw_order=True))
+        output.append(instance([' coords ' + absolute, f' {member_field} {value}'], '', inherited, draw_order=True))
     if not output:
         raise ValueError('baked marker generator has no saved markers')
     return relocate_images('\n'.join(output) + '\n', dev)
