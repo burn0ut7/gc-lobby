@@ -413,7 +413,8 @@ def native_group_field_end(lines, index):
 
 def native_group_symbol(lines, start, end):
     return (end == start + 2 and MILITARY_SYMBOL.fullmatch(lines[start].strip())
-            and MILITARY_IDENTITY.fullmatch(lines[start + 1].strip()))
+            and (MILITARY_IDENTITY.fullmatch(lines[start + 1].strip())
+                 or lines[start + 1].strip() == 'm_Dimension AIR'))
 
 
 def editor_group_preview(lines, start, end):

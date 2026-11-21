@@ -41,6 +41,8 @@ DORMANT_NOTICES = {
      '65DAD44B20B959A8'): '"USMC_KIA"',
 }
 REVIEWED_MISSING_TERMS = {
+    'worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_Layers/Logic.layer':
+        ('5b0005e4ca2a8ca6a11207abff3c72192d0efaa9', '66FB09BDE3CF819F'),
     'worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/MisssionTriggers.layer':
         ('516573a5947dd2aabfafcb80d7b364850f933e64', '6A9F56058342FF13'),
 }

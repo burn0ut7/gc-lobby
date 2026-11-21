@@ -143,7 +143,12 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
             stock_wrapper = stock_wrapper_ancestry_matches(source_units, dev_units, resource, stock, owned)
             if not stock_wrapper and not unchanged_units_parent(source_units, dev_units, resource):
                 return None
+            published_parent = stock_character(resource, parent_path, stock)
+            unit_parent = REF.search(inheritance(source_units, resource)[0].partition('\n')[0])
+            inherits_published_role = bool(published_parent and unit_parent
+                                           and tuple(published_parent) == unit_parent.groups())
             if (not removed and not stock_wrapper and not legacy_member(source_units, resource, False)
+                    and not inherits_published_role
                     and not (verified_forced and inherits_legacy_playable_base(source_units, resource,
                                                                               stock, dev_units))):
                 return None

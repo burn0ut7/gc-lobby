@@ -98,6 +98,7 @@ DAMAGE_TARGETS = {
     'E6AEC014D162D686': 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_FIA_command.et',
     '1C5FE7B7FF49BB8D': 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_Base.et',
     '254289B9C09904AB': 'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2.et',
+    '5729759DD092B0F7': 'Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_randomized.et',
     # The Huey and Mi-8 chains inherit native helicopter damage managers.
     '70BAEEFC2D3FEE64': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H.et',
     'CB4D4CF7E887B2D0': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HEDP.et',
@@ -135,6 +136,19 @@ WORKSHOP_DAMAGE_TARGETS = {
         '5f647d652a2104e0570f662f2d8199ef2aedea5837810b03bac91eada81a86a2',
         (('FD109F3702AAB392', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ZU23.et'),),
     ),
+    'RHS-StatusQuo_595F2BF2F44836FB': (
+        '0aa031f2f9103e4663b99698a8712d2bb9a35601a0a8611e0acb2680cc2e46da',
+        (('2C95509CA3E61DE1', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_command_camo1.et'),),
+    ),
+    'SikorskyH60Project_60ED3CC6E7E40221': (
+        '01e5390c986af0406bd5134fbcf5ff890f28d0171bfb0bc9b14347f0d8114bca',
+        (('47F2921E0DACA300', 'Prefabs/Vehicles/Helicopters/AUS_MH60/AUS_UH60_Supply.et'),
+         ('48F288F5BFF10D8B', 'Prefabs/Vehicles/Helicopters/AUS_MH60/AUS_UH60_armed.et')),
+    ),
+    'WCS_AH-6M_6273146ADFE8241D': (
+        'a2784b9f538456cd3fcb1f14d00819db1b868e6cad2d3e18664fe30ea76ccf56',
+        (('AF950919C81D91B4', 'Prefabs/Vehicles/Helicopters/AH6M/MH6M.et'),),
+    ),
 }
 WORKSHOP_SPAWN_PREFABS = {
     'Motorbike_61B84088181A8FA4': (
@@ -170,6 +184,12 @@ UNITS_DAMAGE_TARGETS = {
     ('AAB3119124C9167A', 'Prefabs/Vehicles/Wheeled/BTR70/USSR/BTR70_USSR.et'): (
         '3724095bc0b5a778965bfe0b7cc5ad98fec11aee',
         ('C012BB3488BEA0C2', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70.et'),
+        None,
+    ),
+    ('C90019A0A487DDD3', 'Prefabs/Vehicles/Helicopters/AUS_MH60/GC_AUS_MH60_armed.et'): (
+        '53f4101fcfe91ad91ddaafecf1edea47008072f6',
+        ('48F288F5BFF10D8B', 'Prefabs/Vehicles/Helicopters/AUS_MH60/AUS_UH60_armed.et'),
+        '6de8976c505309efa5a6a95be9fd09d90e5dde69',
     ),
 }
 REVIEWED_HIT_ZONES = {
@@ -1516,12 +1536,16 @@ def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs, 
                   or (resource, path) in workshop_targets)
     verified_target = registered and resource not in source_units.resources and resource not in dev_units.resources
     reviewed_units = UNITS_DAMAGE_TARGETS.get((resource, path))
-    if not verified_target and reviewed_units and stock:
-        blob, parent = reviewed_units
-        verified_target = (parent[0] not in owned and stock.contains(*parent)
+    if not verified_target and reviewed_units:
+        blob, parent, parent_override = reviewed_units
+        parent_registered = parent in workshop_targets or (stock and stock.contains(*parent))
+        parent_id, parent_path = parent
+        verified_target = (parent[0] not in owned and parent_registered
                            and all(units.resources.get(resource) == [path]
                                    and units.files.get(path) == blob
-                                   and parent[0] not in units.resources
+                                   and (parent_id not in units.resources if parent_override is None else
+                                        units.resources.get(parent_id) == [parent_path]
+                                        and units.files.get(parent_path) == parent_override)
                                    for units in (source_units, dev_units)))
     if (is_character != path.startswith('Prefabs/Characters/')
             or not (verified_target or not is_character and verified_rhs_damage(resource, path, source_units, dev_units, rhs))):
@@ -1861,7 +1885,7 @@ def damage_state_flag_placements(block, *, allow_multiple_states):
         flag = data.get('m_flagName', '')
         state = data.get('m_targetState', '2')
         continuous = data.get('m_continuous', '0')
-        if (not re.fullmatch(r'"[\w.-]+"', flag) or state not in allowed
+        if (not re.fullmatch(FLAG_NAME, flag) or len(flag.encode()) > 130 or state not in allowed
                 or data.get('m_targetZone', '""') != '""' or continuous not in ('0', '1')
                 or (continuous == '1' and not allow_multiple_states)
                 or data.get('m_initialHealth', '1') != '1'):
@@ -2903,6 +2927,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     jip = {}
     mode_components_seen = False
     reconnect = {}
+    disabled_resources = ''
     respawn_table_seen = False
     respawn_fields = ''
     safe_start_seen = False
@@ -2970,6 +2995,13 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             safe_start_seen = True
         elif re.fullmatch(r' m_bDisableArmaVision [01]', line) and disable_photo is None:
             disable_photo = line.endswith(' 1')
+        elif line == ' m_aDisabledResourceTypes {' and not disabled_resources:
+            end = block_end(root, index)
+            values = ' '.join(field.strip() for field in root[index + 1:end]).split()
+            if len(set(values)) != len(values) or set(values) - {'SUPPLIES', 'ELECTRICITY'}:
+                raise ValueError('unsupported disabled resource types')
+            disabled_resources = '\n'.join(root[index:end + 1]) + '\n'
+            index = end
         elif line.strip().partition(' ')[0] in CONSTRUCTION_FIELDS:
             field, _, value = line.strip().partition(' ')
             if field in construction:
@@ -3089,7 +3121,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
  components {{
 {weather}{environment}{settings} }}
 {placement}
-{jip_fields}{children}}}
+{jip_fields}{disabled_resources}{children}}}
 '''
 
 
