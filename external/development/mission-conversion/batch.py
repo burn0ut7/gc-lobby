@@ -2352,15 +2352,34 @@ def workshop_resources(workshop, packages):
     return approved
 
 
-def reviewed_missing_bmp_audio(source, dev, source_units, dev_units, databases):
+BMP_DAMPER_AUDIO = ('F7D2EDE33E61A12A', 'Sounds/Vehicles/Wheeled/BTR70/Vehicles_BTR70_Dampers.acp')
+
+
+def unavailable_optional_resources(databases, snapshots, resources):
+    """Check both identifiers before treating a reviewed legacy resource as unavailable."""
+    missing = {(guid, path) for guid, path in resources
+               if all(guid not in snapshot.resources and path not in snapshot.files for snapshot in snapshots)}
+    if not databases:
+        return set()
+    for registry in databases:
+        if not missing:
+            break
+        try:
+            database = StockPrefabs(registry)
+        except ValueError:
+            return set()
+        missing = {(guid, path) for guid, path in missing
+                   if not database.registered_paths(guid) and not database.registered_ids(path)}
+    return missing
+
+
+def reviewed_missing_bmp_audio(source, dev, unavailable):
     """Preserve the published prefab's audible behavior when the obsolete bank cannot load."""
     resource = '84A2CD45010EC22E'
     path = 'worlds/HitTheMan/Prefabs/Vehicles/BMP1_base_HTM.et'
-    sound = 'F7D2EDE33E61A12A'
-    sound_path = 'Sounds/Vehicles/Wheeled/BTR70/Vehicles_BTR70_Dampers.acp'
-    if (not databases or source.resources.get(resource) != [path] or dev.resources.get(resource) not in (None, [path])
-            or any(sound in snapshot.resources or sound_path in snapshot.files
-                   for snapshot in (source, dev, source_units, dev_units))):
+    sound, sound_path = BMP_DAMPER_AUDIO
+    if (BMP_DAMPER_AUDIO not in unavailable or source.resources.get(resource) != [path]
+            or dev.resources.get(resource) not in (None, [path])):
         return {}
     try:
         body = passive_asset(source, path)
@@ -2369,13 +2388,6 @@ def reviewed_missing_bmp_audio(source, dev, source_units, dev_units, databases):
     token = f' "{{{sound}}}{sound_path}"'
     if body.count(token) != 1:
         return {}
-    for registry in databases:
-        try:
-            db = StockPrefabs(registry)
-        except ValueError:
-            return {}
-        if db.registered_paths(sound) or db.registered_ids(sound_path):
-            return {}
     return {resource: (path, body.replace(token, '', 1))}
 
 

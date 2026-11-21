@@ -200,6 +200,7 @@ def main():
     forced_external = {}
     asset_aliases = {}
     reviewed_audio = {}
+    unavailable = set()
     if args.units:
         source_units = Snapshot(args.units, args.units_source)
         dev_units = Snapshot(args.units, args.units_dev)
@@ -214,9 +215,10 @@ def main():
                 asset_aliases = batch.resource_aliases(args.workshop_addons, dev_units, stock)
                 asset_aliases.update(batch.reviewed_units_asset_paths(source_units, dev_units))
                 if args.workshop_addons:
-                    reviewed_audio = batch.reviewed_missing_bmp_audio(
-                        source, dev, source_units, dev_units,
-                        resource_databases(args.base_database, args.workshop_addons))
+                    unavailable = batch.unavailable_optional_resources(
+                        resource_databases(args.base_database, args.workshop_addons),
+                        (source, dev, source_units, dev_units), (batch.BMP_DAMPER_AUDIO, local_loadouts.GREEN_SNOOD))
+                    reviewed_audio = batch.reviewed_missing_bmp_audio(source, dev, unavailable)
             except (OSError, ValueError) as exc:
                 parser.error(str(exc))
 
@@ -923,7 +925,8 @@ def main():
         restored_rosters = verified_group_rosters(source_units, dev_units, stock, locally_owned, restored)
         loadouts = local_loadouts.collect(
             source, dev, source_units, dev_units, stock,
-            normalize_references=lambda body: batch.replace_registered_paths(body, source, dev, asset_aliases))
+            normalize_references=lambda body: batch.replace_registered_paths(body, source, dev, asset_aliases),
+            unavailable=unavailable)
         reviewed_members = {guid: asset[0] for guid, asset in loadouts.items()}
         local_groups = batch.reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed_members)
 

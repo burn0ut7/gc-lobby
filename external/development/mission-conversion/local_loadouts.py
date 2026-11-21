@@ -13,6 +13,8 @@ CHARACTER = re.compile(r'SCR_ChimeraCharacter : "\{[\da-fA-F]{16}\}[^"\n]+\.et" 
 PLAYABLE = '  PS_PlayableComponent "{5EFCC1946F475F15}" {'
 EDITABLE = '  SCR_EditableCharacterComponent "{520EA1D2F659C85C}" {\n'
 EDITABLE_INFO = '   m_UIInfo SCR_EditableEntityUIInfo "{5298E609432D192D}" {\n'
+GREEN_SNOOD = ('DBFF84DD336E1065',
+               'Prefabs/Characters/HeadGear/Masks/Masks_Keela_Snood/Masks_Keela_Snood_GRN.et')
 LEGACY = re.compile(r'\b(?:PS|TILW)_\w+')
 MOVED_CHARACTER_PARENTS = {
     ('B64CD72F4D93A99E', 'worlds/James/newbritnvatvt/Character_UK_1989_Paras_LRDriver_P.et'):
@@ -99,7 +101,7 @@ def unchanged_units_parent(source_units, dev_units, resource):
     return reviewed_native_ancestry(tuple(native_before), after, dev_units)
 
 
-def collect(source, dev, source_units, dev_units, stock, *, normalize_references=None):
+def collect(source, dev, source_units, dev_units, stock, *, normalize_references=None, unavailable=()):
     """Return approved asset bodies by unique source GUID."""
     approved = {}
     owned = source.resources.keys() | dev.resources.keys()
@@ -181,6 +183,13 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
             else:
                 if not (removed or verified_forced) or not stock.contains(resource, parent_path):
                     return None
+        if (guid == '730C15295DBF4543' and source.files[path] == '90e7c82588520852e48f88e85f35bcbeb29b27ef'
+                and GREEN_SNOOD in unavailable
+                and sha256('\n'.join(inheritance(source_units, resource)).encode()).hexdigest()
+                == 'e469241950b28218b8c61040c46c4bc802fb67998daabe497a0d3a2e8024a058'):
+            # The published role cannot load the snood and its reviewed parent has no face item.
+            item, item_path = GREEN_SNOOD
+            body = body.replace(f'     Prefab "{{{item}}}{item_path}"\n', '     Prefab ""\n', 1)
         compared = normalize_references(body) if normalize_references and path in dev.files else body
         if (dev.resources.get(guid) not in (None, [path])
                 or (path in dev.files and compared.strip() != dev.read(path).strip())):
