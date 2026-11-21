@@ -41,14 +41,24 @@ def runtime_checks(drafts):
     return checks
 
 
-def summarize(inventory, review, limit, previous_checks=None):
+def authored_file_note(note):
+    # Carry forward file evidence from older plans that put it in the runtime queue.
+    return re.fullmatch(
+        r'The original (?:reinforcement waypoint .+ has no authored target'
+        r'|static waypoint link to .+ has no authored target'
+        r'|static vehicle link to .+ has no mission-layer target'
+        r'|spawn at .+ has no authored anchor and does not run)\.', note
+    ) is not None
+
+
+def summarize(inventory, review, limit, previous_checks=None, previous_notes=None):
     migration = inventory['batchMigration']
     candidates = defaultdict(list)
-    committed_launchers = 0
+    committed = set()
     for header, row in inventory['headers'].items():
         destination = row.get('destinationWorld', '').partition('}')[2]
         if row['devHeaderAtSamePath'] and row.get('devWorldAtSamePath'):
-            committed_launchers += 1
+            committed.add(header)
         if migration['worlds'].get(destination, {}).get('status') == 'generated for file review':
             candidates[destination].append(header)
 
@@ -133,23 +143,37 @@ def summarize(inventory, review, limit, previous_checks=None):
     draft_checks = {header: entry['behaviorGaps'] for entry in ready for header in entry['launchers']}
     held_headers = {header for entry in held for header in entry['launchers']}
     recorded_checks = dict(previous_checks or {})
+    file_notes = dict(previous_notes or {})
     runtime_candidates = []
+    cleared_committed = 0
     for header, row in sorted(review['missions'].items()):
         gaps = sorted(set(recorded_checks.get(header, ()))
                       | set(row.get('documentedGaps', ())) | set(draft_checks.get(header, ())))
-        if row['status'] != 'compare' or header in held_headers or not gaps:
+        notes = {note for note in gaps if authored_file_note(note)}
+        if notes:
+            file_notes[header] = sorted(notes.union(file_notes.get(header, ())))
+        checks = sorted(set(gaps) - notes)
+        if header in recorded_checks:
+            recorded_checks[header] = checks
+        if row['status'] != 'compare' or header in held_headers:
             continue
-        recorded_checks[header] = gaps
-        runtime_candidates.append({'world': row['world'], 'launchers': [header], 'behaviorGaps': gaps})
+        if header in committed and header not in draft_checks:
+            cleared_committed += 1
+        if checks:
+            recorded_checks[header] = checks
+            runtime_candidates.append({'world': row['world'], 'launchers': [header],
+                                       'behaviorGaps': checks})
     return {
         'source': inventory['source'], 'target': inventory['target'],
-        'committedLaunchersWithWorld': committed_launchers,
+        'committedLaunchersWithWorld': len(committed),
+        'committedLaunchersCleared': cleared_committed,
         'legacyLaunchers': len(inventory['headers']),
         'launcherFileChecks': dict(Counter(row['status'] for row in review['missions'].values())),
         'worldConversionChecks': migration['totals'],
         'suggestedBatch': selected, 'additionalDrafts': ready[limit:], 'heldDrafts': held,
         'runtimeChecksByLauncher': recorded_checks,
         'runtimeChecks': runtime_checks(runtime_candidates),
+        'authoredFileNotesByLauncher': file_notes,
         'unresolvedResources': review.get('unresolvedResources', []),
         'unavailableDependencyIds': review.get('unavailableDependencyIds', []),
         'rules': [{'rule': rule, **priority[rule]} for rule in rules],
@@ -164,6 +188,8 @@ def markdown(plan):
              f"Dev revision `{plan['target']}`", '',
              f"{plan['committedLaunchersWithWorld']} of {plan['legacyLaunchers']} legacy launchers "
              'have a launcher and world in the committed Dev snapshot.', '',
+             f"{plan['committedLaunchersCleared']} committed launchers cleared the file audit "
+             'without relying on a staged draft.', '',
              '## Launcher file audit including staged drafts', '']
     lines.extend(f"- {status} · {count}" for status, count in sorted(plan['launcherFileChecks'].items()))
     lines.extend(['', '## Drafts ready for source and Dev file review', ''])
@@ -188,6 +214,11 @@ def markdown(plan):
         lines.extend(f'  - {check}' for check in entry['checks'])
     if not plan['runtimeChecks']:
         lines.append('The file-cleared missions reported no additional behavior checks.')
+    if plan['authoredFileNotesByLauncher']:
+        lines.extend(['', '## Inactive links confirmed in source files', ''])
+        for header, notes in sorted(plan['authoredFileNotesByLauncher'].items()):
+            lines.append(f'- `{header}`')
+            lines.extend(f'  - {note}' for note in notes)
     lines.extend(['', '## Drafts held for file checks', ''])
     for entry in plan['heldDrafts']:
         lines.append(f"- `{entry['world']}`")
@@ -275,14 +306,14 @@ def main():
                             '--report', review, '--summary', output / 'review.md'])
         inventory_bytes = inventory.read_bytes()
         inventory_data = json.loads(inventory_bytes)
-        previous_checks = None
+        prior = {}
         if args.previous_plan:
             prior = json.loads(args.previous_plan.read_text(encoding='utf-8'))
             if prior.get('source') != inventory_data['source']:
                 parser.error('the previous plan describes a different legacy revision')
-            previous_checks = prior.get('runtimeChecksByLauncher')
         plan = summarize(inventory_data, json.loads(review.read_text(encoding='utf-8')),
-                         args.batch_size, previous_checks)
+                         args.batch_size, prior.get('runtimeChecksByLauncher'),
+                         prior.get('authoredFileNotesByLauncher'))
         plan['inventorySha256'] = sha256(inventory_bytes).hexdigest()
         (output / 'plan.json').write_text(json.dumps(plan, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
         (output / 'plan.md').write_text(markdown(plan), encoding='utf-8')
