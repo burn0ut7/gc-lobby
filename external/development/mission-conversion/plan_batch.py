@@ -74,6 +74,7 @@ def summarize(inventory, review, limit):
         'worldConversionChecks': migration['totals'],
         'suggestedBatch': ready[:limit], 'additionalDrafts': ready[limit:], 'heldDrafts': held,
         'unresolvedResources': review.get('unresolvedResources', []),
+        'unavailableDependencyIds': review.get('unavailableDependencyIds', []),
         'rules': [{'rule': rule, **priority[rule]} for rule in rules],
     }
 
@@ -111,9 +112,13 @@ def markdown(plan):
         for entry in resources:
             lines.append(f"- `{{{entry['guid']}}}{entry['path']}` · {len(entry['launchers'])} launcher(s)")
             lines.extend(f"  - {registration['provider']} · `{registration['path']}`"
+                         + ('' if registration['declaredDependency'] else ' · outside the Dev dependency graph')
                          for registration in entry['registrations'])
             if not entry['registrations']:
                 lines.append('  - No installed registration found for this ID.')
+    if plan['unavailableDependencyIds']:
+        lines.extend(['', '## Dev dependencies without a local provider', '',
+                      *(f'- `{guid}`' for guid in plan['unavailableDependencyIds'])])
     lines.extend(['', '## Conversion rules to investigate', '',
                   '| Rule | Only reported blocker | Worlds affected |',
                   '| --- | ---: | ---: |'])

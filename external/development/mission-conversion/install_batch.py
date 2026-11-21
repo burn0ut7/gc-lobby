@@ -8,15 +8,16 @@ import subprocess
 from tempfile import NamedTemporaryFile
 
 from catalog import REF, SOURCE_TEXT, Snapshot
+from dependencies import dependency_resources
 from launchers import META_NAME
 from scenery import StockPrefabs
 
 
-def unresolved_resources(files, addons, databases):
-    available, refs = set(), set()
-    for addon in addons:
-        for guid, paths in Snapshot(addon, 'HEAD').resources.items():
-            available.update((guid, path) for path in paths)
+def unresolved_resources(files, target, checkouts, databases):
+    dependencies, providers, _ = dependency_resources(target, checkouts, databases)
+    available = {(guid, path) for resources in (target.resources, dependencies)
+                 for guid, paths in resources.items() for path in paths}
+    refs = set()
     for path, body in files.items():
         if path.endswith('.meta'):
             meta = META_NAME.search(body.decode('utf-8-sig'))
@@ -24,7 +25,7 @@ def unresolved_resources(files, addons, databases):
                 available.add((meta[2].upper(), meta[3]))
         elif PurePosixPath(path).suffix.lower() in SOURCE_TEXT:
             refs.update((guid.upper(), ref) for guid, ref in REF.findall(body.decode('utf-8-sig')))
-    return unregistered_references(refs - available, databases)
+    return unregistered_references(refs - available, providers)
 
 
 def unregistered_references(refs, databases):
@@ -133,7 +134,8 @@ def main():
             writes[target] = body
         if args.base_database:
             databases = resource_databases(args.base_database, args.workshop_addons)
-            missing = unresolved_resources(files, [root, *args.dependency], databases)
+            missing = unresolved_resources(files, Snapshot(root, inventory['target']),
+                                           [Snapshot(path, 'HEAD') for path in args.dependency], databases)
             if missing:
                 raise ValueError('unresolved references: ' + ', '.join(f'{{{guid}}}{path}' for guid, path in sorted(missing)))
         if not args.dry_run:

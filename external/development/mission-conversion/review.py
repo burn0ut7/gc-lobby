@@ -11,6 +11,7 @@ import re
 import subprocess
 
 from catalog import REF, SOURCE_TEXT, Snapshot, TYPES
+from dependencies import dependency_resources
 from install_batch import resource_databases, unregistered_references
 from launchers import META_NAME, WORLD_REF, launcher
 from scenery import StockPrefabs
@@ -187,7 +188,7 @@ def draft_diff(source, draft, paths):
     return ''.join(result).encode()
 
 
-def external_resource_review(missions, databases):
+def external_resource_review(missions, databases, providers):
     """Group unresolved references and show alternate installed registrations."""
     references = defaultdict(dict)
     for launcher_path, mission in missions.items():
@@ -204,7 +205,7 @@ def external_resource_review(missions, databases):
             continue
         provider = 'Base game' if index == 0 else path.parent.name
         for guid in guids:
-            registrations[guid].extend({'provider': provider, 'path': alternate}
+            registrations[guid].extend({'provider': provider, 'path': alternate, 'declaredDependency': path in providers}
                                        for alternate in database.registered_paths(guid))
     return [{'guid': guid, 'path': path, 'launchers': owners, 'registrations': registrations[guid]}
             for (guid, path), owners in sorted(references.items(), key=lambda entry: (-len(entry[1]), *entry[0]))]
@@ -250,14 +251,13 @@ def main():
     if selected - headers:
         parser.error('unknown launcher: ' + ', '.join(sorted(selected - headers)))
     dependencies = defaultdict(list)
-    for addon in args.dependency:
-        for resource, paths in Snapshot(addon, 'HEAD').resources.items():
-            dependencies[resource].extend(path for path in paths if path not in dependencies[resource])
+    checkouts = [Snapshot(addon, 'HEAD') for addon in args.dependency]
     stock = StockPrefabs(args.base_database) if args.base_database else None
     unresolved = None
     if args.workshop_addons:
         try:
             databases = resource_databases(args.base_database, args.workshop_addons)
+            dependencies, providers, unavailable = dependency_resources(target, checkouts, databases)
             references = set()
             for header in selected:
                 try:
@@ -269,16 +269,21 @@ def main():
                         references.update((guid.upper(), name) for guid, name in facts(target, path)[2])
             unresolved = unregistered_references(
                 {(guid, path) for guid, path in references
-                 if path not in (target.resources.get(guid) or dependencies.get(guid, []))}, databases)
+                 if path not in (target.resources.get(guid) or dependencies.get(guid, []))}, providers)
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
+    else:
+        for checkout in checkouts:
+            for resource, paths in checkout.resources.items():
+                dependencies[resource].extend(path for path in paths if path not in dependencies[resource])
     missions = {header: compare_mission(source, target, header, notes, dependencies, stock, unresolved)
                 for header in sorted(selected)}
     report = {'source': source.commit, 'target': target.commit, 'missions': missions}
     if args.draft_stage:
         report['includesDraft'] = True
     if args.workshop_addons:
-        report['unresolvedResources'] = external_resource_review(missions, databases)
+        report['unavailableDependencyIds'] = unavailable
+        report['unresolvedResources'] = external_resource_review(missions, databases, providers)
     args.report.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     if args.summary:
         args.summary.write_text(markdown(source, target, missions), encoding='utf-8')
