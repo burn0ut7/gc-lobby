@@ -13,7 +13,7 @@ from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import REF, SOURCE_TEXT
 from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, render_crew_config, render_spawn, spawn_details, split_crew_block
 from events import EVENT, LEGACY_FLAG, peak_flags
-from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, MISSING_STATUS, condition as extraction_condition
+from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
 from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, inheritance, reviewed_native_ancestry
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
@@ -129,6 +129,9 @@ WORKSHOP_DAMAGE_TARGETS = {
 WORKSHOP_SPAWN_PREFABS = {
     'BritishForces_5AE50EC5B8D6F4AE': (
         None, (('775DFB7F4529A122', 'Prefabs/Weapons/Rifles/L42A1/Rifle_L42A1.et'),),
+    ),
+    'RHS-StatusQuo_595F2BF2F44836FB': (
+        None, (('1A486F1C4D22A32A', 'Prefabs/Vehicles/Tracked/T14/VehParts/Seats/T14_seat.et'),),
     ),
     GMFX_PROVIDER: (
         GMFX_DIGEST, (('DDDDBEC77B49A995', 'Prefabs/Systems/Explosions/Wrapper_Bomb_Huge.et'),),
@@ -2506,7 +2509,7 @@ def extraction_rule(world, area_name, flag, fields, *, polygon=False):
             or any(not FIELD.fullmatch(f'{key} {value}') for key, value in transform.items())):
         raise ValueError('invalid extraction settings')
     at_most = mode in ('0', 'EQUAL_OR_LESS')
-    notices = capture_status_texts(data, EXTRACTION_STATUS, missing_text=MISSING_STATUS) if enabled == '1' else ()
+    notices = capture_status_texts(data, EXTRACTION_STATUS) if enabled == '1' else ()
     recipients = faction_keys(data.get('m_displayTo', '')) if notices else ()
     check = extraction_condition(world, flag[1:-1], area_name, faction, ratio, hold,
                                  skip_discovery=discovery == '1', latch=stops == '1', players_only=players == '1',

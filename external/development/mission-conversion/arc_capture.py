@@ -5,7 +5,7 @@ from decimal import Decimal
 from boundaries import convert_boundaries
 from briefings import block_end, guid, properties, QUOTED
 from catalog import REF
-from extraction import condition as extraction_condition
+from extraction import MISSING_STATUS, condition as extraction_condition
 from industrial import outcome_mode
 from groups import group_layer
 from launchers import launcher
@@ -174,16 +174,17 @@ def faction_keys(value):
     return keys
 
 
-def capture_status_texts(data, defaults, *, missing_text=None):
-    texts = defaults
-    if 'm_statusMessages' in data:
-        value = data['m_statusMessages']
-        texts = re.findall(QUOTED, value)
-        if (len(texts) > 6 or (len(texts) < 6 and missing_text is None)
-                or not re.fullmatch(rf'(?:{QUOTED}\s*)*', value)
-                or any(len(text.encode()) - 2 > 256 or '<' in text or '>' in text for text in texts)):
-            raise ValueError('unsupported custom capture status messages')
-        texts.extend([missing_text] * (6 - len(texts)))
+def capture_status_texts(data, defaults):
+    if 'm_statusMessages' not in data:
+        return defaults
+    value = data['m_statusMessages']
+    if not re.fullmatch(rf'(?:{QUOTED}\s*)*', value):
+        raise ValueError('invalid custom capture status messages')
+    # Legacy queries six fixed status indices and reports a missing entry when reached.
+    texts = re.findall(QUOTED, value)[:6]
+    if any(len(text.encode()) - 2 > 256 or '<' in text or '>' in text for text in texts):
+        raise ValueError('unsupported custom capture status messages')
+    texts.extend([MISSING_STATUS] * (6 - len(texts)))
     return texts
 
 
