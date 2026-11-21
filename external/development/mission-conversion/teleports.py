@@ -8,6 +8,7 @@ from polygon_capture import members
 
 TELEPORT_PREFAB = ('5B462DF843A26368', 'Prefabs/Utils/Interactions/TILW_TeleportInteraction.et')
 NATIVE_PREFAB = '{4A7B7EF936B349A7}Prefabs/Logic/Mission/TeleportInteraction.et'
+PREFAB_ACTION = '404C2C5909834FF5'
 PREFAB_FIELDS = {
     '62EF76E0D47ED96A': 'F097C296BF6748C5', '62EF76E0D47ED970': '33B86D1741F2473F',
     '62EF76E0D47ED972': '21B6A8BC15BF41DF', '62EF76E608B6CB36': '404C2C5909834FF5',
@@ -23,10 +24,10 @@ def is_teleport(line):
     return 'TILW_TeleportInteraction' in line
 
 
-def convert_instance(lines, component_id, inherited):
+def convert_instance(lines, key, inherited, standalone):
     action_at = [i for i, line in enumerate(lines) if is_teleport(line)]
     if not action_at:
-        return lines, None
+        return lines, []
     if lines.count(' components {') != 1:
         raise ValueError('teleport needs root components')
     start = lines.index(' components {')
@@ -47,7 +48,7 @@ def convert_instance(lines, component_id, inherited):
     if len(actions) != 1:
         raise ValueError('teleport needs one additional action list')
     action_end = block_end(lines, actions[0])
-    replacements, settings = {}, None
+    replacements, routes = {}, []
     for index in action_at:
         match = TELEPORT.fullmatch(lines[index])
         if not match or not actions[0] < index < action_end:
@@ -58,7 +59,7 @@ def convert_instance(lines, component_id, inherited):
         while cursor < last:
             field = lines[cursor].strip().split(' ', 1)[0]
             stop = block_end(lines, cursor) if lines[cursor].endswith(' {') else cursor
-            if field in NATIVE_FIELDS:
+            if field in NATIVE_FIELDS or re.fullmatch(r'"Sort Priority" -?\d+', lines[cursor].strip()):
                 native.extend(lines[cursor:stop + 1])
             elif field in LEGACY_FIELDS:
                 legacy.extend(lines[cursor:stop + 1])
@@ -77,9 +78,25 @@ def convert_instance(lines, component_id, inherited):
                 or not all(re.fullmatch(KEY, value) for value in factions)
                 or data.get('m_conditionFlag', '""') != '""'):
             raise ValueError('teleport destination, audience or required flag needs review')
-        if settings:
-            raise ValueError('multiple active teleports need a separate conversion')
-        settings = (target, label, factions)
+        routes.append((index, last, match[1], target, label, factions, native))
+    keyed = len(routes) > 1
+    if len({route[2] for route in routes}) != len(routes):
+        raise ValueError('duplicate teleport action identity')
+    if standalone and routes and not any(route[2] == PREFAB_ACTION for route in routes):
+        raise ValueError('standalone teleport does not configure its inherited action')
+    components, destinations = [], []
+    for index, last, identity, target, label, factions, native in routes:
+        component_id = 'B3632A2C9CA24FDF' if standalone and identity == PREFAB_ACTION else guid(
+            key + '/' + identity if keyed else key)
+        component = [f'  GC_TeleportInteractionComponent "{{{component_id}}}" {{',
+                     '   m_sActionName ' + label, '   m_sDestinationName ' + target]
+        if factions:
+            component.extend(['   m_aFactions {', *('    ' + faction for faction in factions), '   }'])
+        if keyed:
+            component.append(f'   m_sInteractionKey "{identity}"')
+            native.append(f'     m_sInteractionKey "{identity}"')
+        components.extend([*component, '  }'])
+        destinations.append(target[1:-1])
         replacements[index] = last, [lines[index].replace('TILW_TeleportInteraction', 'GC_MissionInteractionAction', 1),
                                       *native, lines[last]]
     output = []
@@ -92,15 +109,33 @@ def convert_instance(lines, component_id, inherited):
         else:
             output.append(lines[index])
             index += 1
-    if not settings:
-        return output, None
-    target, label, factions = settings
-    component = [f'  GC_TeleportInteractionComponent "{{{component_id}}}" {{',
-                 '   m_sActionName ' + label, '   m_sDestinationName ' + target]
-    if factions:
-        component.extend(['   m_aFactions {', *('    ' + faction for faction in factions), '   }'])
-    output[start + 1:start + 1] = [*component, '  }']
-    return output, target[1:-1]
+    output[start + 1:start + 1] = components
+    return output, destinations
+
+
+def convert_children(lines, key, stock, local_resources):
+    if ' {' not in lines:
+        return lines, [], []
+    start = lines.index(' {')
+    end = block_end(lines, start)
+    if end != len(lines) - 1:
+        raise ValueError('teleport children must follow the parent fields')
+    children, destinations = [lines[start]], []
+    cursor = start + 1
+    while cursor < end:
+        if not lines[cursor].startswith('  ') or not lines[cursor].endswith(' {'):
+            raise ValueError('unsupported teleport child placement')
+        stop = block_end(lines, cursor)
+        if stop >= end:
+            raise ValueError('teleport child crosses its parent')
+        child = lines[cursor:stop + 1]
+        if any(is_teleport(line) for line in child):
+            converted, routes = convert([line[2:] for line in child], f'{key}/child/{cursor}', stock, local_resources)
+            child = ['  ' + line for line in converted.splitlines()]
+            destinations.extend(routes)
+        children.extend(child)
+        cursor = stop + 1
+    return lines[:start], [*children, lines[end]], destinations
 
 
 def convert(block, key, stock, local_resources):
@@ -112,28 +147,26 @@ def convert(block, key, stock, local_resources):
     standalone = parent == TELEPORT_PREFAB
     if standalone and parent[0] in local_resources:
         raise ValueError('mission overrides the legacy teleport prefab')
-    inherited = (standalone or (parent == STOCK_FLAGPOLE and parent[0] not in local_resources
+    inherited = (standalone or (stock and parent == STOCK_FLAGPOLE and parent[0] not in local_resources
                                 and stock.contains(*parent)))
     output = [REF.sub(lambda _: f'"{NATIVE_PREFAB}"', block[0], count=1) if standalone else block[0]]
     destinations = []
     for index, (name, fields) in enumerate(members(block, root['group'], root['name'])):
-        component_id = 'B3632A2C9CA24FDF' if standalone else guid(f'{key}/teleport/{index}')
+        placement = f'{key}/teleport/{index}'
+        fields, children, nested = convert_children(fields, placement, stock, local_resources)
         if standalone:
             if any(re.match(r'  \w+Component ', l) and not MANAGER.fullmatch(l) for l in fields):
                 raise ValueError('custom standalone teleport component')
             managers = [l for l in fields if MANAGER.fullmatch(l)]
             if managers and managers != ['  ActionsManagerComponent "{62EF76E0D47ED96A}" {']:
                 raise ValueError('custom standalone teleport action manager')
-            # The prefab inherits its action and context when the instance omits them.
-            if any(TELEPORT.fullmatch(l) and '62EF76E608B6CB36' not in l for l in fields):
-                raise ValueError('standalone teleport adds a custom action')
             fields = [re.sub(r'\{([A-F0-9]{16})\}', lambda m: '{' + PREFAB_FIELDS.get(m[1], m[1]) + '}', line)
                       for line in fields]
             fields = [line.replace('"Interact_A"', '"MissionInteraction"')
                       if line.strip() in ('ContextName "Interact_A"', '"Interact_A"') else line for line in fields]
-        converted, destination = convert_instance(fields, component_id, inherited)
-        if destination:
-            destinations.append(destination)
+        converted, routes = convert_instance(fields, placement, inherited, standalone)
+        converted.extend(children)
+        destinations.extend([*routes, *nested])
         if root['group']:
             output.append(f' {name} {{' if name else ' {')
             output.extend(' ' + line for line in converted)

@@ -1,12 +1,34 @@
 //! Put this action in any native action context on the component's entity.
 class GC_MissionInteractionAction : ScriptedUserAction
 {
+	[Attribute("", UIWidgets.EditBox, "Optional interaction component key on this entity. Leave blank for a single interaction.")]
+	protected string m_sInteractionKey;
 	protected GC_MissionInteractionComponent m_Interaction;
 
 	//------------------------------------------------------------------------------------------------
 	override void Init(IEntity pOwnerEntity, GenericComponent pManagerComponent)
 	{
-		m_Interaction = GC_MissionInteractionComponent.Cast(pOwnerEntity.FindComponent(GC_MissionInteractionComponent));
+		if (m_sInteractionKey.IsEmpty())
+		{
+			m_Interaction = GC_MissionInteractionComponent.Cast(pOwnerEntity.FindComponent(GC_MissionInteractionComponent));
+			return;
+		}
+
+		m_Interaction = null;
+		array<Managed> components = {};
+		pOwnerEntity.FindComponents(GC_MissionInteractionComponent, components);
+		foreach (Managed item : components)
+		{
+			GC_MissionInteractionComponent interaction = GC_MissionInteractionComponent.Cast(item);
+			if (!interaction || interaction.GetInteractionKey() != m_sInteractionKey)
+				continue;
+			if (m_Interaction)
+			{
+				m_Interaction = null;
+				return;
+			}
+			m_Interaction = interaction;
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------

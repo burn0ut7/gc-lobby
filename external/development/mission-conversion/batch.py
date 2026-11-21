@@ -637,6 +637,15 @@ PLACED_ENTITY = re.compile(r'(?P<group>\$grp )?(?P<kind>\w+)(?: (?P<name>[\w.-]+
 def named_placements(layers):
     named = {}
 
+    def visit_children(block):
+        if ' {' not in block[1:-1]:
+            return
+        start = block.index(' {', 1)
+        end = block_end(block, start)
+        children = '\n'.join(line[2:] for line in block[start + 1:end])
+        for _, child in blocks(children):
+            visit(child)
+
     def visit(block):
         head = PLACED_ENTITY.fullmatch(block[0])
         if not head:
@@ -646,15 +655,13 @@ def named_placements(layers):
         if head['group']:
             for index, line in enumerate(block[1:-1], 1):
                 member = re.fullmatch(r' (?:([\w.-]+) )?\{', line)
-                if member and member[1]:
+                if member:
                     placement = block[index:block_end(block, index) + 1]
-                    named.setdefault(member[1], []).append((head['kind'], placement))
-        elif ' {' in block[1:-1]:
-            start = block.index(' {', 1)
-            end = block_end(block, start)
-            children = '\n'.join(line[2:] for line in block[start + 1:end])
-            for _, child in blocks(children):
-                visit(child)
+                    if member[1]:
+                        named.setdefault(member[1], []).append((head['kind'], placement))
+                    visit_children([line[1:] for line in placement])
+        else:
+            visit_children(block)
 
     for text in layers:
         for _, block in blocks(text):
@@ -1977,6 +1984,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare damage notification timing in Match and confirm no objective damage during staging.')
     if any('initialHealth' in record for record in row.get('damageFlagCandidates', {}).values()):
         remaining.append('Compare initial hit zone health and subsequent repairs.')
+    if teleport_targets:
+        remaining.append('Compare authored teleport choices, reach, faction visibility and destinations in Match.')
     if any(item['trigger'] == 'peak player loss' and item.get('inverted')
            for rule in rules.values() if 'trigger' in rule for item in leaves(rule)):
         remaining.append('Compare victory notices below and at the authored casualty threshold after the first sample.')

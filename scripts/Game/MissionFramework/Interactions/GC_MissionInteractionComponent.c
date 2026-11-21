@@ -5,6 +5,9 @@ class GC_MissionInteractionComponentClass : ScriptComponentClass
 
 class GC_MissionInteractionComponent : ScriptComponent
 {
+	[Attribute("", UIWidgets.EditBox, "Optional unique key on this entity. Match it on the user action when placing multiple interactions on the same entity.")]
+	protected string m_sInteractionKey;
+
 	[Attribute("Interact", UIWidgets.EditBox, "Text shown in the normal interaction menu, for example Activate radio.")]
 	protected string m_sActionName;
 	[Attribute("", UIWidgets.Auto, "Optional faction keys allowed to use this interaction. Empty means all factions. Only living, conscious player-controlled characters can use it; spectators cannot.")]
@@ -25,6 +28,12 @@ class GC_MissionInteractionComponent : ScriptComponent
 	string GetActionName()
 	{
 		return m_sActionName;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	string GetInteractionKey()
+	{
+		return m_sInteractionKey;
 	}
 
 	//------------------------------------------------------------------------------------------------
