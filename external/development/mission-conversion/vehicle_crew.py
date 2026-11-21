@@ -53,6 +53,8 @@ COMPOSITION_OVERRIDES = {'7A40BF128BB47EFD': '46f28ca4f00646d4223fc72a3e03c28331
 BTR70_CREW_OVERLAY = '447CFE8D73F95C3E'
 BTR70_CREW_LEAF = '81a8ccf59bed709f4eb87c25c260e529acd6cbb74dab97d09566adf828395c78'
 BTR70_SMOKE_ANCESTOR = 'ae982b43b504904f7b97947e7fc45c83f584e46ce5f7fa8d7c08c05e386eee74'
+# Match both the registered vehicle and the placement's verified legacy crew component.
+VERIFIED_OMITTED_CREW = {('31F0866273C46D76', '"{646D38B1F3186C56}"')}
 
 
 def workshop_vehicles(workshop):
@@ -114,7 +116,7 @@ def crew_station(lines, resolve_character, allow_empty=False):
     return flags, crew_roles(authored, flags, resolve_character, allow_empty)
 
 
-def render_component(component, lines, resolve_character, single_turret):
+def render_component(component, lines, resolve_character, single_turret, *, allow_omitted=False):
     configs = [i for i, line in enumerate(lines) if line.strip().startswith('m_crewConfig ')]
     if not configs:
         data = properties(lines, {'m_customCrew', 'm_noTurretDismount', 'm_idleGroup', 'm_pregameSpawn',
@@ -125,9 +127,10 @@ def render_component(component, lines, resolve_character, single_turret):
             flags = dict.fromkeys(SEAT_TYPES, '1')
         seated = data.get('m_noTurretDismount', '0')
         idle = data.get('m_idleGroup', '0')
-        if 'm_customCrew' not in data:
+        if 'm_customCrew' not in data and not allow_omitted:
             raise ValueError('legacy placed crew omits its character list')
-        roles = crew_roles(data.get('m_customCrew', ''), flags, resolve_character)
+        default_crew = not data.get('m_customCrew')
+        roles = [] if default_crew else crew_roles(data['m_customCrew'], flags, resolve_character)
         waypoints = target_names(data['m_waypointNames']) if data.get('m_waypointNames') else []
         delay = data.get('m_waypointDelay', '5')
         if (seated not in ('0', '1') or idle not in ('0', '1') or data.get('m_pregameSpawn', '0') != '0'
@@ -135,6 +138,10 @@ def render_component(component, lines, resolve_character, single_turret):
             raise ValueError('unsupported placed crew timing or gunner settings')
         separate = idle == '1' and flags['Turret'] == '1'
         options = []
+        if default_crew:
+            if any(flag not in ('0', '1') for flag in flags.values()):
+                raise ValueError('unsupported default crew seat filter')
+            options.append('   m_bUseDefaultCrew 1')
         if separate and not (single_turret and len(roles) == 1 and not waypoints):
             options.append('   m_bShareIdleGunnerGroup 1')
         if waypoints:
@@ -167,10 +174,11 @@ def render_component(component, lines, resolve_character, single_turret):
 
 
 def crew_fields(component, flags, seated, roles, options=()):
+    characters = ['   m_aCharacters {', *('    ' + role for role in roles), '   }'] if roles else []
     return [f'  GC_VehicleCrewComponent {component["id"]} {{',
             *(f'   m_bAllow{seat} 0' for seat in SEAT_TYPES if flags[seat] == '0'),
             *(['   m_bKeepGunnersSeated 1'] if seated == '1' else []),
-            *options, '   m_aCharacters {', *('    ' + role for role in roles), '   }', '  }']
+            *options, *characters, '  }']
 
 
 def verified_btr70_overlay(guid, path, source_units, dev_units):
@@ -204,7 +212,7 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
             or not (stock.contains(guid, path) or external_vehicle)):
         raise ValueError('unverified crew vehicle ' + guid)
 
-    def replace_crew(lines, single_turret):
+    def replace_crew(lines, single_turret, vehicle_guid=None):
         if not any('TILW_VehicleCrewComponent' in line for line in lines):
             return lines
         roots = [index for index, line in enumerate(lines) if line == ' components {']
@@ -220,7 +228,7 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
         replacement = render_component(
             component, lines[index + 1:end],
             lambda guid, path: character_reference(guid, path, source_units, dev_units, stock, owned, external_ai),
-            single_turret)
+            single_turret, allow_omitted=(vehicle_guid, component['id']) in VERIFIED_OMITTED_CREW)
         return [*lines[:index], *replacement, *lines[end + 1:]]
 
     def convert_inherited(lines, parents=()):
@@ -258,7 +266,7 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
             return lines
         if inherited_turrets:
             return convert_inherited(lines)
-        return replace_crew(lines, (guid, path) in SINGLE_SEAT_TURRETS)
+        return replace_crew(lines, (guid, path) in SINGLE_SEAT_TURRETS, guid)
 
     root = vehicle or composition
     if not root['group']:

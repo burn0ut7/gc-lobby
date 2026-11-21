@@ -20,6 +20,9 @@ class GC_VehicleCrewComponent : ScriptComponent
 	[Attribute("0", UIWidgets.CheckBox, "Keep the gunners together in a separate group without waypoint orders.")]
 	protected bool m_bShareIdleGunnerGroup;
 
+	[Attribute("0", UIWidgets.CheckBox, "Use each eligible compartment's default character instead of the authored crew list.")]
+	protected bool m_bUseDefaultCrew;
+
 	[Attribute("", UIWidgets.ResourceAssignArray, "Character prefabs in native compartment order.", params: "et")]
 	protected ref array<ResourceName> m_aCharacters;
 
@@ -41,7 +44,7 @@ class GC_VehicleCrewComponent : ScriptComponent
 	protected void ConnectToLobby()
 	{
 		m_Manager = GC_LobbyManager.GetManager();
-		if (!m_Manager || !m_aCharacters || m_aCharacters.IsEmpty())
+		if (!m_Manager || (!m_bUseDefaultCrew && (!m_aCharacters || m_aCharacters.IsEmpty())))
 			return;
 
 		m_Manager.m_OnLobbyPhaseChanged.Insert(OnLobbyPhaseChanged);
@@ -74,24 +77,30 @@ class GC_VehicleCrewComponent : ScriptComponent
 		int characterIndex;
 		foreach (BaseCompartmentSlot seat : seats)
 		{
-			if (characterIndex >= m_aCharacters.Count())
+			if (!m_bUseDefaultCrew && characterIndex >= m_aCharacters.Count())
 				break;
 			if (!seat || seat.IsOccupied() || !seat.IsCompartmentAccessible() || !AllowsSeat(seat.GetType()))
 				continue;
 
+			ResourceName character;
+			if (m_bUseDefaultCrew)
+				character = seat.GetDefaultOccupantPrefab();
+			else
+				character = m_aCharacters[characterIndex++];
+			if (character.IsEmpty())
+				continue;
 			bool turret = seat.GetType() == ECompartmentType.TURRET;
 			IEntity occupant;
 			if (turret && m_bShareIdleGunnerGroup)
-				occupant = seat.SpawnCharacterInCompartment(m_aCharacters[characterIndex], idleGroup);
+				occupant = seat.SpawnCharacterInCompartment(character, idleGroup);
 			else
-				occupant = seat.SpawnCharacterInCompartment(m_aCharacters[characterIndex], group);
+				occupant = seat.SpawnCharacterInCompartment(character, group);
 			if (occupant && m_bKeepGunnersSeated && turret)
 			{
 				SCR_AICombatComponent combat = SCR_AICombatComponent.Cast(occupant.FindComponent(SCR_AICombatComponent));
 				if (combat)
 					combat.GC_KeepSpawnedGunnerSeated();
 			}
-			characterIndex++;
 		}
 		if (group && m_aCrewWaypoints && !m_aCrewWaypoints.IsEmpty())
 		{
