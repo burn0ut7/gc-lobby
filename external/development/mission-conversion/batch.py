@@ -104,6 +104,14 @@ REVIEWED_CAPACITY = {
           '1bf14443a3d96d4b3a2395fd7a0e643edc308530')),
         113, 108,
     ),
+    'Missions/IronFunnelEvent/MSN3.conf': (
+        'b1a007aab61b09ae2be6d13a4498247c561a035c',
+        (('worlds/IronFunnelEvent/MSN3/SovietLevies_Layers/players_us.layer',
+          'b60a65383fd036ed2eefdfcb141bea23068665ee'),
+         ('worlds/IronFunnelEvent/MSN3/SovietLevies_Layers/players_ussr.layer',
+          '703f3974833ee6ad2dc17909339796467f8cf417')),
+        108, 111,
+    ),
     'Missions/Burger4606/Hush.conf': (
         'c36a235738f8d82c94a2ca091948be6b340718c8',
         (('worlds/Burger4606/Hush/Hush_Layers/players_UK.layer',

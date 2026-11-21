@@ -86,6 +86,10 @@ LEGACY_PLAYABLE_PARENTS = {
     ('836E7E39AAC5888B', 'Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Base.et'),
     ('FDAEA6C9F2673B02', 'Prefabs/Characters/Factions/BLUFOR/RHS_USAF/Character_RHS_USAF_Base.et'),
 }
+# The published legacy resolver uses the registered path when this parent GUID is absent.
+LEGACY_CHARACTER_PARENT_FALLBACKS = {
+    'F80F8EC885274E3A': ('07299990D00B0823', '44F6F191906D9D1C'),
+}
 RHS_AI_ROLES = {
     '1701B425406974A0': 'SL', '234A37EC8608DFAC': 'Rifleman', '727CB9BA48D9407A': 'SR_GL',
     'A5548567111B86FD': 'AR', 'AFF07941936347BB': 'AAT', 'F11CCA20FCC74AA3': 'AT',
@@ -191,6 +195,17 @@ def inherits_legacy_playable_base(snapshot, guid, stock, dev):
     chain = inheritance(snapshot, guid)
     if not chain or not stock or not stock.contains(*BASE_CHARACTER):
         return False
+    fallback = LEGACY_CHARACTER_PARENT_FALLBACKS.get(guid.upper())
+    if fallback and len(chain) == 1:
+        stale, canonical = fallback
+        ref = REF.search(chain[0].partition('\n')[0])
+        if (not ref or ref[1].upper() != stale or stale in snapshot.resources
+                or snapshot.resources.get(canonical) != [ref[2]]):
+            return False
+        normalized = chain[0].replace(ref[0], f'"{{{canonical}}}{ref[2]}"', 1)
+        chain = (normalized, *inheritance(snapshot, canonical))
+        if not reviewed_native_ancestry(chain, inheritance(dev, guid), dev):
+            return False
     if any(not body.startswith('SCR_ChimeraCharacter ') or 'PS_PlayableComponent' in body for body in chain):
         return False
     parent = REF.search(chain[-1].splitlines()[0])
