@@ -16,7 +16,10 @@ WAYPOINTS = re.compile(r'^    TILW_AssignWaypointsInstruction "\{([\da-fA-F]{16}
 KEY = r'"[\w.-]+"'
 EVENT_LABEL = r'"[^"\\\x00-\x1f]+"'
 RESULT = {'EDITOR_FACTION_VICTORY': 1, 'EDITOR_FACTION_DEFEAT': 2, 'EDITOR_FACTION_DRAW': 3}
-TERM = re.compile(r'\s*(?:m_condition )?TILW_(Literal|Conjunction|Disjunction)Term "\{[\da-fA-F]{16}\}" \{')
+TERM = re.compile(
+    r'\s*(?:m_condition )?TILW_(Literal|Conjunction|Disjunction|Minjunction|Maxjunction|Matchjunction)'
+    r'Term "\{[\da-fA-F]{16}\}" \{')
+COUNT_FIELDS = {'Minjunction': 'm_minTrue', 'Maxjunction': 'm_maxTrue', 'Matchjunction': 'm_matchTrue'}
 AI_FLAG = re.compile(r'^  TILW_FactionAIKilledFlag "\{[\da-fA-F]{16}\}" \{$')
 FLAG_ACTION = re.compile(r'^    TILW_(Set|Clear)FlagInstruction "\{[\da-fA-F]{16}\}" \{$')
 FLAG_FIELD = re.compile(r'^\s+m_flagName (' + KEY + r')\s*$')
@@ -129,16 +132,47 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
         if invert in ('0', '1') and flag[1:-1] in event_flags:
             return {'trigger': 'event flag', 'flag': flag[1:-1], **({'inverted': True} if invert == '1' else {})}
         raise ValueError('unresolved or unsupported outcome flag ' + flag)
-    if len(lines) < 4 or lines[1].strip() != 'm_operands {' or block_end(lines, 1) != len(lines) - 2:
+    kind = match[1]
+    threshold = COUNT_FIELDS.get(kind)
+    indent = len(lines[0]) - len(lines[0].lstrip()) + 1
+    start = next((i for i, line in enumerate(lines) if line == ' ' * indent + 'm_operands {'), None)
+    if start is None:
         raise ValueError('unsupported compound outcome term fields')
-    index, operands = 2, []
-    while index < len(lines) - 2:
+    stop = block_end(lines, start)
+    fields = properties([*lines[1:start], *lines[stop + 1:-1]], {'m_invertTerm'} | ({threshold} if threshold else set()))
+    inverted = fields.get('m_invertTerm', '0')
+    if inverted not in ('0', '1'):
+        raise ValueError('invalid compound outcome inversion')
+    index, operands = start + 1, []
+    while index < stop:
         end = block_end(lines, index)
+        if end >= stop:
+            raise ValueError('invalid compound outcome operand list')
         operands.append(read_term(lines[index:end + 1], flags, captures, ai, objective_flags, event_flags, depth + 1))
         index = end + 1
     if not 1 <= len(operands) <= 64:
         raise ValueError('unsupported number of outcome operands')
-    return {'trigger': 'all' if match[1] == 'Conjunction' else 'any', 'operands': operands}
+    term = {'operands': operands}
+    if inverted == '1' or threshold or any(operand.get('requiresMatch') for operand in operands):
+        term['requiresMatch'] = True
+    if not threshold:
+        return {'trigger': 'all' if kind == 'Conjunction' else 'any', **term,
+                **({'inverted': True} if inverted == '1' else {})}
+    value = fields.get(threshold, '1')
+    if not re.fullmatch(r'\d+', value) or int(value) > len(operands):
+        raise ValueError('outcome count outside the operand range')
+    count = int(value)
+    # Native counts use strict comparisons. Any nonempty minimum-of-zero term always passes.
+    if kind == 'Minjunction' and count == 0:
+        return {'trigger': 'count', 'comparison': int(inverted == '0'),
+                'count': len(operands) + int(inverted == '0'), **term}
+    if kind == 'Minjunction':
+        comparison, count = (1, count) if inverted == '1' else (0, count - 1)
+    elif kind == 'Maxjunction':
+        comparison, count = (0, count) if inverted == '1' else (1, count + 1)
+    else:
+        comparison = 3 if inverted == '1' else 2
+    return {'trigger': 'count', 'comparison': comparison, 'count': count, **term}
 
 
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
@@ -284,9 +318,16 @@ def render_check(term, key, captures, capture_messages, tracked_areas):
                     break
         return [re.sub(r'"\{([0-9A-F]{16})\}"', lambda match: '"{' + guid(key + '/' + match[1]) + '}"', line)
                 for line in lines]
-    if trigger in ('all', 'any'):
-        result = [f'      GC_ConditionGroup "{{{guid(key + "/group")}}}" {{',
-                  f'       m_iMatch {int(trigger == "any")}', '       m_aConditions {']
+    if trigger in ('all', 'any', 'count'):
+        if trigger == 'count':
+            result = [f'      GC_ConditionCount "{{{guid(key + "/group")}}}" {{',
+                      f'       m_iComparison {term["comparison"]}', f'       m_iRequiredCount {term["count"]}']
+        else:
+            match = int(trigger == 'any')
+            if term.get('inverted'):
+                match = 3 - match
+            result = [f'      GC_ConditionGroup "{{{guid(key + "/group")}}}" {{', f'       m_iMatch {match}']
+        result.append('       m_aConditions {')
         for index, child in enumerate(term['operands']):
             result.extend('  ' + line for line in render_check(child, f'{key}/{index}', captures, capture_messages,
                                                                tracked_areas))
@@ -305,8 +346,8 @@ def render(key, name, term, actions, captures, capture_messages, tracked_areas):
     dormant = term['trigger'] == 'dormant'
     condition = term['trigger'] not in ('Match start', 'dormant')
     startup = term['trigger'] == 'startup choice'
-    needs_match = any(item['trigger'] in ('event flag', 'interaction flag') and item.get('inverted')
-                      for item in leaves(term))
+    needs_match = term.get('requiresMatch') or any(
+        item['trigger'] in ('event flag', 'interaction flag') and item.get('inverted') for item in leaves(term))
 
     def match_condition(identity):
         if not needs_match:

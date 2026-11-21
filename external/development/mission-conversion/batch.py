@@ -1870,6 +1870,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(item['trigger'] == 'peak player loss' and item.get('inverted')
            for rule in rules.values() if 'trigger' in rule for item in leaves(rule)):
         remaining.append('Compare victory notices below and at the authored casualty threshold after the first sample.')
+    if any(rule.get('requiresMatch') for rule in rules.values()):
+        remaining.append('Compare compound outcome activation around the authored threshold during Match.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Compare framing and zoom against the legacy cover.')
     if status_areas:
