@@ -930,9 +930,13 @@ def main():
             return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned,
                                         external_vehicles, external_ai, external_parents=external_vehicle_parents)
 
+        def resolve_crew_config(resource, path):
+            return vehicle_crew.verified_crew_config(source_units, resource, path, locally_owned)
+
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
                          asset_aliases, {**loadouts, **ai_loadouts}, spawned_assets, convert_crew, resolve_spawn, resolve_crew,
-                         delayed_extractions, batch.reviewed_faction_assets(source, dev, source_units, dev_units))
+                         resolve_crew_config, delayed_extractions,
+                         batch.reviewed_faction_assets(source, dev, source_units, dev_units))
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
                         for path, contents in out.items()}

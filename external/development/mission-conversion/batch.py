@@ -11,7 +11,8 @@ from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURR
 from boundaries import ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE, convert_boundaries
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import REF, SOURCE_TEXT
-from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, render_crew_config, render_spawn, spawn_details, split_crew_block
+from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, render_crew_config, render_spawn, spawn_details
+from vehicle_crew import crew_config_contents
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
 from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, inheritance, reviewed_native_ancestry
@@ -530,6 +531,8 @@ AI_WORLD_ALIASES = {
                          'Prefabs/AI/SCR_AIWorld_Eden.et'),
 }
 STOCK_RESOURCE_ALIASES = {
+    ('6813E89F9EF2BDAC', 'PrefabLibrary/Vegetation/Bushes/b_rosa_canina_1s.et'):
+        'PrefabLibrary/DefaultLibrary/Vegetation/Bushes/b_rosa_canina_1s.et',
     ('2D556E41F306336C', 'Configs/Destruction/MultiphaseDestruction/FX_Debris/FX_Debris_Snadbags_Plastic.conf'):
         'Configs/Destruction/MultiphaseDestruction/FX_Debris/FX_Debris_Sandbags_Plastic.conf',
     ('0CA0547EB03759E1', 'Prefabs/Vegetation/Bush/b_rubus_idaeus_1s_collision.et'):
@@ -1881,7 +1884,7 @@ def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, obje
 
 
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *,
-                 shadowed_names=(), missing_waypoint=None):
+                 resolve_crew_config=None, shadowed_names=(), missing_waypoint=None):
     root = PLACED_SPAWNER.fullmatch(block[0])
     if not root:
         raise ValueError('unverified placed spawner prefab')
@@ -1900,8 +1903,14 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                     raise ValueError('spawner child needs a named native waypoint')
             lines = lines[:child_start]
         config = None
-        if any(line.strip().startswith('m_crewConfig ') for line in lines):
-            config, lines = split_crew_block(lines, 'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID)
+        config_fields = [i for i, line in enumerate(lines) if line.startswith(' m_crewConfig ')]
+        if config_fields:
+            if len(config_fields) != 1:
+                raise ValueError('vehicle spawn needs one m_crewConfig')
+            start, = config_fields
+            end = block_end(lines, start)
+            config = crew_config_contents(lines[start:end + 1], resolve_crew_config)
+            lines = lines[:start] + lines[end + 1:]
         data = properties(lines, SPAWNER_TRANSFORM | {
             'm_prefab', 'm_conditionFlag', 'm_spawnTimings', 'm_setEntityNames', 'm_waypointNames', 'm_pregameSpawn',
         })
@@ -2005,7 +2014,7 @@ def shadowed_crew_names(source, world, layers):
             and len(re.findall(r'(?<![\w.-])' + re.escape(name) + r'(?![\w.-])', corpus)) == referenced[name] + 1}
 
 
-def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, blockers, resolve_crew):
+def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, blockers, resolve_crew, resolve_crew_config):
     placements, schedules, audit = {}, [], []
     layers = {path: text for path in source.layers[world.lower()]
               if 'TILW_PrefabSpawnerEntity' in (text := source.read(path))}
@@ -2026,7 +2035,7 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                 try:
                     native, scheduled, info = placed_spawn(
                         block, f'{layer}:{line}', resolve_spawn, captures, flags, used_flags, resolve_crew,
-                        shadowed_names=shadowed, missing_waypoint=missing_waypoint)
+                        resolve_crew_config=resolve_crew_config, shadowed_names=shadowed, missing_waypoint=missing_waypoint)
                 except ValueError as exc:
                     blockers.append({'rule': 'TILW_PrefabSpawnerEntity', 'file': layer, 'line': line,
                                      'detail': str(exc)})
@@ -2816,7 +2825,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
 
 
 def world_draft(source, dev, world, row, staged, area_placements, interactions, convert_group_block, asset_aliases,
-                local_loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew, delayed=None,
+                local_loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew, resolve_crew_config, delayed=None,
                 faction_assets=None):
     draft, blockers = {}, []
     reviewed_replacements = {}
@@ -2900,7 +2909,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         area_placements = {**placed_areas, **area_placements}
         spawners, schedules, spawner_audit = world_spawners(source, world, resolve_spawn, captures,
                                                            set(objective_flags) | event_flags, used_flags, blockers,
-                                                           resolve_crew)
+                                                           resolve_crew, resolve_crew_config)
         rule_text += schedules
         used_flags.update(entry['flag'] for entry in spawner_audit if entry['trigger'] == 'area capture')
     unused_flags = []
@@ -3464,7 +3473,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
 
 
 def plan(source, dev, report, staged, area_placements, interactions, convert_group_block, asset_aliases,
-         local_loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew, delayed_extractions,
+         local_loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew, resolve_crew_config, delayed_extractions,
          faction_assets=None):
     results, emitted, totals, families = {}, {}, Counter(), Counter()
     for world, row in report['worlds'].items():
@@ -3472,7 +3481,7 @@ def plan(source, dev, report, staged, area_placements, interactions, convert_gro
                                     interactions.get(world, ((), {})), convert_group_block, asset_aliases,
                                     local_loadouts, spawned_assets.get(world, {}), convert_crew,
                                     partial(resolve_spawn, spawned_assets.get(world, {})), resolve_crew,
-                                    delayed_extractions.get(world), faction_assets)
+                                    resolve_crew_config, delayed_extractions.get(world), faction_assets)
         results[world] = result
         totals[result['status']] += 1
         families.update({blocker['rule'] for blocker in result.get('blockers', [])})

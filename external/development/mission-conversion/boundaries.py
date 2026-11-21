@@ -209,7 +209,7 @@ def render_cover(coords, vertices, yaw, cover, pitch=0, roll=0):
 
 def convert_instance(lines, name, passive_only=False, allow_public_faction_color=False, split_fill=True,
                      extended_shapes=False, standalone=False, parent_origin=(0, 0, 0), parent_yaw=0,
-                     parent_scale=1, passive_cover=False, bare=False):
+                     parent_scale=1, passive_cover=False, bare=False, nested=False):
     values, overlay, cover = {}, {}, {}
     navmesh = []
     placement = []
@@ -274,7 +274,7 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
         raise ValueError('passive cover requires explicit component overrides')
     if bare and not (overlay or values):
         raise ValueError('bare map shape needs authored map or AO settings')
-    if coords is None and not (standalone and extended_shapes):
+    if coords is None and not (extended_shapes and (standalone or nested)):
         raise ValueError('missing explicit AO transform')
     origin = floats(coords, 3) if coords is not None else (0, 0, 0)
     pitch, yaw, roll = angles.get('angles', tuple(angles.get(axis, 0) for axis in ('angleX', 'angleY', 'angleZ')))
@@ -417,7 +417,7 @@ def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, pa
         count = 0
     else:
         body, count = convert_instance(lines[:field_end], name, parent_origin=parent_origin,
-                                       parent_yaw=parent_yaw, parent_scale=parent_scale, **options)
+                                       parent_yaw=parent_yaw, parent_scale=parent_scale, nested=depth > 0, **options)
     if child_start is None or not options['extended_shapes']:
         return body, count
     if (depth >= 16 or child_start == len(lines) - 2
@@ -443,7 +443,7 @@ def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, pa
         elif field.startswith('angleY '):
             yaw, = floats(field[7:], 1)
     position = [floats(field[7:], 3) for field in fields if field.startswith('coords ')]
-    if not position and options['standalone']:
+    if not position and (options['standalone'] or depth > 0):
         position = [(0, 0, 0)]
     if len(position) != 1:
         raise ValueError('nested boundary requires one explicit parent origin')

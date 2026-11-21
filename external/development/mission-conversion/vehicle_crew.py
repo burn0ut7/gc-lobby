@@ -19,6 +19,8 @@ PLACED_CHILD = re.compile(r'(GenericEntity|GameEntity|Turret)(?: [\w.-]+)?'
                           r'(?: : ' + REF.pattern + r')? \{')
 COMPONENT = re.compile(r'  TILW_VehicleCrewComponent (?P<id>"\{[\da-fA-F]{16}\}") \{')
 SERIALIZED_ID = r'"\{[\da-fA-F]{16}\}"'
+CREW_CONFIG_FIELD = 'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID
+CREW_CONFIG_REFERENCE = re.compile(CREW_CONFIG_FIELD + r' : ' + REF.pattern + r' \{')
 SEAT_TYPES = ('Pilot', 'Turret', 'Cargo')
 WORKSHOP_VEHICLES = {
     '0144F571F1998FC4': ('WCS_BMP-1_5E524E4FEECCA92B', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_FIA.et'),
@@ -128,12 +130,18 @@ BTR70_CREW_OVERLAY = '447CFE8D73F95C3E'
 BTR70_CREW_LEAF = '81a8ccf59bed709f4eb87c25c260e529acd6cbb74dab97d09566adf828395c78'
 BTR70_SMOKE_ANCESTOR = 'ae982b43b504904f7b97947e7fc45c83f584e46ce5f7fa8d7c08c05e386eee74'
 USSR_BTR70_LEAF = '6ff98c749e6e58fb337ad80c11bdb2cabcf5beebe84afdf0fc8a1e6e917bdd94'
+CDF_BTR70_LEAF = 'da0a998e4f08c0ec1940ba0ee8aee889a9a8c5cbf727df7f7cb9df90c98a1389'
 BTR_DUGOUT = '7CF4F44DAD409258'
 BTR_DUGOUT_LEAF = '6d19ae2e9bcfc0d707ed9d86d8724b8b49f4c132c33dd6cdaab50730e48e7155'
 NVA_BTR70_LEAF = 'ac360b5e120fa0f5ba97deee2e1ee68ef6d415fd9e856710c5104efdd8ea551f'
 NVA_T72A_LEAF = '30fdb038e061492f404c19340d7b0e1da08746c49abd8f57faf46fb7264d38a2'
 NVA_BRDM2_LEAF = 'bbe74f54370ac1a41343d200b834335650508e87632449c8781d5bae490371e4'
 UNITS_CREW_PREFABS = {
+    'FCEC036D7F903A66': (
+        'Prefabs/Vehicles/Wheeled/BTR70/CDF/BTR70_CDF.et',
+        ('B47110AA1A806556', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_FIA.et'),
+        (CDF_BTR70_LEAF,), (CDF_BTR70_LEAF,),
+    ),
     BTR_DUGOUT: (
         'Prefabs/Structures/Military/Fortifications/Trenches/VehicleDugout_BTR.et',
         ('E04C8E7133043968', 'Prefabs/Structures/Core/Fortifications_Base.et'),
@@ -165,6 +173,8 @@ WORKSHOP_VEHICLE_PARENTS = {
     '8A883ABED22B6E27': ('WCS_SpaceCore_5E389BB9F58B79A6', 'Prefabs/Vehicles/Core/Tracked_Base.et'),
 }
 REVIEWED_CREW_CONFIGS = {
+    'A48A101CB478559D': ('Configs/Crews/GC_CDF/BTR70/BTR70_CDF_Crew_AI.conf',
+                         'd569b28ad795ab451116b807145d40e52110ba840edc6c7745d44bc7196ed49f'),
     '012709863EB73BED': ('Configs/Crews/GC_NVA/Crew_NVA_AI.conf',
                          '90846172c477653d708d41e39d6a2be4d94607803653f0fdd8c16ef18746c712'),
     '5657389604450AAC': ('Configs/Crews/US/Crew_US_AI.conf',
@@ -253,13 +263,47 @@ def crew_route_fields(data, default_delay):
 
 
 def crew_config_contents(lines, resolve_config=None):
-    field = r'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID
-    reference = re.fullmatch(field + r' : ' + REF.pattern + r' {', lines[0].strip())
+    reference = CREW_CONFIG_REFERENCE.fullmatch(lines[0].strip())
     if not reference:
-        return contents(lines, field)
-    if not resolve_config or len(lines) != 2 or lines[1].strip() != '}':
-        raise ValueError('referenced crew config has placement overrides')
-    return resolve_config(reference[1].upper(), reference[2])
+        return contents(lines, CREW_CONFIG_FIELD)
+    if not resolve_config:
+        raise ValueError('referenced crew config needs a verified base')
+    base = resolve_config(reference[1].upper(), reference[2])
+    return merge_crew_routes(base, lines[1:-1]) if lines[1:-1] else base
+
+
+def merge_crew_routes(base, override):
+    """Add waypoint fields to the matching inherited crew groups."""
+    authored = {}
+    fields = {'m_waypointNames', 'm_waypointDelay'}
+    groups = contents(override, 'm_crewGroups')
+    cursor = 0
+    while cursor < len(groups):
+        stop = block_end(groups, cursor)
+        header = groups[cursor].strip()
+        if header in authored:
+            raise ValueError('duplicate referenced crew route')
+        route = contents(groups[cursor:stop + 1], 'TILW_CrewGroup ' + SERIALIZED_ID)
+        properties(route, fields)
+        authored[header] = route
+        cursor = stop + 1
+    start = next((index for index, line in enumerate(base) if line.strip() == 'm_crewGroups {'), None)
+    if start is None:
+        raise ValueError('referenced crew has no groups')
+    end = block_end(base, start)
+    result = base[:start + 1]
+    cursor = start + 1
+    while cursor < end:
+        stop = block_end(base, cursor)
+        group = base[cursor:stop]
+        route = authored.pop(group[0].strip(), ())
+        if route and any(line.strip().partition(' ')[0] in fields for line in group[1:]):
+            raise ValueError('referenced crew already authors a route')
+        result.extend([*group, *route, base[stop]])
+        cursor = stop + 1
+    if authored:
+        raise ValueError('referenced crew route group not found')
+    return [*result, *base[end:]]
 
 
 def split_crew_block(lines, field):
