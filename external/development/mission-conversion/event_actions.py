@@ -174,7 +174,7 @@ def split_crew_block(lines, field):
     return lines[start + 1:end], lines[:start] + lines[end + 1:]
 
 
-def render_crew_config(config, key, resolve_character):
+def render_crew_config(config, key, resolve_character, *, shadowed_names=()):
     groups, fields = split_crew_block(config, 'm_crewGroups')
     settings = properties(fields, {'m_noTurretDismount', 'm_useIdleGroups'})
     seated = settings.get('m_noTurretDismount', '0')
@@ -194,6 +194,7 @@ def render_crew_config(config, key, resolve_character):
         name = options.get('m_entityName', '""')
         if not re.fullmatch(r'"[\w.-]{0,128}"', name):
             raise ValueError('unsupported crew group name')
+        shadowed = name[1:-1] in shadowed_names
         delay = options.get('m_waypointDelay', '0')
         if not re.fullmatch(NUMBER, delay) or Decimal(delay) > 86400:
             raise ValueError('invalid crew waypoint delay')
@@ -201,6 +202,8 @@ def render_crew_config(config, key, resolve_character):
         output.append(f'         GC_SpawnCrewGroup "{{{guid(group_key)}}}" {{')
         if name != '""':
             output.append(f'          m_sGroupName {name}')
+        if shadowed:
+            output.append('          m_bNameShadowedByAnchor 1')
         output.append('          m_aStations {')
         start = 0
         characters = []
@@ -229,6 +232,8 @@ def render_crew_config(config, key, resolve_character):
                      'waypointDelaySeconds': delay if route else '0'})
         if name != '""':
             crew[-1]['groupName'] = name[1:-1]
+        if shadowed:
+            crew[-1]['shadowedByAnchor'] = True
         output.append('         }')
         index = end + 1
         count += 1

@@ -281,6 +281,8 @@ class GC_SpawnCrewGroup : GC_SpawnCrewStation
 {
 	[Attribute("", UIWidgets.EditBox, "Optional world name for this AI group. Subsequent crews with the same name join the existing non-playable group.")]
 	string m_sGroupName;
+	[Attribute("0", UIWidgets.CheckBox, "Preserve a legacy name shared with an existing spawner anchor. The anchor keeps name lookup priority and each crew forms its own group.")]
+	bool m_bNameShadowedByAnchor;
 	[Attribute("", UIWidgets.Object, "Optional ordered seat selections using the same AI group. Leave empty to use this group's seat settings.")]
 	ref array<ref GC_SpawnCrewStation> m_aStations;
 	[Attribute("", UIWidgets.EditComboBox, "Existing AI waypoint names in order. Empty means no added orders.", enums: {ParamEnum("", "", "gc-choices:2:GC_WaypointChoices")})]
@@ -296,7 +298,8 @@ class GC_SpawnCrewGroup : GC_SpawnCrewStation
 
 	override bool IsValid()
 	{
-		if (m_sGroupName.Length() > 128 || !GC_RuleAction.ValidTargetNames(m_aWaypoints)
+		if ((m_bNameShadowedByAnchor && m_sGroupName.IsEmpty()) || m_sGroupName.Length() > 128
+			|| !GC_RuleAction.ValidTargetNames(m_aWaypoints)
 			|| m_fWaypointDelay < 0 || m_fWaypointDelay > 86400)
 			return false;
 		if (!m_aStations || m_aStations.IsEmpty())
@@ -330,10 +333,17 @@ class GC_SpawnCrewGroup : GC_SpawnCrewStation
 		AIGroup group;
 		AIGroup idleGroup;
 		SCR_AIGroup existingGroup;
+		IEntity shadowingAnchor;
 		if (!m_sGroupName.IsEmpty())
 		{
 			IEntity existing = GetGame().GetWorld().FindEntityByName(m_sGroupName);
-			if (existing)
+			if (m_bNameShadowedByAnchor)
+			{
+				if (!existing || existing.Type() != GenericEntity)
+					return false;
+				shadowingAnchor = existing;
+			}
+			else if (existing)
 			{
 				existingGroup = SCR_AIGroup.Cast(existing);
 				if (!existingGroup || existingGroup.IsPlayable())
@@ -358,6 +368,8 @@ class GC_SpawnCrewGroup : GC_SpawnCrewStation
 				return false;
 			if (!existingGroup)
 				namedGroup.SetName(m_sGroupName);
+			if (shadowingAnchor && GetGame().GetWorld().FindEntityByName(m_sGroupName) != shadowingAnchor)
+				return false;
 			attempt.QueueInitialOrders(group, m_aWaypoints, m_fWaypointDelay);
 			return true;
 		}

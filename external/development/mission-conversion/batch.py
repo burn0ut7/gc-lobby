@@ -424,6 +424,9 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_randomized.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('7FF511EDC4034D9F', 'Prefabs/Vehicles/Helicopters/Mi24/Mi24V_armed_S5.et'): (
+        'WCS_Mi-24V_628933A0D3A0D700', '7FF511EDC4034D9F',
+        'Prefabs/Vehicles/Helicopters/Mi24/Mi24V_Armed_UB1657_X4.et'),
     ('2B9DB09AC8BEA673', 'Prefabs/Vehicles/Tracked/T-72A/T72A_FIA.et'): (
         'WCS_T-72_5E0AB16BEB16D6A4', '2B9DB09AC8BEA673', 'Prefabs/Vehicles/Tracked/T72A/T72A_FIA.et'),
     ('8A7ECB6BDF6ADC0F', 'Assets/Weapons/Launchers/9K38_IGLA/IGLA.xob'): (
@@ -1440,7 +1443,7 @@ def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, obje
     return path if (guid, path) in workshop_resources or stock.contains(guid, path) else None
 
 
-def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew):
+def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, shadowed_names=()):
     root = PLACED_SPAWNER.fullmatch(block[0])
     if not root:
         raise ValueError('unverified placed spawner prefab')
@@ -1509,7 +1512,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             spawn_key = f'{key}/{sequence}'
             kind = 'GC_AIGroupSpawn' if group else 'GC_PrefabSpawn'
             if config is not None:
-                fields, crew_groups = render_crew_config(config, spawn_key, resolve_crew)
+                fields, crew_groups = render_crew_config(config, spawn_key, resolve_crew,
+                                                         shadowed_names=shadowed_names)
                 kind = 'GC_CrewedVehicleSpawn'
             seconds, action = render_spawn({**details, 'delay': delay}, spawn_key, kind, fields)
             actions[seconds].extend(action)
@@ -1533,19 +1537,43 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
     return '\n'.join(placements) + '\n', '\n'.join(rules) + '\n', audit
 
 
+def shadowed_crew_names(source, world, layers):
+    """Allow a name shared only by one original spawner and its named crew authors."""
+    referenced = Counter()
+    anchors = Counter()
+    try:
+        for text in layers.values():
+            for _, block in blocks(text):
+                if not (root := PLACED_SPAWNER.fullmatch(block[0])):
+                    continue
+                anchors.update(name for name, _ in polygon_capture.members(block, root['group'], root['name']) if name)
+                referenced.update(re.findall(r'(?m)^ +m_entityName "([\w.-]+)"$', '\n'.join(block)))
+    except ValueError:
+        return set()
+    eligible = {name for name in referenced if anchors[name] == 1}
+    if not eligible:
+        return set()
+    corpus = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                       if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+    scripts = script_text(source)
+    return {name for name in eligible if name not in scripts
+            and len(re.findall(r'(?<![\w.-])' + re.escape(name) + r'(?![\w.-])', corpus)) == referenced[name] + 1}
+
+
 def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, blockers, resolve_crew):
     placements, schedules, audit = {}, [], []
-    for layer in source.layers[world.lower()]:
-        text = source.read(layer)
-        if 'TILW_PrefabSpawnerEntity' not in text:
-            continue
+    layers = {path: text for path in source.layers[world.lower()]
+              if 'TILW_PrefabSpawnerEntity' in (text := source.read(path))}
+    shadowed = shadowed_crew_names(source, world, layers) if any('m_entityName ' in text for text in layers.values()) else ()
+    for layer, text in layers.items():
         try:
             for line, block in blocks(text):
                 if not re.match(r'^(?:\$grp )?TILW_PrefabSpawnerEntity\b', block[0]):
                     continue
                 try:
                     native, scheduled, info = placed_spawn(
-                        block, f'{layer}:{line}', resolve_spawn, captures, flags, used_flags, resolve_crew)
+                        block, f'{layer}:{line}', resolve_spawn, captures, flags, used_flags, resolve_crew,
+                        shadowed_names=shadowed)
                 except ValueError as exc:
                     blockers.append({'rule': 'TILW_PrefabSpawnerEntity', 'file': layer, 'line': line,
                                      'detail': str(exc)})
@@ -2522,8 +2550,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     prefab_spawns = [{**item, 'startupChoice': event['flag'] if event['trigger'] == 'startup choice' else None}
                      for event in rules.values() for item in event.get('convertedActions', []) if 'spawnAnchor' in item]
     prefab_spawns.extend(spawner_audit)
-    named_crew = {group['groupName'] for spawn in prefab_spawns for group in spawn.get('crewGroups', ())
-                  if 'groupName' in group}
+    crew_names = defaultdict(set)
+    for spawn in prefab_spawns:
+        for group in spawn.get('crewGroups', ()):
+            if 'groupName' in group:
+                crew_names[group['groupName']].add(group.get('shadowedByAnchor', False))
     spawn_guids = {REF.fullmatch(item['prefab'])[1].upper() for item in prefab_spawns}
     for resource, asset in sorted(spawned_assets.items()):
         if resource not in roster_assets and asset['flag'] in used_flags and resource not in spawn_guids:
@@ -2580,9 +2611,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         for item in prefab_spawns:
             if item['spawnName']:
                 spawned_names[item['spawnName']].append(item['startupChoice'])
-        for name in sorted(named_crew & (named.keys() | spawned_names.keys())):
-            blockers.append({'rule': 'named crew group', 'file': world,
-                             'detail': 'crew group name conflicts with another entity: ' + name})
+        for name, policies in sorted(crew_names.items()):
+            matches = named.get(name, ())
+            if policies == {True} and len(matches) == 1 and matches[0][0] == 'GenericEntity' and name not in spawned_names:
+                continue
+            if matches or name in spawned_names or True in policies:
+                blockers.append({'rule': 'named crew group', 'file': world,
+                                 'detail': 'crew group name conflicts with another entity: ' + name})
         for spawn in prefab_spawns:
             anchor, name = spawn['spawnAnchor'], spawn['spawnName']
             choices = spawned_names[name]
@@ -2711,8 +2746,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(event.get('waypointAssignments') and event.get('trigger') not in ('Match start', 'dormant')
            for event in rules.values()):
         remaining.append('Compare waypoint assignment timing and order after the event condition becomes true.')
-    if named_crew:
+    if crew_names:
         remaining.append('Compare named crew groups across vehicle spawns, initial routes and rollback.')
+    if any(path.endswith('.layer') and '{7FF511EDC4034D9F}Prefabs/Vehicles/Helicopters/Mi24/Mi24V_Armed_UB1657_X4.et'
+           in body for path, body in draft.items()):
+        remaining.append('Compare the registered Mi-24V S5 loadout with the historical mission loadout.')
     if damage_flags:
         remaining.append('Compare damage notification timing in Match and confirm no objective damage during staging.')
     if any(asset.get('playable') for asset in roster_assets.values()):
