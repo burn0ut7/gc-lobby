@@ -365,6 +365,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
     empty_waypoints = []
     converted_actions = []
     delayed_areas = []
+    unroutable_notices = []
     messages = 0
     seen = set()
     term = None
@@ -407,8 +408,11 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 group_match = GROUP_SPAWN.fullmatch(fields[j]) if resolve_spawn else None
                 vehicle_match = VEHICLE_SPAWN.fullmatch(fields[j]) if resolve_spawn and resolve_crew else None
                 if notify_match:
-                    delay, body = message(fields[j + 1:last], key + '/' + notify_match[1], multiline=True)
+                    delay, body = message(fields[j + 1:last], key + '/' + notify_match[1],
+                                          multiline=True, drop_unroutable=compound)
                     messages += 1
+                    if not body:
+                        unroutable_notices.append({'instructionId': notify_match[1], 'delaySeconds': str(delay)})
                 elif end_match:
                     delay, body, notice = end_action(fields[j + 1:last], key + '/' + end_match[1],
                                                      extended_announcements=compound)
@@ -489,6 +493,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         audit['extractionSpawns'] = delayed_areas
     if messages and not (notices or assignments or converted_actions or delayed_areas):
         audit['notificationCount'] = messages
+    if unroutable_notices:
+        audit['notificationsWithoutRecipients'] = unroutable_notices
     return term, actions, audit
 
 

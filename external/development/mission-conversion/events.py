@@ -11,7 +11,7 @@ LITERAL = re.compile(r'^   m_condition TILW_LiteralTerm "\{[\da-fA-F]{16}\}" \{$
 FIELDS = {'m_messageTitle', 'm_messageBody', 'm_factionKeys', 'm_adminOnly', 'm_executionDelay'}
 
 
-def message(lines, key, *, multiline=False):
+def message(lines, key, *, multiline=False, drop_unroutable=False):
     data = properties(lines, FIELDS)
     title = data.get('m_messageTitle', '""')
     body = data.get('m_messageBody', '""')
@@ -27,11 +27,17 @@ def message(lines, key, *, multiline=False):
     admin = data.get('m_adminOnly', '0')
     if admin not in ('0', '1') or (admin == '1' and factions):
         raise ValueError('combined faction and admin audience')
-    if factions and (not re.fullmatch(r'(?:\s*"[\w.-]+"\s*)+', factions) or factions.count('"') > 512):
+    faction_pattern = r'(?:\s*"[\w.-]*"\s*)+' if drop_unroutable else r'(?:\s*"[\w.-]+"\s*)+'
+    if factions and (not re.fullmatch(faction_pattern, factions) or factions.count('"') > 512):
         raise ValueError('unsupported faction list')
     seconds = data.get('m_executionDelay', '5')
     if not re.fullmatch(r'\d+(\.\d+)?', seconds) or Decimal(seconds) > 86400:
         raise ValueError('instruction delay outside native range')
+    if drop_unroutable and factions and '""' in factions:
+        # Legacy filtered hints require a local faction whose key is in the list.
+        factions = ' '.join(re.findall(r'"[\w.-]+"', factions))
+        if not factions:
+            return Decimal(seconds), []
     action = [f'      GC_MessageAction "{{{guid(key)}}}" {{', '       m_sTitle ' + title,
               '       m_sMessage ' + body.replace('\n', '\n       ')]
     if admin == '1':

@@ -136,6 +136,8 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
               if path_resolved_parents else []),
             *(['Compare startup cleanup targets and confirm protected entities survive.']
               if {'GC_StartupCleanupEntity', 'GC_StartupCleanupProtectionComponent'} <= kinds else []),
+            *(['Compare issued equipment and slot presentation for the restored historical MSV80 roles.']
+              if any('/MotorRifle_MSV80/Legacy/Character_USSR_Legacy_MSV80_' in path for _, path in refs) else []),
         ],
     }
 

@@ -3809,6 +3809,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     for rule in rules.values():
         if rule.get('reason') == 'no authored event condition':
             remaining.append(f'The original event {rule["name"]} has no authored condition and does not run.')
+        for notice in rule.get('notificationsWithoutRecipients', []):
+            remaining.append(f'The original notification {notice["instructionId"]} in {rule["name"]} '
+                             'has no eligible recipient and does not display.')
     if outcome.get('derivedFlags'):
         remaining.append('Compare derived outcomes as source flags change, including inverted consumers in Match.')
     if ticket_edits:

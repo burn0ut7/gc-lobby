@@ -948,7 +948,8 @@ def convert_registered_group(lines, guid, source_units, dev_units, stock, locall
 
 def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset(),
                 reviewed_members=None, external_ai=None, allow_stock_ai=False, restored_members=None,
-                reviewed_ai_members=None, forced_external=None, *, rhs=None, depth=0, local_aliases=None):
+                reviewed_ai_members=None, forced_external=None, *, rhs=None, depth=0, local_aliases=None,
+                restored_rosters=None):
     if not re.search(r'^(?:\$grp )?SCR_AIGroup\b', text, re.M):
         return None
 
@@ -968,7 +969,7 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
         children = group_layer(nested, source_units, dev_units, stock, locally_owned, reviewed_callsigns,
                                reviewed_members, external_ai, allow_stock_ai, restored_members,
                                reviewed_ai_members, forced_external, rhs=rhs, depth=depth + 1,
-                               local_aliases=local_aliases)
+                               local_aliases=local_aliases, restored_rosters=restored_rosters)
         if children is None:
             raise ValueError('unsupported child entity on a group')
         body, members = convert(fields[:start])
@@ -1026,6 +1027,9 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
                               reviewed_callsigns=reviewed_callsigns, reviewed_members=reviewed_members,
                               external_ai=external_ai, restored_members=restored_members,
                               reviewed_ai_members=reviewed_ai_members, forced_external=forced_external)
+            if roster := (restored_rosters or {}).get((guid, REF.search(lines[i])[2])):
+                convert = partial(convert_with_restored_roster, convert=convert, roster=roster,
+                                  indent='  ' if match['group'] else ' ')
         result.append(REF.sub(lambda _: '"{' + resource + '}' + dest + '"', lines[i], count=1))
         end = block_end(lines, i)
         if match['group']:
@@ -1047,3 +1051,17 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
         result.append(lines[end])
         i = end + 1
     return '\n'.join(result) + '\n', count, slots
+
+
+def convert_with_restored_roster(fields, *, convert, roster, indent):
+    if any(field.strip() in ('m_bSetPlayable 0', 'm_bPlayable 0') for field in fields):
+        return convert(fields)
+    start = next((index for index, field in enumerate(fields)
+                  if re.fullmatch(r'\s*m_aUnitPrefabSlots (?:\+ ?)?\{', field)), None)
+    if start is not None:
+        end = block_end(fields, start)
+        if '+' not in fields[start] or end != start + 1:
+            return convert(fields)
+        fields = [*fields[:start], *fields[end + 1:]]
+    entries = [f'{indent} "{{{resource}}}{path}"' for resource, path in roster]
+    return convert([*fields, indent + 'm_aUnitPrefabSlots {', *entries, indent + '}'])

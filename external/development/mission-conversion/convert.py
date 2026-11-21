@@ -13,7 +13,7 @@ import breach
 import arc_capture
 import batch
 import local_loadouts
-from restore_units_roles import (verified_aircrew_roles, verified_msv85_wrappers, verified_roles,
+from restore_units_roles import (verified_aircrew_roles, verified_group_rosters, verified_msv85_wrappers, verified_roles,
                                  verified_soviet_aircrew_roles)
 import vehicle_crew
 import bugout
@@ -908,6 +908,7 @@ def main():
             parser.error(str(exc))
         restored = {old: new for old, new in restored.items()
                     if old[0] not in locally_owned and new[0] not in locally_owned}
+        restored_rosters = verified_group_rosters(source_units, dev_units, stock, locally_owned, restored)
         loadouts = local_loadouts.collect(
             source, dev, source_units, dev_units, stock,
             normalize_references=lambda body: batch.replace_registered_paths(body, source, dev, asset_aliases))
@@ -921,7 +922,7 @@ def main():
                                allow_stock_ai=True, restored_members=restored,
                                reviewed_ai_members={**native_ai_members, **(reviewed_ai_members or {})},
                                forced_external=forced_external,
-                               rhs=rhs_database, local_aliases=local_groups)
+                               rhs=rhs_database, local_aliases=local_groups, restored_rosters=restored_rosters)
 
         def convert_crew(block):
             ref = REF.search(block[0])

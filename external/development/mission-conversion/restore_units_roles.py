@@ -7,7 +7,7 @@ from subprocess import CalledProcessError
 
 from briefings import guid
 from catalog import REF, Snapshot
-from groups import only_path, stock_character
+from groups import SLOTS, only_path, stock_character
 from install_batch import resource_databases, unresolved_resources
 from launchers import META_NAME, replace_reference
 from local_loadouts import CHARACTER, LEGACY, migrate_playability, unchanged_units_parent
@@ -29,20 +29,36 @@ MORTAR_ROLES = {
     '5888F75B9942CE7D': 'RTO',
     'A491F9108F01E180': 'Rifleman',
 }
+RIFLE_ROLES = {
+    '70AE8D0AF2E319D6': 'AR',
+    '1A5BEECAF606ACFC': 'SR',
+    '8558FB262DBF1D64': 'CoyL',
+    'CD7EDF8D8DF805C8': 'AT',
+    '566506FE40CF16E5': 'AAT',
+    'A5F4D7FEBDB57183': 'SL_NoRadio',
+    '308B7EF638B4FD35': '1SG',
+    'E5C3468BDF19AC4F': 'MG',
+    '7ED89FF8122EBF62': 'AMG',
+    'A8A47F001DA13B74': 'Sharpshooter',
+    '3C7561AD348B68EA': 'PO',
+    '2E93FDC7C413B281': 'FASL',
+    'E45601E61BEC3F6F': 'TO',
+}
+ARCHIVED_ROLES = MORTAR_ROLES | RIFLE_ROLES
 AUTHORED_DIRECTORY = 'Prefabs/Characters/Factions/OPFOR/USSR_Army/MotorRifle_1980/'
 AUTHORED_PATHS = {
     OLD_LEADER: AUTHORED_DIRECTORY + 'Character_USSR_MSV80_PL_P.et',
     DEPUTY: AUTHORED_DIRECTORY + 'Character_USSR_MSV80_DPL_P.et',
     MEDIC: AUTHORED_DIRECTORY + 'Character_USSR_MSV80_Medic_P.et',
-    **{role: AUTHORED_DIRECTORY + f'Character_USSR_MSV80_{MORTAR_ROLES[role]}_P.et'
-       for role in (MORTAR_FDC, MORTAR_CREW)},
+    **{role: AUTHORED_DIRECTORY + f'Character_USSR_MSV80_{name}_P.et'
+       for role, name in ARCHIVED_ROLES.items()},
 }
 RESTORED = {
     OLD_LEADER: (guid('Units/legacy/' + OLD_LEADER), DIRECTORY + 'Character_USSR_Legacy_MSV80_PL.et'),
     DEPUTY: (DEPUTY, DIRECTORY + 'Character_USSR_Legacy_MSV80_DPL.et'),
     MEDIC: (MEDIC, DIRECTORY + 'Character_USSR_Legacy_MSV80_Medic.et'),
     **{role: (guid('Units/legacy/' + role), DIRECTORY + f'Character_USSR_Legacy_MSV80_{name}.et')
-       for role, name in MORTAR_ROLES.items()},
+       for role, name in ARCHIVED_ROLES.items()},
 }
 
 
@@ -57,10 +73,7 @@ def historical_prefabs(repo, stock, roles=RESTORED):
         if not CHARACTER.fullmatch(header):
             raise ValueError('unsupported archived role ' + original)
         parent = REF.search(header)
-        if original == DEPUTY and parent[1].upper() == OLD_LEADER:
-            native = RESTORED[OLD_LEADER]
-        elif (original in MORTAR_ROLES and parent[1].upper() in MORTAR_ROLES
-              and parent[2] == AUTHORED_DIRECTORY + f'Character_USSR_MSV80_{MORTAR_ROLES[parent[1].upper()]}_P.et'):
+        if AUTHORED_PATHS.get(parent[1].upper()) == parent[2]:
             native = RESTORED[parent[1].upper()]
         else:
             native = stock_character(parent[1], parent[2], stock)
@@ -78,7 +91,7 @@ def verified_roles(units, stock):
     if not stock:
         return {}
     verified = {}
-    for roles in ((OLD_LEADER, DEPUTY, MEDIC), MORTAR_ROLES):
+    for roles in ((OLD_LEADER, DEPUTY, MEDIC), MORTAR_ROLES, RIFLE_ROLES):
         if any(units.resources.get(resource) != [path] for resource, path in (RESTORED[role] for role in roles)):
             continue
         for path, body in historical_prefabs(units.repo, stock, roles).items():
@@ -87,6 +100,30 @@ def verified_roles(units, stock):
         verified.update({(original, path): RESTORED[original] for original, path in AUTHORED_PATHS.items()
                          if original in roles})
     return verified
+
+
+def verified_group_rosters(source, units, stock, mission_owned, restored):
+    """Recover a retired playable roster only for its exact authored group reference."""
+    resource = '8D35DA8B89880FAF'
+    authored = 'Prefabs/Groups/OPFOR/Russia/1980s/Motorised Rifles (BTR-Early)/P/Group_USSR_MSV80_MotRiflePHQ_P.et'
+    canonical = 'Prefabs/Groups/OPFOR/Russia/1980s/MotorRifle_MSV80/Group_USSR_MSV80_MotRiflePHQ.et'
+    base = ('8DE0C0830FE0C33D', 'Prefabs/Groups/OPFOR/Group_USSR_Base.et')
+    if (not stock or not stock.contains(*base) or {resource, base[0]} & mission_owned
+            or any(base[0] in snapshot.resources for snapshot in (source, units))):
+        return {}
+    for snapshot, digest in (
+        (source, 'd80d98dcfa87eaecd297ecc824bf82b6cbb9e24a104388014d26eaec2f80948e'),
+        (units, '6d789194d55d8dce2b0c4afe6b9994841c84dd2a49f1da160d59c0e4a66e6c22'),
+    ):
+        if (snapshot.resources.get(resource) != [canonical]
+                or sha256(snapshot.read(canonical).strip().encode()).hexdigest() != digest):
+            return {}
+    archive = Snapshot(units.repo, ARCHIVE)
+    roles = SLOTS.search(archive.read(only_path(archive, resource)))
+    expected = [(role, AUTHORED_PATHS[role]) for role in (OLD_LEADER, DEPUTY, MEDIC)]
+    if not roles or REF.findall(roles[1]) != expected or not all(role in restored for role in expected):
+        return {}
+    return {(resource, authored): expected}
 
 
 def verified_aircrew_roles(source, units, stock, mission_owned):
