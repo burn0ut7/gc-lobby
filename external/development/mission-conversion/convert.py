@@ -406,7 +406,7 @@ def main():
                     batch_interactions[world] = (objective_flags, interaction_placements)
                     spawned_assets[world] = objectives
                     row.setdefault('interactionCandidate', {})['spawnedObjectives'] = {
-                        'prefabs': {guid: {key: item[key] for key in ('path', 'flag', 'singleUse')}
+                        'prefabs': {guid: {key: value for key, value in item.items() if key != 'body'}
                                     for guid, item in spawned.items()}}
             try:
                 delayed = collect_delayed_extraction(source, world)
@@ -449,7 +449,8 @@ def main():
                     for kind in ('TILW_SetFlagInstruction', 'TILW_FlagSampling', 'TILW_MetaFlag')) else None,
                     resolve_spawn=partial(resolve_spawn, objectives) if args.batch else None,
                     resolve_crew=resolve_crew if args.batch else None, hidden_briefings=hidden_briefings,
-                    derived_audit=derived_audit)
+                    derived_audit=derived_audit,
+                    match_only_flags={asset['flag'] for asset in objectives.values() if asset.get('destroyed')})
                 outcome = {'events': outcome_audit}
                 if derived_audit:
                     outcome['derivedFlags'] = derived_audit

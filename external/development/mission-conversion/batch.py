@@ -6,7 +6,8 @@ from hashlib import sha256
 from pathlib import PurePosixPath
 import re
 
-from arc_capture import CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, capture_instance, capture_messages, faction_keys
+from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURRENT_PARENT,
+                         LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, faction_keys)
 from boundaries import STANDALONE_SHAPE, convert_boundaries
 from briefings import QUOTED, block_end, guid, properties
 from catalog import REF, SOURCE_TEXT
@@ -67,6 +68,10 @@ DAMAGE_TARGETS = {
     # Both Huey chains inherit the damage manager on UH1H_base.et.
     '70BAEEFC2D3FEE64': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H.et',
     'CB4D4CF7E887B2D0': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HEDP.et',
+}
+SPAWN_DAMAGE_TARGETS = {
+    ('ADA7E056B17AC663',
+     'PrefabsEditable/Auto/Props/Military/AmmoBoxes/EquipmentBoxStack/E_EquipmentBoxStack_USSR_01_V2_covered.et'),
 }
 REVIEWED_HIT_ZONES = {
     ('5CFD8CB5C3E55A4E', 'Prefabs/Vehicles/Tracked/BFV/M2A2_MERDC.et', '"Engine_01"'),
@@ -585,11 +590,7 @@ def damage_flag_rules(source, world, stock, local_resources, source_units):
     references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
                            if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
     for flag, entries in candidates.items():
-        # Literal inversion may be serialized before or after the name.
-        count = len(re.findall(
-            rf'(?m)^( +)(?:m_(?:condition|definition) )?TILW_LiteralTerm {SERIALIZED_ID} \{{\n'
-            r'(?:\1 m_invertTerm [01]\n)?\1 m_flagName "'
-            + re.escape(flag) + r'"\n(?:\1 m_invertTerm [01]\n)?\1\}$', references))
+        count = literal_flag_reads(references, flag)
         if len(entries) != 1 or references.count(f'"{flag}"') != count + 1 or flag in script_text(source):
             for path, line, *_ in entries:
                 audit[f'{path}:{line}'] = {'gap': 'damage flag has another producer or unsupported use'}
@@ -601,6 +602,14 @@ def damage_flag_rules(source, world, stock, local_resources, source_units):
         if health is not None:
             audit[f'{path}:{line}']['initialHealth'] = health
     return flags, placements, audit
+
+
+def literal_flag_reads(text, flag):
+    # Literal inversion may be serialized before or after the name.
+    return len(re.findall(
+        rf'(?m)^( +)(?:m_(?:condition|definition) )?TILW_LiteralTerm {SERIALIZED_ID} \{{\n'
+        r'(?:\1 m_invertTerm [01]\n)?\1 m_flagName "'
+        + re.escape(flag) + r'"\n(?:\1 m_invertTerm [01]\n)?\1\}$', text))
 
 
 def unused_flag_sampling(source, world, path, line, framework):
@@ -743,9 +752,37 @@ def passive_asset(source, path):
     raise ValueError('requires a resource conversion rule')
 
 
+def spawned_damage_objective(block, stock, local_resources):
+    parent = REF.search(block[0])
+    if not parent or not block[0].startswith('GenericEntity : '):
+        raise ValueError('unsupported spawned damage owner')
+    ref = (parent[1].upper(), parent[2])
+    if ref not in SPAWN_DAMAGE_TARGETS or ref[0] in local_resources or not stock or not stock.contains(*ref):
+        raise ValueError('unverified spawned damage prefab')
+    starts = [i for i, line in enumerate(block) if DAMAGE_COMPONENT.fullmatch(line)]
+    if len(starts) != 1 or block.count(' components {') != 1:
+        raise ValueError('expected one authored damage producer')
+    start, = starts
+    stop = block_end(block, start)
+    root = block.index(' components {')
+    if not root < start < stop < block_end(block, root):
+        raise ValueError('spawned damage producer is outside root components')
+    data = properties(block[start + 1:stop], {'m_flagName', 'm_targetState', 'm_targetZone',
+                                               'm_continuous', 'm_initialHealth'})
+    flag = data.get('m_flagName', '')
+    if (not re.fullmatch(r'"[\w.-]+"', flag) or data.get('m_targetState', '2') not in ('2', 'DESTROYED')
+            or data.get('m_targetZone', '""') != '""' or data.get('m_continuous', '0') != '0'
+            or data.get('m_initialHealth', '1') != '1'):
+        raise ValueError('unsupported spawned damage state or flag')
+    lines = [*block[:start], block[start].replace('TILW_Flag_EntityDamage', 'GC_DestroyedEntityFlagComponent'),
+             '   m_sFlag ' + flag, *block[stop:]]
+    return '\n'.join(lines) + '\n', flag[1:-1]
+
+
 def spawned_objectives(source, dev, world, stock, local_resources):
     """Identify mission-owned interaction prefabs referenced by a standard spawn."""
     reviewed = {}
+    placements = Counter()
     for layer in source.layers[world.lower()]:
         lines = source.read(layer).splitlines()
         for index, line in enumerate(lines):
@@ -757,21 +794,42 @@ def spawned_objectives(source, dev, world, stock, local_resources):
                 if not prefab:
                     continue
                 resource, path = prefab[1].upper(), prefab[2]
+                placements[resource] += 1
                 if (resource in reviewed or source.resources.get(resource) != [path]
                         or dev.resources.get(resource) not in (None, [path]) or not path.lower().endswith('.et')):
                     continue
                 text = source.read(path)
-                if 'TILW_BaseInteraction' not in text:
+                if 'TILW_BaseInteraction' not in text and 'TILW_Flag_EntityDamage' not in text:
                     continue
                 (_, block), = blocks(text)
-                native, objectives = convert_interaction_block(block, path, stock, local_resources)
-                if (len(objectives) != 1 or LEGACY.search(native)
-                        or (path in dev.files and native.strip() != dev.read(path).strip())):
+                if 'TILW_Flag_EntityDamage' in text:
+                    native, flag = spawned_damage_objective(block, stock, local_resources)
+                    kind = {'destroyed': True}
+                else:
+                    native, objectives = convert_interaction_block(block, path, stock, local_resources)
+                    if len(objectives) != 1:
+                        continue
+                    flag = objectives[0]['flag']
+                    kind = {'singleUse': objectives[0]['singleUse']}
+                if LEGACY.search(native) or (path in dev.files and native.strip() != dev.read(path).strip()):
                     continue
             except ValueError:
                 continue
-            reviewed[resource] = {'path': path, 'body': native, 'flag': objectives[0]['flag'],
-                                  'singleUse': objectives[0]['singleUse']}
+            reviewed[resource] = {'path': path, 'body': native, 'flag': flag, **kind}
+    damaged = {resource: asset for resource, asset in reviewed.items() if asset.get('destroyed')}
+    if damaged:
+        corpus = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                           if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+        scripts = script_text(source)
+        for resource, asset in damaged.items():
+            flag = asset['flag']
+            uses = placements[resource]
+            if (corpus.count(f'"{flag}"') != literal_flag_reads(corpus, flag) + 1 or flag in scripts
+                    or any(api in scripts for api in ('AdjustMissionFlag', 'IsMissionFlag', 'GetFlagSetCopy', 'm_flagSet'))
+                    or corpus.upper().count('{' + resource + '}') != uses):
+                del reviewed[resource]
+            else:
+                asset['spawnCount'] = uses
     return reviewed
 
 
@@ -1851,6 +1909,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         if resource not in ai_assets and asset['flag'] in used_flags and resource not in spawn_guids:
             blockers.append({'rule': 'spawned objective', 'file': asset['path'],
                              'detail': 'objective flag has no converted prefab spawn'})
+        if asset.get('destroyed'):
+            producers = [item for item in prefab_spawns if REF.fullmatch(item['prefab'])[1].upper() == resource]
+            choices = {item['startupChoice'] for item in producers}
+            if len(producers) != asset['spawnCount'] or (len(producers) > 1 and (
+                    None in choices or len(choices) != len(producers))):
+                blockers.append({'rule': 'spawned objective', 'file': asset['path'],
+                                 'detail': 'damage objective needs one spawn or mutually exclusive startup choices'})
     extraction_spawns = [item for event in rules.values() for item in event.get('extractionSpawns', [])]
     if delayed:
         flag_uses = Counter(term.get('flag') for term in terms if term['trigger'] == 'area capture')
@@ -1934,6 +1999,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     body = source.read(world)
     if not re.fullmatch(r'\s*SubScene \{\s*Parent "\{[A-Fa-f0-9]{16}\}[^"]+"\s*}\s*', body):
         blockers.append({'rule': 'terrain and subscene', 'file': world})
+    migrated_longmoor = body.strip() == f'SubScene {{\n Parent "{LONGMOOR_LEGACY_PARENT}"\n}}'
+    if migrated_longmoor:
+        body = body.replace(LONGMOOR_LEGACY_PARENT, LONGMOOR_CURRENT_PARENT)
     draft[world] = body
     for header in row['headers']:
         try:
@@ -1965,6 +2033,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         if count:
             advertised[header] = int(count[1])
     remaining = []
+    if migrated_longmoor:
+        remaining.append('Compare the authored locations against the historical Longmoor terrain.')
     capacity_notes = {}
     for header, actual in advertised.items():
         if header in REVIEWED_CAPACITY:
@@ -1982,6 +2052,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare timing of simultaneous flag changes and their dependent event chains.')
     if damage_flags:
         remaining.append('Compare damage notification timing in Match and confirm no objective damage during staging.')
+    if any(asset.get('destroyed') for asset in spawned_assets.values()):
+        remaining.append('Compare destruction of a spawned objective, including pre-Match damage and the Match outcome.')
     if any('initialHealth' in record for record in row.get('damageFlagCandidates', {}).values()):
         remaining.append('Compare initial hit zone health and subsequent repairs.')
     if teleport_targets:

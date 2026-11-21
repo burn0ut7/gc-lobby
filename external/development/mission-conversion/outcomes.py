@@ -487,12 +487,16 @@ def startup_flags(source, world, owner, body, scripts):
             return ()
     except (IndexError, ValueError):
         return ()
-    framework = '\n'.join(body)
+    # An event title may match the flag it reads. Event-control instructions are checked before this pass.
+    labels = {i + 1 for i, line in enumerate(body[:-1])
+              if EVENT.fullmatch(line) and re.fullmatch(r'   m_name ' + EVENT_LABEL, body[i + 1])}
+    framework = '\n'.join(line for i, line in enumerate(body) if i not in labels)
+    owner_text = source.read(owner)
     outside = '\n'.join(source.read(path) for path in sorted(source.closure(world))
-                        if path != owner and path.lower().endswith(('.ent', '.layer', '.et')))
+                        if path != owner and PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
     if 'GetFlagSetCopy' in scripts or 'm_flagSet' in scripts:
         return ()
-    if any(framework.count(flag) != 2 or source.read(owner).count(flag) != 2
+    if any(framework.count(flag) != 2 or owner_text.count(flag) != 2 + sum(body[i].endswith(flag) for i in labels)
            or flag in outside or flag[1:-1] in scripts for flag in flags):
         return ()
     return tuple(flags)
@@ -541,7 +545,7 @@ def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
 
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
                      extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None,
-                     derived_audit=None):
+                     derived_audit=None, match_only_flags=()):
     captures = captures or {}
     notification_audit = notification_audit or {}
     extraction_spawns = extraction_spawns or {}
@@ -610,6 +614,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns,
                 resolve_spawn, resolve_crew, startup, hidden_briefings,
                 DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived)
+            if any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
+                term['requiresMatch'] = True
             suffixes = {f' ({delay:f}s)' for delay in actions}
             if term['trigger'] not in ('Match start', 'startup choice', 'dormant'):
                 suffixes.add('')
