@@ -185,10 +185,12 @@ def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=Fa
     return '\n'.join([*lines, '  }', *navmesh, ' }', *placement, '}'])
 
 
-def spline_map_component(lines, key):
+def passive_shape_component(lines, key, *, spline=False):
     values, overlay, cover, extra = settings(lines, True, standalone=True, bare=True)
-    if (values or cover or extra or overlay.get('m_drawArea') != '0' or overlay.get('m_drawLine') != '1'
-            or overlay.get('m_invert', '0') != '0'):
+    if values or cover or extra:
+        raise ValueError('custom components on passive map shape')
+    if spline and (overlay.get('m_drawArea') != '0' or overlay.get('m_drawLine') != '1'
+                   or overlay.get('m_invert', '0') != '0'):
         raise ValueError('spline map shape needs a passive outline')
     converted = convert_passive('', [], overlay, standalone=True, require_assigned=True).splitlines()
     converted[2] = f'  GC_MapShapeComponent "{{{key}}}" {{'

@@ -8,7 +8,7 @@ import re
 
 from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURRENT_PARENT,
                          LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, capture_status_texts, faction_keys)
-from boundaries import ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE, convert_boundaries, spline_map_component
+from boundaries import ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE, convert_boundaries, passive_shape_component
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import REF, SOURCE_TEXT
 from event_actions import FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, render_crew_config, render_spawn, spawn_details
@@ -46,7 +46,8 @@ INIT_WEATHER = '  SCR_InitWeatherComponent "{61B68227C35BFE9A}" {'
 INIT_WEATHER_FIELD = re.compile(
     r'   (?:m_sInitialStartingWeatherId "[\w .-]*"|m_iSetWeatherConstant [01]|'
     r'm_initialWeatherDuration(?:Min|Max) \d+(?:\.\d+)?)')
-PERCEPTION = re.compile(r'^PerceptionManager(?: [\w.-]+)? : "\{028DAEAD63E056BE\}[^"]+" \{$')
+PERCEPTION = re.compile(r'^PerceptionManager(?: [\w.-]+| "(?P<serialized>[\da-fA-F]{16})")?'
+                        r' : "\{028DAEAD63E056BE\}[^"]+" \{$')
 LIGHT = 'LightEntity : "{C274EE54AB618B04}Prefabs/Structures/Core/Lamp_LightEntity_base.et" {'
 LIGHT_COMPONENT = [
     ' components {', '  StreetLampComponent "{55A0954A909C9109}" {', '   Enabled 0', '  }', ' }',
@@ -129,6 +130,10 @@ WORKSHOP_DAMAGE_TARGETS = {
     ),
 }
 WORKSHOP_SPAWN_PREFABS = {
+    'Motorbike_61B84088181A8FA4': (
+        '685d9beda81c9a52b79650a5ad42341cd7341370e5f4f77db5db6d49f55901ed',
+        (('F22B338BFAC1FD68', 'Prefabs/Vehicles/Wheeled/Motorbike/motorbike.et'),),
+    ),
     'BritishForces_5AE50EC5B8D6F4AE': (
         None, (('775DFB7F4529A122', 'Prefabs/Weapons/Rifles/L42A1/Rifle_L42A1.et'),),
     ),
@@ -177,6 +182,14 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/Delfer/Topdown/Topdown.conf': (
+        '8e0fde58ddfacdeba1baaca5f7e71af31efb62aa',
+        (('worlds/Delfer/Topdown/Topdown_Layers/blufor_players.layer',
+          'c5c17c96318ffd088b48c46907976ded58516f35'),
+         ('worlds/Delfer/Topdown/Topdown_Layers/redfor_players.layer',
+          'aa0a43c45e58ecee9cf22d43c13220132e1c9aa9')),
+        68, 69,
+    ),
     'Missions/James/OrbSturm.conf': (
         '0fdc64807190cbe82f0b3f53a9fea06efde34c2d',
         (('worlds/James/OrbSturm/OrbSturm_Layers/nva_players.layer',
@@ -1003,7 +1016,7 @@ def scenery_map_placement(block, dev):
                     match = SPLINE_MAP_COMPONENT.fullmatch(components[0])
                     if not match or block_end(components, 0) != len(components) - 1:
                         raise ValueError('spline has custom map components')
-                    result.extend(spline_map_component(components, match[1]))
+                    result.extend(passive_shape_component(components, match[1], spline=True))
                 else:
                     result.extend(fields[index:end + 1])
                 index = end + 1
@@ -2496,6 +2509,8 @@ def area_rules(source, world, dev=None):
                         area = '\n'.join([f'PolylineShapeEntity {area_name} {{', *placement, *child, '}', ''])
                         capture_details.setdefault(flag[1:-1], {'area': area_name})
                         capture_details[flag[1:-1]]['polygonVertices'] = vertices
+                        if any('GC_MapShapeComponent ' in row for row in placement):
+                            capture_details[flag[1:-1]]['polygonMapOverlay'] = True
                     elif attached:
                         area = '\n'.join([*area.splitlines()[:-1], ' {', *attached, ' }', '}', ''])
                         capture_details.setdefault(flag[1:-1], {'area': area_name}).update(amounts)
@@ -3144,10 +3159,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         converted_cover |= 'm_bAutoFrameMap 1' in converted
                         converted_passive_cover |= bool(PASSIVE_COVER.fullmatch(head))
                         converted_bare_map |= bool(BARE_SHAPE.fullmatch(head))
-                elif PERCEPTION.fullmatch(head) and all(
-                    field.strip().partition(' ')[0] in SPAWNER_TRANSFORM and FIELD.fullmatch(field.strip())
-                    for field in block[1:-1]
-                ):
+                elif ((perception := PERCEPTION.fullmatch(head))
+                      and all(field.strip().partition(' ')[0] in SPAWNER_TRANSFORM and FIELD.fullmatch(field.strip())
+                              for field in block[1:-1])
+                      and (not perception['serialized'] or (perception['serialized'] not in script_text(source)
+                           and sum(source.read(path).count(perception['serialized']) for path in source.closure(world)
+                                   if PurePosixPath(path).suffix.lower() in SOURCE_TEXT) == 1))):
                     continue
                 elif kind == 'SCR_EditorRestrictionZoneEntity' and not LEGACY.search(body):
                     names, converted = restriction_zones(block, len(zones) + 1)
@@ -3464,6 +3481,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(record.get('triggerAnchor') for trigger in row.get('captureCandidate', {}).values()
            for record in trigger.values() if isinstance(record, dict)):
         remaining.append('Compare named capture anchors, polygon occupation and associated map outlines.')
+    if any(record.get('polygonMapOverlay') for trigger in row.get('captureCandidate', {}).values()
+           for record in trigger.values() if isinstance(record, dict)):
+        remaining.append('Compare the capture footprint and its shared map fill, outline and faction visibility.')
     if any('m_fAuthoredCountdownSeconds ' in text for text in draft.values() if isinstance(text, str)):
         remaining.append('Compare the authored fractional staging release and displayed countdown.')
     if migrated_longmoor:

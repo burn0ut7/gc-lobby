@@ -1,12 +1,13 @@
-"""Read a native polyline whose only child is a legacy capture trigger."""
+"""Read capture polygons and carry their authored map overlays in place."""
 import re
 
-from boundaries import floats, validate_polygon
+from boundaries import floats, passive_shape_component, validate_polygon
 from briefings import block_end, properties
 
 SHAPE = re.compile(r'(?P<group>\$grp )?PolylineShapeEntity(?: (?P<name>[\w.-]+))? \{')
 MEMBER = re.compile(r' (?:([\w.-]+) )?\{')
 POINT = re.compile(r'ShapePoint "\{[\da-fA-F]{16}\}" \{')
+COMPONENT = re.compile(r'  (TILW_MapShapeComponent|RplComponent) "\{([\da-fA-F]{16})\}" \{')
 
 
 def members(block, grouped, name):
@@ -64,6 +65,11 @@ def read(lines, trigger_pattern):
             floats(value, 4)
         elif field == 'IsClosed' and value == '1':
             pass
+        elif field == 'components' and value == '{':
+            end = block_end(lines, index)
+            placement.extend(polygon_components(lines[index + 1:end]))
+            index = end + 1
+            continue
         elif line == ' {':
             end = block_end(lines, index)
             head = trigger_pattern.fullmatch(lines[index + 1].strip())
@@ -76,7 +82,38 @@ def read(lines, trigger_pattern):
             raise ValueError('unsupported polygon capture field ' + field)
         placement.extend(lines[index:end + 1])
         index = end + 1
-    if origin is None or not vertices or 'IsClosed' not in seen or not child:
-        raise ValueError('capture requires a closed polygon, explicit origin and one trigger child')
+    if origin is None or not vertices or not child:
+        raise ValueError('capture requires a polygon, explicit origin and one trigger child')
+    if 'IsClosed' not in seen:
+        # Legacy capture uses the full ring whether its editor shape is closed or not.
+        # Closing the native collision area is harmless to a fill-only map overlay.
+        if any(line.strip().startswith('m_LineColor ') and floats(line.strip().partition(' ')[2], 4)[3] != 0
+               for line in placement):
+            raise ValueError('implicit capture closure needs review for a visible outline')
+        placement.append(' IsClosed 1')
     validate_polygon(vertices, origin, yaw)
     return placement, child, len(vertices)
+
+
+def polygon_components(lines):
+    result = [' components {']
+    seen = set()
+    index = 0
+    while index < len(lines):
+        match = COMPONENT.fullmatch(lines[index])
+        if not match:
+            raise ValueError('unsupported polygon capture component ' + lines[index].strip().split()[0])
+        kind, key = match.groups()
+        if kind in seen:
+            raise ValueError('duplicate polygon capture component ' + kind)
+        seen.add(kind)
+        end = block_end(lines, index)
+        block = lines[index:end + 1]
+        if kind == 'TILW_MapShapeComponent':
+            result.extend(passive_shape_component(block, key)[1:-1])
+        else:
+            if block[1:-1] not in ([], ['   Streamable Disabled']):
+                raise ValueError('unsupported polygon replication fields')
+            result.extend(block)
+        index = end + 1
+    return [*result, ' }']

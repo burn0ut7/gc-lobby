@@ -30,6 +30,14 @@ PREVIEW_ENTRY = re.compile(r'SCR_BasePreviewEntry "\{[\da-fA-F]{16}\}" \{')
 AI_CONFIG = 'SCR_AIConfigComponent "{512CC1759AE69D6D}" {'
 AI_CONFIG_FIELD = re.compile(r'(?:Enabled|m_Enable(?:Movement|DangerEvents|Perception|Attack|TakeCover|Looking|'
                             r'Communication)) [01]|m_Skill (?:0(?:\.\d+)?|1(?:\.0+)?)')
+GROUP_DEFEND_TREE = 'BehaviorTree "{87F8618AA19A90F5}AI/BehaviorTrees/Chimera/Group/ActivityDefend.bt"'
+STOCK_WEAPON_TREES = {
+    'm_sDefaultWeaponBehaviorTree "{2603840B02776A59}AI/BehaviorTrees/Chimera/Soldier/Fire_Suppressive.bt"',
+    'm_sDefaultWeaponBehaviorTree "{C7C91D4EEF274827}AI/BehaviorTrees/Chimera/Soldier/Defend.bt"',
+}
+WEAPON_HANDLING_CONFIG = (
+    'm_DefaultWeaponTypeHandlingConfig SCR_AIWeaponTypeHandlingConfig "{69377312FF06216C}" {'
+)
 EDITABLE_GROUP = 'SCR_EditableGroupComponent "{50D291F6C83FA532}" {'
 EDITABLE_UI = 'm_UIInfo SCR_EditableGroupUIInfo "{5298E609432D192D}" {'
 EMPTY_VARIANT = re.compile(r'm_VariantData SCR_EditableEntityVariantData "\{[\da-fA-F]{16}\}" \{')
@@ -433,8 +441,16 @@ def native_group_component(lines, start, end):
         return end == start + 1
     if header == MOVEMENT:
         return all(MOVEMENT_FIELD.fullmatch(line.strip()) for line in lines[start + 1:end])
+    if header == 'AIChimeraBehaviorTreeComponent "{13BAA835864B8992}" {':
+        return end == start + 2 and lines[start + 1].strip() == GROUP_DEFEND_TREE
     if header == AI_CONFIG:
-        return all(AI_CONFIG_FIELD.fullmatch(line.strip()) for line in lines[start + 1:end])
+        fields = [line.strip() for line in lines[start + 1:end]]
+        if WEAPON_HANDLING_CONFIG in fields:
+            index = fields.index(WEAPON_HANDLING_CONFIG)
+            if fields[index:index + 2] != [WEAPON_HANDLING_CONFIG, '}']:
+                return False
+            del fields[index:index + 2]
+        return all(line in STOCK_WEAPON_TREES or AI_CONFIG_FIELD.fullmatch(line) for line in fields)
     if header == GROUP_IDENTITY:
         return native_group_symbol(lines, start + 1, end - 1)
     if EDITOR_PREVIEW.fullmatch(header):
