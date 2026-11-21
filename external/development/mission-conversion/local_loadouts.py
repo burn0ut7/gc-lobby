@@ -9,6 +9,8 @@ from groups import inheritance, legacy_member, reviewed_native_ancestry, stock_c
 
 CHARACTER = re.compile(r'SCR_ChimeraCharacter : "\{[\da-fA-F]{16}\}[^"\n]+\.et" \{')
 PLAYABLE = '  PS_PlayableComponent "{5EFCC1946F475F15}" {'
+EDITABLE = '  SCR_EditableCharacterComponent "{520EA1D2F659C85C}" {\n'
+EDITABLE_INFO = '   m_UIInfo SCR_EditableEntityUIInfo "{5298E609432D192D}" {\n'
 LEGACY = re.compile(r'\b(?:PS|TILW)_\w+')
 MOVED_CHARACTER_PARENTS = {
     ('B64CD72F4D93A99E', 'worlds/James/newbritnvatvt/Character_UK_1989_Paras_LRDriver_P.et'):
@@ -40,11 +42,19 @@ def migrate_playability(text, *, inherited_playable=False):
     authored_name = data.get('m_sName', '""')
     # The published legacy component reads m_sName. It has no m_name field.
     if authored_name != '""':
-        if any(line.startswith('  SCR_EditableCharacterComponent ') for line in lines[start + 1:end]):
-            raise ValueError('existing character presentation needs review')
-        lines[end:end] = ['  SCR_EditableCharacterComponent "{520EA1D2F659C85C}" {\n',
-                          '   m_UIInfo SCR_EditableEntityUIInfo "{5298E609432D192D}" {\n',
-                          f'    Name {authored_name}\n', '   }\n', '  }\n']
+        editable = [index for index in range(start + 1, end)
+                    if lines[index].startswith('  SCR_EditableCharacterComponent ')]
+        name = f'    Name {authored_name}\n'
+        if not editable:
+            lines[end:end] = [EDITABLE, EDITABLE_INFO, name, '   }\n', '  }\n']
+        else:
+            index = editable[0]
+            if len(editable) != 1 or lines[index:index + 4] != [EDITABLE, EDITABLE_INFO, '   }\n', '  }\n']:
+                raise ValueError('existing character presentation needs review')
+            lines.insert(index + 2, name)
+            if index < component:
+                component += 1
+                stop += 1
     del lines[component:stop + 1]
     return ''.join(lines), True
 

@@ -15,9 +15,10 @@ STANDARD_CALLSIGN = '63616C6C7369676E'
 INDEX = {'m_iCompanyCallsign': 'm_iGC_CallsignCompany', 'm_iPlatoonCallsign': 'm_iGC_CallsignPlatoon',
          'm_iSquadCallsign': 'm_iGC_CallsignSquad'}
 SLOTS = re.compile(r'^ m_aUnitPrefabSlots \{\n(.*?)^ \}', re.M | re.S)
+DYNAMIC_LOD_DISTANCE = 'DynamicsimLastlodDistance'
 NATIVE_GROUP_FIELD = re.compile(r'm_faction "[\w.-]+"|m_iGroupRadioFrequency \d+|'
                                 r'm_b(?:DeleteWhenEmpty|DeleteIfNoPlayer) [01]|m_iMaxMembers \d{1,4}|'
-                                r'DangerEventRange \d+(?:\.\d+)?')
+                                rf'(?:DangerEventRange|{DYNAMIC_LOD_DISTANCE}) \d+(?:\.\d+)?')
 STATIC_LINK_FIELDS = {'m_aStaticWaypoints {', 'm_aStaticVehicles {'}
 COLOR_TEAM_ARRAY = 'm_aUnitPrefabColorTeams {'
 COLOR_TEAM_VALUES = {'"None"', '"Red"', '"Blue"', '"Yellow"', '"Green"'}

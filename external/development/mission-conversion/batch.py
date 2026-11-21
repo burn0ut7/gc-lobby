@@ -15,7 +15,7 @@ from event_actions import (NUMBER, SPAWN, SPAWN_FIELDS, render_crew_config, rend
                            split_crew_block, target_names)
 from events import LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, MISSING_STATUS, condition as extraction_condition
-from groups import COLOR_TEAM_ARRAY, inheritance
+from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, inheritance
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer
@@ -97,6 +97,22 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/Battalion Breakthrough/BattalionBreakthrough.conf': (
+        '45f4dd177e24450169695f8db49b9434a3b036e0',
+        (('worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/Players_Soviets/OPFOR_Players.layer',
+          '47bd6ed8057a86fadfb07fd77204a0b50d7569e5'),
+         ('worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/Players_UK/UK_Players.layer',
+          'a4b7f1367d499e41776cb1b30b6a4719122c2e51')),
+        92, 96,
+    ),
+    'Missions/HitTheMan/Encircled NVA/EncircledNVA.conf': (
+        '8b2852e0ebaf3cca6cf58a6559f7b888e3f203a7',
+        (('worlds/HitTheMan/Encircled NVA/EncircledNVA_Layers/NVA_Players/NVA_Players.layer',
+          '554325bf5e5aba9c953223e729f3560e84bd4bc7'),
+         ('worlds/HitTheMan/Encircled NVA/EncircledNVA_Layers/US_Players/US_Players.layer',
+          'd111df69e5a5afa0fa81d64de2d2cd6cda681283')),
+        111, 50,
+    ),
     'Missions/Reapzr/Deadlock.conf': (
         'ceaac59d93946de86c2f59625d0adda978d92a98',
         (('worlds/Reapzr/Deadlock/Deadlock_Layers/Groups/Attackers.layer',
@@ -290,10 +306,19 @@ STOCK_RESOURCE_ALIASES = {
         'PrefabLibrary/DefaultLibrary/Walls/Concrete/ConcreteRetainingWall_01_8m.et',
     ('C98A6C1C2372354E', 'Prefabs/Vegetation/Bush/b_corylus_avellana_1_collision.et'):
         'Prefabs/Vegetation/Bush/b_corylus_avellana_1.et',
+    ('A5DE58FC9FB6BA60', 'Prefabs/Vegetation/Bush/b_corylus_avellana_2_collision.et'):
+        'Prefabs/Vegetation/Bush/b_corylus_avellana_2.et',
+    ('1A1CE09F7BCA6650', 'Prefabs/Props/Wrecks/S105_wreck_static.et'):
+        'Prefabs/Props/Wrecks/S105_wreck/S105_wreck_static.et',
     ('DCAF0585D17B917A', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_ranomized.et'):
         'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_randomized.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('12C35C0A24EDA6D0', 'Prefabs/Vehicles/Tracked/BFV/M2A3_BUSK_MERDC.et'): (
+        'WCS_M2A2_63120AE07E6C0966', '12C35C0A24EDA6D0',
+        'Prefabs/Vehicles/Tracked/M2A2/M2A3/M2A3_BUSK_MERDC.et'),
+    ('B3F2B47340817ED6', 'Prefabs/Items/GC_Facepaint_01_US.et'): (
+        'ACEFacepaintDev_68EAA4B96976D557', 'B3F2B47340817ED6', 'Prefabs/Items/ACE_Facepaint_01_US.et'),
     ('9FF4AA98784BDF8B', 'Prefabs/Vehicles/Helicopters/AH6M/OPFOR/AH6M_OPFOR_base.et'): (
         'WCS_AH-6M_6273146ADFE8241D', '9FF4AA98784BDF8B',
         'Prefabs/Vehicles/Helicopters/AH6M/OPFOR/AH6M_OPFOR_Base.et'),
@@ -2218,6 +2243,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(path.endswith('.layer') and isinstance(body, str) and COLOR_TEAM_ARRAY in body
            for path, body in draft.items()):
         remaining.append('Compare authored group color teams and their slot assignments.')
+    if any(path.endswith('.layer') and isinstance(body, str) and DYNAMIC_LOD_DISTANCE in body
+           for path, body in draft.items()):
+        remaining.append('Compare group simulation as players cross the authored LOD distance.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Compare framing and zoom against the legacy cover.')
     if status_areas:
