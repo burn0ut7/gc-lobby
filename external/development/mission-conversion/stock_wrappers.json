@@ -401,6 +401,14 @@
       "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT_P.et",
       "sha256": "769cccf3ca45e6ae3a7b5817273a71b68e35d566444cf5ea4c0ae40c53173249"
     },
+    "BF38869730F83577": {
+      "parent": [
+        "22E43956740A6794",
+        "Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized.et"
+      ],
+      "path": "Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized_P.et",
+      "sha256": "ca386f3812895b5e8d1a6624035f0465d83fed4cabe1a9f10a4656b212b3262d"
+    },
     "BF44997B8982C009": {
       "parent": [
         "84B40583F4D1B7A3",

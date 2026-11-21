@@ -12,7 +12,9 @@ from briefings import block_end, guid, properties
 from catalog import REF, SOURCE_TEXT
 from event_actions import (NUMBER, SPAWN, SPAWN_FIELDS, render_crew_config, render_spawn, spawn_details,
                            split_crew_block, target_names)
+from events import peak_flags
 from extraction import condition as extraction_condition
+from groups import inheritance
 from interactions import convert_block as convert_interaction_block
 from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer
@@ -51,6 +53,11 @@ DAMAGE_COMPONENT = re.compile(rf'  TILW_Flag_EntityDamage {SERIALIZED_ID} \{{')
 DAMAGE_TARGETS = {
     '78CCABFAE4DC21EF': 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/Dst/CrateStack_01_Dst_2_dark.et',
 }
+# The published CIV group chain and base group have no damage manager.
+DAMAGELESS_GROUPS = {
+    '0C8BEF088C9D62CA': ('Prefabs/Groups/CIV/Generic/P/Group_CIV_Generic_P.et',
+                         '7cb828f03ecaa39cd7f01693a4c0b653baa2e631216be0fa5095cf4efb76ad63'),
+}
 PLACED_SPAWNER = re.compile(
     r'(?P<group>\$grp )?TILW_PrefabSpawnerEntity(?: (?P<name>[\w.-]+))? : '
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
@@ -85,6 +92,19 @@ MATERIAL_OVERRIDE = re.compile(
     rf'(?:    MaterialAssignClass {SERIALIZED_ID} \{{\n     SourceMaterial "[^"\n]+"\n'
     r'     AssignedMaterial "\{[\da-fA-F]{16}\}[^"\n]+\.emat"\n    \}\n)+'
     r'   \}\n  \}\n \}\n(?P<transform>(?: [^\n]+\n)*)\}'
+)
+STORAGE_BOX = re.compile(
+    r'GenericEntity : "\{A0E432F0BBED71B4\}PrefabsEditable/Auto/Props/Military/AmmoBoxes/US/'
+    r'E_EquipmentBoxWooden_Equipment_01_US\.et" \{\n'
+    r' ID "[\da-fA-F]{16}"\n components \{\n'
+    r'  SCR_UniversalInventoryStorageComponent "\{5476A2F100DF4EFF\}" \{\n'
+    r'   Enabled 1\n   MultiSlots \{\n'
+    rf'(?:    MultiSlotConfiguration {SERIALIZED_ID} \{{\n'
+    rf'     SlotTemplate (?:InventoryStorageSlot|EquipmentStorageSlot) [\w.-]+ \{{\n'
+    r'      Prefab "\{[\da-fA-F]{16}\}[^"\n]+\.et"\n'
+    r'     \}\n     NumSlots [1-9]\d*\n    \}\n)+'
+    r'   \}\n  \}\n  ActionsManagerComponent "\{5476B36C403D4CC0\}" \{\n'
+    r'   Enabled 1\n  \}\n \}\n\}'
 )
 CALLSIGN_TRIPLET = (r'm_iGC_CallsignCompany "\d+"\n(?P=indent)m_iGC_CallsignPlatoon "\d+"\n'
                     r'(?P=indent)m_iGC_CallsignSquad "\d+"\n')
@@ -236,9 +256,10 @@ def script_text(source):
                      for path in source.files if path.lower().endswith('.c'))
 
 
-def damage_flag_rules(source, world, stock, local_resources):
+def damage_flag_rules(source, world, stock, local_resources, source_units):
     placements, audit, candidates = {}, {}, defaultdict(list)
-    for path in source.layers[world.lower()]:
+    layers = source.layers[world.lower()]
+    for path in layers:
         text = source.read(path)
         if 'TILW_Flag_EntityDamage' not in text:
             continue
@@ -249,12 +270,11 @@ def damage_flag_rules(source, world, stock, local_resources):
             location = f'{path}:{line}'
             try:
                 ref = REF.search(block[0])
-                if (len(components) != 1 or not ref or not stock or ref[1].upper() in local_resources
-                        or DAMAGE_TARGETS.get(ref[1].upper()) != ref[2] or not stock.contains(*ref.groups())):
+                if len(components) != 1 or not ref or not stock or ref[1].upper() in local_resources:
                     raise ValueError('unverified damage objective prefab or component placement')
-                head = re.fullmatch(r'(GenericEntity)(?: ([\w.-]+))?( : .+)', block[0])
-                if not head:
-                    raise ValueError('damage objective needs an individual placed entity')
+                is_group = block[0].startswith('SCR_AIGroup ')
+                if not is_group and (DAMAGE_TARGETS.get(ref[1].upper()) != ref[2] or not stock.contains(*ref.groups())):
+                    raise ValueError('unverified damage objective prefab or component placement')
                 start = components[0]
                 stop = block_end(block, start)
                 parent = block.index(' components {')
@@ -268,6 +288,23 @@ def damage_flag_rules(source, world, stock, local_resources):
                         or data.get('m_targetZone', '""') != '""' or data.get('m_continuous', '0') != '0'
                         or not re.fullmatch(r'1(?:\.0+)?', data.get('m_initialHealth', '1'))):
                     raise ValueError('unsupported damage flag condition')
+                if is_group:
+                    resource = ref[1].upper()
+                    chain = inheritance(source_units, resource)
+                    base = REF.search(chain[-1].partition('\n')[0]) if chain else None
+                    signature = sha256('\n'.join(chain).encode()).hexdigest()
+                    casualty_flags = peak_flags([line for layer in layers for line in source.read(layer).splitlines()])
+                    if (DAMAGELESS_GROUPS.get(resource) != (ref[2], signature) or not base
+                            or base[1].upper() in local_resources or not stock.contains(*base.groups())
+                            or flag not in casualty_flags):
+                        raise ValueError('unverified damageless group or missing casualty flag')
+                    # Legacy binds only the owner, never a member. Keep the authored casualty producer.
+                    placements[(path, line)] = '\n'.join([*block[:start], *block[stop + 1:]]) + '\n'
+                    audit[location] = {'inertGroupFlag': flag[1:-1], 'condition': 'owner has no damage manager'}
+                    continue
+                head = re.fullmatch(r'(GenericEntity)(?: ([\w.-]+))?( : .+)', block[0])
+                if not head:
+                    raise ValueError('damage objective needs an individual placed entity')
                 name = head[2] or 'GC_Damage_' + guid(location)
                 if len(name.encode()) > 128:
                     raise ValueError('damage objective name exceeds the native limit')
@@ -404,6 +441,8 @@ def passive_asset(source, path):
             return body
     if suffix == '.et':
         body = source.read(path)
+        if STORAGE_BOX.fullmatch(body.rstrip('\n')):
+            return body
         lines = body.splitlines()
         material = MATERIAL_OVERRIDE.fullmatch(body.rstrip('\n'))
         if material and all(FIELD.fullmatch(line.strip()) for line in material['transform'].splitlines()):
@@ -1088,7 +1127,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         blockers.append({'rule': 'framework settings', 'file': layer, 'line': line, 'detail': roots})
                 elif kind == 'SCR_AIGroup':
                     try:
-                        converted, count, slots = convert_group_block(body)
+                        converted, count, slots = convert_group_block(interaction_placements.get((layer, line), body))
                         result.append(converted)
                         group_blocks.append({'file': layer, 'line': line, 'groups': count, 'slots': slots})
                     except ValueError as exc:

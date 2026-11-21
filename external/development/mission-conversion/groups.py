@@ -343,7 +343,9 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                          reviewed_callsigns=frozenset(), reviewed_members=None, external_ai=None):
     reviewed_members = reviewed_members or {}
     explicit_force = any(l.strip() == 'm_bSetPlayable 1' for l in lines)
-    native_playable = any(l.strip() == 'm_bPlayable 1' for l in lines) or scalar(inheritance(dev_units, guid), 'm_bPlayable') == 1
+    native_override = next((l.strip()[-1] for l in lines if l.strip() in ('m_bPlayable 0', 'm_bPlayable 1')), None)
+    native_playable = (native_override == '1' if native_override is not None
+                       else scalar(inheritance(dev_units, guid), 'm_bPlayable') == 1)
     if not native_playable and not explicit_force:
         return convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai or {})
     replace_slots = any(l.strip() == 'm_aUnitPrefabSlots {' for l in lines)
@@ -440,6 +442,9 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
         elif token.startswith('m_sCustomNameSet '):
             metadata.append(line.replace('m_sCustomNameSet ', 'm_sGC_Description ', 1))
         elif token in ('m_bSetPlayable 0', 'm_bSetPlayable 1'):
+            pass
+        elif token == 'm_bPlayable 0' and explicit_force:
+            # The legacy group callback marks its member characters playable after initialization.
             pass
         elif token.startswith(('coords ', 'angles ', 'angleX ', 'angleY ', 'angleZ ', 'scale ', 'm_bSnapToTerrain ')) or token == 'm_bPlayable 1':
             out.append(line)
