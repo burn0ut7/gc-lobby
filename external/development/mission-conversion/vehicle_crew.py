@@ -68,6 +68,7 @@ BTR70_CREW_LEAF = '81a8ccf59bed709f4eb87c25c260e529acd6cbb74dab97d09566adf828395
 BTR70_SMOKE_ANCESTOR = 'ae982b43b504904f7b97947e7fc45c83f584e46ce5f7fa8d7c08c05e386eee74'
 NVA_BTR70_LEAF = 'ac360b5e120fa0f5ba97deee2e1ee68ef6d415fd9e856710c5104efdd8ea551f'
 NVA_T72A_LEAF = '30fdb038e061492f404c19340d7b0e1da08746c49abd8f57faf46fb7264d38a2'
+NVA_BRDM2_LEAF = 'bbe74f54370ac1a41343d200b834335650508e87632449c8781d5bae490371e4'
 UNITS_VEHICLES = {
     '1C1038CF07EA4B00': (
         'Prefabs/Vehicles/Wheeled/BTR70/NVA/BTR70_NVA.et',
@@ -80,9 +81,27 @@ UNITS_VEHICLES = {
         (NVA_T72A_LEAF, '44d169d2260f456352926fd245aa50f787083ee2a43a23eb76ebed0b61e0e38d'),
         (NVA_T72A_LEAF, '2ec90305fa151423829093e490029d2a994c655b6b70b47ef1291b2b1207674d'),
     ),
+    'EC4811AC7C17DC7E': (
+        'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2_NVA.et',
+        ('254289B9C09904AB', 'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2.et'),
+        (NVA_BRDM2_LEAF,), (NVA_BRDM2_LEAF,),
+    ),
 }
 WORKSHOP_VEHICLE_PARENTS = {
     '8A883ABED22B6E27': ('WCS_SpaceCore_5E389BB9F58B79A6', 'Prefabs/Vehicles/Core/Tracked_Base.et'),
+}
+REVIEWED_CREW_CONFIGS = {
+    '012709863EB73BED': ('Configs/Crews/GC_NVA/Crew_NVA_AI.conf',
+                         '90846172c477653d708d41e39d6a2be4d94607803653f0fdd8c16ef18746c712'),
+    '5657389604450AAC': ('Configs/Crews/US/Crew_US_AI.conf',
+                         '0e8d90c8331a50c54f78ceafc20774f8c5169b601b1c6b01ff3074a9cd47d066'),
+    'E56AA08ED9F1D4B5': ('Configs/Crews/GC_CDF/Rifleman_CDF.conf',
+                         'c954cc5a6819f9f240ae42226a560d165dd60e573a828c1ae4a6f1a1f74d0610'),
+}
+NVA_CREW_ROLE_PATHS = {
+    '72BF67D118BC5930': ('Driver', 'CrewDriver'),
+    '9594C031304B509D': ('Gunner', 'CrewGunner'),
+    '945EE8F65FF4E94C': ('Commander', 'CrewCO'),
 }
 
 
@@ -159,7 +178,17 @@ def crew_route_fields(data, default_delay):
             *('    ' + name for name in waypoints), '   }']
 
 
-def render_component(component, lines, resolve_character, single_turret):
+def crew_config_contents(lines, resolve_config=None):
+    field = r'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID
+    reference = re.fullmatch(field + r' : ' + REF.pattern + r' {', lines[0].strip())
+    if not reference:
+        return contents(lines, field)
+    if not resolve_config or len(lines) != 2 or lines[1].strip() != '}':
+        raise ValueError('referenced crew config has placement overrides')
+    return resolve_config(reference[1].upper(), reference[2])
+
+
+def render_component(component, lines, resolve_character, single_turret, resolve_config=None):
     configs = [i for i, line in enumerate(lines) if line.strip().startswith('m_crewConfig ')]
     if not configs:
         data = properties(lines, {'m_customCrew', 'm_noTurretDismount', 'm_idleGroup', 'm_pregameSpawn',
@@ -193,7 +222,7 @@ def render_component(component, lines, resolve_character, single_turret):
     if outer.get('m_pregameSpawn', '0') != '0' or outer.get('m_noTurretDismount', '0') not in ('0', '1'):
         raise ValueError('unsupported placed crew timing or deprecated dismount field')
     # The legacy configured-crew path never reads the component's deprecated dismount field.
-    config = contents(lines[index:close + 1], r'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID)
+    config = crew_config_contents(lines[index:close + 1], resolve_config)
     groups = [i for i, line in enumerate(config) if line.strip() == 'm_crewGroups {']
     if len(groups) != 1:
         raise ValueError('crew authoring needs one m_crewGroups')
@@ -250,6 +279,23 @@ def verified_units_vehicle(guid, path, source_units, dev_units, stock, owned, ex
     return before == source_hashes and after == dev_hashes
 
 
+def verified_crew_config(source_units, guid, path, owned):
+    spec = REVIEWED_CREW_CONFIGS.get(guid)
+    if not spec or guid in owned or path != spec[0] or source_units.resources.get(guid) != [path]:
+        raise ValueError('unverified referenced crew config ' + guid)
+    body = source_units.read(path).strip()
+    if sha256(body.encode()).hexdigest() != spec[1]:
+        raise ValueError('referenced crew config differs from the published body ' + guid)
+    if guid == '012709863EB73BED':
+        prefix = 'Prefabs/Characters/Factions/OPFOR/GC_NVA/Character_GC_NVA_'
+        for role, (legacy, canonical) in NVA_CREW_ROLE_PATHS.items():
+            registered = prefix + canonical + '.et'
+            if source_units.resources.get(role) != [registered]:
+                raise ValueError('unverified published crew role ' + role)
+            body = body.replace(f'"{{{role}}}{prefix}{legacy}.et"', f'"{{{role}}}{registered}"')
+    return contents(body.splitlines(), 'TILW_CrewConfig')
+
+
 def convert(block, source_units, dev_units, stock, owned, external_vehicles=None, external_ai=None, *,
             external_parents=None):
     if not any('TILW_VehicleCrewComponent' in line for line in block):
@@ -292,7 +338,7 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
         replacement = render_component(
             component, lines[index + 1:end],
             lambda guid, path: character_reference(guid, path, source_units, dev_units, stock, owned, external_ai),
-            single_turret)
+            single_turret, lambda guid, path: verified_crew_config(source_units, guid, path, owned))
         return [*lines[:index], *replacement, *lines[end + 1:]]
 
     def convert_inherited(lines, parents=()):

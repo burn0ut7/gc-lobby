@@ -67,7 +67,7 @@ def instruction_flags(source, world, framework_path, lines, scripts, flag_reads)
                        for path in sorted(source.closure(world))
                        if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
     return tuple(sorted(flag[1:-1] for flag in flags
-                        if flag[1:-1] not in scripts
+                        if flag not in scripts
                         and corpus.count(flag) == known_uses[flag] + flag_reads.get(flag[1:-1], 0)))
 
 

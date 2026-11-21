@@ -185,7 +185,8 @@ def render_cover(coords, vertices, yaw, cover, pitch=0, roll=0):
 
 
 def convert_instance(lines, name, passive_only=False, allow_public_faction_color=False, split_fill=True,
-                     extended_shapes=False, standalone=False, parent_origin=(0, 0, 0), parent_yaw=0):
+                     extended_shapes=False, standalone=False, parent_origin=(0, 0, 0), parent_yaw=0,
+                     parent_scale=1):
     values, overlay, cover = {}, {}, {}
     navmesh = []
     placement = []
@@ -249,8 +250,9 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     pitch, yaw, roll = angles.get('angles', tuple(angles.get(axis, 0) for axis in ('angleX', 'angleY', 'angleZ')))
     if (pitch or roll) and not extended_shapes:
         raise ValueError('tilted AO needs world-space validation')
-    if scale is not None:
-        vertices = [tuple(axis * scale for axis in point) for point in vertices]
+    world_scale = parent_scale * (scale if scale is not None else 1)
+    if world_scale != 1:
+        vertices = [tuple(axis * world_scale for axis in point) for point in vertices]
     passive_overlay = extended_shapes and values.get('Enabled') == '0' and bool(overlay)
     standalone_ao = standalone and values.get('Enabled') == '1'
     visible_standalone = (overlay.get('Enabled') != '0'
@@ -263,7 +265,9 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
         placement.append(' IsClosed 0')
         closed = False
     if closed is not False or standalone_ao:
-        relative = rotate_point(origin, parent_yaw, 0, 0) if parent_yaw else origin
+        relative = tuple(axis * parent_scale for axis in origin)
+        if parent_yaw:
+            relative = rotate_point(relative, parent_yaw, 0, 0)
         world_origin = tuple(local + parent for local, parent in zip(relative, parent_origin))
         validate_polygon(vertices, world_origin, yaw + parent_yaw, pitch, roll)
     if (closed is False and not (standalone_ao and not visible_standalone)
@@ -371,7 +375,7 @@ def group_members(lines, start, stop, root):
 
 
 def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, parent_yaw=0,
-                      *, marker=None, area_children=None):
+                      *, marker=None, area_children=None, parent_scale=1):
     child_start = next((i for i, line in enumerate(lines) if line.strip() == '{'), None)
     # Only a brace at the root-property indent opens the entity's child list.
     if child_start is not None:
@@ -383,7 +387,7 @@ def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, pa
         count = 0
     else:
         body, count = convert_instance(lines[:field_end], name, parent_origin=parent_origin,
-                                       parent_yaw=parent_yaw, **options)
+                                       parent_yaw=parent_yaw, parent_scale=parent_scale, **options)
     if child_start is None or not options['extended_shapes']:
         return body, count
     if (depth >= 16 or child_start == len(lines) - 2
@@ -394,14 +398,18 @@ def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, pa
     else:
         fields = [line.strip() for line in lines[:child_start] if line.startswith(' ' * indent)
                   and not line.startswith(' ' * (indent + 1))]
-    if any(field.startswith(('angleX ', 'angleZ ', 'scale ')) for field in fields):
-        raise ValueError('nested boundary requires an unscaled parent with yaw-only rotation')
+    if any(field.startswith(('angleX ', 'angleZ ')) for field in fields):
+        raise ValueError('nested boundary requires a parent with yaw-only rotation')
+    scales = [floats(field[6:], 1)[0] for field in fields if field.startswith('scale ')]
+    if len(scales) > 1 or any(scale <= 0 for scale in scales):
+        raise ValueError('invalid nested boundary scale')
+    world_scale = parent_scale * (scales[0] if scales else 1)
     yaw = 0
     for field in fields:
         if field.startswith('angles '):
             pitch, yaw, roll = floats(field[7:], 3)
             if pitch or roll:
-                raise ValueError('nested boundary requires an unscaled parent with yaw-only rotation')
+                raise ValueError('nested boundary requires a parent with yaw-only rotation')
         elif field.startswith('angleY '):
             yaw, = floats(field[7:], 1)
     position = [floats(field[7:], 3) for field in fields if field.startswith('coords ')]
@@ -409,7 +417,9 @@ def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, pa
         position = [(0, 0, 0)]
     if len(position) != 1:
         raise ValueError('nested boundary requires one explicit parent origin')
-    relative = rotate_point(position[0], parent_yaw, 0, 0) if parent_yaw else position[0]
+    relative = tuple(axis * parent_scale for axis in position[0])
+    if parent_yaw:
+        relative = rotate_point(relative, parent_yaw, 0, 0)
     origin = tuple(local + parent for local, parent in zip(relative, parent_origin))
     if not marker and not options['standalone'] and not re.search(r'^GC_AOLimitEntity\b', body, re.M):
         raise ValueError('nested boundary needs an active AO, standalone map shape, or marker')
@@ -430,10 +440,13 @@ def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, pa
                 child_name = ' ' + member_name if member_name else ''
                 child, vertices = convert_hierarchy(
                     lines[start + 1:end], child_name, {**options, 'standalone': bool(standalone)},
-                    origin, depth + 1, yaw + parent_yaw, marker=child_marker, area_children=area_children)
+                    origin, depth + 1, yaw + parent_yaw, marker=child_marker, area_children=area_children,
+                    parent_scale=world_scale)
                 children.extend('  ' + line for line in child.splitlines())
                 count += vertices
         elif area_children and name and options['standalone'] and 'IsClosed 0' not in fields:
+            if world_scale != 1:
+                raise ValueError('scaled boundary with gameplay children needs review')
             child_block = [line[indent + 1:] for line in lines[index:stop + 1]]
             children.extend('  ' + line for line in area_children(name.strip(), child_block))
         else:
