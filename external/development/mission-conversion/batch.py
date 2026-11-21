@@ -12,7 +12,7 @@ from boundaries import STANDALONE_SHAPE, convert_boundaries
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import REF, SOURCE_TEXT
 from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, render_crew_config, render_spawn, spawn_details, split_crew_block
-from events import LEGACY_FLAG, peak_flags
+from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, MISSING_STATUS, condition as extraction_condition
 from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, inheritance
 from interactions import convert_block as convert_interaction_block, convert_object
@@ -56,6 +56,12 @@ NAVMESH_COMPONENT = re.compile(rf' +TILW_NavmeshRegenComponent {SERIALIZED_ID} \
 DAMAGE_COMPONENT = re.compile(rf'  TILW_Flag_EntityDamage {SERIALIZED_ID} \{{')
 DAMAGE_TARGETS = {
     '78CCABFAE4DC21EF': 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/Dst/CrateStack_01_Dst_2_dark.et',
+    '7D39683D0F8EDB59': 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/Dst/CrateStack_01_Dst_3_dark.et',
+    'D042CEA90B8CB14D': 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/CrateStack_01_decals_02.et',
+    '2C83CD194C70DA9C': 'PrefabsEditable/Auto/Props/Military/SupplyBox/SupplyStack/SupplyStack_Large_01/E_SupplyStack_Large_01_storage.et',
+    '5F76887813B86AD4': 'Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/USSR/EquipmentBoxStack_USSR_01_V6_covered.et',
+    '2FCB46C395C9CBE7': 'Prefabs/Props/Airport/GeneratorAirfield_USSR_01/GeneratorAirfield_USSR_01.et',
+    '6597847D2AC253F5': 'Prefabs/Props/Military/Generators/GeneratorMilitary_USSR_01/GeneratorMilitary_USSR_01.et',
     # The installed truck variants inherit SCR_WheeledDamageManagerComponent.
     '1BABF6B33DA0AEB6': 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_command.et',
     '4C81D7ED8F8C0D87': 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker.et',
@@ -66,10 +72,17 @@ DAMAGE_TARGETS = {
     '26013123314183EA': 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_tanker_MERDC.et',
     'C8656AECF5DF41D9': 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_repair_MERDC.et',
     'EC657C9B3C73E192': 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_ammo_MERDC.et',
-    # Both Huey chains inherit the damage manager on UH1H_base.et.
+    'E6AEC014D162D686': 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_FIA_command.et',
+    '1C5FE7B7FF49BB8D': 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_Base.et',
+    '254289B9C09904AB': 'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2.et',
+    # The Huey and Mi-8 chains inherit native helicopter damage managers.
     '70BAEEFC2D3FEE64': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H.et',
     'CB4D4CF7E887B2D0': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HEDP.et',
+    'DDDD9B51F1234DF3': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed.et',
+    '21E9A875C0A3C409': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HE.et',
+    '7BD282AF716ED639': 'Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed.et',
 }
+DAMAGE_FLAG_NAME = re.compile(r'"[\w .-]+"')
 SPAWN_DAMAGE_TARGETS = {
     ('ADA7E056B17AC663',
      'PrefabsEditable/Auto/Props/Military/AmmoBoxes/EquipmentBoxStack/E_EquipmentBoxStack_USSR_01_V2_covered.et'),
@@ -671,7 +684,7 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                     placements[(path, line)] = converted
                     audit[location] = {'initialHealth': health, 'hitZone': zone[1:-1]}
                     continue
-                if (not re.fullmatch(r'"[\w.-]+"', flag) or len(flag.encode()) > 130
+                if (not DAMAGE_FLAG_NAME.fullmatch(flag) or not flag[1:-1].strip() or len(flag.encode()) > 130
                         or data.get('m_targetState', '2') not in ('2', 'DESTROYED')
                         or zone != '""' or data.get('m_continuous', '0') != '0'
                         or (is_group and initial_health)):
@@ -690,7 +703,7 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                     placements[(path, line)] = '\n'.join([*block[:start], *block[stop + 1:]]) + '\n'
                     audit[location] = {'inertGroupFlag': flag[1:-1], 'condition': 'owner has no damage manager'}
                     continue
-                head = re.fullmatch(r'(GenericEntity|Tank|Vehicle)(?: ([\w.-]+))?( : .+)', block[0])
+                head = re.fullmatch(r'(GameEntity|GenericEntity|Tank|Vehicle)(?: ([\w.-]+))?( : .+)', block[0])
                 if not head:
                     raise ValueError('damage objective needs an individual placed entity')
                 name = head[2] or 'GC_Damage_' + guid(location)
@@ -706,7 +719,7 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
     flags = {}
     if not candidates and not grouped:
         return flags, placements, audit
-    references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+    references = '\n'.join(damage_flag_reference_text(source.read(path)) for path in sorted(source.closure(world))
                            if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
     for flag, entries in candidates.items():
         count = literal_flag_reads(references, flag)
@@ -756,7 +769,7 @@ def verified_rhs_damage(resource, path, source_units, dev_units, rhs):
 
 def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs):
     ref = REF.search(block[0])
-    if not ref or not re.match(r'^\$grp (Vehicle|Tank|RHS_Tank|GenericEntity) ', block[0]) or ref[1].upper() in owned:
+    if not ref or not re.match(r'^\$grp (Vehicle|Tank|RHS_Tank|GameEntity|GenericEntity) ', block[0]) or ref[1].upper() in owned:
         raise ValueError('unverified grouped damage objective prefab')
     resource, path = ref[1].upper(), ref[2]
     stock_target = (stock and DAMAGE_TARGETS.get(resource) == path and stock.contains(resource, path)
@@ -774,6 +787,18 @@ def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs):
     if not native or not flags:
         raise ValueError('grouped damage placement has another legacy component')
     return native, flags
+
+
+def damage_flag_reference_text(text):
+    # An event's display name can equal its condition flag without reading or writing the flag.
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if EVENT.fullmatch(line):
+            stop = block_end(lines, index)
+            for item in range(index + 1, stop):
+                if lines[item].startswith('   m_name '):
+                    lines[item] = ''
+    return '\n'.join(lines)
 
 
 def literal_flag_reads(text, flag):
