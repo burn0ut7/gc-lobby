@@ -7,7 +7,7 @@ from pathlib import PurePosixPath
 import re
 
 from arc_capture import CAPTURE_EDITOR_FIELDS, capture_instance
-from boundaries import convert_boundaries
+from boundaries import STANDALONE_SHAPE, convert_boundaries
 from briefings import block_end, guid, properties
 from catalog import REF, SOURCE_TEXT
 from event_actions import (NUMBER, SPAWN, SPAWN_FIELDS, render_crew_config, render_spawn, spawn_details,
@@ -371,23 +371,34 @@ def unused_flag_sampling(source, world, path, line, framework):
     return sorted(set(flags))
 
 
+PLACED_ENTITY = re.compile(r'(?P<group>\$grp )?(?P<kind>\w+)(?: (?P<name>[\w.-]+))?(?: : "[^"]+")? \{')
+
+
 def named_placements(layers):
     named = {}
-    for text in layers:
-        for _, block in blocks(text):
-            head = re.fullmatch(r'(?P<group>\$grp )?(?P<kind>\w+)(?: (?P<name>[\w.-]+))?(?: : "[^"]+")? \{',
-                                block[0])
-            if not head:
-                continue
-            if head['name']:
-                named.setdefault(head['name'], []).append((head['kind'], block))
-            if not head['group']:
-                continue
+
+    def visit(block):
+        head = PLACED_ENTITY.fullmatch(block[0])
+        if not head:
+            return
+        if head['name']:
+            named.setdefault(head['name'], []).append((head['kind'], block))
+        if head['group']:
             for index, line in enumerate(block[1:-1], 1):
-                member = re.fullmatch(r' ([\w.-]+) \{', line)
-                if member:
+                member = re.fullmatch(r' (?:([\w.-]+) )?\{', line)
+                if member and member[1]:
                     placement = block[index:block_end(block, index) + 1]
                     named.setdefault(member[1], []).append((head['kind'], placement))
+        elif ' {' in block[1:-1]:
+            start = block.index(' {', 1)
+            end = block_end(block, start)
+            children = '\n'.join(line[2:] for line in block[start + 1:end])
+            for _, child in blocks(children):
+                visit(child)
+
+    for text in layers:
+        for _, block in blocks(text):
+            visit(block)
     return named
 
 
@@ -735,7 +746,35 @@ TRIGGER = re.compile(r'(?P<group>\$grp )?TILW_(?P<kind>Extraction|Faction)Trigge
                      r' : "\{(?P<guid>192ABD6B9232E064|8C576D46F6579229)\}[^"\n]+" \{')
 
 
-def area_rules(source, world):
+def attached_trigger_map(fields, dev):
+    start = fields.index(' {')
+    if block_end(fields, start) != len(fields) - 1:
+        raise ValueError('custom placement after trigger children')
+    children = '\n'.join(line[2:] for line in fields[start + 1:-1])
+    parent = fields[:start]
+    output, amounts = [], Counter()
+    for _, block in blocks(children):
+        child = '\n'.join(block) + '\n'
+        if block[0].startswith(('PS_ManualMarker ', '$grp PS_ManualMarker ')):
+            rendered, count = convert_layer(child, dev, draw_order=True)
+            amounts['attachedMarkers'] += count
+        elif STANDALONE_SHAPE.fullmatch(block[0]):
+            if any(re.match(r'^ (?:angles|angle[XYZ]|scale) ', field) for field in parent):
+                raise ValueError('attached map shape has a rotated or scaled trigger parent')
+            rendered, audit = convert_boundaries(child, extended_shapes=True)
+            if not rendered or any('gap' in row for row in audit.values()):
+                gap = next((row['gap'] for row in audit.values() if 'gap' in row), 'no converted shape')
+                raise ValueError('attached map shape: ' + gap)
+            amounts['attachedMapShapes'] += len(audit)
+        else:
+            raise ValueError('unsupported trigger child: ' + block[0].removeprefix('$grp ').split()[0])
+        output.extend('  ' + line for line in rendered.splitlines())
+    if not output:
+        raise ValueError('empty trigger child list')
+    return parent, output, amounts
+
+
+def area_rules(source, world, dev=None):
     conditions, placements, audit = {}, {}, {}
     references = None
     scripts = None
@@ -754,8 +793,11 @@ def area_rules(source, world):
             try:
                 for name, fields in polygon_capture.members(block, root['group'], root['name']):
                     trigger = match
+                    attached = []
                     if shape:
                         placement, (trigger, fields), vertices = polygon_capture.read(fields, TRIGGER)
+                    elif ' {' in fields:
+                        fields, attached, amounts = attached_trigger_map(fields, dev)
                     flag_field = next(value.strip() for value in fields if value.strip().startswith('m_flagName '))
                     flag = flag_field.removeprefix('m_flagName ')
                     if not re.fullmatch(r'"\w+"', flag) or flag in conditions or flag in flags:
@@ -772,7 +814,7 @@ def area_rules(source, world):
                         rule = built[flag]
                     else:
                         raise ValueError('inconsistent trigger identity')
-                    if (trigger['kind'] == 'Faction' and not name and not shape
+                    if (trigger['kind'] == 'Faction' and not name and not shape and not attached
                             and not any('m_Messages ' in item for item in rule)):
                         if references is None:
                             references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
@@ -785,6 +827,9 @@ def area_rules(source, world):
                         area = '\n'.join([f'PolylineShapeEntity {area_name} {{', *placement, '}', ''])
                         capture_details.setdefault(flag[1:-1], {'area': area_name})
                         capture_details[flag[1:-1]]['polygonVertices'] = vertices
+                    elif attached:
+                        area = '\n'.join([*area.splitlines()[:-1], ' {', *attached, ' }', '}', ''])
+                        capture_details.setdefault(flag[1:-1], {'area': area_name}).update(amounts)
                     result[flag] = rule
                     areas.append(area)
             except StopIteration:
@@ -1105,7 +1150,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                          'detail': {'missingConvertedFlagProducers': sorted(unresolved_event_flags)}})
     spawners, spawner_audit = {}, []
     if row['serializedTypes'].get('TILW_PrefabSpawnerEntity'):
-        captures, placed_areas, _ = area_rules(source, world)
+        captures, placed_areas, _ = area_rules(source, world, dev)
         area_placements = {**placed_areas, **area_placements}
         spawners, schedules, spawner_audit = world_spawners(source, world, resolve_spawn, captures,
                                                            set(objective_flags) | event_flags, used_flags, blockers,

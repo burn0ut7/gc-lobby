@@ -363,7 +363,7 @@ def main():
                     row['captureCandidate'] = capture_audit
                     arc_areas[world] = area
                 elif args.batch:
-                    captures, batch_areas[world], capture_audit = batch.area_rules(source, world)
+                    captures, batch_areas[world], capture_audit = batch.area_rules(source, world, dev)
                     if capture_audit:
                         row['captureCandidate'] = capture_audit
                 if delayed and delayed.conditions:
