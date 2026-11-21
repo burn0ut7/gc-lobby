@@ -650,3 +650,11 @@ The rule recognized 54 placements across 22 worlds and reduced worlds with prese
 Missions Dev commit `31d03f88` preserves 66 advertised players and 78 authored playable slots. File review matched the 55 explicit role references and placement transforms in order, plus 23 inherited roles. The WCS JLTV retains its Javelin variant and GUID at the installed provider's current path. The 300-second setup, Russian capture and casualty notifications, and 3,600-second time notice retain their authored settings.
 
 The reviewed source emits `US_KIA` and the victory notice reads `USMC_KIA`. No producer exists for the latter in the reviewed source. The port keeps the notice text and delay in a disabled event. The converter applies this decision only to the exact source commit and event identity. The committed file audit passed against the Dev dependency graph, and two full catalog runs reproduced all 192 report and draft files. Live role selection, setup release, capture and notice delivery remain representative runtime checks.
+
+## Engine core and rampart resources
+
+The installer and reviewer load the adjacent engine core registry when the installed base game declares its project GUID. This resolves the particle editor preview prefab used by the authored Breach and Clear particle. The mission remains held because the runtime black smoke wrapper has no installed registration.
+
+Karachinar Crashout is in local Missions Dev commit `add3b368`. The rampart path and entity class match the newer placements in ChakChakChosen and the active ArmaTerrainCore registry. The alias preserves each original transform, hierarchy and navmesh component conversion. The older prefab itself was unavailable for a byte comparison. The live check should cover rampart collision and AI pathing alongside map cover framing.
+
+The committed audit matched 83 playable slots, three 60-second objectives, both casualty thresholds, and the 15-second delay on each outcome notice. Two catalog scans reproduced 180 report and draft files. The only draft change from the rampart alias was replacing the three stale reference IDs in the set dressing layer.

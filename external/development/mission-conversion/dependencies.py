@@ -55,7 +55,14 @@ def dependency_resources(target, checkouts, databases):
     resources = defaultdict(list)
     unavailable = set()
     seen = {root, BASE_GAME}
-    pending = list(reversed(requires))
+    base_requires = ()
+    base_projects = sorted(databases[0].parent.glob('*.gproj'))
+    if len(base_projects) == 1:
+        project = base_projects[0]
+        guid, children = read_project(project.read_bytes(), project)
+        if guid == BASE_GAME:
+            base_requires = children
+    pending = list(reversed((*base_requires, *requires)))
     while pending:
         guid = pending.pop()
         if guid in seen:

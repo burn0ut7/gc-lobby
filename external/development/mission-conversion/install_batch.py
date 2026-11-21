@@ -45,7 +45,13 @@ def resource_databases(base, addons):
         raise ValueError('base resource database does not exist')
     if addons and not addons.is_dir():
         raise ValueError('Workshop addon directory does not exist')
-    return [base, *(sorted(addons.glob('*/resourceDatabase.rdb')) if addons else [])]
+    core = base.parent.parent / 'core' / 'resourceDatabase.rdb'
+    databases = [base]
+    if core.is_file() and core.resolve() != base.resolve():
+        databases.append(core)
+    if addons:
+        databases.extend(sorted(addons.glob('*/resourceDatabase.rdb')))
+    return databases
 
 
 def replace_layer(path, before, after):
