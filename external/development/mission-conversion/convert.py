@@ -14,8 +14,8 @@ import arc_capture
 import batch
 import local_loadouts
 from install_batch import resource_databases
-from restore_units_roles import (verified_aircrew_roles, verified_group_rosters, verified_msv85_wrappers, verified_roles,
-                                 verified_soviet_aircrew_roles)
+from restore_units_roles import (verified_aircrew_roles, verified_group_rosters, verified_msv85_forced_roles,
+                                 verified_msv85_wrappers, verified_roles, verified_soviet_aircrew_roles)
 import vehicle_crew
 import bugout
 from briefings import BriefingAudience, STANDARD_LAYOUTS, guid, indexed_pages, read_pages, render
@@ -211,7 +211,8 @@ def main():
                 occupied = locally_owned | source_units.resources.keys() | dev_units.resources.keys()
                 forced_external = verified_uk_forced_roles(
                     args.workshop_addons, occupied) | verified_rhs_forced_roles(
-                        rhs_database, locally_owned, source_units, dev_units)
+                        rhs_database, locally_owned, source_units, dev_units) | verified_msv85_forced_roles(
+                            source_units, dev_units, locally_owned)
                 asset_aliases = batch.resource_aliases(args.workshop_addons, dev_units, stock)
                 asset_aliases.update(batch.reviewed_units_asset_paths(source_units, dev_units))
                 if args.workshop_addons:

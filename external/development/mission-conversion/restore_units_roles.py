@@ -17,6 +17,13 @@ from scenery import StockPrefabs
 ARCHIVE = 'cda6d96940cd5fca0984087f7d2e58553d9bacb3'
 MSV85_ARCHIVE = '08b79772e2f628b8d52dd6c1b5a0321e2d9ef6cc'
 MSV85_DIRECTORY = 'Prefabs/Characters/Factions/OPFOR/USSR_Army/MotorRifle_MSV85A/'
+MSV85_FORCED_ROLES = {
+    'ECB5E6520057FF89': 'PlatoonLeader', '4318B010D29F4E99': 'DeputyPL',
+    '60F78BEFD940423D': 'Medic', '756A54A830E2B54A': 'CoyCO',
+    '84BFC57ACE3F2322': 'SquadLeader', 'D19FFA691FCF0810': 'AR',
+    '093793A86646164C': 'AT', '8CACCAFD1EDEF893': 'AAT',
+    '7A79814F28466BA6': 'SeniorRifleman', 'D0B3CA0BB493B929': 'Rifleman',
+}
 DIRECTORY = 'Prefabs/Characters/Factions/OPFOR/USSR_Army/MotorRifle_MSV80/Legacy/'
 DEPUTY = '07299990D00B0823'
 MEDIC = 'D1BA3D1164545A8D'
@@ -214,6 +221,18 @@ def verified_msv85_wrappers(source, units):
             raise ValueError('unexpected archived role metadata: ' + path)
         for authored in (path, MSV85_DIRECTORY + Path(path).name, meta[3]):
             result[(resource, authored)] = native
+    return result
+
+
+def verified_msv85_forced_roles(source, units, owned):
+    prefix = MSV85_DIRECTORY + 'Character_USSR_MSV85A_'
+    result = {}
+    for identity, role in MSV85_FORCED_ROLES.items():
+        # The published loader resolves the stale SquadLeader_P path to the SVD GUID.
+        effective = {'SquadLeader': 'SVD', 'CoyCO': 'CoyCO_P'}.get(role, role)
+        if (identity not in owned and source.resources.get(identity) == [prefix + effective + '.et']
+                and unchanged_units_parent(source, units, identity)):
+            result[identity] = (prefix + role + '_P.et', only_path(units, identity))
     return result
 
 

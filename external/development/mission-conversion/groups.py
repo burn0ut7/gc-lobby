@@ -658,15 +658,25 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     slots_start = next((i for i, line in enumerate(lines) if line.strip() == 'm_aUnitPrefabSlots {'), None)
     replace_slots = slots_start is not None
     switches = [line.strip() for line in lines if line.strip().startswith('m_bSetPlayable ')]
-    if native_playable and native_override is None and switches == ['m_bSetPlayable 0'] and len(authored) == 1 and replace_slots:
+    override = next((l.strip()[-1] for l in lines if l.strip().startswith('m_bSetPlayable ')), None)
+    force = (override == '1' if override is not None else
+             (scalar((old,), 'm_bSetPlayable') == 1 or scalar(inheritance(source_units, guid), 'm_bSetPlayable') == 1))
+    if native_playable and native_override is None and not force and len(authored) == 1 and replace_slots:
         entries = '\n'.join(lines[slots_start + 1:block_end(lines, slots_start)])
-        slots = REF.findall(entries)
+        slots = [(resource.upper(), path) for resource, path in REF.findall(entries)]
         known = external_ai or {}
-        if slots and not REF.sub('', entries).strip() and all(
-            known.get(resource.upper()) == path and all(resource.upper() not in assets for assets in
-                                                        (locally_owned, source_units.resources, dev_units.resources))
+        reviewed_external = switches == ['m_bSetPlayable 0'] and all(
+            known.get(resource) == path and all(resource not in assets for assets in
+                                                (locally_owned, source_units.resources, dev_units.resources))
             for resource, path in slots
-        ):
+        )
+        # Some native groups inherit a playable default from the Units migration.
+        # The legacy roster only exposed reviewed non-playable roles when explicitly forced.
+        reviewed_unforced = not switches and all(
+            resource in source_units.resources and path in (forced_external or {}).get(resource, ())
+            and not legacy_member(source_units, resource, False) for resource, path in slots
+        )
+        if slots and not REF.sub('', entries).strip() and (reviewed_external or reviewed_unforced):
             indent = lines[slots_start].partition('m_aUnitPrefabSlots')[0]
             return convert_ai_instance([*lines, indent + 'm_bPlayable 0'], guid, source_units, dev_units,
                                        locally_owned, known, replaces_playable_roster=True)
@@ -707,9 +717,6 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     if not replace_slots:
         roster, converted_wrappers = inherited_playable_roster(
             old, new, stock, (locally_owned, source_units.resources, dev_units.resources))
-    override = next((l.strip()[-1] for l in lines if l.strip().startswith('m_bSetPlayable ')), None)
-    force = (override == '1' if override is not None else
-             (scalar((old,), 'm_bSetPlayable') == 1 or scalar(inheritance(source_units, guid), 'm_bSetPlayable') == 1))
     forced_external = (forced_external or {}) if force else {}
     approved_external = set()
     out = []

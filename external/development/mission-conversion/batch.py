@@ -380,6 +380,14 @@ REVIEWED_CAPACITY = {
           '7ce290991afcf44ebd1b6c1f3baa7aa619be793a')),
         71, 72,
     ),
+    'Missions/HitTheMan/Mountainous Mujahideen/MountainousMujahideen.conf': (
+        'ad9bf1a4a0bdce3da88cc090b6ba369bb1f30ca7',
+        (('worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/CDF_Players/CDF_Players.layer',
+          'f55b2cf87565c259a8be08a09bacbb43c44d70cc'),
+         ('worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/SEP_Players/SEP_Players.layer',
+          '26894091c5f42cace73db42cbba370ed29656b10')),
+        79, 67,
+    ),
     'Missions/Jub/Another Hill/Another Hill.conf': (
         '75e4e21677f4e64358d3ffee3d523e567cf589d8',
         (('worlds/Jub/Another Hill/Another Hill_Layers/Argies.layer',
