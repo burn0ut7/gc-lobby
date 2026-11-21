@@ -9,7 +9,8 @@ import re
 
 from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURRENT_PARENT,
                          LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, capture_status_texts, faction_keys)
-from boundaries import ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE, convert_boundaries, passive_shape_component
+from boundaries import (ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE,
+                        convert_boundaries, group_members, passive_shape_component)
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import OBSOLETE_NAVMESH, REF, SOURCE_TEXT
 from event_actions import (FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, VEHICLE_SPAWN,
@@ -754,6 +755,8 @@ STOCK_RESOURCE_ALIASES = {
     ('208FEE0BF258449B', 'Prefabs/SP01/SP01_UAZ469_USSR.et'):
         'Prefabs/Scenarios/SP01/SP01_UAZ469_USSR.et',
 }
+MARINE_COBRA = ('0174CF72FDB6B805', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Marines.et')
+
 WORKSHOP_RESOURCE_ALIASES = {
     ('4A30874E3A255689', 'Prefabs/Weapons/HeavyWeapons/2A46/Cannon_2A466_T72A_HE.et'): (
         'WCS_T-72_5E0AB16BEB16D6A4', '4A30874E3A255689',
@@ -835,6 +838,8 @@ WORKSHOP_RESOURCE_ALIASES = {
     ('C8C37964483452EA', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Army.et'): (
         'WCS_AH-1S_64CB39E57377C861', 'C8C37964483452EA',
         'Prefabs/Vehicles/Helicopters/AH1S/Army/AH1S_Army_M261_X4.et'),
+    MARINE_COBRA: ('WCS_AH-1S_64CB39E57377C861', MARINE_COBRA[0],
+                  'Prefabs/Vehicles/Helicopters/AH1S/Marines/AH1S_Marines_M261_X4.et'),
     ('89B49CDEBBEC973A', 'Prefabs/Weapons/Magazines/Magazine_127x99_M107A1_10rnd_M2.et'): (
         'TacticalFlava-Weapons_DEADC0DE00000001', '89B49CDEBBEC973A',
         'Prefabs/Weapons/Magazines/M107A1/Magazine_127x99_M107A1_10rnd_M2.et'),
@@ -1399,6 +1404,28 @@ def restore_rhib_mounts(block, aliases, source_blob):
         rebuilt.extend(' ' + field for field in apply(fields))
         rebuilt.append(' }')
     return [*rebuilt, block[-1]]
+
+
+def update_cobra_armament(block, aliases):
+    ref = REF.search(block[0])
+    if not ref or (ref[1].upper(), ref[2]) != MARINE_COBRA or MARINE_COBRA not in aliases:
+        return block
+    # The WCS parent retains these node IDs and the isEnabled field under renamed types.
+    renamed = {
+        ('WCS_ArmamentWeaponGroup', '6242ECBBA8787739'): 'WCS_Armament_WeaponGroup',
+        ('WCS_ArmamentWeaponInfo', '6242ECBBA878773F'): 'WCS_Armament_WeaponInfo',
+        ('WCS_ArmamentWeaponInfo', '6242ECBBA8787730'): 'WCS_Armament_WeaponInfo',
+    }
+    output = []
+    for line in block:
+        match = re.fullmatch(r' +(WCS_ArmamentWeapon(?:Group|Info)) "\{([\dA-F]{16})\}" \{', line)
+        if match:
+            kind = renamed.get(match.groups())
+            if not kind:
+                raise ValueError('Marine Cobra armament override needs review')
+            line = line.replace(match[1], kind, 1)
+        output.append(line)
+    return output
 
 
 def restore_placed_wirecutters(block, aliases, source_blob):
@@ -3008,22 +3035,50 @@ def nested_map_areas(source, world, block, known_conditions):
     checks, records = {}, {}
     scripts = script_text(source)
 
+    root = STANDALONE_SHAPE.fullmatch(block[0])
+    if root and root['group']:
+        block = block.copy()
+        names = {}
+        for start, end, name in group_members(block, 0, len(block) - 1, root):
+            if name:
+                continue
+            children = [TRIGGER.fullmatch(row[3:]) for row in block[start + 1:end] if row.startswith('   ')]
+            captures = [child for child in children if child and child['kind'] == 'Faction'
+                        and child['guid'] == '8C576D46F6579229' and child['name']]
+            if len(captures) == 1:
+                anchor = captures[0]['name']
+                names[start] = f'GC_MigrationArea_{guid(world + "/polygon/" + anchor)}'
+        if names:
+            references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                                   if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+            if len(set(names.values())) != len(names) or any(
+                    name in references or name in scripts for name in names.values()):
+                raise ValueError('generated polygon name conflicts with authored mission content')
+            for start, name in names.items():
+                block[start] = f' {name} {{'
+
     def render_trigger(area_name, child):
         root = TRIGGER.fullmatch(child[0]) or PRESENCE_TRIGGER.fullmatch(child[0])
         if not root or (root['kind'] != 'Presence'
-                        and (root['kind'], root['guid']) != ('Extraction', '192ABD6B9232E064')):
-            raise ValueError('unsupported child on named map extraction polygon')
+                        and (root['kind'], root['guid']) not in {
+                            ('Extraction', '192ABD6B9232E064'), ('Faction', '8C576D46F6579229')
+                        }):
+            raise ValueError('unsupported child on named map polygon')
         anchors = []
         for name, fields in polygon_capture.members(child, root['group'], root['name']):
             flag = next((value.strip().removeprefix('m_flagName ') for value in fields
                          if value.strip().startswith('m_flagName ')), '')
             if (not LEGACY_FLAG.fullmatch(flag) or len(flag.encode()) > 130
                     or flag in known_conditions or flag in checks):
-                raise ValueError('invalid or duplicate nested extraction flag ' + flag)
+                raise ValueError('invalid or duplicate nested area flag ' + flag)
             if (name and (name == area_name or f'"{name}"' in scripts)) or flag in scripts:
-                raise ValueError('nested extraction trigger may be controlled by mission scripts')
-            build = extraction_rule if root['kind'] == 'Extraction' else presence_rule
-            check, _, record = build(world, area_name, flag, fields, polygon=True)
+                raise ValueError('nested area trigger may be controlled by mission scripts')
+            if root['kind'] == 'Faction':
+                built, _, record = capture_instance(world, area_name, fields, polygon=True)
+                check = built[flag]
+            else:
+                build = extraction_rule if root['kind'] == 'Extraction' else presence_rule
+                check, _, record = build(world, area_name, flag, fields, polygon=True)
             checks[flag] = check
             records[flag[1:-1]] = {'area': area_name, **record}
             if name:
@@ -3037,7 +3092,7 @@ def nested_map_areas(source, world, block, known_conditions):
     if gap := next((entry['gap'] for entry in audit.values() if 'gap' in entry), None):
         raise ValueError(gap)
     if not converted or not checks:
-        raise ValueError('named map polygon has no converted extraction triggers')
+        raise ValueError('named map polygon has no converted area triggers')
     return checks, converted, records
 
 
@@ -3722,7 +3777,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 elif NATIVE.match(head):
                     try:
                         vehicle, groups, slots = convert_vehicle_groups(convert_crew(block), convert_group_block)
-                        converted = native_placement(restore_rhib_mounts(vehicle, asset_aliases, source.files[layer]))
+                        vehicle = restore_rhib_mounts(vehicle, asset_aliases, source.files[layer])
+                        converted = native_placement(update_cobra_armament(vehicle, asset_aliases))
                     except ValueError as exc:
                         blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
                     else:
@@ -4128,6 +4184,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare the AH-6 gun and rocket loadout against the legacy scenario.')
     if any(isinstance(body, str) and '{C8C37964483452EA}' in body for body in draft.values()):
         remaining.append('Compare the registered Army Cobra rocket loadout against the legacy scenario.')
+    if any(isinstance(body, str) and '{0174CF72FDB6B805}' in body for body in draft.values()):
+        remaining.append('Compare the Marine Cobra pylons, disabled stations and AO exemption.')
     if any(isinstance(body, str) and '{2FA364D8E326CB3C}' in body for body in draft.values()):
         remaining.append('Compare the Mi-24P control, pylon selection and turret in the current WCS release.')
     if any(isinstance(body, str) and '{F4D545DC6824850D}' in body for body in draft.values()):

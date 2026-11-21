@@ -813,7 +813,7 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                     only_path(source_units, guid)
                     path = only_path(dev_units, guid)
                 else:
-                    parent = stock_character(guid, path, stock) if replace_slots else None
+                    parent = stock_character(guid, path, stock)
                     if parent:
                         converted_wrappers.add(guid.upper())
                         return f'"{{{parent[0]}}}{parent[1]}"'

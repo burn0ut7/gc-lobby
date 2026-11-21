@@ -156,9 +156,10 @@ def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=Fa
     line_color = overlay.get('m_lineColor', '0 0 0 1') if outline == '1' else '0 0 0 0'
     line_width = overlay.get('m_lineWidth', '5')
     world_width = world_width or standalone
+    hidden = standalone and fill == '0' and outline == '0'
     if ((not overlay and not standalone) or fill not in ('0', '1')
-            or (fill == '0' and (not world_width or outline != '1')) or empty not in ('0', '1')
-            or (not keys and empty == '0' and not require_assigned) or invert not in ('0', '1')
+            or (fill == '0' and not hidden and (not world_width or outline != '1')) or empty not in ('0', '1')
+            or (not keys and empty == '0' and not require_assigned and not hidden) or invert not in ('0', '1')
             or outline not in ('0', '1') or not all(0 <= x <= 1 for x in floats(color, 4))
             or (outline == '1' and (not 1 <= float(line_width) <= (math.inf if world_width else 20)
                                    or not math.isfinite(float(line_width))
@@ -169,7 +170,7 @@ def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=Fa
     lines = [f'PolylineShapeEntity{name} : "{MAP_SHAPE}" {{', ' components {',
              '  GC_MapShapeComponent "{8F470B543A20D962}" {', '   m_LineColor ' + line_color,
              '   m_bFillEnabled ' + fill, '   m_FillColor ' + color, '   m_bInvertFill ' + invert]
-    if overlay.get('Enabled') == '0':
+    if hidden or overlay.get('Enabled') == '0':
         lines.append('   m_bEnabled 0')
     if open_fill:
         lines.append('   m_bFillOpenShape 1')
