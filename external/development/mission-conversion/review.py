@@ -11,7 +11,7 @@ import re
 import subprocess
 
 from briefings import block_end
-from catalog import GC_HEADER, REF, SOURCE_TEXT, Snapshot, TYPES
+from catalog import GC_HEADER, OBSOLETE_NAVMESH, REF, SOURCE_TEXT, Snapshot, TYPES
 from dependencies import dependency_resources
 from install_batch import resource_databases, unregistered_references
 from launchers import GENERATED, META_NAME, WORLD_REF, launcher, registered_identity
@@ -107,6 +107,9 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
         issues.append('Legacy declarations remain in Dev')
     if world in target.files and not any(k.startswith('GC_') and 'Mode' in k for k in kinds):
         issues.append('GC Lobby mode placement or native-mode exception needs review')
+    for mesh, blob in OBSOLETE_NAVMESH.items():
+        if mesh in outgoing and target.files[mesh] == blob:
+            issues.append('Dev still references an obsolete compiled navigation mesh: ' + mesh)
     local_refs = []
     missing = []
     path_resolved_parents = []

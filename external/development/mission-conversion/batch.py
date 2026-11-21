@@ -10,7 +10,7 @@ from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURR
                          LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, capture_status_texts, faction_keys)
 from boundaries import ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE, convert_boundaries, passive_shape_component
 from briefings import QUOTED, block_end, guid, properties, target_names
-from catalog import REF, SOURCE_TEXT
+from catalog import OBSOLETE_NAVMESH, REF, SOURCE_TEXT
 from event_actions import (FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, VEHICLE_SPAWN,
                            render_crew_config, render_spawn, spawn_details)
 from vehicle_crew import CREW_CONFIG_FIELD, VERIFIED_DEFAULT_CREW, crew_config_contents, split_crew_block
@@ -1961,6 +1961,9 @@ def passive_asset(source, path):
         return source.read_raw(path)
     if suffix == '.imageset':
         return source.read(path)
+    if suffix == '.nmn' and source.files[path] == OBSOLETE_NAVMESH.get(path):
+        tiles = len(source.navmesh_tiles(path))
+        raise ValueError(f'Workbench rejected the compiled navmesh as obsolete. Regeneration needed. Found {tiles} original tiles')
     if suffix == '.emat':
         body = source.read(path)
         if re.match(r'MatPBR(?:Basic|Decal) \{\n', body) and not LEGACY.search(body):

@@ -13,6 +13,10 @@ NAME = re.compile(r'^\s*Name\s+"\{([0-9A-Fa-f]{16})\}', re.M)
 TYPES = re.compile(r'^[ \t]*(?:\$grp )?(?:(?:m_\w+) )?((?:TILW|PS|GC)_\w+|\w*GameMode\w*|SCR_AIGroup)\b[^\n]*\{[ \t]*$', re.M)
 VEHICLE_LINK = re.compile(r'^\s*m_sAttachmentGroupName\s+"([^"\r\n]+)"\s*$')
 SOURCE_TEXT = {'.ent', '.layer', '.et', '.conf', '.layout', '.ptc', '.emat', '.imageset'}
+OBSOLETE_NAVMESH = {
+    'worlds/Perfk/NavMesh/Ruha_Power_Plant/PK_Ruha_Power_Plant.nmn':
+        'cc346c28b8bc3c04e3ee72eb31de4afa8d483321',
+}
 GC_HEADER_NAMES = r'GC_(?:MissionHeader|ScenarioFrameworkMissionHeader)'
 GC_HEADER = re.compile(r'\A\s*' + GC_HEADER_NAMES + r'(?=\s*\{)')
 MISSION_HEADER = re.compile(r'\A\s*(?:SCR_MissionHeader\w*|' + GC_HEADER_NAMES + r')\b')
@@ -61,6 +65,11 @@ class Snapshot:
             return self.blobs[oid]
         return subprocess.check_output(['git', '-C', str(self.repo), 'cat-file', 'blob', oid])
 
+    def navmesh_tiles(self, path):
+        resource = PurePosixPath(path)
+        prefix = f'{resource.parent}/.NavData/{resource.stem}/'
+        return sorted(file for file in self.files if file.startswith(prefix) and file.endswith('.ntile'))
+
     @cached_property
     def layers(self):
         result = defaultdict(list)
@@ -82,6 +91,8 @@ class Snapshot:
             seen.add(path)
             if path.lower().endswith('.ent'):
                 todo.extend(self.layers[path.lower()])
+            elif path.lower().endswith('.nmn'):
+                todo.extend(self.navmesh_tiles(path))
             if PurePosixPath(path).suffix.lower() in SOURCE_TEXT:
                 for guid, _ in REF.findall(self.read(path)):
                     todo.extend(self.resources.get(guid.upper(), []))

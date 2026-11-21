@@ -7,7 +7,7 @@ import re
 
 from briefings import QUOTED, block_end
 from catalog import REF
-from scenery import StockPrefabs
+from scenery import NUMBER, StockPrefabs
 
 ROOT = re.compile(r'^(?P<group>\$grp )?SCR_AIGroup(?: [\w.\-]+)? : "\{(?P<guid>[A-Fa-f0-9]{16})\}[^"]+\.et" \{$')
 CALL = re.compile(r'^\s*PS_GroupCallsignAssigner "\{([\da-f]{16})\}" \{$', re.I)
@@ -15,6 +15,7 @@ STANDARD_CALLSIGN = '63616C6C7369676E'
 INDEX = {'m_iCompanyCallsign': 'm_iGC_CallsignCompany', 'm_iPlatoonCallsign': 'm_iGC_CallsignPlatoon',
          'm_iSquadCallsign': 'm_iGC_CallsignSquad'}
 SLOTS = re.compile(r'^ m_aUnitPrefabSlots \{\n(.*?)^ \}', re.M | re.S)
+OBSOLETE_RESPAWN_POSITION = re.compile(rf'm_vRespawnPosition {NUMBER} {NUMBER} {NUMBER}')
 DYNAMIC_LOD_DISTANCE = 'DynamicsimLastlodDistance'
 NATIVE_GROUP_FIELD = re.compile(r'm_faction "[\w.-]+"|m_iGroupRadioFrequency \d+|'
                                 r'm_b(?:DeleteWhenEmpty|DeleteIfNoPlayer) [01]|m_iMaxMembers \d{1,4}|'
@@ -607,7 +608,7 @@ def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, ext
             result.append(line.replace('m_sCustomNameSet ', 'm_sGC_ManualCallsign ', 1))
         elif token == 'm_bPlayable 0' and (stock_group or replaces_playable_roster):
             result.append(line)
-        elif token != 'm_bSetPlayable 0':
+        elif token != 'm_bSetPlayable 0' and not OBSOLETE_RESPAWN_POSITION.fullmatch(token):
             raise ValueError('AI group field needs review: ' + token.split()[0])
         index += 1
     return result, 0
@@ -849,6 +850,9 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
         elif token.startswith('m_sCustomNameSet '):
             metadata.append(line.replace('m_sCustomNameSet ', 'm_sGC_Description ', 1))
         elif token in ('m_bSetPlayable 0', 'm_bSetPlayable 1'):
+            pass
+        elif OBSOLETE_RESPAWN_POSITION.fullmatch(token):
+            # Workbench rejects this old SCR_AIGroup field in the published legacy missions.
             pass
         elif token == 'm_bPlayable 0' and (explicit_force or restored_playable or character_playable):
             # Legacy character playability was independent of this native group setting.
