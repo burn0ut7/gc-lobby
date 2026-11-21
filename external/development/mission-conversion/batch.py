@@ -3,6 +3,7 @@ from collections import Counter, defaultdict
 from decimal import Decimal
 from functools import lru_cache, partial
 from hashlib import file_digest, sha256
+from math import isfinite
 from pathlib import PurePosixPath
 import re
 
@@ -164,6 +165,10 @@ WORKSHOP_DAMAGE_TARGETS = {
     ),
 }
 WORKSHOP_SPAWN_PREFABS = {
+    'ArmaTerrainCore_60B524F7A5AE96A8': (
+        '28574b99f5d6a12a7199a29d94194081b196b8ca37d854895fe296763cba778c',
+        (('6650B2B969248F4C', 'Prefabs/Structures/Rock/Afghan_Rock/GraniteCliff_Afghan_03.et'),),
+    ),
     'Motorbike_61B84088181A8FA4': (
         '685d9beda81c9a52b79650a5ad42341cd7341370e5f4f77db5db6d49f55901ed',
         (('F22B338BFAC1FD68', 'Prefabs/Vehicles/Wheeled/Motorbike/motorbike.et'),),
@@ -2458,6 +2463,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
     if not root:
         raise ValueError('unverified placed spawner prefab')
     placements, rules, audit = [], [], []
+    transform_fields = SPAWNER_TRANSFORM | {'scale'}
     for index, (name, lines) in enumerate(polygon_capture.members(block, root['group'], root['name'])):
         children = []
         if ' {' in lines:
@@ -2480,13 +2486,15 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             end = block_end(lines, start)
             config = crew_config_contents(lines[start:end + 1], resolve_crew_config)
             lines = lines[:start] + lines[end + 1:]
-        data = properties(lines, SPAWNER_TRANSFORM | {
+        data = properties(lines, transform_fields | {
             'm_prefab', 'm_conditionFlag', 'm_spawnTimings', 'm_setEntityNames', 'm_waypointNames', 'm_pregameSpawn',
         })
-        transform = [f'{key} {value}' for key, value in data.items() if key in SPAWNER_TRANSFORM]
+        transform = [f'{key} {value}' for key, value in data.items() if key in transform_fields]
         if ('coords' not in data or any(not FIELD.fullmatch(line) for line in transform)
                 or data.get('m_pregameSpawn', '0') != '0'):
             raise ValueError('spawner needs a placed Match-only transform')
+        if 'scale' in data and (not isfinite(scale := float(data['scale'])) or scale <= 0):
+            raise ValueError('spawner scale must be positive and finite')
         timings = data.get('m_spawnTimings', '').split() or ['0']
         if not 1 <= len(timings) <= 128 or any(
                 not re.fullmatch(NUMBER, delay) or Decimal(delay) > 86400 for delay in timings):
@@ -2554,6 +2562,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         placements.extend([f'GenericEntity {anchor} {{', *(' ' + line for line in transform), *children, '}'])
         audit.append({'spawnAnchor': anchor, 'spawnName': details['area'], 'prefab': details['prefab'],
                       'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in group_waypoints], **term})
+        if 'scale' in data:
+            audit[-1]['anchorScale'] = data['scale']
         if absent:
             audit[-1]['missingGroupWaypoint'] = absent[1:-1]
         if self_waypoint:
