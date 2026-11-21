@@ -58,9 +58,25 @@ SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
     'Missions/Woody/COXX_Landay_Haul.conf': (
         '90d1f355e72fc950632ced756ec41f62c746bc66',
-        'worlds/Woody/COXX_Landay_Haul/COXX_Landay_Haul_Layers/playergroups.layer',
-        'b17ee6b7d81dce91a0065354c2dfeba53d619a08',
+        (('worlds/Woody/COXX_Landay_Haul/COXX_Landay_Haul_Layers/playergroups.layer',
+          'b17ee6b7d81dce91a0065354c2dfeba53d619a08'),),
         60, 62,
+    ),
+    'Missions/HitTheMan/Hall Boss/HallBoss.conf': (
+        '36dfbc13413a59bf068ae40807395fe62314e6f6',
+        (('worlds/HitTheMan/Hall Boss/HallBoss_Layers/BLUFOR_Players/BLUFOR_Players.layer',
+          '8089e9efa4f45f36e03a9ace9149ace17aef4299'),
+         ('worlds/HitTheMan/Hall Boss/HallBoss_Layers/OPFOR_Players/OPFOR_Players.layer',
+          '9ad00b7c276ce6c9464afc73ab1a8723cea1ccad')),
+        75, 47,
+    ),
+    'Missions/HitTheMan/Hall Boss Mines/HallBossMines.conf': (
+        'c6b5cc2df728c4553588b1c40b7a114f607814e8',
+        (('worlds/HitTheMan/Hall Boss Mines/HallBossMines_Layers/BLUFOR_Players/BLUFOR_Players.layer',
+          '2b7329b7c7b85db3cb3cd407b3d735ba7cd1f745'),
+         ('worlds/HitTheMan/Hall Boss Mines/HallBossMines_Layers/OPFOR_Players/OPFOR_Players.layer',
+          '9ad00b7c276ce6c9464afc73ab1a8723cea1ccad')),
+        75, 47,
     ),
 }
 MATERIAL_OVERRIDE = re.compile(
@@ -766,23 +782,55 @@ def restriction_zones(block, base):
     return names, '\n'.join(output) + '\n'
 
 
-def faction_overrides(lines):
-    if (len(lines) < 7 or not re.fullmatch(r'  SCR_FactionManager(?: "[\da-fA-F]{16}")? \{', lines[1])
-            or lines[2:4] != ['   ID "5ED9088735FF2D8B"', '   Factions {']
-            or lines[-3:] != ['   }', '  }', ' }']):
-        raise ValueError('custom legacy mode child entities')
-    records = '\n'.join(lines[4:-3])
-    if not records or LEGACY.search(records):
-        raise ValueError('custom legacy faction overrides')
-    return f''' {{
-  SCR_FactionManager {{
-   ID "6ADC9BB66394BE46"
-   Factions + {{
-{records}
-   }}
-  }}
- }}
-'''
+MODE_SINGLETONS = {
+    'RadioManagerEntity': ('5ED9088735FF2DEE', 'A79C4E0A43DEB824', '', []),
+    'ScriptedChatEntity': ('5ED9088735FF2DC2', 'A79C4E0A43DEB825', '', []),
+    'ItemPreviewManagerEntity': (
+        '5ED9088735FF2DD5', '5ED9088735FF2DD5',
+        ' : "{9F18C476AB860F3B}Prefabs/World/Game/ItemPreviewManager.et"', [],
+    ),
+    'SCR_EditorSettingsEntity': ('61B4E967E6C20362', '61B4E967E6C20362', '', ['   m_bIsUnlimitedEditorLegal 1']),
+}
+
+
+def mode_children(lines):
+    output = [' {']
+    seen = set()
+    index = 1
+    while index < len(lines) - 1:
+        match = re.fullmatch(r'  (\w+)(?: "[\da-fA-F]{16}")? \{', lines[index])
+        if not match or match[1] in seen:
+            raise ValueError('custom or duplicate legacy mode child: ' + lines[index].strip())
+        kind = match[1]
+        seen.add(kind)
+        end = block_end(lines, index)
+        fields = lines[index + 1:end]
+        if kind == 'SCR_FactionManager':
+            if not fields or fields[0] != '   ID "5ED9088735FF2D8B"':
+                raise ValueError('unexpected legacy faction manager ID')
+            rest = fields[1:]
+            coords = []
+            if rest and rest[0].startswith('   coords ') and FIELD.fullmatch(rest[0].strip()):
+                coords, rest = rest[:1], rest[1:]
+            if len(rest) < 3 or rest[0] != '   Factions {' or block_end(rest, 0) != len(rest) - 1:
+                raise ValueError('custom legacy faction overrides')
+            if LEGACY.search('\n'.join(rest)):
+                raise ValueError('custom legacy faction overrides')
+            output.extend(['  SCR_FactionManager {', '   ID "6ADC9BB66394BE46"', *coords,
+                           '   Factions + {', *rest[1:], '  }'])
+        elif kind in MODE_SINGLETONS:
+            previous, current, prefab, defaults = MODE_SINGLETONS[kind]
+            if (not fields or fields[0] != f'   ID "{previous}"' or len(fields) > 2
+                    or any(not field.startswith('   coords ') or not FIELD.fullmatch(field.strip())
+                           for field in fields[1:])):
+                raise ValueError('custom legacy ' + kind + ' settings')
+            output.extend([f'  {kind}{prefab} {{', f'   ID "{current}"', *fields[1:], *defaults, '  }'])
+        else:
+            raise ValueError('custom legacy mode child: ' + kind)
+        index = end + 1
+    if not seen:
+        raise ValueError('empty legacy mode children')
+    return '\n'.join([*output, ' }', ''])
 
 
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None):
@@ -793,6 +841,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     construction = {}
     jip = {}
     respawn_table_seen = False
+    safe_start_seen = False
     index = 1
     while index < len(root) - 1:
         line = root[index]
@@ -822,6 +871,11 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             if field in jip:
                 raise ValueError('duplicate legacy JIP setting ' + field)
             jip[field] = value
+        elif re.fullmatch(r' m_safeStartTime -?\d+', line) and not safe_start_seen:
+            # The published Core character controller never calls its safe-start handler.
+            if not -2147483648 <= int(line.split()[-1]) <= 2147483647:
+                raise ValueError('invalid inactive legacy safe-start time')
+            safe_start_seen = True
         elif line.strip().partition(' ')[0] in CONSTRUCTION_FIELDS:
             field, _, value = line.strip().partition(' ')
             if field in construction:
@@ -829,7 +883,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             construction[field] = value
         elif line == ' {' and not children:
             end = block_end(root, index)
-            children = faction_overrides(root[index:end + 1])
+            children = mode_children(root[index:end + 1])
             index = end
         else:
             raise ValueError('game mode field or child requires a conversion rule: ' + line.strip())
@@ -1011,9 +1065,15 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 elif kind == 'PS_MissionDescription' and preset and not row['briefingGaps']:
                     continue
                 elif FRAMEWORK.fullmatch(head) and framework_supported and represented:
-                    roots = [field.strip().split()[0] for field in block[1:-1]
-                             if field.startswith(' ') and not field.startswith('  ') and field.strip() != '}']
-                    unsupported = set(roots) - {'coords', 'm_missionEvents', 'm_casualtyFlags', 'm_suppressGameEnd'}
+                    root_fields = [field.strip() for field in block[1:-1]
+                                   if field.startswith(' ') and not field.startswith('  ') and field.strip() != '}']
+                    roots = [field.split()[0] for field in root_fields]
+                    # The legacy framework uses named placements and flag data, not its own transform.
+                    unsupported = set(roots) - {'m_missionEvents', 'm_casualtyFlags', 'm_suppressGameEnd'}
+                    for field in root_fields:
+                        name = field.split()[0]
+                        if roots.count(name) == 1 and FIELD.fullmatch(field):
+                            unsupported.discard(name)
                     if unsupported == {'m_randomFlags'} and roots.count('m_randomFlags') == 1:
                         if any(term['trigger'] == 'startup choice' for term in terms):
                             unsupported.clear()
@@ -1216,8 +1276,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     capacity_notes = {}
     for header, actual in advertised.items():
         if header in REVIEWED_CAPACITY:
-            header_blob, roster, roster_blob, limit, slots_in_source = REVIEWED_CAPACITY[header]
-            if (source.files[header] == header_blob and source.files.get(roster) == roster_blob
+            header_blob, rosters, limit, slots_in_source = REVIEWED_CAPACITY[header]
+            if (source.files[header] == header_blob
+                    and all(source.files.get(roster) == blob for roster, blob in rosters)
                     and actual == limit and slots == slots_in_source):
                 capacity_notes[header] = f'{limit} advertised players and {slots} original roster entries preserved.'
     if ai_faction:
