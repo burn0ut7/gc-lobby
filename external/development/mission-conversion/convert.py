@@ -149,9 +149,17 @@ def main():
             parser.error(str(exc))
         if rhs_database:
             report['rhsResourceDatabaseSHA256'] = sha256(rhs_database.data).hexdigest()
-    civilian = ('22E43956740A6794', 'Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized.et')
-    if args.batch and stock and stock.contains(*civilian):
-        external_ai[civilian[0]] = civilian[1]
+    stock_ai = {'22E43956740A6794': 'Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized.et'}
+    stock_ai.update({
+        guid: f'Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_{role}.et'
+        for guid, role in {
+            '23ADBBC31B6A3DC6': 'AR', '426F7FAAC77A2A6D': 'PL', '1C78331E156A3D65': 'AT',
+            '631158F6898738A4': 'AAT', '333DA6244C7DA34C': 'SR', '5436629450D8387A': 'SL',
+            'DCB41B3746FDD1BE': 'Rifleman', '8E0FE664CE7D1CA9': 'GL',
+        }.items()
+    })
+    if args.batch and stock:
+        external_ai.update({guid: path for guid, path in stock_ai.items() if stock.contains(guid, path)})
     forced_external = {}
     if args.units:
         source_units = Snapshot(args.units, args.units_source)
@@ -442,6 +450,8 @@ def main():
                     hidden_briefings = {page.name: order for order, page in indexed
                                         if names[page.name] == 1 and page.audience == BriefingAudience.HIDDEN}
                 derived_audit = []
+                damage_flags_before_match = {flag for candidate in row.get('damageFlagCandidates', {}).values()
+                                             for flag in candidate.get('placedDestructionFlags', [])}
                 rules, outcome_audit, gap = compile_outcomes(
                     source, world, captures, compound=args.batch, notification_audit=review,
                     objective_flags=objective_flags, extraction_spawns=delayed.spawns if delayed else None,
@@ -450,7 +460,8 @@ def main():
                     resolve_spawn=partial(resolve_spawn, objectives) if args.batch else None,
                     resolve_crew=resolve_crew if args.batch else None, hidden_briefings=hidden_briefings,
                     derived_audit=derived_audit,
-                    match_only_flags={asset['flag'] for asset in objectives.values() if asset.get('destroyed')})
+                    match_only_flags=damage_flags_before_match |
+                    {asset['flag'] for asset in objectives.values() if asset.get('destroyed')})
                 outcome = {'events': outcome_audit}
                 if derived_audit:
                     outcome['derivedFlags'] = derived_audit
