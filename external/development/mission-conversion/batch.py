@@ -1828,13 +1828,21 @@ def unused_flag_sampling(source, world, path, line, framework):
     end = block_end(framework, start)
     flags = []
     index = start + 1
+    name = r'"([\w.-]+(?: +[\w.-]+)*)"'
     while index < end:
-        if not re.fullmatch(r'  TILW_FlagSampling "\{[\da-fA-F]{16}\}" \{', framework[index]):
+        kind = re.fullmatch(r'  TILW_(FlagSampling|RandomFlag) "\{[\da-fA-F]{16}\}" \{', framework[index])
+        if not kind:
             return []
         stop = block_end(framework, index)
-        data = properties(framework[index + 1:stop], {'m_flagNames'})
-        names = data.get('m_flagNames', '')
-        name = r'"([\w.-]+(?: +[\w.-]+)*)"'
+        if kind[1] == 'FlagSampling':
+            data = properties(framework[index + 1:stop], {'m_flagNames'})
+            names = data.get('m_flagNames', '')
+        else:
+            data = properties(framework[index + 1:stop], {'m_flagName', 'm_chance'})
+            chance = data.get('m_chance', '0.5')
+            names = data.get('m_flagName', '')
+            if not re.fullmatch(NUMBER, chance) or not 0 <= Decimal(chance) <= 1 or not re.fullmatch(name, names):
+                return []
         if not re.fullmatch(rf'(?:{name}\s*)+', names):
             return []
         flags.extend(re.findall(name, names))
@@ -2485,7 +2493,8 @@ def reviewed_spawn_type(source, resource, path, types):
 
 
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
-                 resolve_crew_config=None, shadowed_names=(), missing_waypoint=None, self_waypoints=()):
+                 resolve_crew_config=None, shadowed_names=(), missing_waypoint=None, self_waypoints=(),
+                 capture_latches=None):
     root = PLACED_SPAWNER.fullmatch(block[0])
     if not root:
         raise ValueError('unverified placed spawner prefab')
@@ -2544,7 +2553,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         if config is not None and (not ref or (not ref[2].startswith('Prefabs/Vehicles/') and
                                                not reviewed_spawn_type(source, ref[1].upper(), ref[2],
                                                                        ('Vehicle : ', 'Tank : ', 'RHS_Tank : ')))):
-            raise ValueError('crewed spawner needs a verified vehicle')
+            vehicle = ref[0] if ref else data.get('m_prefab', '')
+            raise ValueError(f'crewed spawner {name or index + 1} needs a verified vehicle: {vehicle}')
         if waypoints and not group and config is None:
             raise ValueError('spawner waypoints need a verified AI group')
         key = f'{location}/spawner/{index}'
@@ -2557,7 +2567,9 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         term = {'trigger': 'Match start'}
         if flag != '""':
             check = captures.get(flag, ())
-            if any(line.strip() == 'm_bStopAfterFirstChange 1' for line in check):
+            if capture_latches and flag[1:-1] in capture_latches:
+                term = {'trigger': 'area capture', 'flag': flag[1:-1]}
+            elif any(line.strip() == 'm_bStopAfterFirstChange 1' for line in check):
                 term = {'trigger': 'area capture', 'flag': flag[1:-1]}
                 if flag[1:-1] not in used_flags and any('m_Messages ' in line for line in check):
                     raise ValueError('capture-gated spawner needs a shared status-message owner')
@@ -2581,7 +2593,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             seconds, action = render_spawn({**details, 'delay': delay}, spawn_key, kind, fields)
             actions[seconds].extend(action)
         label = 'GC_MigratedSpawn_' + guid(key)
-        rendered = render_outcome(key, label, term, actions, captures, {flag}, {})
+        rendered = render_outcome(key, label, term, actions, captures, {flag}, capture_latches or {})
         if term['trigger'] == 'interaction flag':
             rendered[3:3] = [f'      GC_GameModeStateCondition "{{{guid(key + "/match")}}}" {{',
                              '       m_eGameModeState GAME', '      }']
@@ -2633,6 +2645,7 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
     placements, schedules, audit = {}, [], []
     layers = {path: text for path in source.layers[world.lower()]
               if 'TILW_PrefabSpawnerEntity' in (text := source.read(path))}
+    capture_latches = reversible_spawn_captures(source, world, layers, captures)
     shadowed = shadowed_crew_names(source, world, layers) if any('m_entityName ' in text for text in layers.values()) else ()
     for layer, text in layers.items():
         try:
@@ -2654,7 +2667,8 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                     native, scheduled, info = placed_spawn(
                         block, f'{layer}:{line}', resolve_spawn, captures, flags, used_flags, resolve_crew,
                         source=source, resolve_crew_config=resolve_crew_config, shadowed_names=shadowed,
-                        missing_waypoint=missing_waypoint, self_waypoints=self_waypoints)
+                        missing_waypoint=missing_waypoint, self_waypoints=self_waypoints,
+                        capture_latches=capture_latches)
                 except ValueError as exc:
                     blockers.append({'rule': 'TILW_PrefabSpawnerEntity', 'file': layer, 'line': line,
                                      'detail': str(exc)})
@@ -2665,7 +2679,36 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                 audit.extend({'file': layer, 'line': line, 'startupChoice': None, **entry} for entry in info)
         except ValueError as exc:
             blockers.append({'rule': 'placed spawner layer', 'file': layer, 'detail': str(exc)})
+    used_captures = {entry['flag'] for entry in audit if entry['trigger'] == 'area capture'}
+    latches = {flag: name for flag, name in capture_latches.items() if flag in used_captures}
+    if latches:
+        schedules.insert(0, '\n'.join(render_capture_trackers(world, latches, captures, set())) + '\n')
     return placements, ''.join(schedules), audit
+
+
+def reversible_spawn_captures(source, world, layers, captures):
+    reads = placed_spawner_flag_reads(source, layers)
+    candidates = [
+        flag for flag, check in captures.items()
+        if reads[flag[1:-1]] and not any(
+            line.strip().startswith(('m_bStopAfterFirstChange ', 'm_Messages ')) for line in check)
+    ]
+    if not candidates:
+        return {}
+    scripts = script_text(source)
+    references = '\n'.join(damage_flag_reference_text(source.read(path)) for path in sorted(source.closure(world))
+                           if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+    latches = {}
+    for quoted in candidates:
+        flag = quoted[1:-1]
+        # The spawner schedules once on the first positive observation. Other
+        # literal consumers can continue to observe the area's reversible state.
+        if (flag not in scripts
+                and references.count(quoted) == 1 + reads[flag] + literal_flag_reads(references, flag)):
+            name = 'GC_MigrationSpawnCapture_' + guid(world + '/spawn capture/' + flag)
+            if name not in references and name not in scripts:
+                latches[flag] = name
+    return latches
 
 
 def resource_aliases(workshop, units, stock):

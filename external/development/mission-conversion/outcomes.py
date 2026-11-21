@@ -298,11 +298,14 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
             faction, ratio = ai[flag]
             return {'trigger': 'AI loss', 'flag': flag[1:-1], 'faction': faction, 'ratio': ratio}
         if flag in captures:
+            check = captures[flag]
             if invert == '0':
                 return {'trigger': 'area capture', 'flag': flag[1:-1]}
-            if invert == '1' and any(line.strip() == 'm_bStopAfterFirstChange 1' for line in captures[flag]):
+            if invert == '1' and any(line.strip() == 'm_bStopAfterFirstChange 1' for line in check):
                 return {'trigger': 'area capture', 'flag': flag[1:-1], 'inverted': True}
-            if invert == '1' and depth:
+            immediate = (any(line.strip() == 'm_fSeconds 0' for line in check)
+                         and not any(line.strip().startswith(('m_Messages ', 'm_bSkipDiscovery ')) for line in check))
+            if invert == '1' and (depth or immediate):
                 # Both copies advance in the area tracker on the same samples. Keep
                 # status messages on the required positive consumer.
                 return {'trigger': 'area capture', 'flag': flag[1:-1], 'inverted': True,
@@ -1028,7 +1031,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             startup_samples_audit.extend(samples)
     capture_terms = [item for _, _, _, term, _ in parsed for item in leaves(term)
                      if item['trigger'] == 'area capture']
-    live_negations = {item['flag'] for item in capture_terms if item.get('liveCapture')}
+    live_negations = {item['flag'] for item in capture_terms if item.get('liveCapture') and any(
+        line.strip().startswith('m_Messages ') for line in captures[f'"{item["flag"]}"'])}
     if not live_negations <= {item['flag'] for item in capture_terms if not item.get('inverted')}:
         return [], audit, 'a live capture negation needs a positive capture consumer'
     tracked = {item['flag'] for item in capture_terms if item.get('inverted') and not item.get('liveCapture')}

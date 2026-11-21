@@ -23,6 +23,10 @@ CREW_CONFIG_FIELD = 'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID
 CREW_CONFIG_REFERENCE = re.compile(CREW_CONFIG_FIELD + r' : ' + REF.pattern + r' \{')
 SEAT_TYPES = ('Pilot', 'Turret', 'Cargo')
 WORKSHOP_VEHICLES = {
+    '0A17C0D659FA2473': ('TacticalFlava-Turrets_DEADC0DE00000007',
+                         'Prefabs/Weapons/Tripods/6G10/Tripod_6G10_AGS17.et'),
+    '19A9036206E23B23': ('TacticalFlava-TIGR_DEADC0DE00000003',
+                         'Prefabs/Vehicles/Wheeled/TIGR/AGS/GAZ_TIGR_v2_AGS17_Tan.et'),
     '0144F571F1998FC4': ('WCS_BMP-1_5E524E4FEECCA92B', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_FIA.et'),
     '1A407760EEAE4156': ('ZU-23_5C9AD9EF76F6B5EA', 'Prefabs/Vehicles/Static/BaconZU23/BaconZU23_Turret_Deployed.et'),
     '9AEDF323A812F9ED': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2_AFRF.et'),
@@ -40,6 +44,8 @@ WORKSHOP_VEHICLES = {
                          'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM_Green.et'),
     '7BC76F92B882889D': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM.et'),
+    '7B73B9445F145E6E': ('TacticalFlava-TIGR_DEADC0DE00000003',
+                         'Prefabs/Vehicles/Wheeled/TIGR/KORD/GAZ_TIGR_v2_KORD_Tan.et'),
     '7ACFD8FA081996F6': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM_1P29.et'),
     '8E7F7A0368CE8805': ('TacticalFlava-TIGR_DEADC0DE00000003',
@@ -97,6 +103,7 @@ NSV = ('29F0CC704A582154', 'Prefabs/Weapons/Tripods/6T7/Tripod_6T7_NSV.et')
 NSV_SPP = ('3EA26CFD7A202636', 'Prefabs/Weapons/Tripods/6T7/Tripod_6T7_NSV_SPP.et')
 SINGLE_SEAT_TURRETS = {
     PKM, NSV, NSV_SPP,
+    ('0A17C0D659FA2473', 'Prefabs/Weapons/Tripods/6G10/Tripod_6G10_AGS17.et'),
     ('73530808E4B455BA', 'Prefabs/Weapons/Tripods/Tripod_M3_M2HB.et'),
     ('887DB60486A18575', 'Prefabs/Weapons/Tripods/Tripod_M122_MG_M60.et'),
 }
