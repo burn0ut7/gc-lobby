@@ -65,6 +65,17 @@ class GC_BriefingMarkerComponent : ScriptComponent
 	[Attribute("1000", UIWidgets.EditBox, "Draw order while hovered. Use -1 to keep the base draw order.")]
 	protected int m_iHoverZOrder;
 
+	[Attribute("0", UIWidgets.CheckBox, "Use the first child of this named marker as a static map preview camera anchor.")]
+	protected bool m_bPreviewOnHover;
+
+	IEntity GetHoverCameraAnchor()
+	{
+		IEntity owner = GetOwner();
+		if (!m_bPreviewOnHover || !owner || owner.GetName().IsEmpty())
+			return null;
+		return owner.GetChildren();
+	}
+
 	override protected void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);

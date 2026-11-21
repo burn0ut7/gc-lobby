@@ -17,7 +17,7 @@ from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, MISSING_STATUS, cond
 from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, inheritance, reviewed_native_ancestry
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
-from markers import DEST as MAP_MARKER_PREFAB, convert_layer
+from markers import DEST as MAP_MARKER_PREFAB, convert_hover_camera, convert_layer
 from outcomes import FRAMEWORK, SCRIPT_FLAG_APIS, leaves, render as render_outcome, render_capture_trackers
 import polygon_capture
 from respawns import authored_respawn_fields, read_respawns
@@ -2779,6 +2779,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append(spawners[(layer, line)])
                 elif kind == 'PS_ManualMarker':
                     result.append(convert_layer(body, dev, draw_order=True)[0])
+                elif kind == 'PS_ManuaMarkerRender':
+                    result.append(convert_hover_camera(block, f'{layer}:{line}'))
                 elif 'TILW_AOLimit.et' in head or 'TILW_MapShape.et' in head or PASSIVE_COVER.fullmatch(head):
                     converted, audit = convert_boundaries(body, allow_public_faction_color=True, extended_shapes=True)
                     if not converted or any('gap' in item for item in audit.values()):
@@ -3191,6 +3193,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Native cover framing follows map opens. Compare framing and zoom against the legacy cover.')
     if converted_passive_cover:
         remaining.append('Compare faction-only cover fill and confirm it leaves the map view unchanged.')
+    if any(isinstance(body, str) and 'm_bPreviewOnHover 1' in body for body in draft.values()):
+        remaining.append('Compare hover camera framing, faction visibility and cleanup on map close.')
     if any(isinstance(text, str) and '{3B62608C6AB716B9}' in text and 'm_fSize 128000\n' in text
            for text in draft.values()):
         remaining.append('Compare the oversized cover marker at the authored scale across map zoom levels.')

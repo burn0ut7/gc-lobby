@@ -2,8 +2,13 @@
 //! pattern: raise the marker, reveal its label, and show an orange icon glow.
 class GC_BriefingMarkerWidgetComponent : SCR_ScriptedWidgetComponent
 {
+	protected static const int PREVIEW_CAMERA_INDEX = 9;
+	protected static GC_BriefingMarkerWidgetComponent s_ActivePreview;
 	protected Widget m_wLabel;
 	protected ImageWidget m_wGlow;
+	protected RenderTargetWidget m_wPreview;
+	protected IEntity m_PreviewAnchor;
+	protected SCR_PIPCamera m_PreviewCamera;
 	protected int m_iDefaultZOrder;
 	protected int m_iHoverZOrder = GC_BriefingMarker.DEFAULT_HOVER_Z_ORDER;
 
@@ -12,10 +17,24 @@ class GC_BriefingMarkerWidgetComponent : SCR_ScriptedWidgetComponent
 		super.HandlerAttached(w);
 		m_wLabel = w.FindAnyWidget("BriefingMarkerLabel");
 		m_wGlow = ImageWidget.Cast(w.FindAnyWidget("BriefingMarkerGlow"));
+		m_wPreview = RenderTargetWidget.Cast(w.FindAnyWidget("BriefingMarkerPreview"));
 		m_iDefaultZOrder = w.GetZOrder();
 		if (m_wLabel)
 			m_wLabel.SetVisible(true);
 		SetHovered(false);
+	}
+
+	override void HandlerDeattached(Widget w)
+	{
+		StopPreview();
+		super.HandlerDeattached(w);
+	}
+
+	void SetPreviewAnchor(IEntity anchor)
+	{
+		m_PreviewAnchor = anchor;
+		if (m_PreviewAnchor && m_wLabel)
+			m_wLabel.SetVisible(false);
 	}
 
 	override bool OnMouseEnter(Widget w, int x, int y)
@@ -50,6 +69,12 @@ class GC_BriefingMarkerWidgetComponent : SCR_ScriptedWidgetComponent
 
 	protected void SetHovered(bool hovered)
 	{
+		if (m_PreviewAnchor && m_wLabel)
+			m_wLabel.SetVisible(hovered);
+		if (hovered)
+			StartPreview();
+		else
+			StopPreview();
 		if (m_wGlow)
 			m_wGlow.SetVisible(hovered);
 		if (m_wRoot)
@@ -58,6 +83,44 @@ class GC_BriefingMarkerWidgetComponent : SCR_ScriptedWidgetComponent
 				m_wRoot.SetZOrder(m_iHoverZOrder);
 			else
 				m_wRoot.SetZOrder(m_iDefaultZOrder);
+		}
+	}
+
+	protected void StartPreview()
+	{
+		if (!m_PreviewAnchor || !m_wPreview || m_PreviewCamera || !GC_LobbyManager.GetManager())
+			return;
+		if (s_ActivePreview)
+			s_ActivePreview.StopPreview();
+
+		BaseWorld world = m_PreviewAnchor.GetWorld();
+		EntitySpawnParams params = new EntitySpawnParams();
+		params.TransformMode = ETransformMode.WORLD;
+		m_PreviewAnchor.GetWorldTransform(params.Transform);
+		m_PreviewCamera = SCR_PIPCamera.Cast(GetGame().SpawnEntity(SCR_PIPCamera, world, params));
+		if (!m_PreviewCamera)
+			return;
+		s_ActivePreview = this;
+		m_PreviewCamera.SetVerticalFOV(90);
+		m_PreviewCamera.SetNearPlane(0.1);
+		m_PreviewCamera.SetFarPlane(1000);
+		m_PreviewCamera.SetCameraIndex(PREVIEW_CAMERA_INDEX);
+		m_PreviewCamera.ApplyProps(PREVIEW_CAMERA_INDEX);
+		m_wPreview.SetWorld(world, PREVIEW_CAMERA_INDEX);
+		m_wPreview.SetResolutionScale(1, 1);
+		m_wPreview.SetVisible(true);
+	}
+
+	void StopPreview()
+	{
+		if (m_wPreview)
+			m_wPreview.SetVisible(false);
+		if (s_ActivePreview == this)
+			s_ActivePreview = null;
+		if (m_PreviewCamera)
+		{
+			delete m_PreviewCamera;
+			m_PreviewCamera = null;
 		}
 	}
 }
@@ -216,7 +279,16 @@ class GC_BriefingMarkerLayer
 				PrintFormat("GC | Briefing Marker | event=marker-create result=warning marker=%1 reason=handler", marker.GetName(), level: LogLevel.WARNING);
 			}
 			else
+			{
 				markerHandler.SetDrawOrder(marker.GetZOrder(), marker.GetHoverZOrder());
+				IEntity entity = GetGame().GetWorld().FindEntityByName(marker.GetName());
+				if (entity)
+				{
+					GC_BriefingMarkerComponent source = GC_BriefingMarkerComponent.Cast(entity.FindComponent(GC_BriefingMarkerComponent));
+					if (source)
+						markerHandler.SetPreviewAnchor(source.GetHoverCameraAnchor());
+				}
+			}
 
 			markerImage.SetRotation(marker.GetRotation());
 			markerImage.SetColorInt(marker.GetColor());
@@ -330,7 +402,12 @@ class GC_BriefingMarkerLayer
 		foreach (Widget markerRoot : m_aMarkerRoots)
 		{
 			if (markerRoot)
+			{
+				GC_BriefingMarkerWidgetComponent handler = GC_BriefingMarkerWidgetComponent.Cast(markerRoot.FindHandler(GC_BriefingMarkerWidgetComponent));
+				if (handler)
+					handler.StopPreview();
 				markerRoot.RemoveFromHierarchy();
+			}
 		}
 		m_aMarkerRoots.Clear();
 		m_aMarkerImages.Clear();

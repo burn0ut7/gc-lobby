@@ -2,14 +2,22 @@
 import json
 from pathlib import Path
 import re
-from briefings import block_end, properties
+from briefings import block_end, guid, properties
 from launchers import META_NAME
+from scenery import FIELD
 
 BASE = 'CD85ADE9E0F54679'
 LEGACY = re.compile(r'^(?P<group>\$grp )?PS_ManualMarker(?: (?P<name>[\w.\-]+))?'
                     r' : "\{(?P<guid>[A-Fa-f0-9]{16})\}(?P<path>[^"]+)" \{$')
 PRESETS = json.loads(Path(__file__).with_name('marker_presets.json').read_text(encoding='utf-8'))
 DEST = '{924D4B5FA0B24B22}Prefabs/Logic/Mission/MapMarker.et'
+HOVER_CAMERA = re.compile(r'PS_ManuaMarkerRender(?: (?P<name>[\w.-]+))? : '
+                          r'"\{88D799C5DED9EC70\}PrefabsEditable/Markers/EditableMarkerRender.et" \{')
+CAMERA_ANCHOR = re.compile(
+    r' \{\n  GenericEntity \{\n   ID "5F36D427DE745527"\n'
+    r'(?P<transform>(?:   (?:coords|angles|angle[XYZ]) [^\n]+\n)*)'
+    r'   \{\n    SCR_CameraBase "[\da-fA-F]{16}" \{\n     ID "5F36D427B0D92373"\n'
+    r'     coords [^\n]+\n    \}\n   \}\n  \}\n \}')
 FIELDS = {
     'm_sImageSet': 'm_sImageSetOrImage', 'm_sImageSetGlow': 'm_sHighlightImageSet',
     'm_sQuadName': 'm_sQuadName', 'm_MarkerColor': 'm_Color',
@@ -117,6 +125,27 @@ def instance(lines, name, inherited=None, *, draw_order=False):
     output.extend(['  }', *protection, ' }'])
     output.extend(f' {k} {v}' for k, v in merged.items() if k in TRANSFORM)
     return '\n'.join(output + ['}'])
+
+
+def convert_hover_camera(block, source_key):
+    root = HOVER_CAMERA.fullmatch(block[0])
+    if not root:
+        raise ValueError('unverified hover-camera marker prefab')
+    name = root['name'] or ('GC_HoverMarker_' + guid(source_key))
+    fields = block[1:-1]
+    anchor = []
+    if ' {' in fields:
+        split = fields.index(' {')
+        child = CAMERA_ANCHOR.fullmatch('\n'.join(fields[split:]))
+        if not child or not all(FIELD.fullmatch(line.strip()) for line in child['transform'].splitlines()):
+            raise ValueError('unverified hover-camera anchor override')
+        fields, anchor = fields[:split], child['transform'].splitlines()
+    marker = instance(fields, ' ' + name, draw_order=True)
+    marker = marker.replace('  GC_BriefingMarkerComponent "{00C8292F836D4D6F}" {\n',
+                            '  GC_BriefingMarkerComponent "{00C8292F836D4D6F}" {\n   m_bPreviewOnHover 1\n', 1)
+    # The legacy render handler uses the transform of the anchor, ignoring its camera child.
+    return '\n'.join([marker.rsplit('\n}', 1)[0], ' {', '  GenericEntity {',
+                      *anchor, '  }', ' }', '}', ''])
 
 
 def relocate_images(text, dev):
