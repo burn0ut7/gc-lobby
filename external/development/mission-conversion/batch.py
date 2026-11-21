@@ -737,6 +737,8 @@ TRIGGER = re.compile(r'(?P<group>\$grp )?TILW_(?P<kind>Extraction|Faction)Trigge
 
 def area_rules(source, world):
     conditions, placements, audit = {}, {}, {}
+    references = None
+    scripts = None
     for layer in source.layers[world.lower()]:
         text = source.read(layer)
         if 'TILW_ExtractionTriggerEntity' not in text and 'TILW_FactionTriggerEntity' not in text:
@@ -748,6 +750,7 @@ def area_rules(source, world):
                 continue
             root = shape or match
             result, areas, capture_details = {}, [], {}
+            flags = set()
             try:
                 for name, fields in polygon_capture.members(block, root['group'], root['name']):
                     trigger = match
@@ -755,8 +758,9 @@ def area_rules(source, world):
                         placement, (trigger, fields), vertices = polygon_capture.read(fields, TRIGGER)
                     flag_field = next(value.strip() for value in fields if value.strip().startswith('m_flagName '))
                     flag = flag_field.removeprefix('m_flagName ')
-                    if not re.fullmatch(r'"\w+"', flag) or flag in conditions or flag in result:
+                    if not re.fullmatch(r'"\w+"', flag) or flag in conditions or flag in flags:
                         raise ValueError('invalid or duplicate area flag')
+                    flags.add(flag)
                     area_name = 'GC_MigrationArea_' + flag[1:-1]
                     if shape or trigger['kind'] == 'Faction':
                         area_name = name or area_name
@@ -768,13 +772,26 @@ def area_rules(source, world):
                         rule = built[flag]
                     else:
                         raise ValueError('inconsistent trigger identity')
+                    if (trigger['kind'] == 'Faction' and not name and not shape
+                            and not any('m_Messages ' in item for item in rule)):
+                        if references is None:
+                            references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                                                   if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+                            scripts = script_text(source)
+                        if references.count(flag) == 1 and flag[1:-1] not in scripts:
+                            capture_details[flag[1:-1]]['unused'] = True
+                            continue
                     if shape:
                         area = '\n'.join([f'PolylineShapeEntity {area_name} {{', *placement, '}', ''])
                         capture_details.setdefault(flag[1:-1], {'area': area_name})
                         capture_details[flag[1:-1]]['polygonVertices'] = vertices
                     result[flag] = rule
                     areas.append(area)
-            except (StopIteration, ArithmeticError, KeyError, ValueError):
+            except StopIteration:
+                audit[f'{layer}:{line}'] = {'gap': 'area trigger has no explicit flag'}
+                continue
+            except (ArithmeticError, KeyError, ValueError) as exc:
+                audit[f'{layer}:{line}'] = {'gap': str(exc)}
                 continue
             conditions.update(result)
             placements[(layer, line)] = ({flag[1:-1] for flag in result}, ''.join(areas))
@@ -1144,6 +1161,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     areas = area_placements[(layer, line)][1]
                     area_names.extend(re.findall(r'^(?:GC_RadiusAreaEntity|PolylineShapeEntity) ([\w.-]+) ', areas, re.M))
                     result.append(areas)
+                elif (gap := row.get('captureCandidate', {}).get(f'{layer}:{line}', {}).get('gap')):
+                    blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': gap})
                 elif (layer, line) in interaction_placements:
                     result.append(interaction_placements[(layer, line)])
                 elif (layer, line) in spawners:
@@ -1341,7 +1360,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if damage_flags:
         remaining.append('Compare damage notification timing in Match and confirm no objective damage during staging.')
     if converted_cover:
-        remaining.append('Native cover framing follows map opens. Auxiliary outlines use screen width instead of metres.')
+        remaining.append('Native cover framing follows map opens. Compare framing and zoom against the legacy cover.')
     if any(spawn['startupChoice'] for spawn in prefab_spawns):
         remaining.append('Compare pregame selection, spawn timing and faction-specific briefing and map updates.')
     if any(not spawn['startupChoice'] for spawn in prefab_spawns):

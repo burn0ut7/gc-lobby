@@ -116,6 +116,9 @@ def main():
             parser.error(str(exc))
         if rhs_database:
             report['rhsResourceDatabaseSHA256'] = sha256(rhs_database.data).hexdigest()
+    civilian = ('22E43956740A6794', 'Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized.et')
+    if args.batch and stock and stock.contains(*civilian):
+        external_ai[civilian[0]] = civilian[1]
     if args.units:
         source_units = Snapshot(args.units, args.units_source)
         dev_units = Snapshot(args.units, args.units_dev)
