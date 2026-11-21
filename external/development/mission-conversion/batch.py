@@ -1006,9 +1006,10 @@ MODE_SINGLETONS = {
     ),
     'SCR_EditorSettingsEntity': ('61B4E967E6C20362', '61B4E967E6C20362', '', ['   m_bIsUnlimitedEditorLegal 1']),
 }
+NO_PHOTO_EDITOR = '{1197E0F8B1D64714}Prefabs/Editor/GC_EditorManagerNoPhoto.et'
 
 
-def mode_children(lines):
+def mode_children(lines, disable_photo=False):
     output = [' {']
     seen = set()
     index = 1
@@ -1039,19 +1040,26 @@ def mode_children(lines):
                     or any(not field.startswith('   coords ') or not FIELD.fullmatch(field.strip())
                            for field in fields[1:])):
                 raise ValueError('custom legacy ' + kind + ' settings')
-            output.extend([f'  {kind}{prefab} {{', f'   ID "{current}"', *fields[1:], *defaults, '  }'])
+            output.extend([f'  {kind}{prefab} {{', f'   ID "{current}"', *fields[1:], *defaults])
+            if kind == 'SCR_EditorSettingsEntity' and disable_photo:
+                output.append(f'   m_EditorManagerPrefab "{NO_PHOTO_EDITOR}"')
+            output.append('  }')
         else:
             raise ValueError('custom legacy mode child: ' + kind)
         index = end + 1
     if not seen:
         raise ValueError('empty legacy mode children')
+    if disable_photo and 'SCR_EditorSettingsEntity' not in seen:
+        raise ValueError('disabled ArmaVision needs a verified editor settings placement')
     return '\n'.join([*output, ' }', ''])
 
 
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
-    weather, environment, freeze, children = '', '', 0, ''
+    weather, environment, freeze = '', '', 0
+    child_placements = []
+    disable_photo = None
     transform = {}
     immediate_release = False
     construction = {}
@@ -1095,18 +1103,23 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             if not -2147483648 <= int(line.split()[-1]) <= 2147483647:
                 raise ValueError('invalid inactive legacy safe-start time')
             safe_start_seen = True
+        elif re.fullmatch(r' m_bDisableArmaVision [01]', line) and disable_photo is None:
+            disable_photo = line.endswith(' 1')
         elif line.strip().partition(' ')[0] in CONSTRUCTION_FIELDS:
             field, _, value = line.strip().partition(' ')
             if field in construction:
                 raise ValueError('duplicate construction progress field ' + field)
             construction[field] = value
-        elif line == ' {' and not children:
+        elif line == ' {' and not child_placements:
             end = block_end(root, index)
-            children = mode_children(root[index:end + 1])
+            child_placements = root[index:end + 1]
             index = end
         else:
             raise ValueError('game mode field or child requires a conversion rule: ' + line.strip())
         index += 1
+    if disable_photo and not child_placements:
+        raise ValueError('disabled ArmaVision needs a verified editor settings placement')
+    children = mode_children(child_placements, disable_photo) if child_placements else ''
     jip_fields = ''
     if jip:
         mode = LEGACY_JIP_MODES.get(jip.get('m_eJIPState', 'Manual'))
