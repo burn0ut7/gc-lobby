@@ -19,7 +19,7 @@ from catalog import Snapshot, WORLD, compare
 from delayed_extraction import collect as collect_delayed_extraction
 from event_actions import ACTIONS
 from events import world_events
-from groups import group_layer, rhs_ai_characters
+from groups import group_layer, rhs_ai_characters, verified_stock_ai_group
 import gwotline
 import hnevice
 import industrial
@@ -119,7 +119,10 @@ def main():
         report['sourceUnits'] = source_units.commit
         report['targetUnits'] = dev_units.commit
 
-    def resolve_spawn(objectives, resource, path):
+    def resolve_spawn(objectives, resource, path, *, group=False):
+        if group:
+            owners = (locally_owned, source_units.resources, dev_units.resources)
+            return path if verified_stock_ai_group(resource, path, stock, owners) else None
         return batch.spawn_resource(source, dev, source_units, dev_units, stock, resource, path, objectives)
 
     def resolve_crew(resource, path):

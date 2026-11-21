@@ -11,6 +11,7 @@ NUMBER = r'\d+(?:\.\d+)?'
 CLOCK_FIELDS = ('m_iHours', 'm_iMinutes', 'm_iSeconds')
 FACTION_VISIBILITY = re.compile(r'TILW_FactionVisibility "\{[\da-fA-F]{16}\}" \{([^{}]*)\}')
 SPAWN = re.compile(r'    TILW_SpawnPrefabInstruction "\{([\da-fA-F]{16})\}" \{')
+GROUP_SPAWN = re.compile(r'    TILW_SpawnGroupInstruction "\{([\da-fA-F]{16})\}" \{')
 VEHICLE_SPAWN = re.compile(r'    TILW_SpawnVehicleInstruction "\{([\da-fA-F]{16})\}" \{')
 SPAWN_FIELDS = {'m_executionDelay', 'm_prefab', 'm_locationName', 'm_setEntityName'}
 
@@ -137,11 +138,22 @@ def spawn_details(data, resolve_resource):
             'prefab': f'"{{{ref[1]}}}{path}"', 'delay': delay}
 
 
-def prefab_spawn(lines, key, resolve_resource):
-    details = spawn_details(properties(lines, SPAWN_FIELDS), resolve_resource)
-    seconds, body = render_spawn(details, key)
-    return seconds, body, {'instruction': 'TILW_SpawnPrefabInstruction', 'delaySeconds': details['delay'],
+def prefab_spawn(lines, key, resolve_resource, group=False):
+    allowed = SPAWN_FIELDS | {'m_waypointNames'} if group else SPAWN_FIELDS
+    data = properties(lines, allowed)
+    details = spawn_details(data, resolve_resource)
+    fields = []
+    waypoints = target_names(data['m_waypointNames']) if data.get('m_waypointNames') else []
+    if waypoints:
+        fields = ['        m_aWaypoints {', *('         ' + name for name in waypoints), '        }']
+    kind = 'GC_AIGroupSpawn' if group else 'GC_PrefabSpawn'
+    instruction = 'TILW_SpawnGroupInstruction' if group else 'TILW_SpawnPrefabInstruction'
+    seconds, body = render_spawn(details, key, kind, fields)
+    audit = {'instruction': instruction, 'delaySeconds': details['delay'],
                           'spawnAnchor': details['anchor'], 'spawnName': details['area'], 'prefab': details['prefab']}
+    if group:
+        audit['groupWaypoints'] = [name[1:-1] for name in waypoints]
+    return seconds, body, audit
 
 
 def split_crew_block(lines, field):

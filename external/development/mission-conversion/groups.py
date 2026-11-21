@@ -58,6 +58,18 @@ def rhs_ai_characters(workshop):
     return {guid: path for guid, path in characters.items() if registry.contains(guid, path)}, registry
 
 
+def verified_stock_ai_group(guid, path, stock, owned_resources):
+    spec = STOCK_AI_GROUPS.get(guid)
+    if not spec or not stock or path != spec['path']:
+        return None
+    references = [(guid, path), *spec['inheritedGroups'], *spec['slots']]
+    if all(stock.contains(resource, registered_path)
+           and not any(resource in owned for owned in owned_resources)
+           for resource, registered_path in references):
+        return spec
+    return None
+
+
 def only_path(snapshot, guid):
     paths = snapshot.resources.get(guid.upper(), [])
     if len(paths) != 1:
@@ -483,11 +495,8 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
                               stock=stock, locally_owned=locally_owned, reviewed_members=reviewed_members)
         elif stock_group:
             resource, dest = guid, stock_group['path']
-            if (REF.search(lines[i])[2] != dest or not stock.contains(resource, dest)
-                    or any(parent in locally_owned or parent in source_units.resources or parent in dev_units.resources
-                           or not stock.contains(parent, path) for parent, path in stock_group['inheritedGroups'])
-                    or any(slot in locally_owned or slot in source_units.resources or slot in dev_units.resources
-                           or not stock.contains(slot, path) for slot, path in stock_group['slots'])):
+            if not verified_stock_ai_group(guid, REF.search(lines[i])[2], stock,
+                                           (locally_owned, source_units.resources, dev_units.resources)):
                 raise ValueError('unverified native AI group ancestry ' + guid)
             convert = partial(convert_ai_instance, guid=guid, source_units=source_units, dev_units=dev_units,
                               locally_owned=locally_owned, external_ai=external_ai or {},

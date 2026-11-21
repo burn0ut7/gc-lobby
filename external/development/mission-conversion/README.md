@@ -36,6 +36,8 @@ After reviewing a batch, pass its launcher paths to the installer. Use `--dry-ru
 
 The installer leaves Git commits and pushes to the delivery batch. It refuses to overwrite differing files. The review resolves file identities and records supported conversions. It cannot establish runtime behavior for new framework features, historical terrain revisions or inherited behavior that the file rules cannot account for. Exercise a shared feature in Workbench when needed and apply that evidence to the relevant conversion rule across missions.
 
+The AI reinforcement rule uses the existing `GC_AIGroupSpawn` action. It preserves the instruction delay, named placement, optional entity name and order of appended waypoints. The planner verifies the stock group, its group parents and its character roster against the installed registrations and checks for overrides in the Missions and Units snapshots. A completed world draft must also have one placed anchor and one placed AI waypoint for each referenced name. Custom group prefabs and stock groups with overridden roster members stay in the file review until their ancestry and loadouts are verified. The legacy behavior was reviewed in `TILW_Instructions.c` and `TILW_CrewConfig.c` from the published TilW Mission Framework package through the Reforger MCP archive tools.
+
 Desert Heat is the first installed batch draft in Missions Dev commit a07bcbdb. The installer verified every referenced GUID and path against the draft files, current addon checkouts and installed resource databases. Its existing boundary was reused and only the missing boundary was added. Two runs with different Python hash seeds reproduced the draft and inventory byte-for-byte. File review covers the full 277-launcher catalog.
 
 ## Coverage

@@ -1,12 +1,13 @@
 """Stage independently scheduled actions for supported legacy framework events."""
 from collections import defaultdict
 from decimal import Decimal
+from functools import partial
 from pathlib import PurePosixPath
 import re
 
 from briefings import block_end, guid, properties
 from catalog import SOURCE_TEXT
-from event_actions import SPAWN, VEHICLE_SPAWN, compile_action, prefab_spawn, recognized, render_spawn, vehicle_spawn
+from event_actions import GROUP_SPAWN, SPAWN, VEHICLE_SPAWN, compile_action, prefab_spawn, recognized, render_spawn, vehicle_spawn
 from events import EVENT, LITERAL, MESSAGE, message, peak_flags
 
 FRAMEWORK = re.compile(r'^TILW_MissionFrameworkEntity(?: [\w.-]+)? : "\{8F846D0FD5D6EA51\}[^"]+" \{$')
@@ -166,6 +167,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 waypoint_match = WAYPOINTS.fullmatch(fields[j]) if compound else None
                 action_match = recognized(fields[j]) if compound else None
                 spawn_match = SPAWN.fullmatch(fields[j]) if extraction_spawns or resolve_spawn else None
+                group_match = GROUP_SPAWN.fullmatch(fields[j]) if resolve_spawn else None
                 vehicle_match = VEHICLE_SPAWN.fullmatch(fields[j]) if resolve_spawn and resolve_crew else None
                 if notify_match:
                     delay, body = message(fields[j + 1:last], key + '/' + notify_match[1], multiline=True)
@@ -186,9 +188,12 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                     details = extraction_spawns[spawn_match[1]]
                     delay, body = render_spawn(details, key + '/' + spawn_match[1])
                     delayed_areas.append(details)
-                elif spawn_match and resolve_spawn:
-                    delay, body, details = prefab_spawn(fields[j + 1:last], key + '/' + spawn_match[1], resolve_spawn)
-                    converted_actions.append({'instructionId': spawn_match[1], **details})
+                elif (spawn_match or group_match) and resolve_spawn:
+                    identity = (spawn_match or group_match)[1]
+                    resolver = partial(resolve_spawn, group=True) if group_match else resolve_spawn
+                    delay, body, details = prefab_spawn(fields[j + 1:last], key + '/' + identity,
+                                                        resolver, group=bool(group_match))
+                    converted_actions.append({'instructionId': identity, **details})
                 elif vehicle_match:
                     delay, body, details = vehicle_spawn(fields[j + 1:last], key + '/' + vehicle_match[1],
                                                          resolve_spawn, resolve_crew)
@@ -367,18 +372,21 @@ def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
     review = []
     for index, field in enumerate(fields):
         instruction = SPAWN.fullmatch(field)
+        group = GROUP_SPAWN.fullmatch(field)
         vehicle = VEHICLE_SPAWN.fullmatch(field) if resolve_crew else None
-        if not instruction and not vehicle:
+        if not instruction and not group and not vehicle:
             continue
-        identity = (instruction or vehicle)[1]
+        identity = (instruction or group or vehicle)[1]
         try:
             end = block_end(fields, index)
             if vehicle:
                 _, _, details = vehicle_spawn(fields[index + 1:end], key + '/' + identity, resolve_spawn, resolve_crew)
             else:
-                _, _, details = prefab_spawn(fields[index + 1:end], key + '/' + identity, resolve_spawn)
+                resolver = partial(resolve_spawn, group=True) if group else resolve_spawn
+                _, _, details = prefab_spawn(fields[index + 1:end], key + '/' + identity,
+                                              resolver, group=bool(group))
         except ValueError as exc:
-            details = {'gap': str(exc)}
+            details = {'instruction': field.split()[0], 'gap': str(exc)}
         review.append({'instructionId': identity, **details})
     return review
 
@@ -426,11 +434,12 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             continue
         spawns = {child.split('/')[1]: detail for child, detail in extraction_spawns.items()
                   if child.startswith(event[1] + '/')}
-        if not spawns and not any(ENDING.fullmatch(item) or (compound and (WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item)
-                                                                          or recognized(item)
-                                                                          or (resolve_spawn and SPAWN.fullmatch(item))
-                                                                          or (resolve_crew and VEHICLE_SPAWN.fullmatch(item))))
-                   for item in fields):
+        if not spawns and not any(
+                ENDING.fullmatch(item) or (compound and (
+                    WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item) or recognized(item)
+                    or (resolve_spawn and (SPAWN.fullmatch(item) or GROUP_SPAWN.fullmatch(item)))
+                    or (resolve_crew and VEHICLE_SPAWN.fullmatch(item))))
+                for item in fields):
             continue
         name = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
         if not re.fullmatch(EVENT_LABEL if compound else KEY, name):
