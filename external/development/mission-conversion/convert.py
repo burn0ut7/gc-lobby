@@ -220,6 +220,7 @@ def main():
         try:
             world, world_id, _ = launcher(source, dev, header)
             row['destinationWorld'] = '{' + world_id + '}' + world
+            row['devWorldAtSamePath'] = world in dev.files
             headers_by_world[world].append(header)
         except ValueError as exc:
             row['launcherGap'] = str(exc)

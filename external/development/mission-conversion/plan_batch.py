@@ -44,8 +44,11 @@ def runtime_checks(drafts):
 def summarize(inventory, review, limit, previous_checks=None):
     migration = inventory['batchMigration']
     candidates = defaultdict(list)
+    committed_launchers = 0
     for header, row in inventory['headers'].items():
         destination = row.get('destinationWorld', '').partition('}')[2]
+        if row['devHeaderAtSamePath'] and row.get('devWorldAtSamePath'):
+            committed_launchers += 1
         if migration['worlds'].get(destination, {}).get('status') == 'generated for file review':
             candidates[destination].append(header)
 
@@ -140,6 +143,8 @@ def summarize(inventory, review, limit, previous_checks=None):
         runtime_candidates.append({'world': row['world'], 'launchers': [header], 'behaviorGaps': gaps})
     return {
         'source': inventory['source'], 'target': inventory['target'],
+        'committedLaunchersWithWorld': committed_launchers,
+        'legacyLaunchers': len(inventory['headers']),
         'launcherFileChecks': dict(Counter(row['status'] for row in review['missions'].values())),
         'worldConversionChecks': migration['totals'],
         'suggestedBatch': selected, 'additionalDrafts': ready[limit:], 'heldDrafts': held,
@@ -157,7 +162,9 @@ def summarize(inventory, review, limit, previous_checks=None):
 def markdown(plan):
     lines = ['# GC Missions batch plan', '', f"Legacy revision `{plan['source']}`",
              f"Dev revision `{plan['target']}`", '',
-             '## Launcher file audit', '']
+             f"{plan['committedLaunchersWithWorld']} of {plan['legacyLaunchers']} legacy launchers "
+             'have a launcher and world in the committed Dev snapshot.', '',
+             '## Launcher file audit including staged drafts', '']
     lines.extend(f"- {status} · {count}" for status, count in sorted(plan['launcherFileChecks'].items()))
     lines.extend(['', '## Drafts ready for source and Dev file review', ''])
     selected = plan['suggestedBatch']
