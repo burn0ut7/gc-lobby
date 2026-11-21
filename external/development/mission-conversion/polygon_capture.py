@@ -67,8 +67,8 @@ def read(lines, trigger_pattern):
         elif line == ' {':
             end = block_end(lines, index)
             head = trigger_pattern.fullmatch(lines[index + 1].strip())
-            if (not head or head['group'] or head['name'] or block_end(lines, index + 1) != end - 1):
-                raise ValueError('polygon requires one unnamed capture trigger child')
+            if (not head or head['group'] or block_end(lines, index + 1) != end - 1):
+                raise ValueError('polygon requires one capture trigger child')
             child = (head, [item[1:] for item in lines[index + 2:end - 1]])
             index = end + 1
             continue

@@ -336,6 +336,18 @@ AI_WORLD_ALIASES = {
     '33A5B976E41B0A4C': ('Prefabs/AI/SCR_AIWorld_BadOrb.et', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et'),
 }
 STOCK_RESOURCE_ALIASES = {
+    ('0CA0547EB03759E1', 'Prefabs/Vegetation/Bush/b_rubus_idaeus_1s_collision.et'):
+        'Prefabs/Vegetation/Bush/b_rubus_idaeus_1s.et',
+    ('124518D13290A687', 'Prefabs/Vegetation/Bush/b_salix_cinerea_0_collision.et'):
+        'Prefabs/Vegetation/Bush/b_salix_cinerea_0.et',
+    ('6113990D163E5249', 'Prefabs/Items/Equipment/BalisticTable/BalisticTable_US.et'):
+        'Prefabs/Items/Equipment/BallisticTable/BallisticTable_US.et',
+    ('3386EAA823BE462E', 'Prefabs/Props/Wrecks/UAZ469_wreck_static.et'):
+        'Prefabs/Props/Wrecks/UAZ469_wreck/UAZ469_wreck_static.et',
+    ('B90E5414AB7C325B', 'Prefabs/Props/Wrecks/BTR70_wreck_static.et'):
+        'Prefabs/Props/Wrecks/BTR70_Wreck/BTR70_wreck_static.et',
+    ('F849217AB3BA88BE', 'Prefabs/Items/Equipment/Maps/PaperMap_01_folded_USSR.et'):
+        'Prefabs/Items/Equipment/Maps/Map_Paper_01/PaperMap_01_folded_USSR.et',
     ('35D7F1189BE00E94', 'Prefabs/Items/Equipment/BalisticTable/BalisticTable.et'):
         'Prefabs/Items/Equipment/BallisticTable/BallisticTable_base.et',
     ('9668B6C528DCECBD', 'Prefabs/Props/Wrecks/Mi8MT_wreck_static.et'):
@@ -388,6 +400,8 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_randomized.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('1DC01AAACFFA8B63', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_base.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '1DC01AAACFFA8B63', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_Base.et'),
     ('023236B2A390BA5B', 'Prefabs/Weapons/Tripods/BGM71_TOW/Tripod_BGM-71_TOW.et'): (
         'WCS_Armaments_629B2BA37EFFD577', '023236B2A390BA5B',
         'Prefabs/Weapons/Tripods/BGM71_TOW/Tripod_BGM71_TOW.et'),
@@ -502,6 +516,14 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/HitTheMan/Prefabs/Vehicles/BMP1_ZSU_base_HTM.et':
+        '25b2f4c66289a46fd029a1c0fae3e072d35b1c858982b8a873221d98791d5a1f',
+    'worlds/HitTheMan/Prefabs/Vehicles/BaconZU23_Turret_NotEditable_HTM.et':
+        '31ddf51a7efa4150a60239637af698e26899f6ea95af3cb298167f65fcb04324',
+    'worlds/RedTheKnown/BritsAtBeauregard/Prefabs/OpforUnits/ScoutTeam/Custom_Submag_ARY_Rifle_AK74N_PBS4_GP25_Polymer_Plum.et':
+        'b6a0584b1f7fb0ec6e6fe29745017fb2e794cb2daedcd6fc0856bb05eed62260',
+    'worlds/RedTheKnown/BritsAtBeauregard/Prefabs/OpforUnits/ScoutTeam/Custom_Submag_ARY_Rifle_AK74N_PBS4_Polymer_Plum.et':
+        '5b2cad0ac983d4fc4ec2f6de3c59282626e771f2674d2b1642e7ab1d6d8ea1d0',
     'worlds/Til/OwlsPrey/data/OwlsPrey_Mi8_1.et':
         '98926fa48bdd73e42a0eeb98fe0b2de32e140c52387ba6c934ab0a1fd9aaaf4f',
     'worlds/Til/OwlsPrey/data/OwlsPrey_Mi8_2.et':
@@ -1552,6 +1574,8 @@ def area_rules(source, world, dev=None):
             shape = polygon_capture.SHAPE.fullmatch(block[0])
             if not match and not shape:
                 continue
+            if shape and not any(TRIGGER.fullmatch(field.strip()) for field in block):
+                continue
             root = shape or match
             result, areas, capture_details = {}, [], {}
             flags = set()
@@ -1560,6 +1584,13 @@ def area_rules(source, world, dev=None):
                     trigger = match
                     attached = []
                     if shape:
+                        if not any(TRIGGER.fullmatch(field.strip()) for field in fields):
+                            parent, visual, amounts = attached_trigger_map(fields, dev)
+                            if not amounts['attachedMapShapes'] or any(LEGACY.search(field) for field in parent):
+                                raise ValueError('capture group sibling needs a native polygon and map shape')
+                            head = 'PolylineShapeEntity' + (f' {name}' if name else '') + ' {'
+                            areas.append('\n'.join([head, *parent, ' {', *visual, ' }', '}', '']))
+                            continue
                         placement, (trigger, fields), vertices = polygon_capture.read(fields, TRIGGER)
                     elif ' {' in fields:
                         fields, attached, amounts = attached_trigger_map(fields, dev)
@@ -1606,7 +1637,17 @@ def area_rules(source, world, dev=None):
                             capture_details[flag[1:-1]]['unused'] = True
                             continue
                     if shape:
-                        area = '\n'.join([f'PolylineShapeEntity {area_name} {{', *placement, '}', ''])
+                        child = []
+                        if anchor := trigger['name']:
+                            if scripts is None:
+                                scripts = script_text(source)
+                            if anchor == area_name or f'"{anchor}"' in scripts:
+                                raise ValueError('named capture child may be referenced by mission scripts')
+                            transform = [field for field in fields if FIELD.fullmatch(field.strip())]
+                            child = [' {', f'  GenericEntity {anchor} {{',
+                                     *('  ' + field for field in transform), '  }', ' }']
+                            capture_details[flag[1:-1]]['triggerAnchor'] = anchor
+                        area = '\n'.join([f'PolylineShapeEntity {area_name} {{', *placement, *child, '}', ''])
                         capture_details.setdefault(flag[1:-1], {'area': area_name})
                         capture_details[flag[1:-1]]['polygonVertices'] = vertices
                     elif attached:
@@ -2428,6 +2469,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(record.get('statusMessages') for trigger in row.get('captureCandidate', {}).values()
            for record in trigger.values() if isinstance(record, dict)):
         remaining.append('Compare extraction progress and status recipients during Match.')
+    if any(record.get('triggerAnchor') for trigger in row.get('captureCandidate', {}).values()
+           for record in trigger.values() if isinstance(record, dict)):
+        remaining.append('Compare named capture anchors, polygon occupation and associated map outlines.')
     if any('m_fAuthoredCountdownSeconds ' in text for text in draft.values() if isinstance(text, str)):
         remaining.append('Compare the authored fractional staging release and displayed countdown.')
     if migrated_longmoor:

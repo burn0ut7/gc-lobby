@@ -536,7 +536,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                         # A unification pass reused the same ID for the retained numeric
                         # override and the old disabled default. Enabled has no bearing on
                         # the numeric reads made by the legacy playable manager.
-                        if reviewed_callsigns or (assigned[0] == identity and placed == {'Enabled': 0}
+                        if reviewed_callsigns or assigned == (identity, placed) or (
+                                assigned[0] == identity and placed == {'Enabled': 0}
                                                   and set(assigned[1]) & INDEX.keys()):
                             j = last + 1
                             continue
