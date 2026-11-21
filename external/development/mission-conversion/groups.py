@@ -47,6 +47,16 @@ UK_FORCED_ROLES = {
     '4AF2023E868540E7': ('Rifleman', 'Rifleman'),
     'F9E2E97FA21AA133': ('Section2IC', 'Section2IC'),
 }
+RHS_SOBR_BASE = ('B9CA56F3E1FC8641',
+                 'Prefabs/Characters/Factions/OPFOR/RHS_AFRF/VV/RG/Blk/Character_RHS_RF_SOBR_BaseLoadout.et')
+RHS_SOBR_FORCED_ROLES = {
+    '7284A0C1AC626E1F': 'SL',
+    'E4E52E85601454F5': 'Chad1',
+    'EABACB837362304D': 'Breacher',
+    '88B11A65DCD0DBDB': 'Chad2',
+    'FABC8CBA1DFF203D': 'Breacher2',
+    'D5640BB562716235': 'Marksman',
+}
 
 
 def verified_uk_forced_roles(workshop, owned):
@@ -65,6 +75,22 @@ def verified_uk_forced_roles(workshop, owned):
         if guid not in owned and database.contains(guid, path):
             result[guid] = (prefix + old + '.et', path)
     return result
+
+
+def verified_rhs_forced_roles(registry, owned, source_units, dev_units):
+    if not registry or RHS_SOBR_BASE[0] in owned or not registry.contains(*RHS_SOBR_BASE):
+        return {}
+    identity = RHS_SOBR_BASE[0]
+    before, after = inheritance(source_units, identity), inheritance(dev_units, identity)
+    if not reviewed_native_ancestry(before, after, dev_units):
+        return {}
+    prefix = RHS_SOBR_BASE[1].removesuffix('BaseLoadout.et')
+    roles = {guid: f'{prefix}{role}.et' for guid, role in RHS_SOBR_FORCED_ROLES.items()}
+    return {guid: (path, path) for guid, path in roles.items()
+            if (guid not in owned and guid not in source_units.resources and guid not in dev_units.resources
+                and registry.contains(guid, path))}
+
+
 # These exact Units Dev overlays came from the published legacy Core package.
 EXTERNAL_PARENT_BRIDGES = {
     '5346CF7E39A65A6B': ('Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Base.et',
@@ -73,6 +99,8 @@ EXTERNAL_PARENT_BRIDGES = {
                          '6bba2563a432f879d466e9ebed1b312e3f1f5def486175ee71e378f72f3b1c05'),
     '836E7E39AAC5888B': ('Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Base.et',
                          '27bc46c4bd94e55a55363aad3b9f3c927781a70b75301cea113d368efed80b4d'),
+    'EDCFF009262F881C': ('Prefabs/Characters/Factions/OPFOR/RHS_AFRF/Character_RHS_AFRF_Base.et',
+                         '6bba2563a432f879d466e9ebed1b312e3f1f5def486175ee71e378f72f3b1c05'),
 }
 # These external parents were verified against the published Core/RHS prefabs.
 # Both inherit Character_Base, which the legacy GC Lobby package overlays.
@@ -505,13 +533,13 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     if forced_external and not replace_slots and any(member.upper() in forced_external for member in roster):
         before, after = SLOTS.search(old), SLOTS.search(new)
         if REF.sub('', before[1]).strip() or REF.sub('', after[1]).strip():
-            raise ValueError('unsupported inherited British roster')
+            raise ValueError('unsupported inherited external roster')
         for resource, path in REF.findall(after[1]):
             identity = resource.upper()
             if identity in forced_external:
                 paths = forced_external[identity]
                 if path not in paths:
-                    raise ValueError('unverified British role path ' + path)
+                    raise ValueError('unverified external role path ' + path)
                 path = paths[1]
                 approved_external.add(identity)
             elif identity in dev_units.resources:
@@ -673,6 +701,17 @@ def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_
                             reviewed_members=verified)
 
 
+def convert_registered_group(lines, guid, source_units, dev_units, stock, locally_owned, external_ai,
+                             stock_group, reviewed_ai_members, forced_external):
+    if any(line.strip() == 'm_bSetPlayable 1' for line in lines):
+        if sum(line.strip() == 'm_aUnitPrefabSlots {' for line in lines) != 1:
+            raise ValueError('forced playable native group needs a complete authored roster')
+        return convert_instance(lines, guid, '', '', source_units, dev_units, stock, locally_owned,
+                                forced_external=forced_external)
+    return convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai,
+                               stock_group=stock_group, reviewed_ai_members=reviewed_ai_members)
+
+
 def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset(),
                 reviewed_members=None, external_ai=None, allow_stock_ai=False, restored_members=None,
                 reviewed_ai_members=None, forced_external=None, *, rhs=None, depth=0):
@@ -731,9 +770,10 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
                               stock=stock, locally_owned=locally_owned, reviewed_members=reviewed_members)
         elif stock_group:
             resource, dest = guid, stock_group['path']
-            convert = partial(convert_ai_instance, guid=guid, source_units=source_units, dev_units=dev_units,
-                              locally_owned=locally_owned, external_ai=external_ai or {},
-                              stock_group=stock_group, reviewed_ai_members=reviewed_ai_members)
+            convert = partial(convert_registered_group, guid=guid, source_units=source_units, dev_units=dev_units,
+                              stock=stock, locally_owned=locally_owned, external_ai=external_ai or {},
+                              stock_group=stock_group, reviewed_ai_members=reviewed_ai_members,
+                              forced_external=forced_external)
         else:
             _, old = prefab(source_units, guid)
             dest, new = prefab(dev_units, guid)

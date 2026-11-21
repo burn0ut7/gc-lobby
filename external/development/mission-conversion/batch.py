@@ -400,6 +400,9 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_randomized.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('8A7ECB6BDF6ADC0F', 'Assets/Weapons/Launchers/9K38_IGLA/IGLA.xob'): (
+        'WCS_Armaments_629B2BA37EFFD577', '8A7ECB6BDF6ADC0F',
+        'Assets/Weapons/Launchers/9K38_IGLA/9K38_IGLA.xob'),
     ('1DC01AAACFFA8B63', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_base.et'): (
         'WCS_BMP-1_5E524E4FEECCA92B', '1DC01AAACFFA8B63', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_Base.et'),
     ('023236B2A390BA5B', 'Prefabs/Weapons/Tripods/BGM71_TOW/Tripod_BGM-71_TOW.et'): (
@@ -991,11 +994,18 @@ def named_placements(layers):
     return named
 
 
-def waypoint_gaps(named, assignments):
+def waypoint_gaps(named, assignments, spawned_names, scripts):
     gaps = set()
+    no_ops = set()
     for action in assignments:
         group = action['group']
         placements = named.get(group, [])
+        if (action['waypoints'] == [group] and len(placements) == 1
+                and re.fullmatch(WAYPOINT_CLASS, placements[0][0])
+                and group not in spawned_names and group not in scripts):
+            # Both runtimes require an AIGroup. A waypoint cannot assign orders to itself.
+            no_ops.add(group)
+            continue
         if len(placements) != 1 or placements[0][0] != 'SCR_AIGroup':
             gaps.add('expected one placed AI group named ' + group)
             continue
@@ -1006,7 +1016,7 @@ def waypoint_gaps(named, assignments):
                 gaps.add('expected one placed AI waypoint named ' + name)
             elif action['replaceExisting'] and f'"{name}"' in group_fields:
                 gaps.add(f'replacement waypoint {name} may already belong to {group}')
-    return sorted(gaps)
+    return sorted(gaps), sorted(no_ops)
 
 
 def static_link_gaps(layers, named):
@@ -2336,6 +2346,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'delayed extraction', 'file': world,
                              'detail': 'extraction needs all spawns and one positive consumer per flag'})
     missing_waypoints = []
+    self_waypoints = []
     missing_static_vehicles = []
     crew_waypoints = {name for path, body in draft.items() if path.endswith('.layer')
                       for _, fields in re.findall(r'(?ms)^( +)m_aCrewWaypoints \{\n(.*?)^\1\}', body)
@@ -2385,7 +2396,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     rule = 'AI group spawn' if 'groupWaypoints' in spawn else 'crewed vehicle spawn'
                     blockers.append({'rule': rule, 'file': world,
                                      'detail': 'expected one placed AI waypoint named ' + waypoint})
-        for gap in waypoint_gaps(named, assignments):
+        gaps, self_waypoints = waypoint_gaps(named, assignments, spawned_names, script_text(source))
+        for gap in gaps:
             blockers.append({'rule': 'waypoint assignments', 'file': world, 'detail': gap})
         for waypoint in sorted(crew_waypoints):
             targets = named.get(waypoint, [])
@@ -2464,6 +2476,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     remaining = []
     for target in sorted(set(missing_waypoints)):
         remaining.append(f'The original static waypoint link to {target} has no authored target.')
+    for target in self_waypoints:
+        remaining.append(f'The original assignment refers to the waypoint {target} as its group and leaves orders unchanged.')
     for target in sorted(set(missing_static_vehicles)):
         remaining.append(f'The original static vehicle link to {target} has no mission-layer target.')
     if any(record.get('statusMessages') for trigger in row.get('captureCandidate', {}).values()

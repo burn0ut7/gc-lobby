@@ -245,7 +245,8 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
 
 
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
-               resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None):
+               resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None,
+               log_only=False):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -325,7 +326,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         elif not re.fullmatch(r'   m_name ' + (EVENT_LABEL if compound else KEY), line) and line != '   m_pregameEvent 0':
             raise ValueError('unsupported outcome event field ' + field)
         i += 1
-    if not term or not (notices or assignments or converted_actions or delayed_areas or (compound and messages)):
+    if not term or not (notices or assignments or converted_actions or delayed_areas or (compound and messages)
+                        or log_only):
         raise ValueError('missing condition or supported framework instruction')
     if pregame != (term['trigger'] == 'startup choice'):
         raise ValueError('pregame event requires a reviewed startup selection')
@@ -344,6 +346,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         if guard.get('inverted') or not (one_shot_capture or guard['trigger'] in ('interaction flag', 'event flag')):
             raise ValueError('waypoint assignments need a positive one-shot capture, verified flag, or Match start')
     audit = {'announcements': notices, 'instructionDelaysSeconds': [f'{delay:f}' for delay in actions]}
+    if log_only:
+        audit['logOnly'] = True
     if assignments:
         audit['waypointAssignments'] = assignments
     if converted_actions:
@@ -442,6 +446,11 @@ def render(key, name, term, actions, captures, capture_messages, tracked_areas, 
             '     m_aActions {', f'      GC_MessageAction "{{{guid(key + "/log")}}}" {{',
             f'       m_sMessage "{display_name or name}"', '       m_iDelivery 2', '      }', '     }', '    }',
         ])
+    if not actions and not condition and not dormant:
+        actions = {Decimal(0): [
+            f'      GC_MessageAction "{{{guid(key + "/log")}}}" {{',
+            f'       m_sMessage "{display_name or name}"', '       m_iDelivery 2', '      }',
+        ]}
     for delay, body in actions.items():
         delivery = key + '/' + str(delay)
         result.extend([f'    GC_Event "{{{guid(delivery)}}}" {{', f'     m_sName "{name} ({delay:f}s)"'])
@@ -691,7 +700,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             continue
         spawns = {child.split('/')[1]: detail for child, detail in extraction_spawns.items()
                   if child.startswith(event[1] + '/')}
-        if not spawns and not any(
+        log_only = (compound and not any(item.startswith('   m_instructions ') for item in fields)
+                    and any(TERM.fullmatch(item) for item in fields))
+        if not spawns and not log_only and not any(
                 ENDING.fullmatch(item) or (compound and (
                     WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item) or recognized(item)
                     or (resolve_spawn and (SPAWN.fullmatch(item) or GROUP_SPAWN.fullmatch(item)))
@@ -706,7 +717,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             term, actions, details = read_event(
                 fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns,
                 resolve_spawn, resolve_crew, startup, hidden_briefings,
-                DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived)
+                DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived,
+                log_only=log_only)
             if any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
                 term['requiresMatch'] = True
             suffixes = {f' ({delay:f}s)' for delay in actions}

@@ -22,7 +22,7 @@ from delayed_extraction import collect as collect_delayed_extraction
 from event_actions import ACTIONS
 from events import world_events
 from groups import (SLOTS, compare_ai_parents, convert_ai_instance, group_layer, rhs_ai_characters,
-                    verified_stock_ai_group, verified_uk_forced_roles)
+                    verified_rhs_forced_roles, verified_stock_ai_group, verified_uk_forced_roles)
 import gwotline
 import hnevice
 import industrial
@@ -141,12 +141,14 @@ def main():
     if stock:
         report['baseResourceDatabaseSHA256'] = sha256(stock.data).hexdigest()
     external_ai = {}
+    external_vehicles = {}
     rhs_database = None
     workshop_spawn_resources = ()
     if args.batch and args.workshop_addons:
         try:
             external_ai, rhs_database = rhs_ai_characters(args.workshop_addons)
-            workshop_spawn_resources = batch.workshop_spawn_resources(args.workshop_addons)
+            external_vehicles = vehicle_crew.workshop_vehicles(args.workshop_addons)
+            workshop_spawn_resources = batch.workshop_spawn_resources(args.workshop_addons) | set(external_vehicles.items())
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
         if rhs_database:
@@ -172,8 +174,10 @@ def main():
         report['targetUnits'] = dev_units.commit
         if args.batch:
             try:
+                occupied = locally_owned | source_units.resources.keys() | dev_units.resources.keys()
                 forced_external = verified_uk_forced_roles(
-                    args.workshop_addons, locally_owned | source_units.resources.keys() | dev_units.resources.keys())
+                    args.workshop_addons, occupied) | verified_rhs_forced_roles(
+                        rhs_database, locally_owned, source_units, dev_units)
             except (OSError, ValueError) as exc:
                 parser.error(str(exc))
 
@@ -848,7 +852,6 @@ def main():
             restored = (verified_roles(dev_units, stock) | verified_msv85_wrappers(source_units, dev_units)
                         | verified_aircrew_roles(source_units, dev_units, stock, locally_owned))
             asset_aliases = batch.resource_aliases(args.workshop_addons, dev_units, stock)
-            external_vehicles = vehicle_crew.workshop_vehicles(args.workshop_addons)
         except (OSError, ValueError, CalledProcessError) as exc:
             parser.error(str(exc))
         restored = {old: new for old, new in restored.items()
