@@ -153,6 +153,22 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence.conf': (
+        '1ff8bffb54d8c0c63ecaacc7bc7e54230b289737',
+        (('worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence_Layers/BLUFOR_Players/BLUFOR_Players.layer',
+          'ac8fa5ccd6149d33560b905093b2b77d3d82a3ee'),
+         ('worlds/HitTheMan/Nadezhda Mine Clearence/NadezhdaMineClearence_Layers/OPFOR_Players/OPFOR_Players.layer',
+          '6714175b5ca462b777c47bd709b613bddfcf87a4')),
+        75, 66,
+    ),
+    'Missions/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice.conf': (
+        'cf4aa8e5055c9760d5df4173a8a9f6335599d29a',
+        (('worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice_Layers/BLUFOR_Players/BLUFOR_Players.layer',
+          '3d9a49b52a9b82e0075acd847d089220cd4ca1eb'),
+         ('worlds/HitTheMan/Pushing Through Hnevice/PushingThroughHnevice_Layers/OPFOR_Players/OPFOR_Players.layer',
+          'a55a4c44b1a3b82c2f616bea7157063e9f56c61a')),
+        110, 81,
+    ),
     'Missions/HitTheMan/Devils Crossing/DevilsCrossing.conf': (
         '4567fcab9ab11d0ad160f4c47933ea073cd2bb67',
         (('worlds/HitTheMan/Devils Crossing/DevilsCrossing_Layers/BLUFOR_Players/BLUFOR_Players.layer',
@@ -1064,7 +1080,8 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                     continue
                 try:
                     observed[(path, line)] = grouped_damage_placement(
-                        block, stock, local_resources, source_units, dev_units, rhs)
+                        block, stock, local_resources, source_units, dev_units, rhs,
+                        workshop_targets=workshop_targets)
                 except ValueError as exc:
                     audit[location] = {'gap': str(exc)}
                 continue
@@ -1214,17 +1231,18 @@ def verified_rhs_damage(resource, path, source_units, dev_units, rhs):
     return True
 
 
-def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs):
+def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs, *, workshop_targets=()):
     ref = REF.search(block[0])
     if (not ref or not re.match(r'^\$grp (Vehicle|Tank|RHS_Tank|GameEntity|GenericEntity|SCR_ChimeraCharacter) ', block[0])
             or ref[1].upper() in owned):
         raise ValueError('unverified grouped damage objective prefab')
     resource, path = ref[1].upper(), ref[2]
     is_character = block[0].startswith('$grp SCR_ChimeraCharacter ')
-    stock_target = (stock and DAMAGE_TARGETS.get(resource) == path and stock.contains(resource, path)
-                    and resource not in source_units.resources and resource not in dev_units.resources)
+    registered = ((stock and DAMAGE_TARGETS.get(resource) == path and stock.contains(resource, path))
+                  or (resource, path) in workshop_targets)
+    verified_target = registered and resource not in source_units.resources and resource not in dev_units.resources
     if (is_character != path.startswith('Prefabs/Characters/')
-            or not (stock_target or not is_character and verified_rhs_damage(resource, path, source_units, dev_units, rhs))):
+            or not (verified_target or not is_character and verified_rhs_damage(resource, path, source_units, dev_units, rhs))):
         raise ValueError('unverified grouped damage objective prefab')
     members, flags = [], []
     for name, fields in polygon_capture.members(block, True, None):
