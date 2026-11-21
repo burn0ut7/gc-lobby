@@ -41,6 +41,16 @@ Stop each Workbench run once its assigned behaviors are verified. Record results
 
 The migration generates Arma launcher and world resource registrations. The resource audit checks against the dependency graph declared by the Dev projects. The metadata table in `plan.md` separately reports GC headers, generated metadata snapshots, catalogue data, manual catalogue addon IDs and portable launch files committed in Dev. The standard GC launcher requires a generated snapshot or portable export. It resolves the snapshot's referenced addon names to GUIDs, includes the mission's owning addon, and adds any manual catalogue IDs. The portable exporter reports its own file count because it writes outside the checkout. Confirm script-selected content and use the supported exporter for the published build.
 
+Probe unresolved prefab references from the plan together in one isolated Workbench world.
+
+    python "$tools/resource_probe.py" --plan "$output/plan.json" --stage $resourceProbe
+
+Open the generated `addon.gproj` and `worlds/Lookup.ent` through Workbench MCP. Opening the world logs each authored resource string and the resource that actually loaded. The probe mounts the base game by default. Repeat `--addon <GUID>` when the lookup needs specific installed providers. Read the results from that session's log.
+
+    python "$tools/resource_probe.py" --plan "$output/plan.json" --console $probeConsole
+
+An invalid result applies to the mounted graph. Confirm changed GUIDs or paths before adding them to conversion rules. The parser checks that the log contains one consistent result per planned prefab. The generated project reproduced all 23 results from the initial lookup in Workbench MCP session `logs_2026-11-21_15-27-18`.
+
 Stage author catalogue fields from existing legacy GC metadata after running the file audit.
 
     python "$tools/author_catalogue.py" --missions $repo --audit "$output/plan.json" --stage $authorStage
@@ -1199,6 +1209,8 @@ The spawner rules accept a single quoted spawned entity name with spaces. Simple
 Cimic House is in local Missions Dev commit `8fb3abde`. The committed audit matched all 36 slots and resolved its resource references. The legacy event titled `IRAQ_Victory` targets the unmatched name `UK_VICTORY` for deactivation. The conversion records that no-op and preserves the three-second Iraqi announcement, the British Match-start sequence at 1,800 seconds and its exact-name deactivation of `IRAQ_Victory`. The full catalog left all previously generated draft files byte-identical before installation. Spawns, teleport availability and delayed event behavior are covered by the representative queue.
 
 Lacourt Manor now uses the current base-game paths for its hayloft, silage storage and two hornbeam prefabs. Devil's Drive uses the current capitalization of the WCS Mi-24P base prefab. All five references retain their original GUIDs and resolve through the declared Dev dependency graph. The catalog changed only the five path tokens and preserved the other 455 draft files byte for byte. Lacourt Manor still needs three legacy bush registrations and two destroyed tree prefabs. Devil's Drive and three other drafts still need the legacy armed Mi-24P. WCS currently assigns its GUID to a variant with four B8V20A pods and a 9M120 turret. The legacy 9M114 variant is absent from the installed archive, so the file audit keeps those placements in review. The GMFX ammo storage referenced by five other worlds also has no installed resource registration or prefab body in the available archives.
+
+Workbench MCP tested 23 unresolved prefab references together in base-game session `logs_2026-11-21_15-24-06`. It resolved all three of Lacourt Manor's juniper references to current GUIDs at the original paths. The batch rewrites those three tokens after checking the stock registry and preserves all 15 bush placements. All 253 other draft files reproduced byte for byte. The two destroyed hornbeam references did not load and still hold Lacourt Manor.
 
 The roster converter now checks verified legacy playability wrapper ancestry before classifying a group as AI-only. Fate of 2nd Platoon's five US groups inherit playability from seven published GC Lobby wrappers. The published wrappers explicitly enable playability, and the converter verifies the corresponding native character ancestry. All 25 US roles retain their original character IDs, roster order and loadouts. Together with the 50 NVA roles, this matches the launcher capacity of 75. Mixed playable and AI rosters still require review. The only changed draft file is the US roster layer, and the missing black smoke prefab remains a dependency issue.
 

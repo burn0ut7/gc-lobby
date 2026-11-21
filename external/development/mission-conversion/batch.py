@@ -675,6 +675,14 @@ AI_WORLD_ALIASES = {
     '70CCCF16487C927F': ('GitHub/gc-reforger-core/Prefabs/AI/SCR_AIWorld_Eden.et',
                          'Prefabs/AI/SCR_AIWorld_Eden.et'),
 }
+# Workbench resolves these stale GUID-qualified references to the current tree
+# prefab at the same authored path (logs_2026-11-21_15-24-06).
+STOCK_RESOURCE_REKEYS = {
+    ('585B412BC51E59F3', 'Prefabs/Vegetation/Bush/b_juniperus_communis_1s.et'): '6C454FA2B0FAFAEE',
+    ('6230E64FC38CA6B1', 'Prefabs/Vegetation/Bush/b_juniperus_communis_0.et'): '81EE8FAE7539DAA1',
+    ('9025E96A11516E7A', 'Prefabs/Vegetation/Bush/b_juniperus_communis_2w.et'): 'A43BE7E364B5CD67',
+}
+
 STOCK_RESOURCE_ALIASES = {
     ('AED5759B653DF6D0', 'Prefabs/Vegetation/Bush/b_rosa_canina_1s_collision.et'):
         'Prefabs/Vegetation/Bush/b_rosa_canina_1s.et',
@@ -2767,6 +2775,8 @@ def reversible_spawn_captures(source, world, layers, captures):
 def resource_aliases(workshop, units, stock):
     aliases = {(guid, old): (guid, new) for (guid, old), new in STOCK_RESOURCE_ALIASES.items()
                if stock and stock.contains(guid, new)}
+    aliases.update({(old, path): (new, path) for (old, path), new in STOCK_RESOURCE_REKEYS.items()
+                    if stock and not stock.registered_paths(old) and stock.contains(new, path)})
     databases = {}
     if workshop:
         for original, (provider, guid, path) in WORKSHOP_RESOURCE_ALIASES.items():
