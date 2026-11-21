@@ -38,6 +38,7 @@ CONSTRUCTION_FIELDS = {
     'm_fPrepMultiplier': ('m_fPreparationMultiplier', 0.5, 10000000),
     'm_fGameMultiplier': ('m_fMatchMultiplier', 0.5, 10000000),
 }
+DEFAULT_BUILDING_MANAGER = '  SCR_CampaignBuildingManagerComponent "{61B4DDBF56BF1B48}" {'
 LEGACY_JIP_MODES = {'Deny': 'DISABLED', 'Auto': 'AUTO', 'Manual': 'MANUAL',
                     '0': 'DISABLED', '1': 'AUTO', '2': 'MANUAL'}
 NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|RHS_Tank|Turret|SCR_AIWorld|GameEntity|GenericEntity|GenericTerrainEntity|GenericWorldFogEntity|StaticModelEntity|Tree|'
@@ -370,6 +371,14 @@ REVIEWED_CAPACITY = {
         (('worlds/Gabe/PowerStruggle/TVT97PowerStruggle_Layers/Players.layer',
           '23f5f5f4c38796dfad894f9c6404be7c2fc55eb9'),),
         97, 95,
+    ),
+    'Missions/Corax/SanSerriffeBusters/Serriff_Busters.conf': (
+        'dca7ef8249bd38cf60d1c1d5ce2b1b87ad6b9253',
+        (('worlds/Corax/SerriffBusters/SerrifBusters_Layers/BLUFOR.layer',
+          'b0aa003e3b00a2c6e52125024468f213ea549efc'),
+         ('worlds/Corax/SerriffBusters/SerrifBusters_Layers/OPFOR.layer',
+          '7ce290991afcf44ebd1b6c1f3baa7aa619be793a')),
+        71, 72,
     ),
     'Missions/Jub/Another Hill/Another Hill.conf': (
         '75e4e21677f4e64358d3ffee3d523e567cf589d8',
@@ -3218,6 +3227,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, environment, freeze = '', '', 0
+    building_manager = ''
     child_placements = []
     disable_photo = None
     lock_editor = None
@@ -3254,6 +3264,8 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
                 elif header == INIT_WEATHER and all(INIT_WEATHER_FIELD.fullmatch(field)
                                                     for field in component_lines[1:-1]):
                     weather += '\n'.join(component_lines) + '\n'
+                elif header == DEFAULT_BUILDING_MANAGER and stop == component + 1:
+                    building_manager = '\n'.join(component_lines) + '\n'
                 else:
                     raise ValueError('custom legacy game mode components')
                 component = stop + 1
@@ -3340,8 +3352,10 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         raise ValueError('mixed game mode rotation representations')
     placement = '\n'.join(f' {field} {value}' for field, value in {'coords': '0 0 0', **transform}.items())
     resource = guid(world + '/resource')
-    settings = ''
+    settings = building_manager
     if construction:
+        if building_manager:
+            raise ValueError('default building manager with legacy construction multipliers needs review')
         fields = []
         for field, (native, minimum, maximum) in CONSTRUCTION_FIELDS.items():
             if field not in construction:
