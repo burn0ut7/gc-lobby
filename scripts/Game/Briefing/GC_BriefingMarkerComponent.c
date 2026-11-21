@@ -59,6 +59,12 @@ class GC_BriefingMarkerComponent : ScriptComponent
 	[Attribute("", UIWidgets.Auto, "Hide the marker in these individual phases, in addition to the phase threshold", enumType: SCR_EGameModeState)]
 	protected ref array<SCR_EGameModeState> m_aHiddenPhases;
 
+	[Attribute("2", UIWidgets.EditBox, "Draw order of the marker relative to other map widgets")]
+	protected int m_iZOrder;
+
+	[Attribute("1000", UIWidgets.EditBox, "Draw order while hovered. Use -1 to keep the base draw order.")]
+	protected int m_iHoverZOrder;
+
 	override protected void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);
@@ -137,6 +143,7 @@ class GC_BriefingMarkerComponent : ScriptComponent
 			m_eShowAtGameModeState, m_bInvertGameModeState, true, markerColor, m_bAlignTextWithMarkerRotation);
 		marker.SetTextColor(textColor);
 		marker.SetHiddenPhases(m_aHiddenPhases);
+		marker.SetDrawOrder(m_iZOrder, m_iHoverZOrder);
 		if (m_bRestrictToListedFactions)
 			marker.SetListedFactionAudience(!m_bHideWithoutFaction);
 		else if (m_bHideWithoutFaction)

@@ -387,12 +387,25 @@ def replace_registered_paths(text, source, dev, aliases):
     return REF.sub(lambda ref: registered_alias(ref[1].upper(), ref[2], source, dev, aliases) or ref[0], text)
 
 
-def repair_registered_paths(source, dev, world, aliases):
-    """Stage reference-only layer repairs with the existing-file hash."""
+def repair_existing_layers(source, dev, world, aliases):
+    """Stage verified changes to existing layers with the original file hash."""
     repairs, original_hashes = {}, {}
-    for path in dev.layers[world.lower()]:
+    layers = dev.layers[world.lower()]
+    markers_from_batch = any('GC_LobbyGameMode GC_MigratedMission :' in dev.read(path) for path in layers)
+    for path in layers:
         original = dev.read(path)
         updated = replace_registered_paths(original, source, dev, aliases)
+        if (markers_from_batch and path in source.layers[world.lower()]
+                and original.startswith('GenericEntity') and 'GC_BriefingMarkerComponent' in original):
+            legacy = source.read(path)
+            try:
+                before = convert_layer(legacy, dev)
+                if before and before[0].strip() == original.strip():
+                    updated = replace_registered_paths(convert_layer(legacy, dev, draw_order=True)[0],
+                                                       source, dev, aliases)
+            except ValueError:
+                # Layers with unknown or independently edited markers need a file comparison.
+                pass
         if updated != original:
             repairs[path] = updated
             original_hashes[path] = sha256(original.encode()).hexdigest()
@@ -679,10 +692,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if not row['headers']:
         return {}, {'status': 'no launcher'}
     if world in dev.files:
-        repairs, hashes = repair_registered_paths(source, dev, world, asset_aliases)
+        repairs, hashes = repair_existing_layers(source, dev, world, asset_aliases)
         if repairs:
             return repairs, {'status': 'generated for file review', 'files': sorted(repairs),
-                             'reviewedReplacements': hashes, 'resourcePathRepairs': True, 'blockers': []}
+                             'reviewedReplacements': hashes, 'existingLayerRepairs': True, 'blockers': []}
         return {}, {'status': 'existing Dev world', 'review': row['headers']}
     preset = row.get('briefingModePreset')
     if not preset or row['briefingGaps']:
@@ -764,7 +777,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 elif (layer, line) in interaction_placements:
                     result.append(interaction_placements[(layer, line)])
                 elif kind == 'PS_ManualMarker':
-                    result.append(convert_layer(body, dev)[0])
+                    result.append(convert_layer(body, dev, draw_order=True)[0])
                 elif 'TILW_AOLimit.et' in head or 'TILW_MapShape.et' in head:
                     converted, audit = convert_boundaries(body, allow_public_faction_color=True, extended_shapes=True)
                     if not converted or any('gap' in item for item in audit.values()):

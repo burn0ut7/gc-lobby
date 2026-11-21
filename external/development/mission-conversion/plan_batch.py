@@ -25,14 +25,14 @@ def summarize(inventory, review, limit):
         draft = migration['worlds'][world]
         issues = []
         remaining_resources = set()
-        resource_repairs = set(draft['files']) if draft.get('resourcePathRepairs') else set()
+        layer_repairs = set(draft['files']) if draft.get('existingLayerRepairs') else set()
         for header in sorted(headers):
             comparison = review['missions'][header]
             issues.extend(f'{header} — {issue}' for issue in comparison['issues']
-                          if not resource_repairs or issue != 'Unresolved external resource references')
+                          if not layer_repairs or issue != 'Unresolved external resource references')
             for entry in comparison.get('unresolvedExternalReferences', []):
                 reference = f"{{{entry['guid']}}}{entry['path']}"
-                if resource_repairs and resource_repairs.isdisjoint(entry['referencedBy']):
+                if layer_repairs and layer_repairs.isdisjoint(entry['referencedBy']):
                     remaining_resources.add(reference)
                 else:
                     issues.append(reference)

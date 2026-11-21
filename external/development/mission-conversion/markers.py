@@ -49,11 +49,18 @@ def phase_fields(value):
     return ['   m_aHiddenPhases {', *('    ' + phase for phase in PHASES if phase in hidden), '   }']
 
 
-def instance(lines, name, inherited=None):
-    placed = properties(lines, ALLOWED)
+def instance(lines, name, inherited=None, *, draw_order=False):
+    placed = properties(lines, ALLOWED | {'m_iZOrder'} if draw_order else ALLOWED)
     values = {**(inherited or {}), **placed}
-    if values.get('m_bringToFront', '0') != '0':
+    z_order = values.get('m_iZOrder', '0')
+    raise_on_hover = values.get('m_bringToFront', '1')
+    if not re.fullmatch(r'-?\d+', z_order) or not -2147483648 <= int(z_order) <= 2147483647:
+        raise ValueError('invalid marker draw order')
+    if raise_on_hover not in ('0', '1'):
+        raise ValueError('invalid marker hover priority')
+    if not draw_order and values.get('m_bringToFront', '0') != '0':
         raise ValueError('explicit marker layering priority')
+    hover_order = '10000' if raise_on_hover == '1' else '-1'
     any_side = values.get('m_bShowForAnyFaction', '0')
     unassigned = values.get('m_bVisibleForEmptyFaction', '0')
     factions = values.get('m_aVisibleForFactions', '')
@@ -77,6 +84,8 @@ def instance(lines, name, inherited=None):
               '  GC_BriefingMarkerComponent "{00C8292F836D4D6F}" {']
     for old, new in FIELDS.items():
         output.append(f'   {new} ' + merged[old].replace('\n', '\n   '))
+    if draw_order:
+        output.extend([f'   m_iZOrder {z_order}', f'   m_iHoverZOrder {hover_order}'])
     if any_side == '0' and keys:
         output.extend(['   m_aFactionKeys {', '    ' + factions, '   }'])
     explicit_list = any_side == '0' and (unassigned == '1' or not keys)
@@ -107,7 +116,7 @@ def relocate_images(text, dev):
     return pattern.sub(resolve, text)
 
 
-def convert_layer(text, dev=None):
+def convert_layer(text, dev=None, *, draw_order=False):
     """Process complete icon-only layers. Mixed layers keep their original ordering for review."""
     if not re.search(r'^(?:\$grp )?PS_ManualMarker\b', text, re.M):
         return None
@@ -137,10 +146,12 @@ def convert_layer(text, dev=None):
                     if not head:
                         raise ValueError('custom grouped instance')
                     end = block_end(lines, i)
-                    result.append(instance(lines[i + 1:end], (' ' + head['name']) if head['name'] else '', inherited))
+                    result.append(instance(lines[i + 1:end], (' ' + head['name']) if head['name'] else '', inherited,
+                                           draw_order=draw_order))
                     i = end + 1
             else:
-                result.append(instance(lines[i + 1:stop], (' ' + match['name']) if match['name'] else '', inherited))
+                result.append(instance(lines[i + 1:stop], (' ' + match['name']) if match['name'] else '', inherited,
+                                       draw_order=draw_order))
         except ValueError as exc:
             raise ValueError(f'line {i + 1 if match["group"] else start + 1} {exc}') from exc
         i = stop + 1

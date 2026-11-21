@@ -5,6 +5,7 @@ class GC_BriefingMarkerWidgetComponent : SCR_ScriptedWidgetComponent
 	protected Widget m_wLabel;
 	protected ImageWidget m_wGlow;
 	protected int m_iDefaultZOrder;
+	protected int m_iHoverZOrder = GC_BriefingMarker.DEFAULT_HOVER_Z_ORDER;
 
 	override void HandlerAttached(Widget w)
 	{
@@ -21,6 +22,14 @@ class GC_BriefingMarkerWidgetComponent : SCR_ScriptedWidgetComponent
 	{
 		SetHovered(true);
 		return true;
+	}
+
+	void SetDrawOrder(int baseOrder, int hoverOrder)
+	{
+		m_iDefaultZOrder = baseOrder;
+		m_iHoverZOrder = hoverOrder;
+		if (m_wRoot)
+			m_wRoot.SetZOrder(baseOrder);
 	}
 
 	override bool OnMouseLeave(Widget w, Widget enterW, int x, int y)
@@ -45,8 +54,8 @@ class GC_BriefingMarkerWidgetComponent : SCR_ScriptedWidgetComponent
 			m_wGlow.SetVisible(hovered);
 		if (m_wRoot)
 		{
-			if (hovered)
-				m_wRoot.SetZOrder(1000);
+			if (hovered && m_iHoverZOrder >= 0)
+				m_wRoot.SetZOrder(m_iHoverZOrder);
 			else
 				m_wRoot.SetZOrder(m_iDefaultZOrder);
 		}
@@ -202,7 +211,12 @@ class GC_BriefingMarkerLayer
 
 			GC_BriefingMarkerWidgetComponent markerHandler = GC_BriefingMarkerWidgetComponent.Cast(markerRoot.FindHandler(GC_BriefingMarkerWidgetComponent));
 			if (!markerHandler)
+			{
+				markerRoot.SetZOrder(marker.GetZOrder());
 				PrintFormat("GC | Briefing Marker | event=marker-create result=warning marker=%1 reason=handler", marker.GetName(), level: LogLevel.WARNING);
+			}
+			else
+				markerHandler.SetDrawOrder(marker.GetZOrder(), marker.GetHoverZOrder());
 
 			markerImage.SetRotation(marker.GetRotation());
 			markerImage.SetColorInt(marker.GetColor());

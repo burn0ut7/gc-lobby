@@ -4,6 +4,8 @@
 class GC_BriefingMarker
 {
 	static const int MAX_FACTION_KEYS = 16;
+	static const int DEFAULT_Z_ORDER = 2;
+	static const int DEFAULT_HOVER_Z_ORDER = 1000;
 	protected static const int ALL_PHASE_BITS = 31;
 
 	protected string m_sName;
@@ -29,6 +31,8 @@ class GC_BriefingMarker
 	protected bool m_bExcludeFactionKeys;
 	protected bool m_bVisibleWithoutFaction;
 	protected int m_iHiddenPhases;
+	protected int m_iZOrder = DEFAULT_Z_ORDER;
+	protected int m_iHoverZOrder = DEFAULT_HOVER_Z_ORDER;
 
 	string GetName() { return m_sName; }
 	ResourceName GetImage() { return m_sImage; }
@@ -50,6 +54,14 @@ class GC_BriefingMarker
 	bool IsVisible() { return m_bVisible; }
 	int GetRevision() { return m_iRevision; }
 	void SetRevision(int revision) { m_iRevision = revision; }
+	int GetZOrder() { return m_iZOrder; }
+	int GetHoverZOrder() { return m_iHoverZOrder; }
+
+	void SetDrawOrder(int baseOrder, int hoverOrder)
+	{
+		m_iZOrder = baseOrder;
+		m_iHoverZOrder = hoverOrder;
+	}
 
 	void Set(string name, ResourceName image, ResourceName highlightImage, string quadName, vector worldPosition, float rotation, bool worldScale,
 		float size, float minSize, string description, array<string> factionKeys = null,
@@ -60,6 +72,7 @@ class GC_BriefingMarker
 		m_bExcludeFactionKeys = false;
 		m_bVisibleWithoutFaction = false;
 		m_iHiddenPhases = 0;
+		SetDrawOrder(DEFAULT_Z_ORDER, DEFAULT_HOVER_Z_ORDER);
 		m_sName = name;
 		m_sImage = image;
 		m_sHighlightImage = highlightImage;
@@ -185,6 +198,7 @@ class GC_BriefingMarker
 		m_bExcludeFactionKeys = source.m_bExcludeFactionKeys;
 		m_bVisibleWithoutFaction = source.m_bVisibleWithoutFaction;
 		m_iHiddenPhases = source.m_iHiddenPhases;
+		SetDrawOrder(source.m_iZOrder, source.m_iHoverZOrder);
 	}
 
 	bool RplSave(ScriptBitWriter writer)
@@ -214,6 +228,8 @@ class GC_BriefingMarker
 		writer.WriteBool(m_bExcludeFactionKeys);
 		writer.WriteBool(m_bVisibleWithoutFaction);
 		writer.WriteInt(m_iHiddenPhases);
+		writer.WriteInt(m_iZOrder);
+		writer.WriteInt(m_iHoverZOrder);
 		return true;
 	}
 
@@ -249,7 +265,8 @@ class GC_BriefingMarker
 		if (!reader.ReadBool(m_bInvertGameModeState) || !reader.ReadBool(m_bVisible) || !reader.ReadInt(m_iRevision)
 			|| !reader.ReadBool(m_bExplicitAudience) || !reader.ReadBool(m_bExcludeFactionKeys)
 			|| !reader.ReadBool(m_bVisibleWithoutFaction) || !reader.ReadInt(m_iHiddenPhases)
-			|| (m_iHiddenPhases & ALL_PHASE_BITS) != m_iHiddenPhases)
+			|| (m_iHiddenPhases & ALL_PHASE_BITS) != m_iHiddenPhases
+			|| !reader.ReadInt(m_iZOrder) || !reader.ReadInt(m_iHoverZOrder))
 			return false;
 
 		return true;
@@ -292,6 +309,8 @@ class GC_BriefingMarker
 		snapshot.SerializeBool(instance.m_bExcludeFactionKeys);
 		snapshot.SerializeBool(instance.m_bVisibleWithoutFaction);
 		snapshot.SerializeInt(instance.m_iHiddenPhases);
+		snapshot.SerializeInt(instance.m_iZOrder);
+		snapshot.SerializeInt(instance.m_iHoverZOrder);
 		return true;
 	}
 
@@ -338,6 +357,8 @@ class GC_BriefingMarker
 		snapshot.SerializeBool(instance.m_bExcludeFactionKeys);
 		snapshot.SerializeBool(instance.m_bVisibleWithoutFaction);
 		snapshot.SerializeInt(instance.m_iHiddenPhases);
+		snapshot.SerializeInt(instance.m_iZOrder);
+		snapshot.SerializeInt(instance.m_iHoverZOrder);
 		return (instance.m_iHiddenPhases & ALL_PHASE_BITS) == instance.m_iHiddenPhases;
 	}
 
@@ -365,6 +386,8 @@ class GC_BriefingMarker
 		snapshot.EncodeBool(packet);
 		snapshot.EncodeBool(packet);
 		snapshot.EncodeInt(packet);
+		snapshot.EncodeInt(packet);
+		snapshot.EncodeInt(packet);
 	}
 
 	static bool Decode(ScriptBitSerializer packet, ScriptCtx ctx, SSnapSerializerBase snapshot)
@@ -391,6 +414,8 @@ class GC_BriefingMarker
 		snapshot.DecodeBool(packet);
 		snapshot.DecodeBool(packet);
 		snapshot.DecodeInt(packet);
+		snapshot.DecodeInt(packet);
+		snapshot.DecodeInt(packet);
 		return true;
 	}
 
@@ -410,6 +435,7 @@ class GC_BriefingMarker
 			if (!lhs.CompareStringSnapshots(rhs)) return false;
 		}
 		return lhs.CompareSnapshots(rhs, 4) && lhs.CompareSnapshots(rhs, 4)
+			&& lhs.CompareSnapshots(rhs, 4) && lhs.CompareSnapshots(rhs, 4)
 			&& lhs.CompareSnapshots(rhs, 4) && lhs.CompareSnapshots(rhs, 4)
 			&& lhs.CompareSnapshots(rhs, 4) && lhs.CompareSnapshots(rhs, 4)
 			&& lhs.CompareSnapshots(rhs, 4) && lhs.CompareSnapshots(rhs, 4);
@@ -448,6 +474,8 @@ class GC_BriefingMarker
 			&& snapshot.CompareBool(instance.m_bExplicitAudience)
 			&& snapshot.CompareBool(instance.m_bExcludeFactionKeys)
 			&& snapshot.CompareBool(instance.m_bVisibleWithoutFaction)
-			&& snapshot.CompareInt(instance.m_iHiddenPhases);
+			&& snapshot.CompareInt(instance.m_iHiddenPhases)
+			&& snapshot.CompareInt(instance.m_iZOrder)
+			&& snapshot.CompareInt(instance.m_iHoverZOrder);
 	}
 }

@@ -233,7 +233,7 @@ def main():
                         out[layer] = source.blobs[source.files[layer]].decode('utf-8')
                     row.setdefault('stockPlacementLayers', {})[layer] = entry
             try:
-                markers = convert_markers(text, dev)
+                markers = convert_markers(text, dev, draw_order=args.batch)
                 if markers:
                     body, count = markers
                     if layer in dev.files and relocate_images(dev.read(layer), dev).strip() != body.strip():
