@@ -5,6 +5,7 @@ from briefings import block_end, guid, properties
 
 FIELDS = {'m_sFactionKey', 'm_iCount', 'm_iTime', 'm_bWaveMode', 'm_sPosition'}
 ENTRY = re.compile(r'^  PS_FactionRespawnCount "\{([0-9A-Fa-f]{16})\}" \{$')
+MAX_NATIVE_INT = 2147483647
 
 
 def read_respawns(text, path):
@@ -84,7 +85,7 @@ def authored_respawn_fields(world, records, gaps, dynamic_factions=()):
         count = row['tickets']
         interval = row['intervalMs']
         anchor = row['destination']
-        if (not 0 <= count <= 1000000 or not 0 <= interval <= 2147483647 or (row['wave'] and not interval)
+        if (not 0 <= count <= MAX_NATIVE_INT or not 0 <= interval <= MAX_NATIVE_INT or (row['wave'] and not interval)
                 or (anchor and not re.fullmatch(r'[\w.-]+', anchor))):
             raise ValueError('unsupported faction respawn settings for ' + faction)
         key = guid(world + '/scheduled respawn/' + faction)

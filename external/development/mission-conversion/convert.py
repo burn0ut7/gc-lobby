@@ -407,13 +407,15 @@ def main():
                 continue
             if 'PS_MissionDescription' in source.read(path):
                 gaps.append(path + ' contains an inherited or prefab-owned briefing')
-        event = ticket_event(world, respawns, ticket_gaps)
         authored_respawns = False
-        if args.batch and event:
+        if args.batch and respawns:
             try:
                 authored_respawns = bool(authored_respawn_fields(world, respawns, ticket_gaps))
             except ValueError:
                 pass
+        # The event action has its own lower authoring limit. Native per-faction
+        # policies initialize the full ticket value directly.
+        event = ticket_event(world, respawns, list(ticket_gaps) if authored_respawns else ticket_gaps)
         if respawns or ticket_gaps:
             follow_up = []
             if authored_respawns:

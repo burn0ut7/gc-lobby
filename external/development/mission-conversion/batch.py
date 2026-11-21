@@ -2051,6 +2051,23 @@ def marker_edit_gaps(named, edits):
     return sorted(gaps)
 
 
+NATIVE_VEHICLE_OVERRIDES = re.compile(
+    rf'(?:Vehicle|Tank) : "\{{[\dA-Fa-f]{{16}}\}}Prefabs/Vehicles/[^"\n]+\.et" \{{\n'
+    rf' ID "[\dA-Fa-f]{{16}}"\n'
+    rf'(?: components \{{\n'
+    rf'(?:  SCR_EditableVehicleComponent {SERIALIZED_ID} \{{\n'
+    rf'   m_UIInfo SCR_Editable(?:Vehicle|Entity)UIInfo {SERIALIZED_ID} \{{\n'
+    rf'(?:    m_a(?:Authored|Auto)Labels \{{\n     [A-Z0-9_]+(?: [A-Z0-9_]+)*\n    \}}\n'
+    rf'|    m_EntityBudgetCost \{{\n     SCR_EntityBudgetValue {SERIALIZED_ID} \{{\n'
+    rf'      m_Value \d+\n     \}}\n    \}}\n)'
+    rf'   \}}\n  \}}\n)?'
+    rf'(?:  SCR_FuelManagerComponent {SERIALIZED_ID} \{{\n   FuelNodes \{{\n'
+    rf'    SCR_FuelNode {SERIALIZED_ID} \{{\n     m_fInitialFuelTankState {NUMBER}\n'
+    rf'    \}}\n   \}}\n  \}}\n)?'
+    rf' \}}\n)?(?: {FIELD.pattern}\n)*\}}'
+)
+
+
 def passive_asset(source, path):
     suffix = PurePosixPath(path).suffix.lower()
     if suffix == '.edds':
@@ -2082,6 +2099,8 @@ def passive_asset(source, path):
         lines = body.splitlines()
         material = MATERIAL_OVERRIDE.fullmatch(body.rstrip('\n'))
         if material and all(FIELD.fullmatch(line.strip()) for line in material['transform'].splitlines()):
+            return body
+        if NATIVE_VEHICLE_OVERRIDES.fullmatch(body.rstrip('\n')):
             return body
         if (len(lines) > 8 and lines[0] == LIGHT and lines[2:7] == LIGHT_COMPONENT and lines[-1] == '}'
                 and all(line.startswith(' ') and line.strip().partition(' ')[0] in LIGHT_FIELDS
