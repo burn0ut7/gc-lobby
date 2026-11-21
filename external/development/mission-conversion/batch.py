@@ -682,6 +682,20 @@ WORKSHOP_RESOURCE_ALIASES = {
         'ArmaTerrainCore_60B524F7A5AE96A8', '8F92FA56BC6BBB4F',
         'Prefabs/Structures/Bulding/Military/fort_rampart_ep1.et'),
 }
+RHIB_PATH = 'Prefabs/Vehicles/Naval/RHIB/'
+RHIB_GUNBOATS = {
+    ('DDE009B6A29873EE', RHIB_PATH + 'RHIB_Gunboat.et'):
+        ('RHIB_Gunboat.et', 'C5A173E13289F0FB', 'M2HB'),
+    ('38527BF34A02C3C7', RHIB_PATH + 'RHIB_Gunboat_M134.et'):
+        ('RHIB_Gunboat_MK19.et', '2636057EEB31D2EA', 'M134'),
+}
+RHIB_LEGACY_MOUNT_LAYERS = {
+    '48ca3751dc84ada292b3f543e3ed2d9efaac2b4c',  # Privateering
+    '3a5e2a7ece2807560fb281b1ef0d4e43ed25016c',  # North Coast Raid
+    '386dfc4dd48baa575d3b6893f973813518d2c878',  # Stealthing Into Villa
+    '338ce4c121323ef57ed329ee547a1e1b2886c354',  # Oil Rig Rangos
+}
+RHIB_CURRENT_MOUNT_LAYERS = {'10cceaf84b88a05e2c3cad314b005f18334dba38'}  # Taking Trenches
 UNITS_PREFAB_ALIASES = {
     ('7A0813F1B65EA589', 'Prefabs/Groups/BLUFOR/US/Army_1985_Rifles/Group_US_Army_1985_RifleSquad.et.et'): (
         '7A0813F1B65EA589', 'Prefabs/Groups/BLUFOR/US/Deprecated/Army_1985_Rifles/Group_US_Army_1985_RifleSquad.et',
@@ -866,6 +880,59 @@ def placed_core_character(block, resolve_character):
     reference = resolve_character(prefab[1].upper(), prefab[2])
     header = block[0].replace(prefab[0], reference, 1)
     return native_placement([header, *block[1:]], reviewed_character=True)
+
+
+def restore_rhib_mounts(block, aliases, source_blob):
+    ref = REF.search(block[0])
+    if not ref:
+        return block
+    original = ref[1].upper(), ref[2]
+    if original not in RHIB_GUNBOATS:
+        return block
+    if original not in aliases:
+        raise ValueError('RHIB mounts need the reviewed Workshop archive')
+    if source_blob in RHIB_CURRENT_MOUNT_LAYERS:
+        return block
+    if source_blob not in RHIB_LEGACY_MOUNT_LAYERS:
+        raise ValueError('RHIB authoring revision needs loadout review')
+
+    _, mount, suffix = RHIB_GUNBOATS[original]
+    components = [
+        '  SlotManagerComponent "{55BCE45E438E4CFF}" {',
+        '   Slots {',
+        '    RegisteringComponentSlotInfo Turret {',
+        f'     Prefab "{{{mount}}}{RHIB_PATH}RHIB_gun_mount_{suffix}.et"',
+        '    }',
+        '    RegisteringComponentSlotInfo Turret_Rear {',
+        f'     Prefab "{{FB8ABBE5AF24ED1E}}{RHIB_PATH}RHIB_gun_mount_Mk19_rear.et"',
+        '    }',
+        '   }',
+        '  }',
+    ]
+    if suffix == 'M2HB':
+        components.extend([
+            '  SCR_EditableVehicleComponent "{50DEB7C26B5EB312}" {',
+            '   m_UIInfo SCR_EditableEntityUIInfo "{5298E609432D192D}" {',
+            '    Name "#SPC-Vehicle_RHIB_Name - #SPC-Weapon_M2HB_Name #SPC-Weapon_MK19_Name"',
+            '   }',
+            '  }',
+        ])
+    def apply(fields):
+        if any(line.lstrip().startswith(('SlotManagerComponent ', 'SCR_EditableVehicleComponent ')) for line in fields):
+            raise ValueError('RHIB has authored mount or vehicle presentation overrides')
+        if ' components {' not in fields:
+            return [' components {', *components, ' }', *fields]
+        index = fields.index(' components {') + 1
+        return [*fields[:index], *components, *fields[index:]]
+
+    if not block[0].startswith('$grp '):
+        return [block[0], *apply(block[1:-1]), block[-1]]
+    rebuilt = [block[0]]
+    for name, fields in polygon_capture.members(block, True, None):
+        rebuilt.append(f' {name} {{' if name else ' {')
+        rebuilt.extend(' ' + field for field in apply(fields))
+        rebuilt.append(' }')
+    return [*rebuilt, block[-1]]
 
 
 def native_placement(block, *, reviewed_character=False):
@@ -1881,6 +1948,20 @@ def resource_aliases(workshop, units, stock):
             database = databases[provider]
             if database and database.contains(guid, path):
                 aliases[original] = (guid, path)
+        directory = workshop / 'RHIB_5994614FB5AD35C2'
+        archive = directory / 'data.pak'
+        registry = directory / 'resourceDatabase.rdb'
+        if archive.is_file() and registry.is_file():
+            with archive.open('rb') as stream:
+                digest = file_digest(stream, 'sha256').hexdigest()
+            if digest == '4dc8b818337a350f678a96f31cf36447a4372d1830fa1beeb977a929e5dcd215':
+                database = StockPrefabs(registry)
+                for original, (leaf, mount, suffix) in RHIB_GUNBOATS.items():
+                    current = original[0], RHIB_PATH + leaf
+                    if (database.contains(*current)
+                            and database.contains(mount, RHIB_PATH + f'RHIB_gun_mount_{suffix}.et')
+                            and database.contains('FB8ABBE5AF24ED1E', RHIB_PATH + 'RHIB_gun_mount_Mk19_rear.et')):
+                        aliases[original] = current
     for original, (current, path, digest) in UNITS_PREFAB_ALIASES.items():
         old, _ = original
         if ((old == current or old not in units.resources) and units.resources.get(current) == [path]
@@ -2834,7 +2915,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 elif NATIVE.match(head):
                     try:
                         vehicle, groups, slots = convert_vehicle_groups(convert_crew(block), convert_group_block)
-                        converted = native_placement(vehicle)
+                        converted = native_placement(restore_rhib_mounts(vehicle, asset_aliases, source.files[layer]))
                     except ValueError as exc:
                         blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
                     else:
@@ -3178,6 +3259,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare the AH-6 gun and rocket loadout against the legacy scenario.')
     if any(isinstance(body, str) and '{C8C37964483452EA}' in body for body in draft.values()):
         remaining.append('Compare the registered Army Cobra rocket loadout against the legacy scenario.')
+    if any(isinstance(body, str) and RHIB_PATH in body for body in draft.values()):
+        remaining.append('Compare RHIB boarding, flotation and the authored front and rear mounts.')
     if any(isinstance(body, str) and '{D17CCBF7FE9AAFEC}' in body for body in draft.values()):
         remaining.append('Compare the woodland CROWS II turret and crew stations against the legacy scenario.')
     if any(path.endswith('.layer') and isinstance(body, str) and '{BC07885176C7FF8A}' in body
