@@ -13612,7 +13612,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/Players_UK/UK_Players.layer": {
-          "gap": "legacy slot playability requires review 5E4D30EAE4DDA13A"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "boundaryLayers": {
@@ -15519,7 +15519,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/NATO_playergroups.layer": {
-          "gap": "legacy slot playability requires review 852FD90D22A94116"
+          "gap": "legacy slot playability requires review E9601333852C637F"
         },
         "worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/PACT_playergroups.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -15575,7 +15575,8 @@
       },
       "groupLayers": {
         "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/BLUFOR/Players.layer": {
-          "gap": "legacy slot playability requires review 283A06EF2B6E7E24"
+          "playableGroups": 14,
+          "unitPrefabEntries": 70
         },
         "worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/OPFOR/PlayerOPFOR.layer": {
           "gap": "unresolved character prefab D1BA3D1164545A8D"
@@ -15667,7 +15668,7 @@
       },
       "groupLayers": {
         "worlds/IronFunnelEvent/MSN3/SovietLevies_Layers/players_us.layer": {
-          "gap": "legacy slot playability requires review 5E4D30EAE4DDA13A"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/IronFunnelEvent/MSN3/SovietLevies_Layers/players_ussr.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -23549,7 +23550,8 @@
       },
       "groupLayers": {
         "worlds/Til/AndresBeacon/AndresBeacon_Layers/players.layer": {
-          "gap": "legacy slot playability requires review 283A06EF2B6E7E24"
+          "playableGroups": 8,
+          "unitPrefabEntries": 67
         }
       },
       "directBriefingsRead": 6,

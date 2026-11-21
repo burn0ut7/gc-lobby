@@ -1,5 +1,6 @@
 """Convert complete layers of playable groups backed by both revisions of GC Units."""
 from functools import lru_cache, partial
+from hashlib import sha256
 import json
 from pathlib import Path
 import re
@@ -20,6 +21,13 @@ FORMATION = re.compile(r'AIFormationComponent "\{[\da-fA-F]{16}\}" \{')
 WRAPPERS = json.loads(Path(__file__).with_name('stock_wrappers.json').read_text(encoding='utf-8'))
 STOCK_AI_GROUPS = json.loads(Path(__file__).with_name('stock_ai_groups.json').read_text(encoding='utf-8'))
 BASE_CHARACTER = ('37578B1666981FCE', 'Prefabs/Characters/Core/Character_Base.et')
+# These exact Units Dev overlays came from the published legacy Core package.
+EXTERNAL_PARENT_BRIDGES = {
+    '7A9EE19AB67B298B': ('Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_base.et',
+                         '6bba2563a432f879d466e9ebed1b312e3f1f5def486175ee71e378f72f3b1c05'),
+    '836E7E39AAC5888B': ('Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Base.et',
+                         '27bc46c4bd94e55a55363aad3b9f3c927781a70b75301cea113d368efed80b4d'),
+}
 # These external parents were verified against the published Core/RHS prefabs.
 # Both inherit Character_Base, which the legacy GC Lobby package overlays.
 LEGACY_PLAYABLE_PARENTS = {
@@ -129,6 +137,42 @@ def stock_character(guid, path, stock):
     if stock and member and member['path'] == path and stock.contains(*member['parent']):
         return member['parent']
     return None
+
+
+def reviewed_native_ancestry(before, after, dev):
+    if not before or any(re.search(r'\b(?:PS|TILW)_\w+', body) for body in (*before, *after)):
+        return False
+    if before == after:
+        return True
+    if before != after[:-1]:
+        return False
+    ref = REF.search(before[-1].partition('\n')[0])
+    bridge = EXTERNAL_PARENT_BRIDGES.get(ref[1].upper()) if ref else None
+    return (bool(bridge) and ref[2] == bridge[0] and dev.resources.get(ref[1].upper()) == [bridge[0]]
+            and sha256(after[-1].strip().encode()).hexdigest() == bridge[1])
+
+
+def stock_wrapper_ancestry_matches(source, dev, guid, stock, owned):
+    try:
+        before, after = inheritance(source, guid), inheritance(dev, guid)
+    except ValueError:
+        return False
+    if not before:
+        return False
+    if any(not body.startswith('SCR_ChimeraCharacter ') for body in (*before, *after)):
+        return False
+    ref = REF.search(before[-1].partition('\n')[0])
+    if not ref or ref[1].upper() in owned:
+        return False
+    parent = stock_character(ref[1], ref[2], stock)
+    if not parent or parent[0] in owned:
+        return False
+    native = before[-1].replace(ref[0], f'"{{{parent[0]}}}{parent[1]}"', 1)
+    try:
+        underlying = inheritance(source, parent[0])
+    except ValueError:
+        return False
+    return reviewed_native_ancestry((*before[:-1], native, *underlying), after, dev)
 
 
 def compare_ai_parents(source_units, dev_units, guid):
@@ -366,7 +410,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
         if member.upper() in reviewed_members or member.upper() in converted_wrappers:
             continue
         if not (legacy_member(source_units, member, force)
-                or (force and inherits_legacy_playable_base(source_units, member, stock))):
+                or (force and inherits_legacy_playable_base(source_units, member, stock))
+                or stock_wrapper_ancestry_matches(source_units, dev_units, member, stock, locally_owned)):
             raise ValueError('legacy slot playability requires review ' + member)
         only_path(dev_units, member)
     if not native_playable:

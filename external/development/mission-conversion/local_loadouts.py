@@ -1,22 +1,43 @@
 """Migrate explicitly or ancestrally playable character prefabs owned by a mission."""
 from functools import lru_cache
-from hashlib import sha256
 from pathlib import PurePosixPath
 import re
 
-from briefings import block_end
+from briefings import QUOTED, block_end, properties
 from catalog import REF
-from groups import inheritance, legacy_member
+from groups import inheritance, legacy_member, reviewed_native_ancestry, stock_character, stock_wrapper_ancestry_matches
 
 CHARACTER = re.compile(r'SCR_ChimeraCharacter : "\{[\da-fA-F]{16}\}[^"\n]+\.et" \{')
-PLAYABLE = re.compile(r'^  PS_PlayableComponent "\{5EFCC1946F475F15\}" \{\n   m_bIsPlayable 1\n  \}\n', re.M)
+PLAYABLE = '  PS_PlayableComponent "{5EFCC1946F475F15}" {'
 LEGACY = re.compile(r'\b(?:PS|TILW)_\w+')
-# The published legacy Core already supplied this empty FIA overlay. Units Dev
-# carries the same field-for-field resource with the original identity.
-EXTERNAL_PARENT_BRIDGES = {
-    '7A9EE19AB67B298B': ('Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_base.et',
-                         '6bba2563a432f879d466e9ebed1b312e3f1f5def486175ee71e378f72f3b1c05'),
-}
+def migrate_playability(text):
+    """Remove the reviewed legacy slot marker and retain its authored role label."""
+    lines = text.splitlines(keepends=True)
+    if PLAYABLE + '\n' not in lines:
+        return text, False
+    if lines.count(PLAYABLE + '\n') != 1 or lines.count(' components {\n') != 1:
+        raise ValueError('ambiguous legacy playable component')
+    component = lines.index(PLAYABLE + '\n')
+    start = lines.index(' components {\n')
+    end = block_end(lines, start)
+    if not start < component < end:
+        raise ValueError('legacy playability is outside the character components')
+    stop = block_end(lines, component)
+    data = properties([line.rstrip('\n') for line in lines[component + 1:stop]],
+                      {'m_bIsPlayable', 'm_sName', 'm_name'})
+    if (data.get('m_bIsPlayable') != '1'
+            or any(not re.fullmatch(QUOTED, data[field]) for field in ('m_sName', 'm_name') if field in data)):
+        raise ValueError('unsupported legacy playability values')
+    authored_name = data.get('m_sName', '""')
+    # The published legacy component reads m_sName. It has no m_name field.
+    if authored_name != '""':
+        if any(line.startswith('  SCR_EditableCharacterComponent ') for line in lines[start + 1:end]):
+            raise ValueError('existing character presentation needs review')
+        lines[end:end] = ['  SCR_EditableCharacterComponent "{520EA1D2F659C85C}" {\n',
+                          '   m_UIInfo SCR_EditableEntityUIInfo "{5298E609432D192D}" {\n',
+                          f'    Name {authored_name}\n', '   }\n', '  }\n']
+    del lines[component:stop + 1]
+    return ''.join(lines), True
 
 
 @lru_cache(maxsize=4096)
@@ -24,26 +45,18 @@ def unchanged_units_parent(source_units, dev_units, resource):
     try:
         before = inheritance(source_units, resource)
         after = inheritance(dev_units, resource)
+        native_before = tuple(migrate_playability(text)[0] for text in before)
     except ValueError:
         return False
     if not before or not after or any(not CHARACTER.fullmatch(text.partition('\n')[0]) for text in (*before, *after)):
         return False
-    native_before = tuple(PLAYABLE.sub('', text) for text in before)
-    if any(LEGACY.search(text) for text in (*native_before, *after)):
-        return False
-    if native_before == after:
-        return True
-    if native_before != after[:-1]:
-        return False
-    parent = REF.search(before[-1].splitlines()[0])
-    bridge = EXTERNAL_PARENT_BRIDGES.get(parent[1].upper()) if parent else None
-    return (bool(bridge) and parent[2] == bridge[0] and dev_units.resources.get(parent[1].upper()) == [bridge[0]]
-            and sha256(after[-1].strip().encode()).hexdigest() == bridge[1])
+    return reviewed_native_ancestry(native_before, after, dev_units)
 
 
 def collect(source, dev, source_units, dev_units, stock):
     """Return approved asset bodies by unique source GUID."""
     approved = {}
+    owned = source.resources.keys() | dev.resources.keys()
 
     def evaluate(guid, seen):
         if guid in approved:
@@ -58,20 +71,12 @@ def collect(source, dev, source_units, dev_units, stock):
         first = text.partition('\n')[0]
         if not CHARACTER.fullmatch(first):
             return None
-        body, removed = PLAYABLE.subn('', text)
-        if removed > 1 or LEGACY.search(body):
+        try:
+            body, removed = migrate_playability(text)
+        except ValueError:
             return None
-        if removed:
-            lines = text.splitlines()
-            if lines.count(' components {') != 1:
-                return None
-            start = lines.index(' components {')
-            try:
-                components = '\n'.join(lines[start + 1:block_end(lines, start)]) + '\n'
-            except ValueError:
-                return None
-            if not PLAYABLE.search(components):
-                return None
+        if LEGACY.search(body):
+            return None
         parent = REF.search(first)
         resource, parent_path = parent[1].upper(), parent[2]
         if resource in source.resources:
@@ -81,17 +86,25 @@ def collect(source, dev, source_units, dev_units, stock):
         elif resource in dev.resources or not parent_path.lower().startswith('prefabs/characters/'):
             return None
         elif resource in source_units.resources or resource in dev_units.resources:
-            if not unchanged_units_parent(source_units, dev_units, resource):
+            stock_wrapper = stock_wrapper_ancestry_matches(source_units, dev_units, resource, stock, owned)
+            if not stock_wrapper and not unchanged_units_parent(source_units, dev_units, resource):
                 return None
-            if not removed and not legacy_member(source_units, resource, False):
+            if not removed and not stock_wrapper and not legacy_member(source_units, resource, False):
                 return None
             canonical, = dev_units.resources[resource]
             if not canonical.lower().startswith('prefabs/characters/'):
                 return None
             header = first.replace(parent[0], f'"{{{resource}}}{canonical}"', 1)
             body = header + body[len(first):]
-        elif not removed or not stock.contains(resource, parent_path):
-            return None
+        else:
+            native = stock_character(resource, parent_path, stock)
+            if native:
+                if (native[0] in source.resources or native[0] in dev.resources
+                        or native[0] in source_units.resources or native[0] in dev_units.resources):
+                    return None
+                body = first.replace(parent[0], f'"{{{native[0]}}}{native[1]}"', 1) + body[len(first):]
+            elif not removed or not stock.contains(resource, parent_path):
+                return None
         if (dev.resources.get(guid) not in (None, [path])
                 or (path in dev.files and body.strip() != dev.read(path).strip())):
             return None
