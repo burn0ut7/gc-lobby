@@ -336,21 +336,37 @@ def main():
         has_outcomes = row['serializedTypes'].get('TILW_EndGameInstruction')
         delayed = None
         objectives = {}
+        if args.batch and row['serializedTypes'].get('TILW_SetNameComponent') and row['serializedTypes'].get('TILW_Flag_EntityDamage'):
+            try:
+                ai_assets = batch.ai_objectives(source, dev, world, stock, locally_owned, source_units, dev_units)
+                ai_flags = [asset[key] for asset in ai_assets.values() for key in ('flag', 'deathFlag')]
+                if len(set(ai_flags)) != len(ai_flags) or set(ai_flags) & set(objective_flags):
+                    raise ValueError('duplicate AI objective flag producers')
+                if ai_assets:
+                    objectives.update(ai_assets)
+                    objective_flags = set(objective_flags) | set(ai_flags)
+                    batch_interactions[world] = (objective_flags, interaction_placements)
+                    spawned_assets[world] = objectives
+                    row['aiObjectives'] = {identity: {k: v for k, v in asset.items() if k != 'body'}
+                                           for identity, asset in ai_assets.items()}
+            except ValueError as exc:
+                row['aiObjectiveGap'] = str(exc)
         if args.batch and row['serializedTypes'].get('TILW_SpawnPrefabInstruction'):
-            objectives = batch.spawned_objectives(source, dev, world, stock, locally_owned)
-            if objectives:
-                asset_flags = [item['flag'] for item in objectives.values()]
-                if len(asset_flags) != len(set(asset_flags)) or set(asset_flags) & set(objective_flags):
+            spawned = batch.spawned_objectives(source, dev, world, stock, locally_owned)
+            if spawned:
+                asset_flags = [item['flag'] for item in spawned.values()]
+                if (len(asset_flags) != len(set(asset_flags)) or set(asset_flags) & set(objective_flags)
+                        or objectives.keys() & spawned.keys()):
                     row.setdefault('interactionCandidate', {})['spawnedObjectives'] = {
                         'gap': 'duplicate objective flag producers'}
-                    objectives = {}
                 else:
+                    objectives.update(spawned)
                     objective_flags = set(objective_flags) | set(asset_flags)
                     batch_interactions[world] = (objective_flags, interaction_placements)
                     spawned_assets[world] = objectives
                     row.setdefault('interactionCandidate', {})['spawnedObjectives'] = {
                         'prefabs': {guid: {key: item[key] for key in ('path', 'flag', 'singleUse')}
-                                    for guid, item in objectives.items()}}
+                                    for guid, item in spawned.items()}}
             try:
                 delayed = collect_delayed_extraction(source, world)
                 if delayed.conditions:
@@ -752,10 +768,11 @@ def main():
         restored = {old: new for old, new in restored.items()
                     if old[0] not in locally_owned and new[0] not in locally_owned}
 
-        def convert_group_block(body):
+        def convert_group_block(body, reviewed_ai_members=None):
             return group_layer(body, source_units, dev_units, stock, locally_owned,
                                reviewed_members=reviewed_members, external_ai=external_ai,
-                               allow_stock_ai=True, restored_members=restored)
+                               allow_stock_ai=True, restored_members=restored,
+                               reviewed_ai_members=reviewed_ai_members)
 
         def convert_crew(block):
             return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned,

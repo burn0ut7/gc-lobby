@@ -251,13 +251,16 @@ def native_group_component(lines, start, end):
             and all(EDITABLE_UI_FIELD.fullmatch(line.strip()) for line in lines[start + 2:end - 1]))
 
 
-def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai, stock_group=None):
+def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai, stock_group=None,
+                        reviewed_ai_members=None):
     old_chain = () if stock_group else compare_ai_parents(source_units, dev_units, guid)
     inherited_stock_slots = {tuple(slot) for slot in stock_group['slots']} if stock_group else set()
     checked = set()
 
     def member(match):
         resource = match[1].upper()
+        if reviewed_ai_members and reviewed_ai_members.get(resource) == match[2]:
+            return match[0]
         if resource not in locally_owned and resource not in source_units.resources and resource not in dev_units.resources:
             if external_ai.get(resource) == match[2] or (resource, match[2]) in inherited_stock_slots:
                 return match[0]
@@ -340,7 +343,8 @@ def inherited_playable_roster(old, new, stock, owned_resources):
 
 
 def convert_instance(lines, guid, old, new, source_units, dev_units, stock, locally_owned,
-                     reviewed_callsigns=frozenset(), reviewed_members=None, external_ai=None, restored_members=None):
+                     reviewed_callsigns=frozenset(), reviewed_members=None, external_ai=None, restored_members=None,
+                     reviewed_ai_members=None):
     reviewed_members = reviewed_members or {}
     restored_members = restored_members or {}
     explicit_force = any(l.strip() == 'm_bSetPlayable 1' for l in lines)
@@ -358,7 +362,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                 raise ValueError('mixed playability alongside restored legacy roles')
             restored_playable = True
     if not native_playable and not explicit_force and not restored_playable:
-        return convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai or {})
+        return convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai or {},
+                                   reviewed_ai_members=reviewed_ai_members)
     roster = []
     converted_wrappers = set()
     if not replace_slots:
@@ -517,7 +522,8 @@ def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_
 
 
 def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset(),
-                reviewed_members=None, external_ai=None, allow_stock_ai=False, restored_members=None):
+                reviewed_members=None, external_ai=None, allow_stock_ai=False, restored_members=None,
+                reviewed_ai_members=None):
     if not re.search(r'^(?:\$grp )?SCR_AIGroup\b', text, re.M):
         return None
     lines = text.splitlines()
@@ -549,7 +555,7 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
                 raise ValueError('unverified native AI group ancestry ' + guid)
             convert = partial(convert_ai_instance, guid=guid, source_units=source_units, dev_units=dev_units,
                               locally_owned=locally_owned, external_ai=external_ai or {},
-                              stock_group=stock_group)
+                              stock_group=stock_group, reviewed_ai_members=reviewed_ai_members)
         else:
             _, old = prefab(source_units, guid)
             dest, new = prefab(dev_units, guid)
@@ -557,7 +563,8 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
             convert = partial(convert_instance, guid=guid, old=old, new=new, source_units=source_units,
                               dev_units=dev_units, stock=stock, locally_owned=locally_owned,
                               reviewed_callsigns=reviewed_callsigns, reviewed_members=reviewed_members,
-                              external_ai=external_ai, restored_members=restored_members)
+                              external_ai=external_ai, restored_members=restored_members,
+                              reviewed_ai_members=reviewed_ai_members)
         result.append(REF.sub(lambda _: '"{' + resource + '}' + dest + '"', lines[i], count=1))
         end = block_end(lines, i)
         if match['group']:

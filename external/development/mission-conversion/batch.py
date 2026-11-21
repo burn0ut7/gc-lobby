@@ -15,7 +15,7 @@ from event_actions import (NUMBER, SPAWN, SPAWN_FIELDS, render_crew_config, rend
 from events import LEGACY_FLAG, peak_flags
 from extraction import condition as extraction_condition
 from groups import inheritance
-from interactions import convert_block as convert_interaction_block
+from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer
 from outcomes import FRAMEWORK, leaves, render as render_outcome
@@ -63,6 +63,14 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/arc/StationSmashers.conf': (
+        '7bcb2beb501cba2cb14a896d7fe8fad1f267e705',
+        (('worlds/arc/StationSmashers/StationSmashers_Layers/players_ins.layer',
+          'd675a0072d39d427245c28258f9add77831c2c1f'),
+         ('worlds/arc/StationSmashers/StationSmashers_Layers/players_us.layer',
+          'b7ab827c80f7034784f4f554ff03a44330fca9b0')),
+        48, 52,
+    ),
     'Missions/IronFunnelEvent/MSN2.conf': (
         '0bd1338b3736f1caa0e5418a9e996696bb14b41e',
         (('worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/BLUFOR/Players.layer',
@@ -138,6 +146,8 @@ AI_WORLD_ALIASES = {
     '33A5B976E41B0A4C': ('Prefabs/AI/SCR_AIWorld_BadOrb.et', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et'),
 }
 STOCK_RESOURCE_ALIASES = {
+    ('1D0B32AA80873228', 'Prefabs/Props/Wrecks/LAV25_wreck.et'):
+        'Prefabs/Props/Wrecks/LAV25_wreck/LAV25_wreck.et',
     ('1F3291C2A7E2BA00', 'Prefabs/Props/Wrecks/BRDM2_wreck_static.et'):
         'Prefabs/Props/Wrecks/BRDM2_wreck/BRDM2_wreck_static.et',
     ('23C0BE9D80929DBD', 'Prefabs/Vegetation/Bush/b_salix_cinerea_1w_collision.et'):
@@ -582,6 +592,85 @@ def spawned_objectives(source, dev, world, stock, local_resources):
                 continue
             reviewed[resource] = {'path': path, 'body': native, 'flag': objectives[0]['flag'],
                                   'singleUse': objectives[0]['singleUse']}
+    return reviewed
+
+
+def ai_objectives(source, dev, world, stock, local_resources, source_units, dev_units):
+    """Convert named objective characters instantiated by the reviewed civilian AI group."""
+    reviewed = {}
+    paths = sorted(p for p in source.closure(world) if PurePosixPath(p).suffix.lower() in SOURCE_TEXT)
+    originals = {p: source.read(p) for p in paths}
+    corpus = '\n'.join(originals.values())
+    condition_corpus = re.sub(r'(?m)^   m_name "[\w.-]+"$', '', corpus)
+    scripts = script_text(source)
+    base = ('E024A74F8A4BC644', 'Prefabs/Characters/Factions/CIV/Businessman/Character_CIV_Businessman_1.et')
+    civ = ('DF688F0BC937BFC7', 'Prefabs/Groups/CIV/Group_CIV_Base.et')
+    if (base[0] in local_resources or not stock.contains(*base) or civ[0] in local_resources
+            or any(snapshot.resources.get(civ[0]) != [civ[1]] for snapshot in (source_units, dev_units))
+            or source_units.read(civ[1]) != dev_units.read(civ[1])
+            or not stock.contains('000CD338713F2B5A', 'Prefabs/AI/Groups/Group_Base.et')):
+        return reviewed
+    for layer in source.layers[world.lower()]:
+        if 'SCR_AIGroup ' not in originals[layer]:
+            continue
+        for line, group in blocks(originals[layer]):
+            if not re.fullmatch(r'SCR_AIGroup [\w.-]+ : "' + re.escape(f'{{{civ[0]}}}{civ[1]}') + r'" \{', group[0]):
+                continue
+            slots = [i for i, field in enumerate(group) if field == ' m_aUnitPrefabSlots {']
+            if len(slots) != 1 or any('m_bPlayable' in field or 'm_bSetPlayable' in field for field in group):
+                continue
+            start = slots[0]
+            ref = REF.fullmatch(group[start + 1].strip())
+            if not ref or block_end(group, start) != start + 2:
+                continue
+            resource, path = ref[1].upper(), ref[2]
+            if (source.resources.get(resource) != [path] or dev.resources.get(resource) not in (None, [path])
+                    or not path.startswith(world.rsplit('/', 1)[0] + '/') or corpus.count(ref[0]) != 1):
+                continue
+            entity = source.read(path).splitlines()
+            if not entity or entity[0] != f'SCR_ChimeraCharacter : "{{{base[0]}}}{base[1]}" {{':
+                continue
+            try:
+                root = entity.index(' components {')
+                root_end = block_end(entity, root)
+                setters = [i for i, value in enumerate(entity) if re.fullmatch(
+                    rf'  TILW_SetNameComponent {SERIALIZED_ID} \{{', value)]
+                damage = [i for i, value in enumerate(entity) if DAMAGE_COMPONENT.fullmatch(value)]
+                if len(setters) != 1 or len(damage) != 1:
+                    continue
+                setter, damage_index = setters[0], damage[0]
+                setter_close, damage_close = block_end(entity, setter), block_end(entity, damage_index)
+                if not (root < setter < setter_close < root_end and root < damage_index < damage_close < root_end):
+                    continue
+                name = properties(entity[setter + 1:setter_close], {'m_setName'})['m_setName']
+                death = properties(entity[damage_index + 1:damage_close], {'m_flagName'})['m_flagName']
+                if (not re.fullmatch(r'"[\w.-]{1,128}"', name) or not re.fullmatch(r'"[\w.-]{1,128}"', death)
+                        or any(field.startswith(('  RplComponent ', '  SCR_CharacterDamageManagerComponent '))
+                               for field in entity[root + 1:root_end])):
+                    continue
+                after = entity.copy()
+                after[setter:setter_close + 1] = [
+                    entity[setter].replace('TILW_SetNameComponent', 'GC_MissionEntityNameComponent'),
+                    f'   m_sMissionName {name}', '  }']
+                del after[damage_index:damage_close + 1]
+                native, action = convert_object(after, name[1:-1], path, inherited_replication=True)
+                body = '\n'.join(native) + '\n'
+                if not action or LEGACY.search(body) or (path in dev.files and dev.read(path).strip() != body.strip()):
+                    continue
+                flags = (death, '"' + action['flag'] + '"')
+                if len(set(flags)) != 2 or any(
+                    condition_corpus.count(flag) != len(re.findall(r'(?m)^ +(?:m_condition )?TILW_LiteralTerm [^\n]+\n'
+                                                         r'(?: +m_invertTerm [01]\n)? +m_flagName '
+                                                         + re.escape(flag) + '$', corpus)) + 1
+                    or flag in scripts for flag in flags):
+                    continue
+                if name in scripts or re.search(r'(?m)^\s*\w+ ' + re.escape(name[1:-1]) + r' (?:[:{])', corpus):
+                    continue
+            except (KeyError, ValueError):
+                continue
+            reviewed[resource] = {'path': path, 'body': body, 'flag': action['flag'], 'deathFlag': death[1:-1],
+                                  'entity': name[1:-1], 'singleUse': action['singleUse'],
+                                  'placement': f'{layer}:{line}'}
     return reviewed
 
 
@@ -1348,6 +1437,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     objective_flags, interaction_placements = interactions
     damage_flags = {record['flag']: record['entity'] for record in row.get('damageFlagCandidates', {}).values()
                     if 'flag' in record and record['flag'] in objective_flags}
+    ai_assets = {resource: asset for resource, asset in spawned_assets.items() if 'deathFlag' in asset}
+    damage_flags.update({asset['deathFlag']: asset['entity'] for asset in ai_assets.values()})
     teleport_targets = {target for record in row.get('interactionCandidate', {}).values() if isinstance(record, dict)
                         for target in record.get('teleportDestinations', [])}
     event_flags = {action['setsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
@@ -1408,7 +1499,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         blockers.append({'rule': 'framework settings', 'file': layer, 'line': line, 'detail': roots})
                 elif kind == 'SCR_AIGroup':
                     try:
-                        converted, count, slots = convert_group_block(interaction_placements.get((layer, line), body))
+                        ai_members = {identity: asset['path'] for identity, asset in ai_assets.items()
+                                      if asset['placement'] == f'{layer}:{line}'}
+                        converted, count, slots = convert_group_block(
+                            interaction_placements.get((layer, line), body), ai_members)
                         result.append(converted)
                         group_blocks.append({'file': layer, 'line': line, 'groups': count, 'slots': slots})
                     except ValueError as exc:
@@ -1499,7 +1593,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     prefab_spawns.extend(spawner_audit)
     spawn_guids = {REF.fullmatch(item['prefab'])[1].upper() for item in prefab_spawns}
     for resource, asset in sorted(spawned_assets.items()):
-        if asset['flag'] in used_flags and resource not in spawn_guids:
+        if resource not in ai_assets and asset['flag'] in used_flags and resource not in spawn_guids:
             blockers.append({'rule': 'spawned objective', 'file': asset['path'],
                              'detail': 'objective flag has no converted prefab spawn'})
     extraction_spawns = [item for event in rules.values() for item in event.get('extractionSpawns', [])]
@@ -1513,6 +1607,14 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                          or damage_flags
                          or any('m_aStatic' in body for body in draft.values())):
         named = named_placements(draft.values())
+        for resource, asset in ai_assets.items():
+            reference = f'"{{{resource}}}{asset["path"]}"'
+            occurrences = sum(body.count(reference) for body in draft.values())
+            if occurrences != 1 or asset['entity'] in named:
+                blockers.append({'rule': 'AI objective spawn', 'file': asset['path'],
+                                 'detail': 'expected one member and one unique runtime name'})
+            else:
+                named[asset['entity']] = [('SCR_ChimeraCharacter', reference)]
         for target in sorted(damage_flags.values()):
             if len(named.get(target, [])) != 1:
                 blockers.append({'rule': 'damage flag target', 'file': world,
