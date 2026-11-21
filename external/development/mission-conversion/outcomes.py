@@ -41,6 +41,14 @@ DORMANT_NOTICES = {
 REVIEWED_INACTIVE_FLAGS = {
     'worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/default.layer':
         ('ec2d8e9742da07dccacdb9f37beebfb23449e213', '"Industrial"', 2),
+    'worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid_layers/fw.layer':
+        ('bff731fee3984b1ab9eb50b692dc2cd841feeb17', '"Sawmill_Held"', 1),
+    'worlds/Til/HueyHill/HueyHill_Layers/default.layer':
+        ('d1ddf95704da3f6c1fd51954c546639f7dc5917e', '"TruckDestroyed"', 1),
+    'worlds/Til/RoutePierre/RoutePierre_Layers/default.layer':
+        ('7fecb24882a1c6a5b22b7ab2e78d8c6b0685f040', '"23"', 2),
+    'worlds/Wade/NightSeizure/NightSeizure_Layers/default.layer':
+        ('1db6432dc54bc23c48b8c94d1d310657fc473ee2', '"Intel"', 2),
 }
 
 

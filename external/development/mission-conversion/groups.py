@@ -38,6 +38,18 @@ MILITARY_IDENTITY = re.compile(r'm_Identity (BLUFOR|OPFOR|INDFOR|CIVILIAN)')
 WRAPPERS = json.loads(Path(__file__).with_name('stock_wrappers.json').read_text(encoding='utf-8'))
 STOCK_AI_GROUPS = json.loads(Path(__file__).with_name('stock_ai_groups.json').read_text(encoding='utf-8'))
 RHS_AI_GROUPS = json.loads(Path(__file__).with_name('rhs_ai_groups.json').read_text(encoding='utf-8'))
+STOCK_FORCED_ROSTERS = {
+    '1F468430E5AB477E': ('E5E4A45D13175E67', '33155540F5CAA602', 'EC8C02BC296EEEA0',
+                         'B7E8542C3CD9E4B2', '218217624DA44CCD', 'C81429173BB025F2'),
+    'AC473DE5F4B24E82': ('33155540F5CAA602', '33155540F5CAA602'),
+    '666A2B0A6B1967AE': ('6C1FFF78CD4E4ADA', '4D20F57C29B6EC1D', '5EFF3963153BE048',
+                         'A16C1DE30B6957D9', '029FF8F84148012E', '1523C468AAF90312'),
+    'B721D5A8C1B556CE': ('4D20F57C29B6EC1D', '4D20F57C29B6EC1D'),
+}
+STOCK_FORCED_CALLSIGNS = {
+    '68B49475034AE9C4', '68B49475050A0FED', '68B4947507BD96A1', '68B494750A66A9AD',
+    '68B494753290ECAA', '68B494751EAA3C6F', '68B494751D89F7E5', '68B49475189DF08B',
+}
 BASE_CHARACTER = ('37578B1666981FCE', 'Prefabs/Characters/Core/Character_Base.et')
 UK_CHARACTER_BASE = ('542CBB6908CA71D8', 'Prefabs/Characters/Factions/BLUFOR/UK_Army/Character_UK_Base.et')
 UK_REGULAR_DIRECTORY = 'Prefabs/Characters/Factions/BLUFOR/UK_Army/1989/Regulars/'
@@ -750,7 +762,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     return out + metadata, len(roster)
 
 
-def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_owned, reviewed_members):
+def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_owned, reviewed_members, *,
+                           reviewed_callsigns=frozenset()):
     roster = list(spec['slots'])
     placement = []
     depth = min((len(line) - len(line.lstrip()) for line in lines if line.strip()), default=1)
@@ -783,11 +796,11 @@ def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_
         rendered.append(f'{indent} "{{{resource}}}{asset}"')
     placement.extend([indent + 'm_aUnitPrefabSlots {', *rendered, indent + '}', indent + 'm_bSetPlayable 1'])
     return convert_instance(placement, spec['parent'][0], '', '', source_units, dev_units, stock, locally_owned,
-                            reviewed_members=verified)
+                            reviewed_members=verified, reviewed_callsigns=reviewed_callsigns)
 
 
 def convert_registered_group(lines, guid, source_units, dev_units, stock, locally_owned, external_ai,
-                             stock_group, reviewed_ai_members, forced_external):
+                             stock_group, reviewed_ai_members, forced_external, reviewed_members=None):
     rosters = [index for index, line in enumerate(lines) if line.strip() == 'm_aUnitPrefabSlots {']
     entries = ''
     authored_slots = []
@@ -804,7 +817,23 @@ def convert_registered_group(lines, guid, source_units, dev_units, stock, locall
     all_playable = bool(authored_slots) and all(
         resource.upper() in source_units.resources and legacy_member(source_units, resource.upper(), False)
         for resource, _ in authored_slots)
-    if all_playable or any(line.strip() == 'm_bSetPlayable 1' for line in lines):
+    switches = [line.strip() for line in lines if line.strip().startswith('m_bSetPlayable ')]
+    if not rosters and not unverified_slots and switches == ['m_bSetPlayable 1'] and guid in STOCK_FORCED_ROSTERS:
+        registered = {resource: path for group, order in STOCK_FORCED_ROSTERS.items()
+                      for resource, path in STOCK_AI_GROUPS[group]['slots'] if resource in order}
+        available = {resource: path for resource, path in registered.items() if stock.contains(resource, path)
+                     and all(resource not in owned for owned in (locally_owned, source_units.resources,
+                                                                  dev_units.resources))}
+        order = STOCK_FORCED_ROSTERS[guid]
+        if any(member not in available for member in order):
+            raise ValueError('unverified inherited playable roster ' + guid)
+        spec = {'slots': [(member, available[member]) for member in order], 'parent': (guid, stock_group['path'])}
+        placement = [line for line in lines if line.strip() != 'm_bSetPlayable 1']
+        callsigns = [match[1].upper() for line in placement if (match := CALL.fullmatch(line))]
+        reviewed_callsigns = (set(callsigns) & STOCK_FORCED_CALLSIGNS) if len(callsigns) == 1 else frozenset()
+        return convert_stock_instance(placement, spec, source_units, dev_units, stock, locally_owned,
+                                      {**(reviewed_members or {}), **available}, reviewed_callsigns=reviewed_callsigns)
+    if all_playable or 'm_bSetPlayable 1' in switches:
         if len(rosters) != 1:
             raise ValueError('forced playable native group needs a complete authored roster')
         return convert_instance(lines, guid, '', '', source_units, dev_units, stock, locally_owned,
@@ -875,7 +904,7 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
             convert = partial(convert_registered_group, guid=guid, source_units=source_units, dev_units=dev_units,
                               stock=stock, locally_owned=locally_owned, external_ai=external_ai or {},
                               stock_group=stock_group, reviewed_ai_members=reviewed_ai_members,
-                              forced_external=forced_external)
+                              forced_external=forced_external, reviewed_members=reviewed_members)
         else:
             _, old = prefab(source_units, guid)
             dest, new = prefab(dev_units, guid)

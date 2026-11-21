@@ -1,5 +1,6 @@
 """Migrate character prefabs owned by a mission without changing their playability."""
 from functools import lru_cache
+from hashlib import sha256
 from pathlib import PurePosixPath
 import re
 
@@ -22,6 +23,10 @@ MOVED_CHARACTER_PARENTS = {
 MOVED_AI_PARENTS = {
     ('4C362B06571604F9', 'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/Character_GC_SEPARATIST_SL.et'):
         'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/2020/Character_SEP_SL.et',
+}
+REVIEWED_FORCED_CHARACTERS = {
+    '899712E13A601488': '4c4f34ec51a307bfee86f7153626906af9a3cfe21064e540408a82bb2f9fa1ff',
+    'DADA3692BC2D3EE1': 'e2f4d1d7c1b1ec926064f5832a5d9fde9e7899438fb6df189137655a1f821892',
 }
 
 
@@ -140,8 +145,11 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
                         or native[0] in source_units.resources or native[0] in dev_units.resources):
                     return None
                 body = first.replace(parent[0], f'"{{{native[0]}}}{native[1]}"', 1) + body[len(first):]
-            elif not removed or not stock.contains(resource, parent_path):
-                return None
+            else:
+                expected = REVIEWED_FORCED_CHARACTERS.get(guid)
+                verified_forced = expected and sha256(text.strip().encode()).hexdigest() == expected
+                if not (removed or verified_forced) or not stock.contains(resource, parent_path):
+                    return None
         compared = normalize_references(body) if normalize_references and path in dev.files else body
         if (dev.resources.get(guid) not in (None, [path])
                 or (path in dev.files and compared.strip() != dev.read(path).strip())):

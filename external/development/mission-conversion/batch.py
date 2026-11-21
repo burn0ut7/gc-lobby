@@ -1065,9 +1065,10 @@ def unused_flag_sampling(source, world, path, line, framework):
         stop = block_end(framework, index)
         data = properties(framework[index + 1:stop], {'m_flagNames'})
         names = data.get('m_flagNames', '')
-        if not re.fullmatch(r'(?:"[\w.-]+"\s*)+', names):
+        name = r'"([\w.-]+(?: +[\w.-]+)*)"'
+        if not re.fullmatch(rf'(?:{name}\s*)+', names):
             return []
-        flags.extend(re.findall(r'"([\w.-]+)"', names))
+        flags.extend(re.findall(name, names))
         index = stop + 1
     content = source.read(path).splitlines()
     # Exclude the entire sampling block only. Declarations elsewhere in the same layer still count as uses.
