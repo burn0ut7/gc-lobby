@@ -10,6 +10,12 @@ from groups import inheritance, legacy_member, reviewed_native_ancestry, stock_c
 CHARACTER = re.compile(r'SCR_ChimeraCharacter : "\{[\da-fA-F]{16}\}[^"\n]+\.et" \{')
 PLAYABLE = '  PS_PlayableComponent "{5EFCC1946F475F15}" {'
 LEGACY = re.compile(r'\b(?:PS|TILW)_\w+')
+MOVED_CHARACTER_PARENTS = {
+    ('B64CD72F4D93A99E', 'worlds/James/newbritnvatvt/Character_UK_1989_Paras_LRDriver_P.et'):
+        'worlds/James/JavoryPrelude/Character_UK_1989_Paras_LRDriver_P.et',
+}
+
+
 def migrate_playability(text, *, inherited_playable=False):
     """Remove the reviewed legacy slot marker and retain its authored role label."""
     lines = text.splitlines(keepends=True)
@@ -81,8 +87,12 @@ def collect(source, dev, source_units, dev_units, stock):
         resource, parent_path = parent[1].upper(), parent[2]
         if resource in source.resources:
             parent_asset = evaluate(resource, seen | {guid})
-            if not parent_asset or parent_path != parent_asset[0]:
+            if not parent_asset or (parent_path != parent_asset[0]
+                                    and MOVED_CHARACTER_PARENTS.get((resource, parent_path)) != parent_asset[0]):
                 return None
+            if parent_path != parent_asset[0]:
+                header = first.replace(parent[0], f'"{{{resource}}}{parent_asset[0]}"', 1)
+                body = header + body[len(first):]
         elif resource in dev.resources or not parent_path.lower().startswith('prefabs/characters/'):
             return None
         elif resource in source_units.resources or resource in dev_units.resources:

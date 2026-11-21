@@ -40,6 +40,10 @@ NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|Turret|SCR_AIWorld|GameEntity|
                     r'DecalEntity|SCR_DestructibleEntity|SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
                     r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity|LightEntity)\b')
 WEATHER = re.compile(r'  SCR_TimeAndWeatherHandlerComponent "\{5EE3229927D4D2F5\}" \{')
+INIT_WEATHER = '  SCR_InitWeatherComponent "{61B68227C35BFE9A}" {'
+INIT_WEATHER_FIELD = re.compile(
+    r'   (?:m_sInitialStartingWeatherId "[\w .-]*"|m_iSetWeatherConstant [01]|'
+    r'm_initialWeatherDuration(?:Min|Max) \d+(?:\.\d+)?)')
 PERCEPTION = re.compile(r'^PerceptionManager(?: [\w.-]+)? : "\{028DAEAD63E056BE\}[^"]+" \{$')
 LIGHT = 'LightEntity : "{C274EE54AB618B04}Prefabs/Structures/Core/Lamp_LightEntity_base.et" {'
 LIGHT_COMPONENT = [
@@ -198,6 +202,12 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Vegetation/Bush/b_corylus_avellana_1.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('24223D0679CDD612', 'Prefabs/Vehicles/Tracked/BFV/M2A2_OD.et'): (
+        'WCS_M2A2_63120AE07E6C0966', '24223D0679CDD612',
+        'Prefabs/Vehicles/Tracked/M2A2/M2A2_OD.et'),
+    ('5B4927667C3291EF', 'Prefabs/Structures/Wall/CityDoor.et'): (
+        'ArmaTerrainCore_60B524F7A5AE96A8', '5B4927667C3291EE',
+        'Prefabs/Structures/Wall/CityDoor.et'),
     ('36EA87CEC1BE77E0', 'Prefabs/Vehicles/Wheeled/JLTV/OGPK/M2HB/JLTV_OGPK_Olive.et'): (
         'WCS_JLTV_5C721177A220B42F', '36EA87CEC1BE77E0',
         'Prefabs/Vehicles/Wheeled/JLTV/OGPK/M2HB/JLTV_OGPK_M2HB_Olive.et'),
@@ -1265,6 +1275,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     immediate_release = False
     construction = {}
     jip = {}
+    mode_components_seen = False
     respawn_table_seen = False
     respawn_fields = ''
     safe_start_seen = False
@@ -1273,10 +1284,27 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         line = root[index]
         if line == ' components {':
             end = block_end(root, index)
-            if (end <= index + 2 or not WEATHER.fullmatch(root[index + 1])
-                    or block_end(root, index + 1) != end - 1):
+            if mode_components_seen or end == index + 1:
                 raise ValueError('custom legacy game mode components')
-            weather, environment = convert_weather(world, root[index + 1:end])
+            mode_components_seen = True
+            component = index + 1
+            seen = set()
+            while component < end:
+                header = root[component]
+                stop = block_end(root, component)
+                if header in seen or stop >= end:
+                    raise ValueError('custom legacy game mode components')
+                seen.add(header)
+                component_lines = root[component:stop + 1]
+                if WEATHER.fullmatch(header):
+                    handler, environment = convert_weather(world, component_lines)
+                    weather += handler
+                elif header == INIT_WEATHER and all(INIT_WEATHER_FIELD.fullmatch(field)
+                                                    for field in component_lines[1:-1]):
+                    weather += '\n'.join(component_lines) + '\n'
+                else:
+                    raise ValueError('custom legacy game mode components')
+                component = stop + 1
             index = end
         elif line.strip().partition(' ')[0] in SPAWNER_TRANSFORM and FIELD.fullmatch(line.strip()):
             field, _, value = line.strip().partition(' ')

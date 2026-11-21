@@ -381,6 +381,15 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                      reviewed_ai_members=None, forced_external=None):
     reviewed_members = reviewed_members or {}
     restored_members = restored_members or {}
+    lines = list(lines)
+    authored = [i for i, line in enumerate(lines) if re.fullmatch(r'\s*m_aUnitPrefabSlots (?:\+ ?)?\{', line)]
+    for start in authored:
+        end = block_end(lines, start)
+        for index in range(start + 1, end):
+            # Some legacy slot arrays contain bare resource names without spaces.
+            bare = re.fullmatch(r'( +)(\{[\da-fA-F]{16}\}[^\s"]+\.et)\s*', lines[index])
+            if bare:
+                lines[index] = f'{bare[1]}"{bare[2]}"'
     explicit_force = any(l.strip() == 'm_bSetPlayable 1' for l in lines)
     native_override = next((l.strip()[-1] for l in lines if l.strip() in ('m_bPlayable 0', 'm_bPlayable 1')), None)
     native_playable = (native_override == '1' if native_override is not None
@@ -398,7 +407,6 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     character_playable = False
     if not (native_playable or explicit_force or restored_playable):
         # The old lobby registered playable characters independently of the group's native flag.
-        authored = [i for i, line in enumerate(lines) if re.fullmatch(r'\s*m_aUnitPrefabSlots (?:\+ ?)?\{', line)]
         if len(authored) <= 1:
             base = SLOTS.search(old)
             members = REF.findall(base[1]) if base and not replace_slots else []
