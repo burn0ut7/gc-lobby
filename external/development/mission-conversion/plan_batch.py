@@ -41,6 +41,29 @@ def runtime_checks(drafts):
     return checks
 
 
+def resource_recovery_queue(resources, held):
+    """Rank resource leads by the complete world drafts they could release."""
+    references = {f"{{{entry['guid']}}}{entry['path']}": entry for entry in resources}
+    single_asset_worlds = defaultdict(set)
+    affected_worlds = defaultdict(set)
+    for draft in held:
+        missing = {issue for issue in draft['issues'] if issue in references}
+        for reference in missing:
+            affected_worlds[reference].add(draft['world'])
+        other_issues = [issue for issue in draft['issues'] if issue not in missing
+                        and not issue.endswith(' — Unresolved external resource references')]
+        if len(missing) == 1 and not other_issues:
+            single_asset_worlds[next(iter(missing))].add(draft['world'])
+    return [
+        {'reference': reference, 'worlds': sorted(affected_worlds[reference]),
+         'onlyMissingAsset': sorted(single_asset_worlds[reference]),
+         'registeredInDevGraph': any(entry['declaredDependency'] for entry in
+                                    references[reference]['registrations'])}
+        for reference in sorted(affected_worlds, key=lambda ref: (
+            -len(single_asset_worlds[ref]), -len(affected_worlds[ref]), ref))
+    ]
+
+
 def authored_file_note(note):
     # Carry forward file evidence from older plans that put it in the runtime queue.
     return re.fullmatch(
@@ -176,6 +199,7 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         'runtimeChecks': runtime_checks(runtime_candidates),
         'authoredFileNotesByLauncher': file_notes,
         'unresolvedResources': review.get('unresolvedResources', []),
+        'resourceRecoveryQueue': resource_recovery_queue(review.get('unresolvedResources', []), held),
         'unavailableDependencyIds': review.get('unavailableDependencyIds', []),
         'rules': [{'rule': rule, **priority[rule]} for rule in rules],
         'specificBlockers': [{'blocker': kind, **specific[kind]} for kind in details],
@@ -208,8 +232,10 @@ def markdown(plan):
         lines.append('No drafts cleared the file checks.')
     lines.extend(['', f"Additional drafts that cleared file checks · {len(plan['additionalDrafts'])}",
                   '', '## Representative Workbench checks across file-cleared missions', '',
-                  'Run these after assembling the conversion batch. A representative in an additional '
-                  'draft is playable after its installation.', ''])
+                  'After bulk installation, compile once and run one lobby-to-after-action smoke test. '
+                  'Start with the first installed representative that can exercise the full flow. '
+                  'Credit checks observed during that run and use the queue for remaining behaviors. '
+                  'Record any checks left unverified.', ''])
     for entry in plan['runtimeChecks']:
         lines.append(f"- `{entry['launcher']}`")
         lines.extend(f'  - {check}' for check in entry['checks'])
@@ -228,6 +254,14 @@ def markdown(plan):
                      for resource in entry.get('remainingResources', []))
     if not plan['heldDrafts']:
         lines.append('None.')
+    if plan['resourceRecoveryQueue']:
+        lines.extend(['', '## Dependency recovery priorities for complete drafts', '',
+                      '| Resource | Only missing asset | Held worlds | ID registered in Dev graph |',
+                      '| --- | ---: | ---: | --- |'])
+        for entry in plan['resourceRecoveryQueue']:
+            registered = 'Yes' if entry['registeredInDevGraph'] else 'No'
+            lines.append(f"| `{entry['reference']}` | {len(entry['onlyMissingAsset'])} | "
+                         f"{len(entry['worlds'])} | {registered} |")
     resources = plan['unresolvedResources']
     if resources:
         lines.extend(['', '## Unresolved resource registrations', '',

@@ -84,6 +84,8 @@ def main():
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument('--mission', action='append', help='exact legacy launcher path, repeat to select a batch')
     selection.add_argument('--plan', type=Path, help='install the suggested batch from a file audit plan')
+    parser.add_argument('--all-ready', action='store_true',
+                        help='install all file-cleared drafts in the plan in one pass')
     parser.add_argument('--dependency', action='append', type=Path, default=[], help='addon checkout at HEAD for resource checks')
     parser.add_argument('--base-database', type=Path, help='verify draft resource references before installing')
     parser.add_argument('--workshop-addons', type=Path, help='include installed provider databases in resource checks')
@@ -91,6 +93,8 @@ def main():
                         help='install reviewed updates to existing, unmodified Dev layers or generated settings')
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
+    if args.all_ready and not args.plan:
+        parser.error('--all-ready requires --plan')
 
     def git(*command):
         return subprocess.check_output(['git', '-C', str(args.missions), *command]).decode().strip()
@@ -114,9 +118,12 @@ def main():
                 raise ValueError('plan and inventory describe different revisions')
             if plan.get('inventorySha256') != sha256(inventory_bytes).hexdigest():
                 raise ValueError('plan and inventory come from different file audits')
-            missions = [header for row in plan['suggestedBatch'] for header in row['launchers']]
+            ready = plan['suggestedBatch']
+            if args.all_ready:
+                ready = [*ready, *plan['additionalDrafts']]
+            missions = [header for row in ready for header in row['launchers']]
             if not missions:
-                raise ValueError('the plan has no suggested drafts')
+                raise ValueError('the plan has no file-cleared drafts')
             if not args.base_database:
                 raise ValueError('--plan requires --base-database for the installation resource audit')
         if missions:

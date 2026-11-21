@@ -8,7 +8,7 @@ import re
 
 from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURRENT_PARENT,
                          LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, capture_status_texts, faction_keys)
-from boundaries import ROOT as AO_SHAPE, STANDALONE_SHAPE, convert_boundaries
+from boundaries import ROOT as AO_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE, convert_boundaries
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import REF, SOURCE_TEXT
 from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, render_crew_config, render_spawn, spawn_details, split_crew_block
@@ -423,6 +423,11 @@ REVIEWED_MISSING_SPAWN_WAYPOINTS = {
 REVIEWED_MISSING_STATIC_VEHICLES = {
     'worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/OPFOR.layer':
         ('9a5b8ff212d1ba8c484e8e17dfed060b9baff796', {'T72A_1'}),
+    'worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Opfor/Players.layer':
+        ('9f0599d33d2c7b9964f1e5bd6c7fa526151c29e9', {
+            'Ural4320_ammo1', 'Ural4320_ammo2', 'Ural4320_command1',
+            'Ural4320_repair1', 'Ural4320_repair2', 'Ural4320_tanker1',
+        }),
 }
 MATERIAL_OVERRIDE = re.compile(
     rf'SCR_DestructibleBuildingEntity : "\{{[\da-fA-F]{{16}}\}}Prefabs/Structures/[^"\n]+\.et" \{{\n'
@@ -678,6 +683,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/TheLocalPub/LamentinLosers/Prefabs/Weapons/Explosives/Mine_TM62M/Mine_TM62M_LamentinLosers.et':
+        '168f1b77cfe825a1a980903dcacc10461131b8f9b56463e228dae8931f25bc58',
     'worlds/anteante101/Prefabs/group/Group_GC_ION_Uniformed_CAT_WL_AA101.et':
         'ae267b03015662a0badcfa9210ce86ca18d1c3bf2e06efe19fe8b0b009fe4813',
     'worlds/arc/CommandosReforged/Prefabs/BLU/Barret_m107a1_IR.et':
@@ -2593,6 +2600,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     parts = {}
     boundaries = {}
     converted_cover = False
+    converted_passive_cover = False
     reused_layers = set()
     group_blocks = []
     area_names = []
@@ -2720,13 +2728,14 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append(spawners[(layer, line)])
                 elif kind == 'PS_ManualMarker':
                     result.append(convert_layer(body, dev, draw_order=True)[0])
-                elif 'TILW_AOLimit.et' in head or 'TILW_MapShape.et' in head:
+                elif 'TILW_AOLimit.et' in head or 'TILW_MapShape.et' in head or PASSIVE_COVER.fullmatch(head):
                     converted, audit = convert_boundaries(body, allow_public_faction_color=True, extended_shapes=True)
                     if not converted or any('gap' in item for item in audit.values()):
                         blockers.append({'rule': 'boundary or map shape', 'file': layer, 'line': line, 'detail': audit})
                     else:
                         boundaries.setdefault(layer, []).append(converted)
                         converted_cover |= 'm_bAutoFrameMap 1' in converted
+                        converted_passive_cover |= bool(PASSIVE_COVER.fullmatch(head))
                 elif PERCEPTION.fullmatch(head) and all(
                     field.strip().partition(' ')[0] in SPAWNER_TRANSFORM and FIELD.fullmatch(field.strip())
                     for field in block[1:-1]
@@ -3108,6 +3117,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare group simulation as players cross the authored LOD distance.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Compare framing and zoom against the legacy cover.')
+    if converted_passive_cover:
+        remaining.append('Compare faction-only cover fill and confirm it leaves the map view unchanged.')
     if any(isinstance(text, str) and '{3B62608C6AB716B9}' in text and 'm_fSize 128000\n' in text
            for text in draft.values()):
         remaining.append('Compare the oversized cover marker at the authored scale across map zoom levels.')
