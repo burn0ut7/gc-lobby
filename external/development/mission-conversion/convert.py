@@ -144,10 +144,13 @@ def main():
     external_vehicles = {}
     rhs_database = None
     workshop_spawn_resources = ()
+    external_vehicle_parents = {}
     if args.batch and args.workshop_addons:
         try:
             external_ai, rhs_database = rhs_ai_characters(args.workshop_addons)
             external_vehicles = vehicle_crew.workshop_vehicles(args.workshop_addons)
+            external_vehicle_parents = vehicle_crew.workshop_vehicles(
+                args.workshop_addons, vehicle_crew.WORKSHOP_VEHICLE_PARENTS)
             workshop_spawn_resources = batch.workshop_spawn_resources(args.workshop_addons) | set(external_vehicles.items())
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
@@ -894,8 +897,14 @@ def main():
                                rhs=rhs_database)
 
         def convert_crew(block):
+            ref = REF.search(block[0])
+            if ref and ref[1].upper() in external_vehicles:
+                guid = ref[1].upper()
+                alias = batch.registered_alias(guid, ref[2], source, dev, asset_aliases)
+                if alias == f'"{{{guid}}}{external_vehicles[guid]}"':
+                    block = [block[0][:ref.start()] + alias + block[0][ref.end():], *block[1:]]
             return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned,
-                                        external_vehicles, external_ai)
+                                        external_vehicles, external_ai, external_parents=external_vehicle_parents)
 
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
                          asset_aliases, {**loadouts, **ai_loadouts}, spawned_assets, convert_crew, resolve_spawn, resolve_crew,

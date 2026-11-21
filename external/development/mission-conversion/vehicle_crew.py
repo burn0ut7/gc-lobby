@@ -27,16 +27,21 @@ WORKSHOP_VEHICLES = {
     '2B9DB09AC8BEA673': ('WCS_T-72_5E0AB16BEB16D6A4', 'Prefabs/Vehicles/Tracked/T72A/T72A_FIA.et'),
     '31F0866273C46D76': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/K17/APC_K17_Berezok.et'),
     '447CFE8D73F95C3E': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_AFRF.et'),
+    '5CFD8CB5C3E55A4E': ('WCS_M2A2_63120AE07E6C0966', 'Prefabs/Vehicles/Tracked/M2A2/M2A2_MERDC.et'),
     '6B7CD408BDFB94F5': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM_Green.et'),
     '7BC76F92B882889D': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM.et'),
+    '7ACFD8FA081996F6': ('TacticalFlava-TIGR_DEADC0DE00000003',
+                         'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM_1P29.et'),
     '8E7F7A0368CE8805': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM_Green_1P29.et'),
     '95A220DF8D6E2543': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/ArbaletDM/GAZ_TIGR_v2_Arbalet_KORD_Green.et'),
+    '953523CFE2DB9769': ('M113APC_5E5C154FEE1094BB', 'Prefabs/Vehicles/Tracked/M113/M113_APC_MERDC.et'),
     'AC12E5669B411D57': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/KORD/GAZ_TIGR_v2_KORD.et'),
+    'AF1C02364D45CC5B': ('WCS_T-72_5E0AB16BEB16D6A4', 'Prefabs/Vehicles/Tracked/T72A/T72A_Desert.et'),
     'FD109F3702AAB392': ('ZU-23_5C9AD9EF76F6B5EA', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ZU23.et'),
 }
 PKM = ('723870DBB19D30B0', 'Prefabs/Weapons/Tripods/Tripod_6T5_PKM.et')
@@ -61,15 +66,36 @@ COMPOSITION_OVERRIDES = {'7A40BF128BB47EFD': '46f28ca4f00646d4223fc72a3e03c28331
 BTR70_CREW_OVERLAY = '447CFE8D73F95C3E'
 BTR70_CREW_LEAF = '81a8ccf59bed709f4eb87c25c260e529acd6cbb74dab97d09566adf828395c78'
 BTR70_SMOKE_ANCESTOR = 'ae982b43b504904f7b97947e7fc45c83f584e46ce5f7fa8d7c08c05e386eee74'
+NVA_BTR70_LEAF = 'ac360b5e120fa0f5ba97deee2e1ee68ef6d415fd9e856710c5104efdd8ea551f'
+NVA_T72A_LEAF = '30fdb038e061492f404c19340d7b0e1da08746c49abd8f57faf46fb7264d38a2'
+UNITS_VEHICLES = {
+    '1C1038CF07EA4B00': (
+        'Prefabs/Vehicles/Wheeled/BTR70/NVA/BTR70_NVA.et',
+        ('C012BB3488BEA0C2', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70.et'),
+        (NVA_BTR70_LEAF,), (NVA_BTR70_LEAF,),
+    ),
+    '83FC98FFD5D48825': (
+        'Prefabs/Vehicles/Tracked/T-72A/T72A_NVA.et',
+        ('8A883ABED22B6E27', 'Prefabs/Vehicles/Core/Tracked_Base.et'),
+        (NVA_T72A_LEAF, '44d169d2260f456352926fd245aa50f787083ee2a43a23eb76ebed0b61e0e38d'),
+        (NVA_T72A_LEAF, '2ec90305fa151423829093e490029d2a994c655b6b70b47ef1291b2b1207674d'),
+    ),
+}
+WORKSHOP_VEHICLE_PARENTS = {
+    '8A883ABED22B6E27': ('WCS_SpaceCore_5E389BB9F58B79A6', 'Prefabs/Vehicles/Core/Tracked_Base.et'),
+}
 
 
-def workshop_vehicles(workshop):
+def workshop_vehicles(workshop, resources=WORKSHOP_VEHICLES):
     result = {}
     if not workshop:
         return result
-    for resource, (provider, path) in WORKSHOP_VEHICLES.items():
-        registry = workshop / provider / 'resourceDatabase.rdb'
-        if registry.is_file() and StockPrefabs(registry).contains(resource, path):
+    databases = {}
+    for resource, (provider, path) in resources.items():
+        if provider not in databases:
+            registry = workshop / provider / 'resourceDatabase.rdb'
+            databases[provider] = StockPrefabs(registry) if registry.is_file() else None
+        if (database := databases[provider]) and database.contains(resource, path):
             result[resource] = path
     return result
 
@@ -210,7 +236,22 @@ def verified_btr70_overlay(guid, path, source_units, dev_units):
     return before == [BTR70_CREW_LEAF] and after == [BTR70_CREW_LEAF, BTR70_SMOKE_ANCESTOR]
 
 
-def convert(block, source_units, dev_units, stock, owned, external_vehicles=None, external_ai=None):
+def verified_units_vehicle(guid, path, source_units, dev_units, stock, owned, external_parents):
+    spec = UNITS_VEHICLES.get(guid)
+    if (not spec or path != spec[0]
+            or source_units.resources.get(guid) != [path] or dev_units.resources.get(guid) != [path]):
+        return False
+    _, parent, source_hashes, dev_hashes = spec
+    if not (stock.contains(*parent) or external_parents.get(parent[0]) == parent[1]) or any(
+            parent[0] in resources for resources in (owned, source_units.resources, dev_units.resources)):
+        return False
+    before = tuple(sha256(body.strip().encode()).hexdigest() for body in inheritance(source_units, guid))
+    after = tuple(sha256(body.strip().encode()).hexdigest() for body in inheritance(dev_units, guid))
+    return before == source_hashes and after == dev_hashes
+
+
+def convert(block, source_units, dev_units, stock, owned, external_vehicles=None, external_ai=None, *,
+            external_parents=None):
     if not any('TILW_VehicleCrewComponent' in line for line in block):
         return block
     vehicle = VEHICLE.fullmatch(block[0])
@@ -229,8 +270,10 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
                           and source_units.read(path) == dev_units.read(path)
                           and sha256(dev_units.read(path).strip().encode()).hexdigest() == COMPOSITION_OVERRIDES[guid])
     vehicle_overlay = vehicle and external_vehicle and verified_btr70_overlay(guid, path, source_units, dev_units)
-    if (guid in owned or (units_owned and not (inherited_override or vehicle_overlay))
-            or not (stock.contains(guid, path) or external_vehicle)):
+    units_vehicle = vehicle and units_owned and verified_units_vehicle(
+        guid, path, source_units, dev_units, stock, owned, external_parents or {})
+    if (guid in owned or (units_owned and not (inherited_override or vehicle_overlay or units_vehicle))
+            or not (stock.contains(guid, path) or external_vehicle or units_vehicle)):
         raise ValueError('unverified crew vehicle ' + guid)
 
     def replace_crew(lines, single_turret):

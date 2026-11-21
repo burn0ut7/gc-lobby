@@ -468,6 +468,12 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Scenarios/SP01/SP01_UAZ469_USSR.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('5CFD8CB5C3E55A4E', 'Prefabs/Vehicles/Tracked/BFV/M2A2_MERDC.et'): (
+        'WCS_M2A2_63120AE07E6C0966', '5CFD8CB5C3E55A4E',
+        'Prefabs/Vehicles/Tracked/M2A2/M2A2_MERDC.et'),
+    ('AF1C02364D45CC5B', 'Prefabs/Vehicles/Tracked/T-72A/T72A_Desert.et'): (
+        'WCS_T-72_5E0AB16BEB16D6A4', 'AF1C02364D45CC5B',
+        'Prefabs/Vehicles/Tracked/T72A/T72A_Desert.et'),
     ('7FF511EDC4034D9F', 'Prefabs/Vehicles/Helicopters/Mi24/Mi24V_armed_S5.et'): (
         'WCS_Mi-24V_628933A0D3A0D700', '7FF511EDC4034D9F',
         'Prefabs/Vehicles/Helicopters/Mi24/Mi24V_Armed_UB1657_X4.et'),
