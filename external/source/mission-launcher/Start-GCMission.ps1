@@ -51,7 +51,7 @@ function Read-MissionHeader([string]$path) {
     $scenario = [GcNativeBlock]::Read("$($header.FullName).meta",'MetaFileClass').Text('Name')
     $resource = Get-Resource $scenario '.conf'
     if ([IO.Path]::GetFullPath((Join-Path $owner.FullName $resource.path)) -ne $header.FullName) { throw 'Scenario .meta does not match the deployed header path' }
-    $body = [GcNativeBlock]::Read($header.FullName,'GC_MissionHeader')
+    $body = [GcNativeBlock]::ReadMissionHeader($header.FullName)
     $world = $body.Text('World')
     $worldResource = Get-Resource $world '.ent'
     $catalog = $body.Object('m_GC_Catalog','GC_CatalogMissionMetadata')

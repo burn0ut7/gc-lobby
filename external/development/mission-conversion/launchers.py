@@ -7,7 +7,7 @@ import re
 import subprocess
 
 from briefings import block_end
-from catalog import Snapshot
+from catalog import GC_HEADER_NAMES, Snapshot
 
 
 def field(pattern):
@@ -19,8 +19,13 @@ META_NAME = field('Name')
 SHARED_ID = '321510A1C6838890'
 BUSTERS = 'worlds/Corax/SerriffBusters/SerrifBusters.ent'
 TOPDOWN = 'worlds/Delfer/Topdown/Topdown.ent'
-LEGACY_HEADER_TYPE = re.compile(rb'\A((?:\xef\xbb\xbf)?[ \t\r\n]*)SCR_MissionHeader(?=\s*\{)')
-GC_HEADER_TYPE = re.compile(rb'\A(?:\xef\xbb\xbf)?[ \t\r\n]*GC_MissionHeader(?=\s*\{)')
+PREFIX = rb'\A(?:\xef\xbb\xbf)?[ \t\r\n]*'
+LEGACY_HEADER_TYPE = re.compile(PREFIX + rb'(SCR_MissionHeader(?:ScenarioFramework)?)(?=\s*\{)')
+GC_HEADER_TYPE = re.compile(PREFIX + GC_HEADER_NAMES.encode() + rb'(?=\s*\{)')
+NATIVE_TYPES = {
+    b'SCR_MissionHeader': b'GC_MissionHeader',
+    b'SCR_MissionHeaderScenarioFramework': b'GC_ScenarioFrameworkMissionHeader',
+}
 GENERATED = re.compile(r' m_GC_GeneratedMetadata GC_GeneratedMissionMetadata(?: "[^"]+")? \{')
 
 
@@ -33,7 +38,10 @@ def replace_reference(text, pattern, guid, path):
 
 
 def native_header(body):
-    return LEGACY_HEADER_TYPE.sub(rb'\g<1>GC_MissionHeader', body, count=1)
+    match = LEGACY_HEADER_TYPE.match(body)
+    if not match:
+        return body
+    return body[:match.start(1)] + NATIVE_TYPES[match[1]] + body[match.end(1):]
 
 
 def launcher(source, dev, header):
@@ -161,7 +169,7 @@ def prepare_metadata_headers(dev, plan, headers, capture=None):
                     prepared[header] = updated
             continue
         if capture:
-            raise ValueError(f'{header} must be a GC_MissionHeader before merging its snapshot')
+            raise ValueError(f'{header} needs a native GC header before merging its snapshot')
         updated = native_header(body)
         if updated == body:
             unsupported[header] = dev.read(header).lstrip().split(maxsplit=1)[0]

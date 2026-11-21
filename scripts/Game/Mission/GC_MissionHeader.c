@@ -12,6 +12,16 @@ class GC_MissionHeader : SCR_MissionHeader
 	ref GC_GeneratedMissionMetadata m_GC_GeneratedMetadata;
 }
 
+//! Opt-in header for missions using native Scenario Framework header overrides.
+class GC_ScenarioFrameworkMissionHeader : SCR_MissionHeaderScenarioFramework
+{
+	[Attribute("", UIWidgets.Object, "Choose the mission type, objectives and equipment. Other details are optional.", "noDetails")]
+	ref GC_CatalogMissionMetadata m_GC_Catalog;
+
+	[Attribute("", UIWidgets.Hidden)]
+	ref GC_GeneratedMissionMetadata m_GC_GeneratedMetadata;
+}
+
 [BaseContainerProps()]
 class GC_GeneratedMissionMetadata
 {

@@ -22,6 +22,16 @@ public sealed class GcNativeBlock
 
     public static GcNativeBlock Read(string path, string type)
     {
+        return ReadRoot(path, new[] { type });
+    }
+
+    public static GcNativeBlock ReadMissionHeader(string path)
+    {
+        return ReadRoot(path, new[] { "GC_MissionHeader", "GC_ScenarioFrameworkMissionHeader" });
+    }
+
+    static GcNativeBlock ReadRoot(string path, string[] types)
+    {
         string source = File.ReadAllText(path);
         var tokens = new List<string>();
         var stack = new Stack<int>();
@@ -48,8 +58,8 @@ public sealed class GcNativeBlock
         // Inherited root containers can have dependency-bearing fields in the
         // parent. Require a self-contained saved header/project for this reader.
         if (pos != source.Length || stack.Count != 0 || tokens.Count < 3 ||
-            tokens[0] != type || tokens[1] != "{" || ends[1] != tokens.Count - 1)
-            throw new InvalidDataException("Expected self-contained " + type + " in " + path);
+            Array.IndexOf(types, tokens[0]) < 0 || tokens[1] != "{" || ends[1] != tokens.Count - 1)
+            throw new InvalidDataException("Expected self-contained " + string.Join(" or ", types) + " in " + path);
         return new GcNativeBlock(tokens, ends, 1);
     }
 

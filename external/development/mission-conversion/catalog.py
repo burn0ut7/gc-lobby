@@ -13,6 +13,9 @@ NAME = re.compile(r'^\s*Name\s+"\{([0-9A-Fa-f]{16})\}', re.M)
 TYPES = re.compile(r'^[ \t]*(?:\$grp )?(?:(?:m_\w+) )?((?:TILW|PS|GC)_\w+|\w*GameMode\w*|SCR_AIGroup)\b[^\n]*\{[ \t]*$', re.M)
 VEHICLE_LINK = re.compile(r'^\s*m_sAttachmentGroupName\s+"([^"\r\n]+)"\s*$')
 SOURCE_TEXT = {'.ent', '.layer', '.et', '.conf', '.layout', '.ptc', '.emat', '.imageset'}
+GC_HEADER_NAMES = r'GC_(?:MissionHeader|ScenarioFrameworkMissionHeader)'
+GC_HEADER = re.compile(r'\A\s*' + GC_HEADER_NAMES + r'(?=\s*\{)')
+MISSION_HEADER = re.compile(r'\A\s*(?:SCR_MissionHeader\w*|' + GC_HEADER_NAMES + r')\b')
 
 
 class Snapshot:
@@ -86,7 +89,7 @@ class Snapshot:
 
     def headers(self):
         for path in self.files:
-            if path.lower().endswith('.conf') and re.match(r'\s*(?:SCR_MissionHeader\w*|GC_MissionHeader)\b', self.read(path)):
+            if path.lower().endswith('.conf') and MISSION_HEADER.match(self.read(path)):
                 yield path
 
 

@@ -11,7 +11,7 @@ import re
 import subprocess
 
 from briefings import block_end
-from catalog import REF, SOURCE_TEXT, Snapshot, TYPES
+from catalog import GC_HEADER, REF, SOURCE_TEXT, Snapshot, TYPES
 from dependencies import dependency_resources
 from install_batch import resource_databases, unregistered_references
 from launchers import GENERATED, META_NAME, WORLD_REF, launcher
@@ -50,7 +50,7 @@ def facts(snapshot, path):
     if PurePosixPath(path).suffix.lower() not in SOURCE_TEXT:
         return {}, [], []
     text = snapshot.read(path)
-    if path.endswith('.conf') and text.lstrip().startswith('GC_MissionHeader'):
+    if path.endswith('.conf') and GC_HEADER.match(text):
         lines = text.splitlines()
         for start, line in enumerate(lines):
             if GENERATED.fullmatch(line):
@@ -144,7 +144,7 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
             'registeredLauncher': bool(identity and identity[3] == header
                                        and target.resources.get(identity[2].upper()) == [header]),
             'registeredWorld': target.resources.get(resource) == [world],
-            'gcMissionHeader': bool(re.match(r'\s*GC_MissionHeader\b', body)),
+            'gcMissionHeader': bool(GC_HEADER.match(body)),
             'generatedSnapshot': bool(re.search(
                 r'^\s*m_GC_GeneratedMetadata\s+GC_GeneratedMissionMetadata(?:\s+"[^"]+")?\s*\{', body, re.M)),
             'catalogueMetadata': bool(re.search(

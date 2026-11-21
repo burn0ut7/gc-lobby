@@ -70,9 +70,9 @@ class GC_MissionMetadataConfig
 		typename type;
 		if (header)
 			type = header.GetClassName().ToType();
-		if (!type || !type.IsInherited(GC_MissionHeader))
+		if (!type || (!type.IsInherited(GC_MissionHeader) && !type.IsInherited(GC_ScenarioFrameworkMissionHeader)))
 		{
-			error = "This mission needs a GC_MissionHeader to store generated metadata.";
+			error = "This mission needs a GC mission header to store generated metadata.";
 			return false;
 		}
 		GC_GeneratedMissionMetadata snapshot = exporter.CreateSnapshot(world);
