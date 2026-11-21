@@ -1026,6 +1026,9 @@ WIRECUTTER_PREFAB = ('42232FFE6E7AC415', 'Prefabs/Items/Core/Wirecutters/wirecut
 LEGACY_WIRECUTTER = re.compile(
     r'\$grp GenericEntity : "\{8554ED3F088BADA6\}Prefabs/Items/Core/Wirecutters/wirecutters(?:old)?\.et" \{')
 UNITS_PREFAB_ALIASES = {
+    ('A3E19E754552334B', 'Prefabs/Items/Equipment/Radios/Radio_PRC352.et'): (
+        'A3E19E754552334B', 'Prefabs/Items/Equipment/Radios/UK/Radio_PRC351.et',
+        '801d79b4ecfb2e2c7e9b78bc660b2cc5ca0cbfdfcbae9874807a90927fa34e77'),
     ('91766A63132EE378', 'Prefabs/Groups/BLUFOR/US/Army_1985_Rifles_Desert/Group_US_Army_1985_Desert_RifleSquad.et'): (
         '91766A63132EE378',
         'Prefabs/Groups/BLUFOR/US/Deprecated/Army_1985_Rifles_Desert/Group_US_Army_1985_Desert_RifleSquad.et',
@@ -1571,10 +1574,38 @@ def restore_placed_wirecutters(block, aliases, source_blob):
     return '\n'.join([*rebuilt, '}', ''])
 
 
+def staging_vehicle_placement(block):
+    root = PLACED_ENTITY.fullmatch(block[0])
+    if not root or root['kind'] not in ('Vehicle', 'Tank', 'RHS_Tank'):
+        raise ValueError('staging vehicle exemption needs a placed vehicle')
+    marker = f'  GC_StagingVehicleExemptionComponent "{{{guid("staging vehicle exemption")}}}" {{'
+    rendered = [block[0]]
+    for name, fields in polygon_capture.members(block, root['group'], root['name']):
+        flags = [(index, field) for index, field in enumerate(fields) if 'm_bEnableMoveOnFreeze' in field]
+        if flags:
+            if len(flags) != 1 or flags[0][1] not in (' m_bEnableMoveOnFreeze 0', ' m_bEnableMoveOnFreeze 1'):
+                raise ValueError('staging vehicle exemption requires a single instance flag')
+            index, field = flags[0]
+            fields = fields[:index] + fields[index + 1:]
+            if field.endswith(' 1'):
+                if ' components {' in fields:
+                    start = fields.index(' components {')
+                    fields[start + 1:start + 1] = [marker, '  }']
+                else:
+                    fields[:0] = [' components {', marker, '  }', ' }']
+        if root['group']:
+            rendered.extend([f' {name} {{' if name else ' {', *(' ' + line for line in fields), ' }'])
+        else:
+            rendered.extend(fields)
+    return [*rendered, block[-1]]
+
+
 def native_placement(block, *, reviewed_character=False):
     if not NATIVE.match(block[0]) and not (
             reviewed_character and re.match(r'^(?:\$grp )?SCR_ChimeraCharacter(?: [\w.-]+)? : ', block[0])):
         return None
+    if any('m_bEnableMoveOnFreeze' in line for line in block):
+        block = staging_vehicle_placement(block)
     lines = block
     if any('TILW_NavmeshRegenComponent' in line or 'PK_EntityProtectorComponent' in line for line in block):
         lines = block.copy()
@@ -3549,6 +3580,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     child_placements = []
     disable_photo = None
     lock_editor = None
+    restrict_staging_combat = None
     transform = {}
     immediate_release = False
     construction = {}
@@ -3628,6 +3660,8 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             disable_photo = line.endswith(' 1')
         elif re.fullmatch(r' m_bDisableBuildingModeAfterFreezeTime [01]', line) and lock_editor is None:
             lock_editor = line.endswith(' 1')
+        elif re.fullmatch(r' m_bFreezeTimeShootingForbiden [01]', line) and restrict_staging_combat is None:
+            restrict_staging_combat = line.endswith(' 1')
         elif line == ' m_aDisabledResourceTypes {' and not disabled_resources:
             end = block_end(root, index)
             values = ' '.join(field.strip() for field in root[index + 1:end]).split()
@@ -3652,6 +3686,11 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     if lock_editor and (freeze > 3600 or not (freeze or immediate_release)
                         and '{9C2001FE7A2F2281}Prefabs/MP/Modes/PS_GameMode_Lobby.et' not in root[0]):
         raise ValueError('limited editor lock requires a verified staging duration')
+    if restrict_staging_combat:
+        if not 1 < freeze <= 3600:
+            raise ValueError('combat staging requires a verified duration')
+        # The legacy timer subtracts its first second before Match starts.
+        freeze -= 1
     children = ''
     if child_placements or lock_editor:
         children = mode_children(child_placements or [' {', ' }'], disable_photo, lock_editor)
@@ -3704,16 +3743,21 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
 '''
     if zones:
         key = world + '/release staging zones'
-        settings += f'''  SCR_PlayersRestrictionZoneManagerComponent "{{{guid(key + '/manager')}}}" {{
+        manager_type = ('GC_StagingRestrictionZoneManagerComponent' if restrict_staging_combat
+                        else 'SCR_PlayersRestrictionZoneManagerComponent')
+        settings += f'''  {manager_type} "{{{guid(key + '/manager')}}}" {{
   }}
 '''
     if freeze or lock_editor:
         settings += '  GC_LobbyFreezeComponent "{E81E75BC287148D0}" {\n'
         if freeze:
             authored = ('m_fAuthoredCountdownSeconds' if isinstance(freeze, Decimal) else 'm_iAuthoredCountdownSeconds')
-            settings += f'   {authored} {freeze:f}\n'
+            duration = str(freeze) if restrict_staging_combat else f'{freeze:f}'
+            settings += f'   {authored} {duration}\n'
         if lock_editor:
             settings += '   m_bLockLimitedEditorAfterStaging 1\n'
+        if restrict_staging_combat:
+            settings += '   m_bRestrictAuthoredStagingCombat 1\n'
         settings += '  }\n'
     if zones:
         names = '\n'.join(f'        "{name}"' for name in zones)
@@ -4353,6 +4397,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare the capture footprint and its shared map fill, outline and faction visibility.')
     if any('m_fAuthoredCountdownSeconds ' in text for text in draft.values() if isinstance(text, str)):
         remaining.append('Compare the authored fractional staging release and displayed countdown.')
+    if any('m_bRestrictAuthoredStagingCombat 1' in text for text in draft.values() if isinstance(text, str)):
+        remaining.append('Compare remote-player staging input, vehicle exemptions, zone exit and release.')
     if migrated_longmoor:
         remaining.append('Compare the authored locations against the historical Longmoor terrain.')
     capacity_notes = {}

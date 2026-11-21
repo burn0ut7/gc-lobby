@@ -14,6 +14,8 @@ modded class GC_LobbyPlayerController
 	protected bool m_bGC_SetupSent;
 	protected string m_sGC_SetupText;
 	protected int m_iGC_SetupDisplayed = -1;
+	protected RplId m_GC_StagingRestrictedBody = RplId.Invalid();
+	protected RplId m_GC_LocalStagingRestrictedBody = RplId.Invalid();
 
 	//------------------------------------------------------------------------------------------------
 	GC_SetupZoneEntity GC_GetSetupZone()
@@ -60,7 +62,15 @@ modded class GC_LobbyPlayerController
 			return false;
 		GC_LobbyFreezeComponent freeze = GC_LobbyFreezeComponent.GetInstance();
 		bool adminFreeze = freeze && freeze.AffectsPlayer(GetPlayerId());
-		return GC_AreAdminControlsFrozen() || adminFreeze || (GC_SetupActive() && m_bGC_SetupSafeStart);
+		return GC_AreAdminControlsFrozen() || adminFreeze || (GC_SetupActive() && m_bGC_SetupSafeStart)
+			|| GC_IsAuthoredStagingInputRestricted(freeze);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected bool GC_IsAuthoredStagingInputRestricted(GC_LobbyFreezeComponent freeze)
+	{
+		return freeze && !Replication.IsServer() && !SCR_Global.IsAdmin(GetPlayerId())
+			&& freeze.IsAuthoredStagingCombatRestricted();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -83,12 +93,142 @@ modded class GC_LobbyPlayerController
 			}
 			return;
 		}
+		GC_FilterCombatActions(actions);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void GC_FilterCombatActions(ActionManager actions)
+	{
 		actions.SetActionValue("CharacterFire", 0);
 		actions.SetActionValue("CharacterThrowGrenade", 0);
 		actions.SetActionValue("CharacterMelee", 0);
 		actions.SetActionValue("CharacterFireStatic", 0);
 		actions.SetActionValue("TurretFire", 0);
 		actions.SetActionValue("VehicleFire", 0);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	override void OnUpdate(float timeSlice)
+	{
+		super.OnUpdate(timeSlice);
+		if (GetGame().GetPlayerController() != this || !GC_IsAuthoredStagingInputRestricted(GC_LobbyFreezeComponent.GetInstance()))
+			return;
+
+		ActionManager actions = GetActionManager();
+		if (!actions)
+			return;
+
+		GC_FilterCombatActions(actions);
+		actions.SetActionValue("VehicleHorn", 0);
+		IEntity character = GetControlledEntity();
+		if (!character)
+			return;
+		Vehicle vehicle = Vehicle.Cast(character.GetRootParent());
+		bool outsideZone = m_GC_LocalStagingRestrictedBody != RplId.Invalid()
+			&& Replication.FindItemId(character) == m_GC_LocalStagingRestrictedBody;
+		if (outsideZone)
+			GC_FilterStagingCharacterMovement(actions);
+		if (!vehicle)
+		{
+			if (outsideZone)
+				GC_FilterStagingVehicleActions(actions);
+			return;
+		}
+		bool exempt = vehicle.FindComponent(GC_StagingVehicleExemptionComponent) != null;
+		if (exempt && !outsideZone)
+			return;
+
+		GC_FilterStagingVehicleActions(actions);
+		if (!exempt)
+		{
+			VehicleWheeledSimulation simulation = VehicleWheeledSimulation.Cast(vehicle.FindComponent(VehicleWheeledSimulation));
+			if (simulation && simulation.EngineIsOn())
+				simulation.EngineStop();
+		}
+		if (outsideZone)
+		{
+			BaseVehicleNodeComponent node = BaseVehicleNodeComponent.Cast(vehicle.FindComponent(BaseVehicleNodeComponent));
+			if (!node)
+				return;
+			SCR_HelicopterControllerComponent helicopter = SCR_HelicopterControllerComponent.Cast(node.FindComponent(SCR_HelicopterControllerComponent));
+			if (helicopter && !helicopter.GetAutohoverEnabled())
+				actions.SetActionValue("AutohoverToggle", 1);
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	void GC_SetStagingZoneMovementRestricted(IEntity character)
+	{
+		GC_LobbyFreezeComponent freeze = GC_LobbyFreezeComponent.GetInstance();
+		if (!Replication.IsServer() || !freeze || !freeze.IsAuthoredStagingCombatRestricted()
+			|| (character && character != GetControlledEntity()))
+			return;
+		RplId body = RplId.Invalid();
+		if (character)
+			body = Replication.FindItemId(character);
+		if (m_GC_StagingRestrictedBody == body)
+			return;
+
+		m_GC_StagingRestrictedBody = body;
+		Rpc(GC_RpcDoStagingZoneMovementRestricted, body);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
+	protected void GC_RpcDoStagingZoneMovementRestricted(RplId body)
+	{
+		GC_LobbyFreezeComponent freeze = GC_LobbyFreezeComponent.GetInstance();
+		if (freeze && freeze.IsAuthoredStagingCombatRestricted() && GetGame().GetPlayerController() == this)
+			m_GC_LocalStagingRestrictedBody = body;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void GC_FilterStagingCharacterMovement(ActionManager actions)
+	{
+		actions.SetActionValue("CharacterForward", 0);
+		actions.SetActionValue("CharacterRight", 0);
+		actions.SetActionValue("CharacterTurnUp", 0);
+		actions.SetActionValue("CharacterTurnRight", 0);
+		actions.SetActionValue("GetOut", 0);
+		actions.SetActionValue("JumpOut", 0);
+		actions.SetActionValue("CharacterStand", 0);
+		actions.SetActionValue("CharacterCrouch", 0);
+		actions.SetActionValue("CharacterProne", 0);
+		actions.SetActionValue("CharacterStandCrouchToggle", 0);
+		actions.SetActionValue("CharacterStandProneToggle", 0);
+		actions.SetActionValue("CharacterRoll", 0);
+		actions.SetActionValue("CharacterJump", 0);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void GC_FilterStagingVehicleActions(ActionManager actions)
+	{
+		actions.SetActionValue("VehicleEngineStop", 1);
+		actions.SetActionValue("VehicleEngineStart", 0);
+		actions.SetActionValue("AutohoverToggle", 0);
+		actions.SetActionValue("WheelBrake", 0);
+		actions.SetActionValue("WheelBrakePersistent", 1);
+		actions.SetActionValue("CyclicForward", 0);
+		actions.SetActionValue("CyclicBack", 0);
+		actions.SetActionValue("CyclicLeft", 0);
+		actions.SetActionValue("CyclicRight", 0);
+		actions.SetActionValue("AntiTorqueLeft", 0);
+		actions.SetActionValue("AntiTorqueRight", 0);
+		actions.SetActionValue("CollectiveIncrease", 0);
+		actions.SetActionValue("CollectiveDecrease", 0);
+		actions.SetActionValue("HelicopterEngineStop", 0);
+		actions.SetActionValue("HelicopterEngineStart", 0);
+		actions.SetActionValue("CarThrust", 0);
+		actions.SetActionValue("CarBrake", 0);
+		actions.SetActionValue("CarSteering", 0);
+		actions.SetActionValue("CarTurbo", 0);
+		actions.SetActionValue("CarTurboToggle", 0);
+		actions.SetActionValue("CarShift", 0);
+		actions.SetActionValue("CarShiftReverse", 0);
+		actions.SetActionValue("CarHandBrake", 1);
+		actions.SetActionValue("CarHandBrakePersistent", 0);
+		actions.SetActionValue("CarLightsHiBeamToggle", 0);
+		actions.SetActionValue("CarHazardLights", 0);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -252,6 +392,8 @@ modded class GC_LobbyPlayerController
 		GC_CloseSetupHud();
 		m_GC_SetupCharacter = null;
 		m_GC_SetupZone = null;
+		m_GC_StagingRestrictedBody = RplId.Invalid();
+		m_GC_LocalStagingRestrictedBody = RplId.Invalid();
 		super.ShutdownLobbyPresentation();
 	}
 }

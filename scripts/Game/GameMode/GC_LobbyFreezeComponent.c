@@ -15,6 +15,8 @@ class GC_LobbyFreezeComponent : ScriptComponent
 	protected float m_fAuthoredCountdownSeconds;
 	[Attribute("0", UIWidgets.CheckBox, "Close and lock the limited editor when authored staging ends.")]
 	protected bool m_bLockLimitedEditorAfterStaging;
+	[Attribute("0", UIWidgets.CheckBox, "Suppress effective damage and restrict player combat and vehicle controls until authored staging ends.")]
+	protected bool m_bRestrictAuthoredStagingCombat;
 	[RplProp(onRplName: "OnStateChanged")]
 	protected int m_iConfiguredSeconds;
 	[RplProp(onRplName: "OnStateChanged")]
@@ -346,6 +348,25 @@ class GC_LobbyFreezeComponent : ScriptComponent
 		if (elapsed < 0)
 			return 0;
 		return Math.Max(0, Math.Ceil(GetAuthoredDuration() - elapsed));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	bool IsAuthoredStagingCombatRestricted()
+	{
+		if (!HasAuthoredStagingCombatRestrictions())
+			return false;
+
+		GC_LobbyManager manager = GC_LobbyManager.GetManager();
+		SCR_EGameModeState phase = manager.GetLobbyPhase();
+		if (phase == SCR_EGameModeState.POSTGAME)
+			return false;
+		return phase != SCR_EGameModeState.GAME || manager.GetPhaseElapsedTime() < GetAuthoredDuration();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	bool HasAuthoredStagingCombatRestrictions()
+	{
+		return m_bRestrictAuthoredStagingCombat && GetInstance() == this && GetAuthoredDuration() > 0;
 	}
 
 	//------------------------------------------------------------------------------------------------
