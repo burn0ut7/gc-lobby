@@ -4,7 +4,7 @@ from hashlib import sha256
 from pathlib import PurePosixPath
 import re
 
-from briefings import block_end, properties, target_names
+from briefings import block_end, guid, properties, target_names
 from catalog import REF
 from groups import inheritance, legacy_member
 from local_loadouts import unchanged_units_parent
@@ -196,26 +196,26 @@ def character_reference(guid, path, source_units, dev_units, stock, owned, exter
 CREW_ROLE = re.compile(REF.pattern + r'|""')
 
 
-def crew_roles(authored, flags, resolve_character, allow_empty=False):
+def crew_roles(authored, flags, resolve_character, allow_empty=False, allow_all_blank=False):
     if (not authored or CREW_ROLE.sub('', authored).strip() or all(flag == '0' for flag in flags.values())
             or any(flag not in ('0', '1') for flag in flags.values())):
         raise ValueError('crew migration requires explicit characters and qualifying seats')
     roles = list(CREW_ROLE.finditer(authored))
-    if len(roles) > 128 or not any(role[1] for role in roles):
+    if len(roles) > 128 or (not allow_all_blank and not any(role[1] for role in roles)):
         raise ValueError('unsupported crew size or empty roster')
     if not allow_empty and any(not role[1] for role in roles):
         raise ValueError('crew station contains empty seats')
     return [resolve_character(role[1].upper(), role[2]) if role[1] else '""' for role in roles]
 
 
-def crew_station(lines, resolve_character, allow_empty=False):
+def crew_station(lines, resolve_character, allow_empty=False, placed=False):
     station = contents(lines, 'TILW_CrewStation ' + SERIALIZED_ID)
     values = properties(station, {'m_characters', *('m_allow' + seat for seat in SEAT_TYPES)})
     flags = {seat: values.get('m_allow' + seat, '1') for seat in SEAT_TYPES}
     authored = values.get('m_characters', '')
-    if authored.startswith('""'):
+    if authored.startswith('""') and not placed:
         raise ValueError('legacy station suppresses crew when the first seat is blank')
-    return flags, crew_roles(authored, flags, resolve_character, allow_empty)
+    return flags, crew_roles(authored, flags, resolve_character, allow_empty, allow_all_blank=placed)
 
 
 def crew_route_fields(data, default_delay):
@@ -237,6 +237,88 @@ def crew_config_contents(lines, resolve_config=None):
     if not resolve_config or len(lines) != 2 or lines[1].strip() != '}':
         raise ValueError('referenced crew config has placement overrides')
     return resolve_config(reference[1].upper(), reference[2])
+
+
+def split_crew_block(lines, field):
+    starts = [i for i, line in enumerate(lines) if re.fullmatch(field + r' \{', line.strip())]
+    if len(starts) != 1:
+        raise ValueError('vehicle spawn needs one ' + field.split()[0])
+    start = starts[0]
+    end = block_end(lines, start)
+    return lines[start + 1:end], lines[:start] + lines[end + 1:]
+
+
+def render_crew_config(config, key, resolve_character, *, shadowed_names=(), placed=False):
+    groups, fields = split_crew_block(config, 'm_crewGroups')
+    settings = properties(fields, {'m_noTurretDismount', 'm_useIdleGroups'})
+    seated = settings.get('m_noTurretDismount', '0')
+    idle = settings.get('m_useIdleGroups', '1')
+    if seated not in ('0', '1') or idle not in ('0', '1'):
+        raise ValueError('invalid crew options')
+    output = ['        m_aCrewGroups {']
+    crew = []
+    index = 0
+    count = 0
+    while index < len(groups):
+        end = block_end(groups, index)
+        group = contents(groups[index:end + 1], 'TILW_CrewGroup ' + SERIALIZED_ID)
+        stations, fields = split_crew_block(group, 'm_crewStations')
+        options = properties(fields, {'m_waypointNames', 'm_waypointDelay', 'm_entityName'})
+        authored_route = options.get('m_waypointNames')
+        route = target_names(authored_route, skip_blank=True) if authored_route else []
+        if authored_route and not route and idle == '1':
+            raise ValueError('blank crew route may change idle gunner grouping')
+        name = options.get('m_entityName', '""')
+        if not re.fullmatch(r'"[\w.-]{0,128}"', name):
+            raise ValueError('unsupported crew group name')
+        if placed and name != '""':
+            raise ValueError('placed crew group name requires spatial ownership review')
+        shadowed = name[1:-1] in shadowed_names
+        delay = options.get('m_waypointDelay', '0')
+        if not re.fullmatch(r"\d+(?:\.\d+)?", delay) or Decimal(delay) > 86400:
+            raise ValueError('invalid crew waypoint delay')
+        group_key = f'{key}/crew/{count}'
+        output.append(f'         GC_SpawnCrewGroup "{{{guid(group_key)}}}" {{')
+        if name != '""':
+            output.append(f'          m_sGroupName {name}')
+        if shadowed:
+            output.append('          m_bNameShadowedByAnchor 1')
+        output.append('          m_aStations {')
+        start = 0
+        characters = []
+        while start < len(stations):
+            stop = block_end(stations, start)
+            flags, roles = crew_station(stations[start:stop + 1], resolve_character, allow_empty=True, placed=placed)
+            station_id = guid(f'{group_key}/station/{len(characters)}')
+            output.extend([f'           GC_SpawnCrewStation "{{{station_id}}}" {{',
+                           *(f'            m_b{native} 0' for legacy, native in
+                             zip(SEAT_TYPES, ('Driver', 'Gunners', 'Passengers')) if flags[legacy] == '0'),
+                           '            m_aCharacters {', *('             ' + role for role in roles),
+                           '            }', '           }'])
+            start = stop + 1
+            characters.append(roles)
+        if not 1 <= len(characters) <= 16:
+            raise ValueError('unsupported number of crew stations')
+        output.append('          }')
+        if seated == '1':
+            output.append('          m_bKeepGunnersSeated 1')
+        if route:
+            if idle == '1':
+                output.append('          m_bSeparateOrderedGunners 1')
+            output.extend(['          m_fWaypointDelay ' + delay, '          m_aWaypoints {',
+                           *('           ' + point for point in route), '          }'])
+        crew.append({'stations': characters, 'waypoints': [point[1:-1] for point in route],
+                     'waypointDelaySeconds': delay if route else '0'})
+        if name != '""':
+            crew[-1]['groupName'] = name[1:-1]
+        if shadowed:
+            crew[-1]['shadowedByAnchor'] = True
+        output.append('         }')
+        index = end + 1
+        count += 1
+    if not 1 <= count <= 16:
+        raise ValueError('unsupported number of crew groups')
+    return [*output, '        }'], crew
 
 
 def render_component(component, lines, resolve_character, single_turret, resolve_config=None):
@@ -284,7 +366,10 @@ def render_component(component, lines, resolve_character, single_turret, resolve
     idle = options.get('m_useIdleGroups', '1')
     if seated not in ('0', '1') or idle not in ('0', '1'):
         raise ValueError('invalid placed crew options')
-    group = contents(config[start + 1:end], 'TILW_CrewGroup ' + SERIALIZED_ID)
+    group_records = config[start + 1:end]
+    if group_records and block_end(group_records, 0) < len(group_records) - 1:
+        return render_structured_placement(component, config, resolve_character)
+    group = contents(group_records, 'TILW_CrewGroup ' + SERIALIZED_ID)
     stations = [i for i, line in enumerate(group) if line.strip() == 'm_crewStations {']
     if len(stations) != 1:
         raise ValueError('crew authoring needs one m_crewStations')
@@ -292,12 +377,21 @@ def render_component(component, lines, resolve_character, single_turret, resolve
     end = block_end(group, start)
     group_options = properties(group[:start] + group[end + 1:], {'m_waypointNames', 'm_waypointDelay'})
     route = crew_route_fields(group_options, '0')
-    flags, roles = crew_station(group[start + 1:end], resolve_character, allow_empty=True)
+    station_records = group[start + 1:end]
+    if station_records and block_end(station_records, 0) < len(station_records) - 1:
+        return render_structured_placement(component, config, resolve_character)
+    flags, roles = crew_station(station_records, resolve_character, allow_empty=True)
     if route:
         if idle == '1':
             route.insert(0, '   m_bSeparateOrderedGunners 1')
         route.insert(0, '   m_bAssignInitialCrewOrders 1')
     return crew_fields(component, flags, seated, roles, route)
+
+
+def render_structured_placement(component, config, resolve_character):
+    fields, _ = render_crew_config(config, component['id'], resolve_character, placed=True)
+    return [f'  GC_VehicleCrewComponent {component["id"]} {{',
+            *(line[5:] for line in fields), '  }']
 
 
 def crew_fields(component, flags, seated, roles, options=()):

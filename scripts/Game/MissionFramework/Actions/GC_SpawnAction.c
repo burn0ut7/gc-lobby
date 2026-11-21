@@ -226,7 +226,7 @@ class GC_SpawnCrewStation
 		available.Copy(slots);
 		foreach (BaseCompartmentSlot slot : available)
 		{
-			if (custom && characterIndex >= m_aCharacters.Count())
+			if (custom && characterIndex >= m_aCharacters.Count() && !attempt.m_bPlacedCrew)
 				break;
 			if (!slot || slot.IsOccupied() || !slot.IsCompartmentAccessible())
 				continue;
@@ -234,6 +234,12 @@ class GC_SpawnCrewStation
 			if (!((type == ECompartmentType.PILOT && m_bDriver) || (type == ECompartmentType.TURRET && m_bGunners)
 				|| (type == ECompartmentType.CARGO && m_bPassengers)))
 				continue;
+			// Legacy placed stations claim the next eligible seat before checking roster exhaustion.
+			if (custom && characterIndex >= m_aCharacters.Count())
+			{
+				slots.RemoveItemOrdered(slot);
+				break;
+			}
 			ResourceName character;
 			if (custom)
 				character = m_aCharacters[characterIndex++];
@@ -242,7 +248,7 @@ class GC_SpawnCrewStation
 			if (!custom && character.IsEmpty())
 				continue;
 			slots.RemoveItemOrdered(slot);
-			if (character.IsEmpty())
+			if (character.IsEmpty() || (attempt.m_bPlacedCrew && custom && m_aCharacters[0].IsEmpty()))
 				continue;
 			bool idle = idleGunners && type == ECompartmentType.TURRET;
 			AIGroup seatGroup;
@@ -373,6 +379,11 @@ class GC_SpawnCrewGroup : GC_SpawnCrewStation
 			attempt.QueueInitialOrders(group, m_aWaypoints, m_fWaypointDelay);
 			return true;
 		}
+		if (group && attempt.m_bPlacedCrew)
+		{
+			attempt.QueueInitialOrders(group, m_aWaypoints, m_fWaypointDelay);
+			return true;
+		}
 		return !group || attempt.AssignOrders(group, m_aWaypoints, m_fWaypointDelay);
 	}
 }
@@ -388,6 +399,7 @@ class GC_InitialCrewOrders
 class GC_SpawnAttempt
 {
 	GC_MissionRuleEngine m_RuleSource;
+	bool m_bPlacedCrew;
 	protected ref array<IEntity> m_aCrew = {};
 	protected ref array<AIGroup> m_aGroups = {};
 	protected ref array<ref GC_InitialCrewOrders> m_aInitialOrders = {};
@@ -432,6 +444,11 @@ class GC_SpawnAttempt
 		orders.m_aWaypoints = waypoints;
 		orders.m_fDelay = delay;
 		m_aInitialOrders.Insert(orders);
+	}
+
+	array<ref GC_InitialCrewOrders> GetInitialOrders()
+	{
+		return m_aInitialOrders;
 	}
 
 	void Commit()

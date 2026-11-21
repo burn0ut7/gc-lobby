@@ -169,6 +169,10 @@ def rhs_ai_characters(workshop):
     characters['0848BAB1B94FCBBA'] = root + 'Character_RHS_RF_MSV_VKPO_DS_Crew.et'
     characters['A0CAC00219D7EF55'] = ('Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Summer/'
                                       'Character_RHS_RF_MSV_VKPO_S_Rifleman.et')
+    for guid, role in {'47E5851C66B52637': 'SR_GL', 'B4474D20DB777AB6': 'AR',
+                       '5C75226D45102461': 'Rifleman'}.items():
+        characters[guid] = ('Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Summer/RandomSoldiers/'
+                            f'Character_RHS_RF_MSV_VKPO_S_{role}_Random.et')
     characters.update({guid: path for group in RHS_AI_GROUPS.values() for guid, path in group['slots']})
     for guid, role in {'9D7859DE5E1DA3AB': 'AR', '8DE84439090A3D21': 'SR', '918062BE34F7C4D7': 'CC',
                        'E0E062BD23185D62': 'AMG'}.items():

@@ -2883,9 +2883,15 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     missing_spawn_anchors = set()
     self_waypoints = []
     missing_static_vehicles = []
-    crew_waypoints = {name for path, body in draft.items() if path.endswith('.layer')
-                      for _, fields in re.findall(r'(?ms)^( +)m_aCrewWaypoints \{\n(.*?)^\1\}', body)
-                      for name in re.findall(r'"([\w.-]+)"', fields)}
+    crew_waypoints = set()
+    for path, body in draft.items():
+        if not path.endswith('.layer'):
+            continue
+        placed_groups = re.findall(r'(?ms)^( +)GC_SpawnCrewGroup "\{[\da-fA-F]{16}\}" \{\n(.*?)^\1\}', body)
+        lists = re.findall(r'(?ms)^( +)m_aCrewWaypoints \{\n(.*?)^\1\}', body)
+        for _, group in placed_groups:
+            lists.extend(re.findall(r'(?ms)^( +)m_aWaypoints \{\n(.*?)^\1\}', group))
+        crew_waypoints.update(name for _, fields in lists for name in re.findall(r'"([\w.-]+)"', fields))
     if not blockers and (assignments or marker_edits or prefab_spawns or extraction_spawns or area_names or teleport_targets
                          or damage_flags or roster_assets or crew_waypoints
                          or any('m_aStatic' in body for body in draft.values())):
@@ -3124,6 +3130,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(path.endswith('.layer') and 'GC_VehicleCrewComponent' in body
            for path, body in draft.items() if isinstance(body, str)):
         remaining.append('Compare placed crew arrival at Match start, compartment order and gunner dismount policy.')
+    if any(path.endswith('.layer') and 'GC_SpawnCrewGroup' in body
+           for path, body in draft.items() if isinstance(body, str)):
+        remaining.append('Compare multi-station seat reservation, empty seats and separate AI groups.')
     if crew_waypoints:
         remaining.append('Compare placed crew waypoint order, delay and separate idle turret grouping.')
     if any(isinstance(body, str) and '{823CA4130CE90077}' in body for body in draft.values()):

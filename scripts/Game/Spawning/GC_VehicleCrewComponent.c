@@ -38,6 +38,9 @@ class GC_VehicleCrewComponent : ScriptComponent
 	[Attribute("0", UIWidgets.CheckBox, "Assign this route only if the crew group has no existing waypoints.")]
 	protected bool m_bAssignInitialCrewOrders;
 
+	[Attribute("", UIWidgets.Object, "Optional ordered crew groups and seat filters. When set, these replace the single roster above.")]
+	protected ref array<ref GC_SpawnCrewGroup> m_aCrewGroups;
+
 	protected GC_LobbyManager m_Manager;
 
 	override protected void OnPostInit(IEntity owner)
@@ -50,7 +53,8 @@ class GC_VehicleCrewComponent : ScriptComponent
 	protected void ConnectToLobby()
 	{
 		m_Manager = GC_LobbyManager.GetManager();
-		if (!m_Manager || (!m_bUseDefaultCrew && (!m_aCharacters || m_aCharacters.IsEmpty())))
+		if (!m_Manager || ((!m_aCrewGroups || m_aCrewGroups.IsEmpty())
+			&& !m_bUseDefaultCrew && (!m_aCharacters || m_aCharacters.IsEmpty())))
 			return;
 
 		m_Manager.m_OnLobbyPhaseChanged.Insert(OnLobbyPhaseChanged);
@@ -78,6 +82,11 @@ class GC_VehicleCrewComponent : ScriptComponent
 
 		array<BaseCompartmentSlot> seats = {};
 		compartments.GetCompartments(seats);
+		if (m_aCrewGroups && !m_aCrewGroups.IsEmpty())
+		{
+			SpawnStructuredCrew(seats);
+			return;
+		}
 		AIGroup group;
 		AIGroup idleGroup;
 		bool hasRoute = m_aCrewWaypoints && !m_aCrewWaypoints.IsEmpty();
@@ -116,7 +125,35 @@ class GC_VehicleCrewComponent : ScriptComponent
 		}
 		if (group && hasRoute)
 		{
-			GetGame().GetCallqueue().CallLater(AssignOrders, Math.Round(m_fCrewWaypointDelay * 1000), false, group);
+			GetGame().GetCallqueue().CallLater(AssignOrders, Math.Round(m_fCrewWaypointDelay * 1000), false,
+				group, m_aCrewWaypoints, m_bAssignInitialCrewOrders);
+		}
+	}
+
+	protected void SpawnStructuredCrew(array<BaseCompartmentSlot> seats)
+	{
+		if (m_aCrewGroups.Count() > 16 || seats.Count() > 128)
+			return;
+		foreach (GC_SpawnCrewGroup crew : m_aCrewGroups)
+		{
+			if (!crew || !crew.m_sGroupName.IsEmpty() || !crew.IsValid() || !crew.Prepare())
+				return;
+		}
+
+		GC_SpawnAttempt attempt = new GC_SpawnAttempt();
+		attempt.m_bPlacedCrew = true;
+		foreach (GC_SpawnCrewGroup crew : m_aCrewGroups)
+		{
+			if (!crew.Fill(seats, attempt))
+			{
+				attempt.Rollback();
+				return;
+			}
+		}
+		foreach (GC_InitialCrewOrders orders : attempt.GetInitialOrders())
+		{
+			GetGame().GetCallqueue().CallLater(AssignOrders, Math.Round(orders.m_fDelay * 1000),
+				false, orders.m_Group, orders.m_aWaypoints, true);
 		}
 	}
 
@@ -126,18 +163,18 @@ class GC_VehicleCrewComponent : ScriptComponent
 			&& m_Manager.GetLobbyPhase() == SCR_EGameModeState.GAME;
 	}
 
-	protected void AssignOrders(AIGroup group)
+	protected void AssignOrders(AIGroup group, array<string> waypoints, bool initialOnly)
 	{
 		if (!group || !IsActiveMatch())
 			return;
-		if (m_bAssignInitialCrewOrders)
+		if (initialOnly)
 		{
 			array<AIWaypoint> existing = {};
 			group.GetWaypoints(existing);
 			if (!existing.IsEmpty())
 				return;
 		}
-		GC_WaypointOrders.Apply(group, m_aCrewWaypoints);
+		GC_WaypointOrders.Apply(group, waypoints);
 	}
 
 	protected bool AllowsSeat(ECompartmentType type)
