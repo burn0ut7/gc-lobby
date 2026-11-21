@@ -15,6 +15,10 @@ SPAWN = re.compile(r'    TILW_SpawnPrefabInstruction "\{([\da-fA-F]{16})\}" \{')
 GROUP_SPAWN = re.compile(r'    TILW_SpawnGroupInstruction "\{([\da-fA-F]{16})\}" \{')
 VEHICLE_SPAWN = re.compile(r'    TILW_SpawnVehicleInstruction "\{([\da-fA-F]{16})\}" \{')
 SPAWN_FIELDS = {'m_executionDelay', 'm_prefab', 'm_locationName', 'm_setEntityName'}
+DEFAULT_CREW_PILOTS = {
+    ('C012BB3488BEA0C2', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70.et'),
+    ('B47110AA1A806556', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_FIA.et'),
+}
 
 
 def entity_fields(names):
@@ -243,6 +247,7 @@ def render_crew_config(config, key, resolve_character, *, shadowed_names=()):
 
 
 def vehicle_spawn(lines, key, resolve_resource, resolve_character):
+    kind = 'GC_CrewedVehicleSpawn'
     if any(line.strip().startswith('m_crewConfig ') for line in lines):
         config, spawn = split_crew_block(lines, 'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID)
         data = properties(spawn, SPAWN_FIELDS)
@@ -253,12 +258,17 @@ def vehicle_spawn(lines, key, resolve_resource, resolve_character):
             'm_customCrew', 'm_waypointNames', 'm_waypointDelay', 'm_idleGroup',
             *('m_spawn' + position for position in SEAT_TYPES),
         })
-        fields, crew = render_legacy_crew(data, key, resolve_character)
+        if all(data.get('m_spawn' + position) == '0' for position in SEAT_TYPES):
+            # The deprecated event instruction passes an empty seat filter, so
+            # AddCrew never selects an occupant or obtains a group to route.
+            kind, fields, crew = 'GC_PrefabSpawn', [], {'crew': [], 'crewDisabled': True}
+        else:
+            fields, crew = render_legacy_crew(data, key, resolve_character)
     ref = REF.fullmatch(data.get('m_prefab', ''))
     if not ref or not ref[2].startswith('Prefabs/Vehicles/'):
         raise ValueError('crewed spawn requires a vehicle prefab')
     details = spawn_details(data, resolve_resource)
-    seconds, body = render_spawn(details, key, 'GC_CrewedVehicleSpawn', fields)
+    seconds, body = render_spawn(details, key, kind, fields)
     return seconds, body, {'instruction': 'TILW_SpawnVehicleInstruction', 'delaySeconds': details['delay'],
                           'spawnAnchor': details['anchor'], 'spawnName': details['area'], 'prefab': details['prefab'],
                           **crew}
@@ -266,7 +276,14 @@ def vehicle_spawn(lines, key, resolve_resource, resolve_character):
 
 def render_legacy_crew(data, key, resolve_character):
     flags = {position: data.get('m_spawn' + position, '1') for position in SEAT_TYPES}
-    roles = crew_roles(data.get('m_customCrew', ''), flags, resolve_character, allow_empty=True)
+    if any(flag not in ('0', '1') for flag in flags.values()) or all(flag == '0' for flag in flags.values()):
+        raise ValueError('crew migration requires qualifying seats')
+    authored = data.get('m_customCrew', '')
+    if not authored:
+        ref = REF.fullmatch(data.get('m_prefab', ''))
+        if not ref or (ref[1].upper(), ref[2]) not in DEFAULT_CREW_PILOTS or flags['Pilot'] != '1':
+            raise ValueError('default crew requires a verified prefab with a selected pilot')
+    roles = crew_roles(authored, flags, resolve_character, allow_empty=True) if authored else []
     idle = data.get('m_idleGroup', '0')
     waypoint_delay = data.get('m_waypointDelay', '5')
     waypoints = target_names(data['m_waypointNames']) if data.get('m_waypointNames') else []
@@ -275,8 +292,9 @@ def render_legacy_crew(data, key, resolve_character):
         raise ValueError('unsupported crew order delay or configuration')
     flags_native = zip(SEAT_TYPES, ('Driver', 'Gunners', 'Passengers'))
     fields = ['        m_aCrewGroups {', f'         GC_SpawnCrewGroup "{{{guid(key + "/crew")}}}" {{',
-              *(f'          m_b{native} 0' for legacy, native in flags_native if flags[legacy] == '0'),
-              '          m_aCharacters {', *('           ' + role for role in roles), '          }']
+              *(f'          m_b{native} 0' for legacy, native in flags_native if flags[legacy] == '0')]
+    if roles:
+        fields.extend(['          m_aCharacters {', *('           ' + role for role in roles), '          }'])
     if idle == '1' and flags['Turret'] == '1':
         fields.append('          m_bShareIdleGunnerGroup 1')
     if waypoints:
@@ -285,7 +303,8 @@ def render_legacy_crew(data, key, resolve_character):
         fields.extend(['          m_aWaypoints {', *('           ' + name for name in waypoints), '          }'])
     fields.extend(['         }', '        }'])
     return fields, {'crew': roles, 'crewWaypoints': [waypoint[1:-1] for waypoint in waypoints],
-                    'crewWaypointDelaySeconds': waypoint_delay if waypoints else '0'}
+                    'crewWaypointDelaySeconds': waypoint_delay if waypoints else '0',
+                    **({'crewDefaults': True} if not authored else {})}
 
 
 ACTIONS = {

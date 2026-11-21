@@ -38,7 +38,7 @@ LEGACY_JIP_MODES = {'Deny': 'DISABLED', 'Auto': 'AUTO', 'Manual': 'MANUAL',
                     '0': 'DISABLED', '1': 'AUTO', '2': 'MANUAL'}
 NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|RHS_Tank|Turret|SCR_AIWorld|GameEntity|GenericEntity|GenericTerrainEntity|GenericWorldFogEntity|StaticModelEntity|Tree|'
                     r'DecalEntity|SCR_DestructibleEntity|SCR_DestructibleTreeV2|SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
-                    r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity|LightEntity|Projectile)\b')
+                    r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity|LightEntity|Projectile|CommentEntity)\b')
 WEATHER = re.compile(r'  SCR_TimeAndWeatherHandlerComponent "\{5EE3229927D4D2F5\}" \{')
 INIT_WEATHER = '  SCR_InitWeatherComponent "{61B68227C35BFE9A}" {'
 INIT_WEATHER_FIELD = re.compile(
@@ -2829,6 +2829,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare startup flag draws and verify selected events activate only in Match.')
     if any(not spawn['startupChoice'] for spawn in prefab_spawns):
         remaining.append('Compare spawn placement and timing in Match, including concurrent actions.')
+    if any(spawn.get('crewDefaults') for spawn in prefab_spawns):
+        remaining.append('Compare prefab default occupants, seat filters and crew orders on event-spawned vehicles.')
     return ({} if blockers else draft), {
         'status': 'blocked by conversion rules' if blockers else 'generated for file review',
         'blockers': blockers, 'files': sorted(draft), 'mixedLayerGroups': group_blocks,
