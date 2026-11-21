@@ -30,6 +30,7 @@ WORKSHOP_VEHICLES = {
                          'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM.et'),
     'AC12E5669B411D57': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/KORD/GAZ_TIGR_v2_KORD.et'),
+    'FD109F3702AAB392': ('ZU-23_5C9AD9EF76F6B5EA', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ZU23.et'),
 }
 PKM = ('723870DBB19D30B0', 'Prefabs/Weapons/Tripods/Tripod_6T5_PKM.et')
 SINGLE_SEAT_TURRETS = {

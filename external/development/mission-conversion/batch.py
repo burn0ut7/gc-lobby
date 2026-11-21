@@ -96,6 +96,14 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/IronFunnelEvent/MSN1.conf': (
+        'bc54df59d5f3682b81e89394990e787b2d0e4b53',
+        (('worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/NATO_playergroups.layer',
+          '7473e531083f7dbba88825cc424ecd5541da1aa6'),
+         ('worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/PACT_playergroups.layer',
+          '1bf14443a3d96d4b3a2395fd7a0e643edc308530')),
+        113, 108,
+    ),
     'Missions/Burger4606/Hush.conf': (
         'c36a235738f8d82c94a2ca091948be6b340718c8',
         (('worlds/Burger4606/Hush/Hush_Layers/players_UK.layer',
@@ -408,6 +416,9 @@ UNITS_PREFAB_ALIASES = {
         'E69BD3AC16F5AA77', 'Prefabs/Vehicles/Wheeled/M998/M1151/BTR_Turret/M1151_armed_BTR_TAN.et',
         'c2ed980a0600ae70cdf3c94909e59b5eb5164c75e78f7474f2efdea330aea0f4'),
     ('AAB3119124C9167A', 'Prefabs/Vehicles/Wheeled/BTR70/1980 Mot Rifle/BTR70_MSV80.et'): (
+        'AAB3119124C9167A', 'Prefabs/Vehicles/Wheeled/BTR70/USSR/BTR70_USSR.et',
+        '6ff98c749e6e58fb337ad80c11bdb2cabcf5beebe84afdf0fc8a1e6e917bdd94'),
+    ('AAB3119124C9167A', 'Prefabs/Vehicles/Wheeled/BTR70/USSR/BTR70_MSV80.et'): (
         'AAB3119124C9167A', 'Prefabs/Vehicles/Wheeled/BTR70/USSR/BTR70_USSR.et',
         '6ff98c749e6e58fb337ad80c11bdb2cabcf5beebe84afdf0fc8a1e6e917bdd94'),
     ('F503F71C08BE3F7D', 'Prefabs/Vehicles/Helicopters/AUS_MH60/AUS_UH60_armed.et'): (
