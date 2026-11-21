@@ -181,8 +181,8 @@ class GC_CrewedVehicleSpawn : GC_PrefabSpawn
 	}
 }
 
-[BaseContainerProps(), BaseContainerCustomStringTitleField("Crew Group")]
-class GC_SpawnCrewGroup
+[BaseContainerProps(), BaseContainerCustomStringTitleField("Crew Station")]
+class GC_SpawnCrewStation
 {
 	[Attribute("1", UIWidgets.CheckBox, "Fill available driver or pilot seats.")]
 	bool m_bDriver = true;
@@ -192,26 +192,15 @@ class GC_SpawnCrewGroup
 	bool m_bPassengers = true;
 	[Attribute("", UIWidgets.ResourceNamePicker, "Optional characters in the vehicle's seat order. Empty list: use default crew. With a list, a blank entry leaves that seat empty; when the list ends, this group stops filling seats.", "et")]
 	ref array<ResourceName> m_aCharacters;
-	[Attribute("", UIWidgets.EditComboBox, "Existing AI waypoint names in order. These orders apply only to this crew group. Empty means no added orders.", enums: {ParamEnum("", "", "gc-choices:2:GC_WaypointChoices")})]
-	ref array<string> m_aWaypoints;
-	[Attribute("0", UIWidgets.EditBox, "Seconds after boarding before assigning this group's orders.", params: "0 86400")]
-	float m_fWaypointDelay;
-	[Attribute("0", UIWidgets.CheckBox, "Keep this group's gunners in their turrets rather than voluntarily dismounting to fight.")]
-	bool m_bKeepGunnersSeated;
-
 	//------------------------------------------------------------------------------------------------
 	bool IsValid()
 	{
-		return (m_bDriver || m_bGunners || m_bPassengers) && GC_RuleAction.ValidTargetNames(m_aWaypoints)
-			&& m_fWaypointDelay >= 0 && m_fWaypointDelay <= 86400
-			&& (!m_aCharacters || m_aCharacters.Count() <= 128);
+		return (m_bDriver || m_bGunners || m_bPassengers) && (!m_aCharacters || m_aCharacters.Count() <= 128);
 	}
 
 	//------------------------------------------------------------------------------------------------
 	bool Prepare()
 	{
-		if (!GC_WaypointOrders.Check(m_aWaypoints))
-			return false;
 		if (m_aCharacters)
 		{
 			foreach (ResourceName name : m_aCharacters)
@@ -227,9 +216,8 @@ class GC_SpawnCrewGroup
 	}
 
 	//------------------------------------------------------------------------------------------------
-	bool Fill(array<BaseCompartmentSlot> slots, GC_SpawnAttempt attempt)
+	bool FillStation(array<BaseCompartmentSlot> slots, GC_SpawnAttempt attempt, inout AIGroup group, bool seated, bool idleGunners)
 	{
-		AIGroup group;
 		int characterIndex;
 		bool custom = m_aCharacters && !m_aCharacters.IsEmpty();
 		array<BaseCompartmentSlot> available = {};
@@ -254,20 +242,86 @@ class GC_SpawnCrewGroup
 			slots.RemoveItemOrdered(slot);
 			if (character.IsEmpty())
 				continue;
-			IEntity occupant = slot.SpawnCharacterInCompartment(character, group);
-			attempt.Track(occupant, group);
-			if (!occupant || !group)
+			bool idle = idleGunners && type == ECompartmentType.TURRET;
+			AIGroup seatGroup;
+			if (!idle)
+				seatGroup = group;
+			IEntity occupant = slot.SpawnCharacterInCompartment(character, seatGroup);
+			attempt.Track(occupant, seatGroup);
+			if (!occupant || !seatGroup)
 				return false;
-			if (m_bKeepGunnersSeated && type == ECompartmentType.TURRET)
+			if (!idle)
+				group = seatGroup;
+			if (seated && type == ECompartmentType.TURRET)
 			{
 				SCR_AICombatComponent combat = SCR_AICombatComponent.Cast(occupant.FindComponent(SCR_AICombatComponent));
 				if (combat)
 					combat.GC_KeepSpawnedGunnerSeated();
 			}
 		}
-		if (group)
-			return attempt.AssignOrders(group, m_aWaypoints, m_fWaypointDelay);
 		return true;
+	}
+}
+
+[BaseContainerProps(), BaseContainerCustomStringTitleField("Crew Group")]
+class GC_SpawnCrewGroup : GC_SpawnCrewStation
+{
+	[Attribute("", UIWidgets.Object, "Optional ordered seat selections using the same AI group. Leave empty to use this group's seat settings.")]
+	ref array<ref GC_SpawnCrewStation> m_aStations;
+	[Attribute("", UIWidgets.EditComboBox, "Existing AI waypoint names in order. Empty means no added orders.", enums: {ParamEnum("", "", "gc-choices:2:GC_WaypointChoices")})]
+	ref array<string> m_aWaypoints;
+	[Attribute("0", UIWidgets.EditBox, "Seconds after boarding before assigning this group's orders.", params: "0 86400")]
+	float m_fWaypointDelay;
+	[Attribute("0", UIWidgets.CheckBox, "Keep this group's gunners in their turrets rather than voluntarily dismounting to fight.")]
+	bool m_bKeepGunnersSeated;
+	[Attribute("0", UIWidgets.CheckBox, "Put each gunner in a separate AI group if waypoints are assigned.")]
+	bool m_bSeparateOrderedGunners;
+
+	override bool IsValid()
+	{
+		if (!GC_RuleAction.ValidTargetNames(m_aWaypoints) || m_fWaypointDelay < 0 || m_fWaypointDelay > 86400)
+			return false;
+		if (!m_aStations || m_aStations.IsEmpty())
+			return super.IsValid();
+		if (m_aStations.Count() > 16)
+			return false;
+		foreach (GC_SpawnCrewStation station : m_aStations)
+		{
+			if (!station || !station.IsValid())
+				return false;
+		}
+		return true;
+	}
+
+	override bool Prepare()
+	{
+		if (!GC_WaypointOrders.Check(m_aWaypoints))
+			return false;
+		if (!m_aStations || m_aStations.IsEmpty())
+			return super.Prepare();
+		foreach (GC_SpawnCrewStation station : m_aStations)
+		{
+			if (!station.Prepare())
+				return false;
+		}
+		return true;
+	}
+
+	bool Fill(array<BaseCompartmentSlot> slots, GC_SpawnAttempt attempt)
+	{
+		AIGroup group;
+		bool idle = m_bSeparateOrderedGunners && m_aWaypoints && !m_aWaypoints.IsEmpty();
+		if (m_aStations && !m_aStations.IsEmpty())
+		{
+			foreach (GC_SpawnCrewStation station : m_aStations)
+			{
+				if (!station.FillStation(slots, attempt, group, m_bKeepGunnersSeated, idle))
+					return false;
+			}
+		}
+		else if (!FillStation(slots, attempt, group, m_bKeepGunnersSeated, idle))
+			return false;
+		return !group || attempt.AssignOrders(group, m_aWaypoints, m_fWaypointDelay);
 	}
 }
 

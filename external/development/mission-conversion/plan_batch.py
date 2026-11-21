@@ -3,6 +3,7 @@ import argparse
 from collections import Counter, defaultdict
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -10,6 +11,20 @@ import sys
 def run_tool(name, args):
     script = Path(__file__).with_name(name + '.py')
     subprocess.run([sys.executable, '-B', str(script), *map(str, args)], check=True)
+
+
+def specific_blocker(blocker):
+    rule = blocker['rule']
+    detail = blocker.get('detail')
+    if not isinstance(detail, str) or not detail:
+        return rule
+    detail = re.sub(r'^line \d+ ', '', detail)
+    if detail.startswith('game mode field or child requires a conversion rule: '):
+        field = detail.rsplit(': ', 1)[1].split()[0]
+        return f'{rule} · {field}'
+    if detail.startswith('unresolved or unsupported outcome flag '):
+        return f'{rule} · unresolved flag producer'
+    return f'{rule} · {detail}'
 
 
 def summarize(inventory, review, limit):
@@ -39,11 +54,14 @@ def summarize(inventory, review, limit):
             if comparison['status'] != 'compare' and not comparison['issues']:
                 issues.append(f'{header} — comparison incomplete')
             advertised = draft.get('advertisedSlots', {}).get(header)
-            if advertised is not None and advertised != draft['verifiedPlayableSlots']:
+            if (advertised is not None and advertised != draft['verifiedPlayableSlots']
+                    and header not in draft.get('reviewedCapacity', {})):
                 issues.append(f"{header} — {advertised} advertised slots, "
                               f"{draft['verifiedPlayableSlots']} converted")
         record = {'world': world, 'launchers': sorted(headers),
                   'behaviorGaps': draft.get('remainingBehavior', [])}
+        if draft.get('reviewedCapacity'):
+            record['reviewedCapacity'] = draft['reviewedCapacity']
         if draft.get('reviewedReplacements'):
             record['reviewedReplacements'] = sorted(draft['reviewedReplacements'])
         if remaining_resources:
@@ -54,20 +72,41 @@ def summarize(inventory, review, limit):
             ready.append(record)
 
     priority = defaultdict(lambda: {'worldsAffected': 0, 'soleBlockerWorlds': 0, 'examples': []})
+    specific = defaultdict(lambda: {'worldsAffected': 0, 'soleBlockerWorlds': 0, 'examples': []})
     for world, row in sorted(migration['worlds'].items()):
         if row['status'] != 'blocked by conversion rules':
             continue
         by_rule = {}
+        by_detail = {}
         for blocker in row['blockers']:
             by_rule.setdefault(blocker['rule'], blocker)
+            if blocker['rule'] == 'framework events' and 'detail' not in blocker:
+                outcome = inventory['worlds'][world].get('outcomeCandidate', {})
+                gaps = [{'rule': blocker['rule'], 'file': location.rsplit(':', 1)[0],
+                         'line': int(location.rsplit(':', 1)[1]), 'detail': event['gap']}
+                        for location, event in outcome.get('events', {}).items() if 'gap' in event]
+                if 'gap' in outcome:
+                    gaps.append({**blocker, 'detail': outcome['gap']})
+            else:
+                gaps = []
+            for gap in gaps or [blocker]:
+                by_detail.setdefault(specific_blocker(gap), gap)
         for rule, example in by_rule.items():
             entry = priority[rule]
             entry['worldsAffected'] += 1
             entry['soleBlockerWorlds'] += int(len(by_rule) == 1)
             if len(entry['examples']) < 3:
                 entry['examples'].append({'world': world, **example})
+        for kind, example in by_detail.items():
+            entry = specific[kind]
+            entry['worldsAffected'] += 1
+            entry['soleBlockerWorlds'] += int(len(by_detail) == 1)
+            if len(entry['examples']) < 3:
+                entry['examples'].append({'world': world, **example})
     rules = sorted(priority, key=lambda rule: (
         -priority[rule]['soleBlockerWorlds'], -priority[rule]['worldsAffected'], rule))
+    details = sorted(specific, key=lambda kind: (
+        -specific[kind]['soleBlockerWorlds'], -specific[kind]['worldsAffected'], kind))
     return {
         'source': inventory['source'], 'target': inventory['target'],
         'launcherFileChecks': dict(Counter(row['status'] for row in review['missions'].values())),
@@ -76,6 +115,7 @@ def summarize(inventory, review, limit):
         'unresolvedResources': review.get('unresolvedResources', []),
         'unavailableDependencyIds': review.get('unavailableDependencyIds', []),
         'rules': [{'rule': rule, **priority[rule]} for rule in rules],
+        'specificBlockers': [{'blocker': kind, **specific[kind]} for kind in details],
     }
 
 
@@ -93,6 +133,7 @@ def markdown(plan):
             lines.extend(f'  - Unresolved reference in other layers or resources: `{resource}`'
                          for resource in entry.get('remainingResources', []))
             lines.extend(f'  - {gap}' for gap in entry['behaviorGaps'])
+            lines.extend(f'  - {note}' for note in entry.get('reviewedCapacity', {}).values())
     else:
         lines.append('No drafts cleared the file checks.')
     lines.extend(['', f"Additional drafts that cleared file checks · {len(plan['additionalDrafts'])}",
@@ -119,6 +160,12 @@ def markdown(plan):
     if plan['unavailableDependencyIds']:
         lines.extend(['', '## Dev dependencies without a local provider', '',
                       *(f'- `{guid}`' for guid in plan['unavailableDependencyIds'])])
+    lines.extend(['', '## Highest-priority specific blockers', '',
+                  '| Blocker | Only reported blocker | Worlds affected |',
+                  '| --- | ---: | ---: |'])
+    for entry in plan['specificBlockers'][:25]:
+        blocker = entry['blocker'].replace('|', '\\|')
+        lines.append(f"| {blocker} | {entry['soleBlockerWorlds']} | {entry['worldsAffected']} |")
     lines.extend(['', '## Conversion rules to investigate', '',
                   '| Rule | Only reported blocker | Worlds affected |',
                   '| --- | ---: | ---: |'])

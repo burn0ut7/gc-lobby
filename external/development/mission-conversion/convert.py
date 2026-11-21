@@ -17,11 +17,11 @@ from restore_units_roles import verified_roles
 import vehicle_crew
 import bugout
 from briefings import BriefingAudience, guid, indexed_pages, read_pages, render
-from catalog import Snapshot, WORLD, compare
+from catalog import REF, Snapshot, WORLD, compare
 from delayed_extraction import collect as collect_delayed_extraction
 from event_actions import ACTIONS
 from events import world_events
-from groups import group_layer, rhs_ai_characters, verified_stock_ai_group
+from groups import SLOTS, compare_ai_parents, convert_ai_instance, group_layer, rhs_ai_characters, verified_stock_ai_group
 import gwotline
 import hnevice
 import industrial
@@ -125,11 +125,29 @@ def main():
     def resolve_spawn(objectives, resource, path, *, group=False):
         if group:
             owners = (locally_owned, source_units.resources, dev_units.resources)
-            return path if verified_stock_ai_group(resource, path, stock, owners) else None
+            if verified_stock_ai_group(resource, path, stock, owners):
+                return path
+            if (resource in locally_owned or source_units.resources.get(resource) != [path]
+                    or dev_units.resources.get(resource) != [path]):
+                return None
+            try:
+                ancestry = compare_ai_parents(source_units, dev_units, resource)
+                if not ancestry[0].startswith('SCR_AIGroup '):
+                    return None
+                convert_ai_instance([], resource, source_units, dev_units, locally_owned, external_ai)
+                for parent in ancestry:
+                    slots = SLOTS.search(parent)
+                    if slots and any(not local_loadouts.unchanged_units_parent(source_units, dev_units, guid)
+                                     and external_ai.get(guid) != path for guid, path in REF.findall(slots[1])):
+                        return None
+            except ValueError:
+                return None
+            return path
         return batch.spawn_resource(source, dev, source_units, dev_units, stock, resource, path, objectives)
 
     def resolve_crew(resource, path):
-        return vehicle_crew.character_reference(resource, path, source_units, dev_units, stock, locally_owned)
+        return vehicle_crew.character_reference(resource, path, source_units, dev_units, stock, locally_owned,
+                                                external_ai)
 
     out = {}
     arc_areas = {}
@@ -714,7 +732,8 @@ def main():
                                         external_vehicles, external_ai)
 
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
-                         asset_aliases, loadouts, spawned_assets, convert_crew, resolve_spawn, delayed_extractions)
+                         asset_aliases, loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew,
+                         delayed_extractions)
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
                         for path, contents in out.items()}
