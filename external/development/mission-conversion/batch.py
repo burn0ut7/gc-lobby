@@ -994,6 +994,36 @@ def named_placements(layers):
     return named
 
 
+def convert_vehicle_groups(block, convert_group_block):
+    """Convert placed group children in the vehicle's original coordinate space."""
+    root = PLACED_ENTITY.fullmatch(block[0])
+    if (not root or root['kind'] not in ('Vehicle', 'Tank', 'RHS_Tank')
+            or not any(re.match(r'^ +(?:\$grp )?SCR_AIGroup ', line) for line in block[1:])):
+        return block, 0, 0
+    rendered = [block[0]]
+    groups = slots = 0
+    for name, fields in polygon_capture.members(block, root['group'], root['name']):
+        if ' {' in fields:
+            start = fields.index(' {')
+            stop = block_end(fields, start)
+            if stop != len(fields) - 1:
+                raise ValueError('unsupported fields after vehicle children')
+            children = []
+            for _, child in blocks('\n'.join(line[2:] for line in fields[start + 1:stop])):
+                if re.match(r'^(?:\$grp )?SCR_AIGroup ', child[0]):
+                    output, group_count, slot_count = convert_group_block('\n'.join(child) + '\n')
+                    child = output.splitlines()
+                    groups += group_count
+                    slots += slot_count
+                children.extend('  ' + line for line in child)
+            fields = [*fields[:start + 1], *children, fields[stop]]
+        if root['group']:
+            rendered.extend([f' {name} {{' if name else ' {', *(' ' + line for line in fields), ' }'])
+        else:
+            rendered.extend(fields)
+    return [*rendered, block[-1]], groups, slots
+
+
 def waypoint_gaps(named, assignments, spawned_names, scripts):
     gaps = set()
     no_ops = set()
@@ -2319,7 +2349,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append(body)
                 elif NATIVE.match(head):
                     try:
-                        converted = native_placement(convert_crew(block))
+                        vehicle, groups, slots = convert_vehicle_groups(convert_crew(block), convert_group_block)
+                        converted = native_placement(vehicle)
                     except ValueError as exc:
                         blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
                     else:
@@ -2327,6 +2358,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                             blockers.append({'rule': kind, 'file': layer, 'line': line})
                         else:
                             result.append(converted)
+                            if groups:
+                                group_blocks.append({'file': layer, 'line': line, 'groups': groups, 'slots': slots})
                 else:
                     rule = 'framework events' if kind == 'TILW_MissionFrameworkEntity' else kind
                     blockers.append({'rule': rule, 'file': layer, 'line': line})

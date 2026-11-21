@@ -255,6 +255,13 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     standalone_ao = standalone and values.get('Enabled') == '1'
     visible_standalone = (overlay.get('Enabled') != '0'
                           and (overlay.get('m_drawArea', '1'), overlay.get('m_drawLine', '0')) != ('0', '0'))
+    if (standalone and not standalone_ao and closed is not False and len(vertices) == 2
+            and overlay.get('m_drawArea') == '0' and overlay.get('m_drawLine') == '1'):
+        # The legacy renderer adds a closing segment only for outlines with more than two points.
+        if ' IsClosed 1' in placement:
+            placement.remove(' IsClosed 1')
+        placement.append(' IsClosed 0')
+        closed = False
     if closed is not False or standalone_ao:
         relative = rotate_point(origin, parent_yaw, 0, 0) if parent_yaw else origin
         world_origin = tuple(local + parent for local, parent in zip(relative, parent_origin))

@@ -703,8 +703,16 @@ def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_
 
 def convert_registered_group(lines, guid, source_units, dev_units, stock, locally_owned, external_ai,
                              stock_group, reviewed_ai_members, forced_external):
-    if any(line.strip() == 'm_bSetPlayable 1' for line in lines):
-        if sum(line.strip() == 'm_aUnitPrefabSlots {' for line in lines) != 1:
+    rosters = [index for index, line in enumerate(lines) if line.strip() == 'm_aUnitPrefabSlots {']
+    authored_slots = []
+    if len(rosters) == 1:
+        start, = rosters
+        authored_slots = REF.findall('\n'.join(lines[start + 1:block_end(lines, start)]))
+    all_playable = bool(authored_slots) and all(
+        resource.upper() in source_units.resources and legacy_member(source_units, resource.upper(), False)
+        for resource, _ in authored_slots)
+    if all_playable or any(line.strip() == 'm_bSetPlayable 1' for line in lines):
+        if len(rosters) != 1:
             raise ValueError('forced playable native group needs a complete authored roster')
         return convert_instance(lines, guid, '', '', source_units, dev_units, stock, locally_owned,
                                 forced_external=forced_external)
