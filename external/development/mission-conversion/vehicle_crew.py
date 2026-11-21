@@ -20,6 +20,7 @@ COMPONENT = re.compile(r'  TILW_VehicleCrewComponent (?P<id>"\{[\da-fA-F]{16}\}"
 SERIALIZED_ID = r'"\{[\da-fA-F]{16}\}"'
 SEAT_TYPES = ('Pilot', 'Turret', 'Cargo')
 WORKSHOP_VEHICLES = {
+    '0144F571F1998FC4': ('WCS_BMP-1_5E524E4FEECCA92B', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_FIA.et'),
     '1A407760EEAE4156': ('ZU-23_5C9AD9EF76F6B5EA', 'Prefabs/Vehicles/Static/BaconZU23/BaconZU23_Turret_Deployed.et'),
     '9AEDF323A812F9ED': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2_AFRF.et'),
     '18378FFFC82F30BF': ('M113APC_5E5C154FEE1094BB', 'Prefabs/Vehicles/Tracked/M113/M113_APC.et'),

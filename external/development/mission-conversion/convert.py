@@ -167,6 +167,7 @@ def main():
     if args.batch and stock:
         external_ai.update({guid: path for guid, path in stock_ai.items() if stock.contains(guid, path)})
     forced_external = {}
+    asset_aliases = {}
     if args.units:
         source_units = Snapshot(args.units, args.units_source)
         dev_units = Snapshot(args.units, args.units_dev)
@@ -178,6 +179,7 @@ def main():
                 forced_external = verified_uk_forced_roles(
                     args.workshop_addons, occupied) | verified_rhs_forced_roles(
                         rhs_database, locally_owned, source_units, dev_units)
+                asset_aliases = batch.resource_aliases(args.workshop_addons, dev_units, stock)
             except (OSError, ValueError) as exc:
                 parser.error(str(exc))
 
@@ -188,6 +190,8 @@ def main():
                 return path
             if batch.verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path):
                 return path
+            if (alias := asset_aliases.get((resource, path))) and alias[0] == resource:
+                path = alias[1]
             if (resource in locally_owned or source_units.resources.get(resource) != [path]
                     or dev_units.resources.get(resource) != [path]):
                 return None
@@ -855,7 +859,6 @@ def main():
         try:
             restored = (verified_roles(dev_units, stock) | verified_msv85_wrappers(source_units, dev_units)
                         | verified_aircrew_roles(source_units, dev_units, stock, locally_owned))
-            asset_aliases = batch.resource_aliases(args.workshop_addons, dev_units, stock)
         except (OSError, ValueError, CalledProcessError) as exc:
             parser.error(str(exc))
         restored = {old: new for old, new in restored.items()

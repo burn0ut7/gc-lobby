@@ -514,6 +514,9 @@ WORKSHOP_RESOURCE_ALIASES = {
         'Prefabs/Structures/Bulding/Military/fort_rampart_ep1.et'),
 }
 UNITS_PREFAB_ALIASES = {
+    ('D57725689E9E8EDA', 'Prefabs/Groups/OPFOR/GC_SEPARATIST/GC_SEPARATIST_RifleSquad.et'): (
+        'D57725689E9E8EDA', 'Prefabs/Groups/OPFOR/GC_SEPARATIST/2020/Group_SEP_RifleSquad.et',
+        '0305282df1d84452f884b72815847edc9c0785314f54727aa7bfa88ab3ec2a3a'),
     ('2CE3925D1803A664', 'Prefabs/Vehicles/Wheeled/M998/M1025_armed_BGM-71_MERDC.et'): (
         '2CE3925D1803A664', 'Prefabs/Vehicles/Wheeled/M998/M1046_armed_BGM-71_MERDC.et',
         '0a545c5d39ebf2ef49440561ee0f1bda70276b58561e2a7bb6e7b44b333eeaf9'),
@@ -2697,6 +2700,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare timing of simultaneous flag changes and their dependent event chains.')
     if any(action.get('deactivatesEvents') for event in rules.values() for action in event.get('convertedActions', ())):
         remaining.append('Compare event deactivation before a trigger and after it queues delayed actions.')
+    if any(event.get('waypointAssignments') and event.get('trigger') not in ('Match start', 'dormant')
+           for event in rules.values()):
+        remaining.append('Compare waypoint assignment timing and order after the event condition becomes true.')
     if damage_flags:
         remaining.append('Compare damage notification timing in Match and confirm no objective damage during staging.')
     if any(asset.get('playable') for asset in roster_assets.values()):

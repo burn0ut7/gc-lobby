@@ -163,6 +163,14 @@ def waypoint_action(lines, key):
     return Decimal(delay), [*body, '      }'], details
 
 
+def waypoint_trigger(term):
+    if term.get('inverted'):
+        return False
+    if term['trigger'] in ('all', 'any'):
+        return all(waypoint_trigger(operand) for operand in term['operands'])
+    return term['trigger'] in ('Match start', 'dormant', 'area capture', 'interaction flag', 'event flag')
+
+
 def deactivate_events(lines, key):
     data = properties(lines, {'m_eventNames', 'm_executionDelay'})
     names = data.get('m_eventNames', '')
@@ -271,6 +279,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
     actions = defaultdict(list)
     notices = []
     assignments = []
+    empty_waypoints = []
     converted_actions = []
     delayed_areas = []
     messages = 0
@@ -316,6 +325,11 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                     delay, body, notice = end_action(fields[j + 1:last], key + '/' + end_match[1], compound)
                     notices.append(notice)
                 elif waypoint_match:
+                    if last == j + 1:
+                        # A serialized placeholder has no group to look up.
+                        empty_waypoints.append(waypoint_match[1])
+                        j = last + 1
+                        continue
                     delay, body, assignment = waypoint_action(fields[j + 1:last], key + '/' + waypoint_match[1])
                     assignments.append(assignment)
                 elif deactivate_match:
@@ -352,7 +366,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
             raise ValueError('unsupported outcome event field ' + field)
         i += 1
     if not term or not (notices or assignments or converted_actions or delayed_areas or (compound and messages)
-                        or log_only):
+                        or log_only or empty_waypoints):
         raise ValueError('missing condition or supported framework instruction')
     if pregame != (term['trigger'] == 'startup choice'):
         raise ValueError('pregame event requires a reviewed startup selection')
@@ -360,21 +374,15 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                     or any(action['instruction'] not in ('TILW_SpawnPrefabInstruction', 'TILW_EditMapItemInstruction')
                            for action in converted_actions)):
         raise ValueError('unsupported pregame action')
-    if assignments and term['trigger'] not in ('Match start', 'dormant'):
-        guard = term
-        while (guard['trigger'] in ('all', 'any') and not guard.get('inverted')
-               and len(guard['operands']) == 1):
-            guard, = guard['operands']
-        capture = captures.get('"' + guard.get('flag', '') + '"', [])
-        one_shot_capture = guard['trigger'] == 'area capture' and any(
-            line.strip() == 'm_bStopAfterFirstChange 1' for line in capture)
-        if guard.get('inverted') or not (one_shot_capture or guard['trigger'] in ('interaction flag', 'event flag')):
-            raise ValueError('waypoint assignments need a positive one-shot capture, verified flag, or Match start')
+    if assignments and not waypoint_trigger(term):
+        raise ValueError('waypoint assignments need positive capture or verified mission flags, or Match start')
     audit = {'announcements': notices, 'instructionDelaysSeconds': [f'{delay:f}' for delay in actions]}
     if log_only:
         audit['logOnly'] = True
     if assignments:
         audit['waypointAssignments'] = assignments
+    if empty_waypoints:
+        audit['emptyWaypointInstructions'] = empty_waypoints
     if converted_actions:
         audit['convertedActions'] = converted_actions
     if delayed_areas:
@@ -753,6 +761,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             if any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
                 term['requiresMatch'] = True
             suffixes = {f' ({delay:f}s)' for delay in actions}
+            if not suffixes and term['trigger'] == 'Match start':
+                suffixes.add(' (0s)')
             if term['trigger'] not in ('Match start', 'startup choice', 'dormant'):
                 suffixes.add('')
             native_name = name
