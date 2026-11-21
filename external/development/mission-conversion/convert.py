@@ -441,14 +441,18 @@ def main():
                     indexed, _ = indexed_pages(pages)
                     hidden_briefings = {page.name: order for order, page in indexed
                                         if names[page.name] == 1 and page.audience == BriefingAudience.HIDDEN}
+                derived_audit = []
                 rules, outcome_audit, gap = compile_outcomes(
                     source, world, captures, compound=args.batch, notification_audit=review,
                     objective_flags=objective_flags, extraction_spawns=delayed.spawns if delayed else None,
                     scripts=batch.script_text(source) if args.batch and any(row['serializedTypes'].get(kind)
-                    for kind in ('TILW_SetFlagInstruction', 'TILW_FlagSampling')) else None,
+                    for kind in ('TILW_SetFlagInstruction', 'TILW_FlagSampling', 'TILW_MetaFlag')) else None,
                     resolve_spawn=partial(resolve_spawn, objectives) if args.batch else None,
-                    resolve_crew=resolve_crew if args.batch else None, hidden_briefings=hidden_briefings)
+                    resolve_crew=resolve_crew if args.batch else None, hidden_briefings=hidden_briefings,
+                    derived_audit=derived_audit)
                 outcome = {'events': outcome_audit}
+                if derived_audit:
+                    outcome['derivedFlags'] = derived_audit
                 if gap:
                     outcome['gap'] = gap
                 if rules:

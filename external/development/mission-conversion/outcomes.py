@@ -2,6 +2,7 @@
 from collections import defaultdict
 from decimal import Decimal
 from functools import partial
+from graphlib import CycleError, TopologicalSorter
 from pathlib import PurePosixPath
 import re
 
@@ -17,12 +18,15 @@ KEY = r'"[\w.-]+"'
 EVENT_LABEL = r'"[^"\\\x00-\x1f]+"'
 RESULT = {'EDITOR_FACTION_VICTORY': 1, 'EDITOR_FACTION_DEFEAT': 2, 'EDITOR_FACTION_DRAW': 3}
 TERM = re.compile(
-    r'\s*(?:m_condition )?TILW_(Literal|Conjunction|Disjunction|Minjunction|Maxjunction|Matchjunction)'
+    r'\s*(?:m_(?:condition|definition) )?TILW_(Literal|Conjunction|Disjunction|Minjunction|Maxjunction|Matchjunction)'
     r'Term "\{[\da-fA-F]{16}\}" \{')
 COUNT_FIELDS = {'Minjunction': 'm_minTrue', 'Maxjunction': 'm_maxTrue', 'Matchjunction': 'm_matchTrue'}
 AI_FLAG = re.compile(r'^  TILW_FactionAIKilledFlag "\{[\da-fA-F]{16}\}" \{$')
 FLAG_ACTION = re.compile(r'^    TILW_(Set|Clear)FlagInstruction "\{[\da-fA-F]{16}\}" \{$')
 FLAG_FIELD = re.compile(r'^\s+m_flagName (' + KEY + r')\s*$')
+META_FLAG = re.compile(r'^  TILW_MetaFlag "\{[\da-fA-F]{16}\}" \{$')
+META_FLAG_FIELD = re.compile(r'^\s+m_flagName (' + EVENT_LABEL + r')\s*$')
+SCRIPT_FLAG_APIS = ('AdjustMissionFlag', 'IsMissionFlag', 'GetFlagSetCopy', 'm_flagSet')
 # The reviewed source produces US_KIA, while this notice consumes USMC_KIA.
 DORMANT_NOTICES = {
     ('a75e404c331abce5185f315f47f533d9b8eccf00',
@@ -51,8 +55,7 @@ def instruction_flags(source, world, framework_path, lines, scripts):
                               for item in body if not FLAG_FIELD.fullmatch(item)):
             continue
         known_uses[names[0]] += 1
-    legacy_flag_apis = ('AdjustMissionFlag', 'IsMissionFlag', 'GetFlagSetCopy', 'm_flagSet')
-    if not flags or any(api in scripts for api in legacy_flag_apis):
+    if not flags or any(api in scripts for api in SCRIPT_FLAG_APIS):
         return ()
     corpus = '\n'.join('\n'.join(line for line in source.read(path).splitlines()
                                 if not (path == framework_path and line.startswith('   m_name ')))
@@ -60,6 +63,61 @@ def instruction_flags(source, world, framework_path, lines, scripts):
                        if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
     return tuple(sorted(flag[1:-1] for flag in flags
                         if flag[1:-1] not in scripts and corpus.count(flag) == known_uses[flag]))
+
+
+def derived_flags(source, world, framework_path, body, scripts):
+    """Read pure derived flags whose authored references are all literal terms."""
+    starts = [i for i, line in enumerate(body) if line == ' m_metaFlags {']
+    if not starts:
+        return {}
+    if len(starts) != 1 or scripts is None or any(api in scripts for api in SCRIPT_FLAG_APIS):
+        raise ValueError('meta flag ownership requires review')
+    start = starts[0]
+    end = block_end(body, start)
+    definitions = {}
+    cursor = start + 1
+    while cursor < end:
+        if not META_FLAG.fullmatch(body[cursor]):
+            raise ValueError('unsupported meta flag placement')
+        stop = block_end(body, cursor)
+        fields = body[cursor + 1:stop]
+        terms = [i for i, line in enumerate(fields)
+                 if line.startswith('   m_definition ') and TERM.fullmatch(line)]
+        if len(terms) != 1:
+            raise ValueError('meta flag requires one supported definition')
+        term = terms[0]
+        close = block_end(fields, term)
+        flag = properties(fields[:term] + fields[close + 1:], {'m_flagName'}).get('m_flagName', '')
+        if not re.fullmatch(EVENT_LABEL, flag) or flag in definitions or flag in scripts:
+            raise ValueError('invalid or script-managed meta flag ' + flag)
+        definitions[flag] = fields[term:close + 1]
+        cursor = stop + 1
+
+    literal_uses = defaultdict(int)
+    for index, line in enumerate(body):
+        match = TERM.fullmatch(line)
+        if not match or match[1] != 'Literal':
+            continue
+        stop = block_end(body, index)
+        fields = body[index + 1:stop]
+        for item in fields:
+            if name := META_FLAG_FIELD.fullmatch(item):
+                literal_uses[name[1]] += 1
+    content = '\n'.join('\n'.join(line for line in source.read(path).splitlines()
+                                  if not (path == framework_path and line.startswith('   m_name ')))
+                        for path in sorted(source.closure(world))
+                        if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+    for flag in definitions:
+        if content.count(flag) != literal_uses[flag] + 1:
+            raise ValueError('meta flag has another producer or unsupported use: ' + flag)
+    dependencies = {flag: {match[1] for line in lines if (match := META_FLAG_FIELD.fullmatch(line))
+                           and match[1] in definitions}
+                    for flag, lines in definitions.items()}
+    try:
+        tuple(TopologicalSorter(dependencies).static_order())
+    except CycleError as exc:
+        raise ValueError('cyclic meta flag definitions') from exc
+    return definitions
 
 
 def end_action(lines, key, allow_neutral=False):
@@ -102,7 +160,8 @@ def waypoint_action(lines, key):
     return Decimal(delay), [*body, '      }'], details
 
 
-def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0, *, allow_dormant=False):
+def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0, *,
+              allow_dormant=False, derived=None, negate=False):
     match = TERM.fullmatch(lines[0])
     if not match or depth > 8:
         raise ValueError('unsupported outcome term')
@@ -110,6 +169,12 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
         values = properties(lines[1:-1], {'m_flagName', 'm_invertTerm'})
         flag = values.get('m_flagName', '""')
         invert = values.get('m_invertTerm', '0')
+        if negate and invert in ('0', '1'):
+            invert = str(int(invert == '0'))
+        if derived and flag in derived and invert in ('0', '1'):
+            resolved = read_term(derived[flag], flags, captures, ai, objective_flags, event_flags, depth + 1,
+                                 derived=derived, negate=invert == '1')
+            return {**resolved, 'requiresMatch': True, 'derivedFlag': flag[1:-1]}
         if flag == '""' and invert == '1' and depth == 0:
             return {'trigger': 'Match start'}
         if flag == '""' and invert == '0' and allow_dormant and depth == 0:
@@ -143,12 +208,15 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
     inverted = fields.get('m_invertTerm', '0')
     if inverted not in ('0', '1'):
         raise ValueError('invalid compound outcome inversion')
+    if negate:
+        inverted = str(int(inverted == '0'))
     index, operands = start + 1, []
     while index < stop:
         end = block_end(lines, index)
         if end >= stop:
             raise ValueError('invalid compound outcome operand list')
-        operands.append(read_term(lines[index:end + 1], flags, captures, ai, objective_flags, event_flags, depth + 1))
+        operands.append(read_term(lines[index:end + 1], flags, captures, ai, objective_flags, event_flags,
+                                  depth + 1, derived=derived))
         index = end + 1
     if not 1 <= len(operands) <= 64:
         raise ValueError('unsupported number of outcome operands')
@@ -176,7 +244,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
 
 
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
-               resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None):
+               resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -203,7 +271,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 term = {'trigger': 'dormant', 'flag': literal_flag[1:-1], 'reason': 'no legacy flag producer'}
             else:
                 term = read_term(fields[i:end + 1], flags, captures, ai, objective_flags, event_flags,
-                                 allow_dormant=compound)
+                                 allow_dormant=compound, derived=derived)
             i = end
         elif line == '   m_instructions {':
             end = block_end(fields, i)
@@ -472,7 +540,8 @@ def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
 
 
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
-                     extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None):
+                     extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None,
+                     derived_audit=None):
     captures = captures or {}
     notification_audit = notification_audit or {}
     extraction_spawns = extraction_spawns or {}
@@ -500,6 +569,14 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     if set(objective_flags) & {key[1:-1] for key in (*flags, *ai, *captures)}:
         return [], {}, 'ambiguous interaction flag producer'
     event_flags = instruction_flags(source, world, path, body, scripts) if scripts is not None else ()
+    derived, derived_gap = {}, None
+    if compound:
+        try:
+            derived = derived_flags(source, world, path, body, scripts)
+        except ValueError as exc:
+            derived_gap = str(exc)
+    if derived and derived_audit is not None:
+        derived_audit.extend(flag[1:-1] for flag in derived)
     startup = startup_flags(source, world, path, body, scripts or '') if compound and resolve_spawn else ()
     parsed, audit = [], {}
     names = set()
@@ -529,7 +606,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             term, actions, details = read_event(
                 fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns,
                 resolve_spawn, resolve_crew, startup, hidden_briefings,
-                DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None)
+                DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived)
             emitted_names = {f'{name} ({delay:f}s)' for delay in actions}
             if term['trigger'] not in ('Match start', 'startup choice', 'dormant'):
                 emitted_names.add(name)
@@ -563,4 +640,4 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     compiled.extend(render_capture_trackers(world, tracked_areas, captures, capture_messages))
     for identity, name, term, actions in parsed:
         compiled.extend(render(world + '/' + identity, name, term, actions, captures, capture_messages, tracked_areas))
-    return compiled, audit, None
+    return compiled, audit, derived_gap

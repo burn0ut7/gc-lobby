@@ -81,6 +81,12 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/arc/PatrolTroubles.conf': (
+        '3e3558ba1284691a71fd64781266612bc881b5df',
+        (('worlds/arc/PatrolTroubles/PatrolTroubles_Layers/players.layer',
+          '872d093e2b12108445da912dabc0df2df3d2e90d'),),
+        40, 41,
+    ),
     'Missions/Sasha20k_pro/Assault of thirty palms.conf': (
         '05531d2a0fc40bdc0cd36b570db1bff7ddf6cedc',
         (('worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/Players_us.layer',
@@ -246,6 +252,8 @@ STOCK_RESOURCE_ALIASES = {
         'PrefabLibrary/DefaultLibrary/Walls/Concrete/ConcreteWall_01_3m.et',
     ('C98A6C1C2372354E', 'Prefabs/Vegetation/Bush/b_corylus_avellana_1_collision.et'):
         'Prefabs/Vegetation/Bush/b_corylus_avellana_1.et',
+    ('DCAF0585D17B917A', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_ranomized.et'):
+        'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_randomized.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
     ('1DC01AAACFFA8B63', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_base.et'): (
@@ -554,7 +562,7 @@ def damage_flag_rules(source, world, stock, local_resources, source_units):
     for flag, entries in candidates.items():
         # Literal inversion may be serialized before or after the name.
         count = len(re.findall(
-            rf'(?m)^( +)(?:m_condition )?TILW_LiteralTerm {SERIALIZED_ID} \{{\n'
+            rf'(?m)^( +)(?:m_(?:condition|definition) )?TILW_LiteralTerm {SERIALIZED_ID} \{{\n'
             r'(?:\1 m_invertTerm [01]\n)?\1 m_flagName "'
             + re.escape(flag) + r'"\n(?:\1 m_invertTerm [01]\n)?\1\}$', references))
         if len(entries) != 1 or references.count(f'"{flag}"') != count + 1 or flag in script_text(source):
@@ -1247,13 +1255,16 @@ def presence_rule(world, area_name, flag, fields):
 def extraction_rule(world, area_name, flag, fields, *, polygon=False):
     data = properties(fields, {'m_queryRadius', 'm_captureTime', 'm_flagName', 'm_stopAfterFirstChange',
                                'm_factionKey', 'm_ratioThreshold', 'm_playersOnly', 'm_comparisonMode',
-                               'm_skipFirstQuery', 'm_eventsOnlyDuringGame'} | CAPTURE_TRANSFORM | CAPTURE_EDITOR_FIELDS)
+                               'm_skipFirstQuery', 'm_eventsOnlyDuringGame', 'm_locationName',
+                               'm_sendStatusMessages'} | CAPTURE_TRANSFORM | CAPTURE_EDITOR_FIELDS)
     players = data.get('m_playersOnly', '1')
     stops = data.get('m_stopAfterFirstChange', '0')
     discovery = data.get('m_skipFirstQuery', '0')
     mode = data.get('m_comparisonMode', 'EQUAL_OR_MORE')
     if (any(value not in ('0', '1') for value in (players, stops, discovery))
             or mode not in ('0', '1', 'EQUAL_OR_LESS', 'EQUAL_OR_MORE')
+            or not re.fullmatch(QUOTED, data.get('m_locationName', '""'))
+            or data.get('m_sendStatusMessages', '0') != '0'
             or data.get('m_eventsOnlyDuringGame', '1') != '1'):
         raise ValueError('unsupported extraction settings')
     faction = data['m_factionKey']
@@ -1667,6 +1678,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     roots = [field.split()[0] for field in root_fields]
                     # The legacy framework uses named placements and flag data, not its own transform.
                     unsupported = set(roots) - {'m_missionEvents', 'm_casualtyFlags', 'm_suppressGameEnd'}
+                    if outcome.get('derivedFlags'):
+                        unsupported.discard('m_metaFlags')
                     for field in root_fields:
                         name = field.split()[0]
                         if roots.count(name) == 1 and FIELD.fullmatch(field):
@@ -1942,6 +1955,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare victory notices below and at the authored casualty threshold after the first sample.')
     if any(rule.get('requiresMatch') for rule in rules.values()):
         remaining.append('Compare compound outcome activation around the authored threshold during Match.')
+    if outcome.get('derivedFlags'):
+        remaining.append('Compare derived outcomes as source flags change, including inverted consumers in Match.')
     if ticket_edits:
         remaining.append('Compare event-driven ticket changes and any spectator respawn requests.')
     if any(path.endswith('.layer') and isinstance(body, str)
