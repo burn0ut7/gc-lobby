@@ -13,7 +13,7 @@ import breach
 import arc_capture
 import batch
 import local_loadouts
-from restore_units_roles import verified_msv85_wrappers, verified_roles
+from restore_units_roles import verified_aircrew_roles, verified_msv85_wrappers, verified_roles
 import vehicle_crew
 import bugout
 from briefings import BriefingAudience, STANDARD_LAYOUTS, guid, indexed_pages, read_pages, render
@@ -831,7 +831,8 @@ def main():
         loadouts = local_loadouts.collect(source, dev, source_units, dev_units, stock)
         reviewed_members = {guid: asset[0] for guid, asset in loadouts.items()}
         try:
-            restored = verified_roles(dev_units, stock) | verified_msv85_wrappers(source_units, dev_units)
+            restored = (verified_roles(dev_units, stock) | verified_msv85_wrappers(source_units, dev_units)
+                        | verified_aircrew_roles(source_units, dev_units, stock, locally_owned))
             asset_aliases = batch.resource_aliases(args.workshop_addons, dev_units, stock)
             external_vehicles = vehicle_crew.workshop_vehicles(args.workshop_addons)
         except (OSError, ValueError, CalledProcessError) as exc:

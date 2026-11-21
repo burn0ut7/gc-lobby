@@ -1,5 +1,6 @@
 """Stage previously shipped Units loadouts with their original equipment and native parents."""
 import argparse
+from hashlib import sha256
 from pathlib import Path
 import re
 from subprocess import CalledProcessError
@@ -65,6 +66,37 @@ def verified_roles(units, stock):
         if path not in units.files or units.read(path) != body:
             raise ValueError('archived loadout differs from the reviewed recovery: ' + path)
     return {(original, path): RESTORED[original] for original, path in AUTHORED_PATHS.items()}
+
+
+def verified_aircrew_roles(source, units, stock, mission_owned):
+    """Retain the legacy Lobby and Units combination observed in Workbench."""
+    root = 'Prefabs/Characters/Factions/BLUFOR/US_Army/'
+    pilot, crew = 'E9601333852C637F', '0812D60CBC9DD927'
+    pilot_native = root + 'Deprecated/Character_US_HeliPilot_P.et'
+    stock_pilot = ('42A502E3BB727CEB', root + 'Character_US_HeliPilot.et')
+    stock_crew = ('15CD521098748195', root + 'Character_US_HeliCrew.et')
+    radio = ('9B6B61BB3FE3DFB0', 'Prefabs/Items/Equipment/Radios/Radio_ANPRC77.et')
+    radio_overlay = 'Prefabs/Items/Equipment/Radios/US/Radio_ANPRC77.et'
+    stock_assets = (stock_pilot, stock_crew, radio)
+    if (not stock or any(not stock.contains(*asset) for asset in stock_assets)
+            or {pilot, crew, *(guid for guid, _ in stock_assets)} & mission_owned
+            or any(guid in checkout.resources for checkout in (source, units)
+                   for guid in (crew, stock_pilot[0], stock_crew[0]))
+            or source.resources.get(pilot) != [pilot_native] or units.resources.get(pilot) != [pilot_native]
+            or source.resources.get(radio[0]) != [radio_overlay] or units.resources.get(radio[0]) != [radio_overlay]):
+        return {}
+    body = units.read(pilot_native)
+    if (source.read(pilot_native) != body or sha256(body.strip().encode()).hexdigest()
+            != '756dca3a36bff9441f07762428a167041981a2bbb7ef44ce57811801676cb5b1'):
+        return {}
+    radio_body = units.read(radio_overlay)
+    if (source.read(radio_overlay) != radio_body or sha256(radio_body.strip().encode()).hexdigest()
+            != '42df5362f470cd116120441fa05b82b57759ae231f94336079f7e66903873de4'):
+        return {}
+    return {
+        (pilot, root + 'Character_US_HeliPilot_P.et'): (pilot, pilot_native),
+        (crew, root + 'Character_US_HeliCrew_P.et'): stock_crew,
+    }
 
 
 def verified_msv85_wrappers(source, units):
