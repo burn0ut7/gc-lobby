@@ -229,12 +229,13 @@ def contents(lines, field):
     return lines[1:-1]
 
 
-def character_reference(guid, path, source_units, dev_units, stock, owned, external_ai=None):
+def character_reference(guid, path, source_units, dev_units, stock, owned, external_ai=None, *,
+                        allow_legacy_playable=False):
     if guid in owned or not path.startswith('Prefabs/Characters/'):
         raise ValueError('unverified crew character ' + guid)
     if guid in source_units.resources or guid in dev_units.resources:
         if (not unchanged_units_parent(source_units, dev_units, guid)
-                or legacy_member(source_units, guid, False)):
+                or (not allow_legacy_playable and legacy_member(source_units, guid, False))):
             raise ValueError('crew character ancestry needs review ' + guid)
         canonical, = dev_units.resources[guid]
         if PurePosixPath(path).name != PurePosixPath(canonical).name:
@@ -583,7 +584,8 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
         end = block_end(lines, index)
         replacement = render_component(
             component, lines[index + 1:end],
-            lambda guid, path: character_reference(guid, path, source_units, dev_units, stock, owned, external_ai),
+            lambda guid, path: character_reference(guid, path, source_units, dev_units, stock, owned, external_ai,
+                                                   allow_legacy_playable=True),
             single_turret, lambda guid, path: verified_crew_config(source_units, guid, path, owned),
             allow_default_crew=allow_default_crew)
         return [*lines[:index], *replacement, *lines[end + 1:]]

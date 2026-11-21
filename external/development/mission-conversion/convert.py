@@ -253,9 +253,9 @@ def main():
         return batch.spawn_resource(source, dev, source_units, dev_units, stock, resource, path, objectives,
                                     workshop_spawn_resources)
 
-    def resolve_crew(resource, path):
+    def resolve_crew(resource, path, *, allow_legacy_playable=True):
         return vehicle_crew.character_reference(resource, path, source_units, dev_units, stock, locally_owned,
-                                                external_ai)
+                                                external_ai, allow_legacy_playable=allow_legacy_playable)
 
     out = {}
     arc_areas = {}

@@ -851,6 +851,10 @@ WIRECUTTER_PREFAB = ('42232FFE6E7AC415', 'Prefabs/Items/Core/Wirecutters/wirecut
 LEGACY_WIRECUTTER = re.compile(
     r'\$grp GenericEntity : "\{8554ED3F088BADA6\}Prefabs/Items/Core/Wirecutters/wirecutters(?:old)?\.et" \{')
 UNITS_PREFAB_ALIASES = {
+    ('91766A63132EE378', 'Prefabs/Groups/BLUFOR/US/Army_1985_Rifles_Desert/Group_US_Army_1985_Desert_RifleSquad.et'): (
+        '91766A63132EE378',
+        'Prefabs/Groups/BLUFOR/US/Deprecated/Army_1985_Rifles_Desert/Group_US_Army_1985_Desert_RifleSquad.et',
+        '7d3df1aef362ab7d1979cb4e18126135966c143144cd510790f27d86748388b2'),
     ('C00B26E6C8808EF8', 'Prefabs/Vehicles/Wheeled/M998/CRX_M1025_armed_M2HB_gunshield_MERDC.et'): (
         'C00B26E6C8808EF8', 'Prefabs/Vehicles/Wheeled/M998/CRX_M1025_armed_M2HB_gunshield_DESERT.et',
         '99815cf48312662ac44de7615b5a3c027287de6b28c1c96bf36f5d8b9a9d4d1c'),
@@ -1183,7 +1187,7 @@ def placed_core_character(block, resolve_character):
     if not members:
         return None
     prefab = REF.search(block[0])
-    reference = resolve_character(prefab[1].upper(), prefab[2])
+    reference = resolve_character(prefab[1].upper(), prefab[2], allow_legacy_playable=False)
     header = block[0].replace(prefab[0], reference, 1)
     return native_placement([header, *block[1:]], reviewed_character=True)
 
@@ -3468,6 +3472,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'delayed extraction', 'file': world,
                              'detail': 'extraction needs all spawns and one positive consumer per flag'})
     missing_waypoints = []
+    group_waypoint_links = []
     missing_spawn_anchors = set()
     self_waypoints = []
     missing_order_groups = set()
@@ -3569,6 +3574,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             if len(targets) != 1 or not re.fullmatch(WAYPOINT_CLASS, targets[0][0]):
                 blockers.append({'rule': 'placed crew waypoint', 'file': world,
                                  'detail': 'expected one placed AI waypoint named ' + waypoint})
+        source_named = None
         for layer, field, target in static_link_gaps(draft, named):
             reviews = REVIEWED_MISSING_WAYPOINTS if field == 'm_aStaticWaypoints' else REVIEWED_MISSING_STATIC_VEHICLES
             reviewed_blob, reviewed_targets = reviews.get(layer, (None, ()))
@@ -3577,6 +3583,17 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 missing = missing_waypoints if field == 'm_aStaticWaypoints' else missing_static_vehicles
                 missing.append(target)
                 continue
+            targets = named.get(target, ())
+            if (field == 'm_aStaticWaypoints' and len(targets) == 1 and targets[0][0] == 'SCR_AIGroup'
+                    and target not in spawned_names and target not in crew_name_counts
+                    and target not in script_text(source)):
+                if source_named is None:
+                    source_named = named_placements(source.read(path) for path in source.layers[world.lower()])
+                original = source_named.get(target, ())
+                if len(original) == 1 and original[0][0] == 'SCR_AIGroup':
+                    # SCR_AIGroup.AddWaypointsStatic casts the named entity to AIWaypoint.
+                    group_waypoint_links.append(target)
+                    continue
             blockers.append({'rule': 'static group links', 'file': layer,
                              'detail': f'{field} requires a unique placed target named {target}'})
         for gap in marker_edit_gaps(named, marker_edits):
@@ -3650,6 +3667,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append(f'The original spawn at {target} has no authored anchor and does not run.')
     for target in sorted(set(missing_waypoints)):
         remaining.append(f'The original static waypoint link to {target} has no authored target.')
+    for target in sorted(set(group_waypoint_links)):
+        remaining.append(f'The original static waypoint link to {target} names a group and leaves orders unchanged.')
     for target in sorted(set(self_waypoints)):
         remaining.append(f'The original assignment refers to the waypoint {target} as its group and leaves orders unchanged.')
     for target in sorted(missing_order_groups):
@@ -3819,6 +3838,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare spawn placement and timing in Match, including concurrent actions.')
     if any(spawn.get('crewDefaults') for spawn in prefab_spawns):
         remaining.append('Compare prefab default occupants, seat filters and crew orders on event-spawned vehicles.')
+    if any(spawn.get('crewGroups') for spawn in spawner_audit):
+        remaining.append('Compare explicit crew seating and group routes on timed vehicle spawns.')
     return ({} if blockers else draft), {
         'status': 'blocked by conversion rules' if blockers else 'generated for file review',
         'blockers': blockers, 'files': sorted(draft), 'mixedLayerGroups': group_blocks,
