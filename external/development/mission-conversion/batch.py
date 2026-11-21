@@ -542,6 +542,9 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Scenarios/SP01/SP01_UAZ469_USSR.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('C8C37964483452EA', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Army.et'): (
+        'WCS_AH-1S_64CB39E57377C861', 'C8C37964483452EA',
+        'Prefabs/Vehicles/Helicopters/AH1S/Army/AH1S_Army_M261_X4.et'),
     ('89B49CDEBBEC973A', 'Prefabs/Weapons/Magazines/Magazine_127x99_M107A1_10rnd_M2.et'): (
         'TacticalFlava-Weapons_DEADC0DE00000001', '89B49CDEBBEC973A',
         'Prefabs/Weapons/Magazines/M107A1/Magazine_127x99_M107A1_10rnd_M2.et'),
@@ -2902,15 +2905,14 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     missing_spawn_anchors = set()
     self_waypoints = []
     missing_static_vehicles = []
-    crew_waypoints = set()
+    placed_crew_fields = []
     for path, body in draft.items():
-        if not path.endswith('.layer'):
-            continue
-        placed_groups = re.findall(r'(?ms)^( +)GC_SpawnCrewGroup "\{[\da-fA-F]{16}\}" \{\n(.*?)^\1\}', body)
-        lists = re.findall(r'(?ms)^( +)m_aCrewWaypoints \{\n(.*?)^\1\}', body)
-        for _, group in placed_groups:
-            lists.extend(re.findall(r'(?ms)^( +)m_aWaypoints \{\n(.*?)^\1\}', group))
-        crew_waypoints.update(name for _, fields in lists for name in re.findall(r'"([\w.-]+)"', fields))
+        if path.endswith('.layer'):
+            placed_crew_fields.extend(fields for _, fields in re.findall(
+                r'(?ms)^( +)GC_VehicleCrewComponent "\{[\da-fA-F]{16}\}" \{\n(.*?)^\1\}', body))
+    crew_waypoints = {name for crew in placed_crew_fields
+                      for _, fields in re.findall(r'(?ms)^( +)m_a(?:Crew)?Waypoints \{\n(.*?)^\1\}', crew)
+                      for name in re.findall(r'"([\w.-]+)"', fields)}
     if not blockers and (assignments or marker_edits or prefab_spawns or extraction_spawns or area_names or teleport_targets
                          or damage_flags or roster_assets or crew_waypoints
                          or any('m_aStatic' in body for body in draft.values())):
@@ -3146,16 +3148,16 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare teleport availability as the required Match flag is set or cleared.')
     if required_interaction_flags:
         remaining.append('Compare flag-gated mission actions, including repeated use and action-specific hold times.')
-    if any(path.endswith('.layer') and 'GC_VehicleCrewComponent' in body
-           for path, body in draft.items() if isinstance(body, str)):
+    if placed_crew_fields:
         remaining.append('Compare placed crew arrival at Match start, compartment order and gunner dismount policy.')
-    if any(path.endswith('.layer') and 'GC_SpawnCrewGroup' in body
-           for path, body in draft.items() if isinstance(body, str)):
+    if any('m_aCrewGroups {' in crew for crew in placed_crew_fields):
         remaining.append('Compare multi-station seat reservation, empty seats and separate AI groups.')
     if crew_waypoints:
         remaining.append('Compare placed crew waypoint order, delay and separate idle turret grouping.')
     if any(isinstance(body, str) and '{823CA4130CE90077}' in body for body in draft.values()):
         remaining.append('Compare the AH-6 gun and rocket loadout against the legacy scenario.')
+    if any(isinstance(body, str) and '{C8C37964483452EA}' in body for body in draft.values()):
+        remaining.append('Compare the registered Army Cobra rocket loadout against the legacy scenario.')
     if any(isinstance(body, str) and '{D17CCBF7FE9AAFEC}' in body for body in draft.values()):
         remaining.append('Compare the woodland CROWS II turret and crew stations against the legacy scenario.')
     if any(path.endswith('.layer') and isinstance(body, str) and '{BC07885176C7FF8A}' in body
