@@ -18,6 +18,7 @@ from outcomes import FRAMEWORK, leaves
 import polygon_capture
 import teleports
 from scenery import FIELD, StockPrefabs, WAYPOINT_CLASS
+from weather import convert_weather
 
 LEGACY = re.compile(r'\b(?:TILW|PS)_\w+')
 MODE = re.compile(r'^PS_GameModeCoop(?: [\w.-]+)? : "'
@@ -571,7 +572,7 @@ def faction_overrides(lines):
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=()):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
-    weather, coords, freeze, children = '', ' coords 0 0 0', 0, ''
+    weather, environment, coords, freeze, children = '', '', ' coords 0 0 0', 0, ''
     immediate_release = False
     construction = {}
     index = 1
@@ -582,12 +583,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             if (end <= index + 2 or not WEATHER.fullmatch(root[index + 1])
                     or block_end(root, index + 1) != end - 1):
                 raise ValueError('custom legacy game mode components')
-            weather = '\n'.join(root[index + 1:end]) + '\n'
-            for old, new in (('5EE3229927D4D2F5', '6B71E9A8B1A8C501'), ('m_bUseSpecifiedDate', 'm_bDateOverride'),
-                             ('m_iSetDay', 'm_iDay'), ('m_iSetMonth', 'm_iMonth'), ('m_iSetYear', 'm_iYear')):
-                weather = weather.replace(old, new)
-            if LEGACY.search(weather) or re.search(r'\bm_f(?:FogDensity|FogHeight|Rain|Wind)\b|\bm_bOverrideEnvironment\b', weather):
-                raise ValueError('custom legacy weather overrides')
+            weather, environment = convert_weather(world, root[index + 1:end])
             index = end
         elif re.fullmatch(r' coords [-+\d.]+ [-+\d.]+ [-+\d.]+', line):
             coords = line
@@ -668,7 +664,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
 '''
     return f'''GC_LobbyGameMode GC_MigratedMission : "{{{resource}}}{preset}" {{
  components {{
-{weather}{settings} }}
+{weather}{environment}{settings} }}
 {coords}
 {children}}}
 '''

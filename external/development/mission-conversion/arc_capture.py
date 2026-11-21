@@ -11,6 +11,7 @@ from groups import group_layer
 from launchers import launcher
 from markers import convert_layer
 from scenery import FIELD, NUMBER, StockPrefabs
+from weather import environment_component
 
 RECIPES = {
     'FightingRetreat': {
@@ -376,14 +377,10 @@ def assemble(source, dev, stock, workshop, world, row, staged, rules, area):
         for old, new in {'FogDensity': 'FogAmount', 'FogHeight': 'FogHeightDensity',
                          'Rain': 'RainIntensity', 'Wind': 'WindSpeed'}.items():
             field = re.search(r'^   m_f' + old + r' ([\d.]+)\n', text, re.M)
-            values[new] = field[1]
+            values['m_f' + new] = field[1]
             text = text.replace(field[0], '', 1)
         text = text.replace('   m_bOverrideEnvironment 1\n', '', 1)
-        fields = '\n'.join(f'   m_f{key} {value}' for key, value in values.items())
-        environment = f'''  GC_MissionEnvironmentComponent "{{{guid(world + '/environment')}}}" {{
-{fields}
-  }}
-'''
+        environment = environment_component(world, values)
     faction_ids = {'WateryGrave': ('5978B9CE6585BBE8',),
                    'FightingRetreat': ('5978B9CE6585BBE8', '5CC8DE37E1FF0F7A')}
     if name == 'WateryGrave':
