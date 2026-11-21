@@ -274,6 +274,9 @@ def main():
             pages.extend(found)
             gaps.extend(issues)
         row['directBriefingsRead'] = len(pages)
+        named_briefings = sorted({page.name for page in pages if page.name})
+        if named_briefings and args.batch:
+            row['namedBriefings'] = named_briefings
         # Nested and script-created pages need their owning resources converted.
         for path in sorted(source.closure(world)):
             if not path.lower().endswith(('.et', '.layer')) or path in source.layers[world.lower()]:

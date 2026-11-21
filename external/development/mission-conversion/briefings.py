@@ -103,33 +103,60 @@ def page(lines, origin, name=''):
     return Page(int(values.get('m_iOrder', 0)), title, body, '' if any_side else factions, origin, audience, name)
 
 
+def description_placement(lines, path, start, result, covered, depth=0):
+    indent = len(lines[start]) - len(lines[start].lstrip(' '))
+    match = PLACEMENT.fullmatch(lines[start][indent:])
+    if not match or BASE not in match['head']:
+        raise ValueError('inline or custom description prefab')
+    if depth > 16:
+        raise ValueError('description hierarchy exceeds 16 levels')
+    stop = block_end(lines, start)
+    covered.add(start)
+    if not match['group']:
+        name = re.match(r'\s*([\w.-]+)\s*(?=:|$)', match['head'])
+        description_instance(lines, path, start, stop, name[1] if name else '', result, covered, depth)
+        return stop
+    i = start + 1
+    while i < stop:
+        member = re.fullmatch(r' ' * (indent + 1) + r'(?:([^{}"]+?)\s+)?\{\s*', lines[i])
+        if not member:
+            raise ValueError('unexpected grouped instance')
+        end = block_end(lines, i)
+        name = member[1] if member[1] and re.fullmatch(r'[\w.-]+', member[1]) else ''
+        description_instance(lines, path, i, end, name, result, covered, depth)
+        i = end + 1
+    return stop
+
+
+def description_instance(lines, path, start, stop, name, result, covered, depth):
+    indent = len(lines[start]) - len(lines[start].lstrip(' ')) + 1
+    children = next((i for i in range(start + 1, stop) if lines[i] == ' ' * indent + '{'), None)
+    result.append(page(lines[start + 1:children if children is not None else stop], f'{path}:{start + 1}', name))
+    if children is None:
+        return
+    if block_end(lines, children) != stop - 1 or children == stop - 2:
+        raise ValueError('unsupported description child list')
+    i = children + 1
+    while i < stop - 1:
+        if (lines[i][:indent + 1] != ' ' * (indent + 1)
+                or not PLACEMENT.fullmatch(lines[i][indent + 1:])):
+            raise ValueError('non-description child under briefing at line ' + str(i + 1))
+        end = description_placement(lines, path, i, result, covered, depth + 1)
+        i = end + 1
+
+
 def read_pages(text, path):
     lines = text.split('\n')
-    result, gaps = [], []
-    starts = [i for i, line in enumerate(lines) if PLACEMENT.fullmatch(line)]
-    for start in starts:
-        loc = f'{path}:{start + 1}'
+    result, gaps, covered = [], [], set()
+    for start, line in enumerate(lines):
+        if not PLACEMENT.fullmatch(line):
+            continue
         try:
-            match = PLACEMENT.fullmatch(lines[start])
-            if BASE not in match['head']:
-                raise ValueError('inline or custom description prefab')
-            stop = block_end(lines, start)
-            if match['group']:
-                i = start + 1
-                while i < stop:
-                    if not re.fullmatch(r'\s+(?:[^{}"]+\s+)?\{\s*', lines[i]):
-                        raise ValueError('unexpected grouped instance')
-                    end = block_end(lines, i)
-                    member = re.fullmatch(r'\s+([\w.-]+)\s+\{\s*', lines[i])
-                    result.append(page(lines[i + 1:end], f'{path}:{i + 1}', member[1] if member else ''))
-                    i = end + 1
-            else:
-                name = re.match(r'\s*([\w.-]+)\s*(?=:|$)', match['head'])
-                result.append(page(lines[start + 1:stop], loc, name[1] if name else ''))
+            description_placement(lines, path, start, result, covered)
         except ValueError as exc:
-            gaps.append(f'{loc} {exc}')
-    # Nested descriptions need parent transforms/lifecycle and possible runtime updates.
-    if re.search(r'^\s+(?:\$grp )?PS_MissionDescription\b', text, re.M):
+            gaps.append(f'{path}:{start + 1} {exc}')
+    if any(i not in covered and line != line.lstrip() and PLACEMENT.fullmatch(line.lstrip())
+           for i, line in enumerate(lines)):
         gaps.append(path + ' nested description')
     return result, gaps
 

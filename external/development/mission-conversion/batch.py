@@ -1074,11 +1074,16 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         blockers.append({'rule': 'mode placement', 'file': world})
     else:
         mode_name = mode[0].split(' : ', 1)[0].removeprefix('PS_GameModeCoop').strip()
-        if mode_name and any(mode_name in action['entities'] for event in rules.values()
-                             for action in event.get('convertedActions', [])
-                             if action['instruction'] == 'TILW_DeleteEntitiesInstruction'):
+        deletion_targets = {name for event in rules.values() for action in event.get('convertedActions', [])
+                            if action['instruction'] == 'TILW_DeleteEntitiesInstruction'
+                            for name in action['entities']}
+        if mode_name in deletion_targets:
             blockers.append({'rule': 'mode settings', 'file': mode_index[0],
                              'detail': 'legacy instruction deletes its own game mode'})
+        deleted_briefings = sorted(deletion_targets.intersection(row.get('namedBriefings', [])))
+        if deleted_briefings:
+            blockers.append({'rule': 'briefing lifecycle', 'file': world,
+                             'detail': 'legacy instruction removes briefing pages: ' + ', '.join(deleted_briefings)})
         try:
             layer, index = mode_index
             rendered = render_mode(world, mode, preset or '', rule_text, zones, ai_faction,
