@@ -23,6 +23,7 @@ from delayed_extraction import collect as collect_delayed_extraction
 from event_actions import ACTIONS
 from events import world_events
 from groups import (SLOTS, compare_ai_parents, convert_ai_instance, group_layer, inheritance, rhs_ai_characters,
+                    uk_ai_characters,
                     unchanged_deprecated_stock_override, unchanged_disabled_playability, verified_rhs_forced_roles,
                     verified_stock_ai_group, verified_uk_forced_roles)
 import gwotline
@@ -151,6 +152,7 @@ def main():
     if args.batch and args.workshop_addons:
         try:
             external_ai, rhs_database = rhs_ai_characters(args.workshop_addons)
+            external_ai.update(uk_ai_characters(args.workshop_addons))
             external_vehicles = vehicle_crew.workshop_vehicles(args.workshop_addons)
             external_vehicle_parents = vehicle_crew.workshop_vehicles(
                 args.workshop_addons, vehicle_crew.WORKSHOP_VEHICLE_PARENTS)

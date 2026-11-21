@@ -134,6 +134,8 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
             *notes_for_world.get('batchDraft', {}).get('remainingBehavior', []),
             *(['Compare the authored locations against the historical Longmoor terrain.']
               if path_resolved_parents else []),
+            *(['Compare startup cleanup targets and confirm protected entities survive.']
+              if {'GC_StartupCleanupEntity', 'GC_StartupCleanupProtectionComponent'} <= kinds else []),
         ],
     }
 

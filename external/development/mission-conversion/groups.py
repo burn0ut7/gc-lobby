@@ -52,7 +52,13 @@ STOCK_FORCED_CALLSIGNS = {
 }
 BASE_CHARACTER = ('37578B1666981FCE', 'Prefabs/Characters/Core/Character_Base.et')
 UK_CHARACTER_BASE = ('542CBB6908CA71D8', 'Prefabs/Characters/Factions/BLUFOR/UK_Army/Character_UK_Base.et')
+UK_PROVIDER = 'BritishForces_5AE50EC5B8D6F4AE'
 UK_REGULAR_DIRECTORY = 'Prefabs/Characters/Factions/BLUFOR/UK_Army/1989/Regulars/'
+UK_1983_AI_ROLES = {
+    'FFB42452E9AD5FFC': 'SectionCommander', 'A6D0DBFAC6349E22': 'Rifleman',
+    'F5B9FF92DBFB520C': 'Rifleman_LAT', '2C69231254D1AEDB': 'Section2IC',
+    'D005E20AE7CB8431': 'GPMG_No1', '327FBCA6B02BC5A8': 'AMG', 'B3BBFBAC7CBF582E': 'L4LMG_No1',
+}
 UK_FORCED_ROLES = {
     '59DC74EF0ECF7E49': ('Medic', 'Medic'),
     'D0F124C1610D3232': ('LSW', 'LSW'),
@@ -75,7 +81,7 @@ RHS_SOBR_FORCED_ROLES = {
 def verified_uk_forced_roles(workshop, owned):
     if not workshop:
         return {}
-    registry = workshop / 'BritishForces_5AE50EC5B8D6F4AE' / 'resourceDatabase.rdb'
+    registry = workshop / UK_PROVIDER / 'resourceDatabase.rdb'
     if not registry.is_file():
         return {}
     database = StockPrefabs(registry)
@@ -88,6 +94,20 @@ def verified_uk_forced_roles(workshop, owned):
         if guid not in owned and database.contains(guid, path):
             result[guid] = (prefix + old + '.et', path)
     return result
+
+
+def uk_ai_characters(workshop):
+    registry = workshop / UK_PROVIDER / 'resourceDatabase.rdb'
+    if not registry.is_file():
+        return {}
+    database = StockPrefabs(registry)
+    if not database.contains(*UK_CHARACTER_BASE):
+        return {}
+    prefix = 'Prefabs/Characters/Factions/BLUFOR/UK_Army/1983/Regulars/Character_UK_1983_Regulars_'
+    if not database.contains('4A29AE1848437792', prefix + 'BaseLoadout.et'):
+        return {}
+    roles = {guid: prefix + role + '.et' for guid, role in UK_1983_AI_ROLES.items()}
+    return {guid: path for guid, path in roles.items() if database.contains(guid, path)}
 
 
 def verified_rhs_forced_roles(registry, owned, source_units, dev_units):

@@ -35,6 +35,7 @@ WIDE_COVER_FIELDS = {
     'm_bUseWorldScale': '1',
     'm_fWorldSize': '128000',
 }
+EMPTY_CLEANUP_PROTECTION = re.compile(r'\s*PK_EntityProtectorComponent "(\{[A-Fa-f0-9]{16}\})" \{')
 
 
 def phase_fields(value):
@@ -56,6 +57,14 @@ def phase_fields(value):
 
 
 def instance(lines, name, inherited=None, *, draw_order=False):
+    protection = []
+    authored_components = [index for index, line in enumerate(lines) if line.strip() == 'components {']
+    if len(authored_components) == 1:
+        start, = authored_components
+        stop = block_end(lines, start)
+        if stop == start + 3 and (component := EMPTY_CLEANUP_PROTECTION.fullmatch(lines[start + 1])):
+            protection = [f'  GC_StartupCleanupProtectionComponent "{component[1]}" {{', '  }']
+            lines = [*lines[:start], *lines[stop + 1:]]
     placed = properties(lines, ALLOWED | {'m_iZOrder'} if draw_order else ALLOWED)
     values = {**(inherited or {}), **placed}
     z_order = values.get('m_iZOrder', '0')
@@ -105,7 +114,7 @@ def instance(lines, name, inherited=None, *, draw_order=False):
     if unassigned == '0' and (any_side == '1' or explicit_list):
         output.append('   m_bHideWithoutFaction 1')
     output.extend(phase)
-    output.extend(['  }', ' }'])
+    output.extend(['  }', *protection, ' }'])
     output.extend(f' {k} {v}' for k, v in merged.items() if k in TRANSFORM)
     return '\n'.join(output + ['}'])
 
