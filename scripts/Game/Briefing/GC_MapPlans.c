@@ -14,6 +14,7 @@ class GC_MapPlans
 	static const string INACTIVE_MISSION = "<inactive>";
 	static const string RECOVERY_FILE = "$profile:Lobby2MapRecovery";
 	static const int RECOVERY_SECONDS = 7200;
+	static const string MAP_UNAVAILABLE = "The mission map is unavailable.";
 
 	//------------------------------------------------------------------------------------------------
 	//! Only eligibility is global: unrelated missions invalidate GC Lobby recovery
@@ -127,13 +128,16 @@ class GC_MapPlans
 	//------------------------------------------------------------------------------------------------
 	protected GC_MapPlanData Capture()
 	{
+		SCR_MapMarkerManagerComponent manager = SCR_MapMarkerManagerComponent.GetInstance();
+		if (!manager || !manager.GetMarkerConfig())
+			return null;
+
 		GC_MapPlanData data = new GC_MapPlanData();
 		data.m_sWorld = GetGame().GetWorldFile();
 		data.m_iLastActive = System.GetUnixTime();
 		FactionManager factions = GetGame().GetFactionManager();
 		for (int index; factions && index < factions.GetFactionsCount(); index++)
 			data.m_aFactions.Insert(factions.GetFactionByIndex(index).GetFactionKey());
-		SCR_MapMarkerManagerComponent manager = SCR_MapMarkerManagerComponent.GetInstance();
 		array<SCR_MapMarkerBase> markers = manager.GetStaticMarkers();
 		markers.InsertAll(manager.GetDisabledMarkers());
 		foreach (SCR_MapMarkerBase marker : markers)
@@ -156,6 +160,8 @@ class GC_MapPlans
 	//------------------------------------------------------------------------------------------------
 	protected string Validate(GC_MapPlanData data)
 	{
+		if (!data)
+			return MAP_UNAVAILABLE;
 		if (!m_Drawings.IsAvailable())
 			return "Load the GC Lobby Map Drawing Plans addon to save or load drawings.";
 		if (data.m_sWorld != GetGame().GetWorldFile())
@@ -173,7 +179,7 @@ class GC_MapPlans
 		}
 		SCR_MapMarkerManagerComponent manager = SCR_MapMarkerManagerComponent.GetInstance();
 		if (!manager || !manager.GetMarkerConfig())
-			return "The mission map is unavailable.";
+			return MAP_UNAVAILABLE;
 		SCR_MapMarkerConfig config = manager.GetMarkerConfig();
 		foreach (int index, array<int> row : data.m_aMarkers)
 		{
@@ -283,14 +289,16 @@ class GC_MapPlans
 			GC_MapPlanData captured = Capture();
 			result = Validate(captured);
 			if (result.IsEmpty())
-				output = captured.Encode();
-			if (output.Length() > 131072)
 			{
-				output = string.Empty;
-				result = "The plan exceeds the 128 KiB transfer limit.";
+				output = captured.Encode();
+				if (output.Length() > 131072)
+				{
+					output = string.Empty;
+					result = "The plan exceeds the 128 KiB transfer limit.";
+				}
+				else
+					result = "Plan exported.";
 			}
-			else if (result.IsEmpty())
-				result = "Plan exported.";
 		}
 		else if (action != "load" && action != "clear")
 			result = "Unknown map plan action.";
@@ -307,6 +315,12 @@ class GC_MapPlans
 					result = "The plan file is invalid or too large.";
 				else
 					result = Validate(data);
+			}
+			else
+			{
+				SCR_MapMarkerManagerComponent manager = SCR_MapMarkerManagerComponent.GetInstance();
+				if (!manager || !manager.GetMarkerConfig())
+					result = MAP_UNAVAILABLE;
 			}
 			if (result.IsEmpty())
 			{
