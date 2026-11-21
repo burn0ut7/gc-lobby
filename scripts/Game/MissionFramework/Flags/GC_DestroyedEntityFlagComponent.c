@@ -1,12 +1,18 @@
-[ComponentEditorProps(category: "GC Lobby/Mission", description: "Call a mission flag once when the owner's main hit zone is destroyed.")]
+[ComponentEditorProps(category: "GC Lobby/Mission", description: "Set a mission flag from the owner's main hit zone.")]
 class GC_DestroyedEntityFlagComponentClass : ScriptComponentClass
 {
 }
 
 class GC_DestroyedEntityFlagComponent : ScriptComponent
 {
-	[Attribute("", UIWidgets.Auto, "Mission flag called once on destruction. Define it in the GC Lobby Manager.")]
+	[Attribute("", UIWidgets.Auto, "Mission flag controlled by this hit zone. Define it in the GC Lobby Manager.")]
 	protected GC_MissionFlagName m_sFlag;
+
+	[Attribute("2", UIWidgets.ComboBox, "Hit-zone state that sets the flag.", enums: ParamEnumArray.FromEnum(EDamageState))]
+	protected EDamageState m_eTargetState;
+
+	[Attribute("0", UIWidgets.CheckBox, "Keep listening after the first match and clear the flag when the hit zone leaves the target state.")]
+	protected bool m_bTrackChanges;
 
 	protected SCR_HitZone m_HitZone;
 
@@ -36,13 +42,22 @@ class GC_DestroyedEntityFlagComponent : ScriptComponent
 
 	protected void OnDamageStateChanged(SCR_HitZone zone)
 	{
-		if (!zone || zone != m_HitZone || zone.GetDamageState() != EDamageState.DESTROYED)
+		if (!zone || zone != m_HitZone)
 			return;
 		IEntity owner = GetOwner();
 		GC_LobbyGameMode mode = GC_LobbyGameMode.GetGameMode();
 		GC_LobbyManager lobby = GC_LobbyManager.GetManager();
-		if (owner && mode && owner.GetWorld() == mode.GetWorld() && lobby && lobby.CallFlag(m_sFlag))
-			StopObserving();
+		if (!owner || !mode || owner.GetWorld() != mode.GetWorld() || !lobby)
+			return;
+
+		bool value = lobby.GetFlag(m_sFlag);
+		if (zone.GetDamageState() == m_eTargetState)
+		{
+			if ((value || lobby.CallFlag(m_sFlag)) && !m_bTrackChanges)
+				StopObserving();
+		}
+		else if (m_bTrackChanges && value)
+			lobby.ResetFlag(m_sFlag);
 	}
 
 	protected void StopObserving()

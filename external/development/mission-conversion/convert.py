@@ -373,7 +373,8 @@ def main():
                 row['interactionCandidate'] = {'gap': str(exc)}
         if args.batch and row['serializedTypes'].get('TILW_Flag_EntityDamage'):
             try:
-                damage_flags, damage, audit = batch.damage_flag_rules(source, world, stock, locally_owned, source_units)
+                damage_flags, damage, audit = batch.damage_flag_rules(
+                    source, world, stock, locally_owned, source_units, dev_units, rhs_database)
                 if set(damage_flags) & set(objective_flags) or damage.keys() & interaction_placements.keys():
                     raise ValueError('damage flag or target also has an interaction')
                 objective_flags = set(objective_flags) | set(damage_flags)

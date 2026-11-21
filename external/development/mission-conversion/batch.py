@@ -37,7 +37,7 @@ CONSTRUCTION_FIELDS = {
 }
 LEGACY_JIP_MODES = {'Deny': 'DISABLED', 'Auto': 'AUTO', 'Manual': 'MANUAL',
                     '0': 'DISABLED', '1': 'AUTO', '2': 'MANUAL'}
-NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|Turret|SCR_AIWorld|GameEntity|GenericEntity|GenericTerrainEntity|GenericWorldFogEntity|StaticModelEntity|Tree|'
+NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|RHS_Tank|Turret|SCR_AIWorld|GameEntity|GenericEntity|GenericTerrainEntity|GenericWorldFogEntity|StaticModelEntity|Tree|'
                     r'DecalEntity|SCR_DestructibleEntity|SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
                     r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity|LightEntity|Projectile)\b')
 WEATHER = re.compile(r'  SCR_TimeAndWeatherHandlerComponent "\{5EE3229927D4D2F5\}" \{')
@@ -74,6 +74,15 @@ DAMAGE_TARGETS = {
 SPAWN_DAMAGE_TARGETS = {
     ('ADA7E056B17AC663',
      'PrefabsEditable/Auto/Props/Military/AmmoBoxes/EquipmentBoxStack/E_EquipmentBoxStack_USSR_01_V2_covered.et'),
+}
+RHS_DAMAGE_PATHS = {
+    '52B13341B4A2F012': 'Prefabs/Vehicles/Tracked/2S1/Tank_2S1_Green.et',
+    'D8136D90BE12445F': 'Prefabs/Vehicles/Tracked/2S1/Tank_2S1.et',
+}
+LOCKED_RHS_DAMAGE = ('BA824F5F67636A44', 'Prefabs/Vehicles/Tracked/2S1/Tank_2S1_locked.et')
+RHS_DAMAGE_OVERRIDES = {
+    'BA824F5F67636A44': '615db277a484e78ea645f1bca85b5a9fe01df4b3a19a60768051f7a696624fb5',
+    'D8136D90BE12445F': '19ac6eea43f0794f1e347e142330c6eaf31ad37df5153ddcd62bca337514cba8',
 }
 REVIEWED_HIT_ZONES = {
     ('5CFD8CB5C3E55A4E', 'Prefabs/Vehicles/Tracked/BFV/M2A2_MERDC.et', '"Engine_01"'),
@@ -532,7 +541,7 @@ def script_text(source):
                      for path in source.files if path.lower().endswith('.c'))
 
 
-def damage_flag_rules(source, world, stock, local_resources, source_units):
+def damage_flag_rules(source, world, stock, local_resources, source_units, dev_units, rhs=None):
     placements, audit, candidates = {}, {}, defaultdict(list)
     grouped = {}
     layers = source.layers[world.lower()]
@@ -546,7 +555,8 @@ def damage_flag_rules(source, world, stock, local_resources, source_units):
                 if not any('TILW_Flag_EntityDamage' in part for part in block):
                     continue
                 try:
-                    grouped[(path, line)] = grouped_damage_placement(block, stock, local_resources)
+                    grouped[(path, line)] = grouped_damage_placement(
+                        block, stock, local_resources, source_units, dev_units, rhs)
                 except ValueError as exc:
                     audit[location] = {'gap': str(exc)}
                 continue
@@ -653,17 +663,41 @@ def damage_flag_rules(source, world, stock, local_resources, source_units):
     return flags, placements, audit
 
 
-def grouped_damage_placement(block, stock, owned):
+def verified_rhs_damage(resource, path, source_units, dev_units, rhs):
+    if not rhs:
+        return False
+    declared = [(resource, path)]
+    if (resource, path) == LOCKED_RHS_DAMAGE:
+        parent = 'D8136D90BE12445F'
+        declared.append((parent, RHS_DAMAGE_PATHS[parent]))
+    elif RHS_DAMAGE_PATHS.get(resource) != path:
+        return False
+    if not all(rhs.contains(guid, prefab) for guid, prefab in declared if guid != LOCKED_RHS_DAMAGE[0]):
+        return False
+    for guid, prefab in declared:
+        if guid not in source_units.resources and guid not in dev_units.resources and guid != LOCKED_RHS_DAMAGE[0]:
+            continue
+        if (source_units.resources.get(guid) != [prefab] or dev_units.resources.get(guid) != [prefab]
+                or source_units.read(prefab) != dev_units.read(prefab)
+                or sha256(dev_units.read(prefab).strip().encode()).hexdigest() != RHS_DAMAGE_OVERRIDES.get(guid)):
+            return False
+    return True
+
+
+def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs):
     ref = REF.search(block[0])
-    if (not ref or not re.match(r'^\$grp (Vehicle|Tank|GenericEntity) ', block[0]) or not stock
-            or ref[1].upper() in owned or DAMAGE_TARGETS.get(ref[1].upper()) != ref[2]
-            or not stock.contains(*ref.groups())):
+    if not ref or not re.match(r'^\$grp (Vehicle|Tank|RHS_Tank|GenericEntity) ', block[0]) or ref[1].upper() in owned:
+        raise ValueError('unverified grouped damage objective prefab')
+    resource, path = ref[1].upper(), ref[2]
+    stock_target = (stock and DAMAGE_TARGETS.get(resource) == path and stock.contains(resource, path)
+                    and resource not in source_units.resources and resource not in dev_units.resources)
+    if not stock_target and not verified_rhs_damage(resource, path, source_units, dev_units, rhs):
         raise ValueError('unverified grouped damage objective prefab')
     lines, flags = [block[0]], []
     for name, fields in polygon_capture.members(block, True, None):
         member = ['{', *fields, '}']
         if any('TILW_Flag_EntityDamage' in line for line in fields):
-            member, flag = destroyed_flag_placement(member)
+            member, flag = damage_state_flag_placement(member, allow_multiple_states=True)
             flags.append(flag)
         lines.extend([f' {name} {{' if name else ' {', *(' ' + part for part in member[1:-1]), ' }'])
     native = native_placement([*lines, block[-1]])
@@ -820,7 +854,7 @@ def passive_asset(source, path):
     raise ValueError('requires a resource conversion rule')
 
 
-def destroyed_flag_placement(block):
+def damage_state_flag_placement(block, *, allow_multiple_states=False):
     starts = [i for i, line in enumerate(block) if DAMAGE_COMPONENT.fullmatch(line)]
     if len(starts) != 1 or block.count(' components {') != 1:
         raise ValueError('expected one authored damage producer')
@@ -832,12 +866,21 @@ def destroyed_flag_placement(block):
     data = properties(block[start + 1:stop], {'m_flagName', 'm_targetState', 'm_targetZone',
                                                'm_continuous', 'm_initialHealth'})
     flag = data.get('m_flagName', '')
-    if (not re.fullmatch(r'"[\w.-]+"', flag) or data.get('m_targetState', '2') not in ('2', 'DESTROYED')
-            or data.get('m_targetZone', '""') != '""' or data.get('m_continuous', '0') != '0'
+    state = data.get('m_targetState', '2')
+    continuous = data.get('m_continuous', '0')
+    allowed = {'0', 'UNDAMAGED', '1', 'INTERMEDIARY', '2', 'DESTROYED'} if allow_multiple_states else {'2', 'DESTROYED'}
+    if (not re.fullmatch(r'"[\w.-]+"', flag) or state not in allowed
+            or data.get('m_targetZone', '""') != '""' or continuous not in ('0', '1')
+            or (continuous == '1' and not allow_multiple_states)
             or data.get('m_initialHealth', '1') != '1'):
         raise ValueError('unsupported destruction state or flag')
+    settings = ['   m_sFlag ' + flag]
+    if state not in ('2', 'DESTROYED'):
+        settings.append('   m_eTargetState ' + state)
+    if continuous == '1':
+        settings.append('   m_bTrackChanges 1')
     lines = [*block[:start], block[start].replace('TILW_Flag_EntityDamage', 'GC_DestroyedEntityFlagComponent'),
-             '   m_sFlag ' + flag, *block[stop:]]
+             *settings, *block[stop:]]
     return lines, flag[1:-1]
 
 
@@ -848,7 +891,7 @@ def spawned_damage_objective(block, stock, local_resources):
     ref = (parent[1].upper(), parent[2])
     if ref not in SPAWN_DAMAGE_TARGETS or ref[0] in local_resources or not stock or not stock.contains(*ref):
         raise ValueError('unverified spawned damage prefab')
-    lines, flag = destroyed_flag_placement(block)
+    lines, flag = damage_state_flag_placement(block)
     return '\n'.join(lines) + '\n', flag
 
 
