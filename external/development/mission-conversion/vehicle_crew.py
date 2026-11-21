@@ -14,7 +14,7 @@ from scenery import StockPrefabs
 VEHICLE = re.compile(
     r'(?P<group>\$grp )?(?:Vehicle|Tank|Turret)(?: (?P<name>[\w.-]+))? : '
     r'"\{(?P<guid>[\da-fA-F]{16})\}(?P<path>Prefabs/(?:Vehicles|Weapons/Tripods)/[^"]+\.et)" \{')
-COMPOSITION = re.compile(r'(?P<group>\$grp )?GenericEntity(?: (?P<name>[\w.-]+))? : "[^"]+" \{')
+COMPOSITION = re.compile(r'(?P<group>\$grp )?(?P<kind>GenericEntity|StaticModelEntity)(?: (?P<name>[\w.-]+))? : "[^"]+" \{')
 PLACED_CHILD = re.compile(r'(GenericEntity|GameEntity|Turret)(?: [\w.-]+)?'
                           r'(?: : ' + REF.pattern + r')? \{')
 COMPONENT = re.compile(r'  TILW_VehicleCrewComponent (?P<id>"\{[\da-fA-F]{16}\}") \{')
@@ -127,10 +127,23 @@ COMPOSITION_OVERRIDES = {'7A40BF128BB47EFD': '46f28ca4f00646d4223fc72a3e03c28331
 BTR70_CREW_OVERLAY = '447CFE8D73F95C3E'
 BTR70_CREW_LEAF = '81a8ccf59bed709f4eb87c25c260e529acd6cbb74dab97d09566adf828395c78'
 BTR70_SMOKE_ANCESTOR = 'ae982b43b504904f7b97947e7fc45c83f584e46ce5f7fa8d7c08c05e386eee74'
+USSR_BTR70_LEAF = '6ff98c749e6e58fb337ad80c11bdb2cabcf5beebe84afdf0fc8a1e6e917bdd94'
+BTR_DUGOUT = '7CF4F44DAD409258'
+BTR_DUGOUT_LEAF = '6d19ae2e9bcfc0d707ed9d86d8724b8b49f4c132c33dd6cdaab50730e48e7155'
 NVA_BTR70_LEAF = 'ac360b5e120fa0f5ba97deee2e1ee68ef6d415fd9e856710c5104efdd8ea551f'
 NVA_T72A_LEAF = '30fdb038e061492f404c19340d7b0e1da08746c49abd8f57faf46fb7264d38a2'
 NVA_BRDM2_LEAF = 'bbe74f54370ac1a41343d200b834335650508e87632449c8781d5bae490371e4'
-UNITS_VEHICLES = {
+UNITS_CREW_PREFABS = {
+    BTR_DUGOUT: (
+        'Prefabs/Structures/Military/Fortifications/Trenches/VehicleDugout_BTR.et',
+        ('E04C8E7133043968', 'Prefabs/Structures/Core/Fortifications_Base.et'),
+        (BTR_DUGOUT_LEAF,), (BTR_DUGOUT_LEAF,),
+    ),
+    'AAB3119124C9167A': (
+        'Prefabs/Vehicles/Wheeled/BTR70/USSR/BTR70_USSR.et',
+        ('C012BB3488BEA0C2', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70.et'),
+        (USSR_BTR70_LEAF,), (USSR_BTR70_LEAF,),
+    ),
     '1C1038CF07EA4B00': (
         'Prefabs/Vehicles/Wheeled/BTR70/NVA/BTR70_NVA.et',
         ('C012BB3488BEA0C2', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70.et'),
@@ -422,8 +435,8 @@ def verified_btr70_overlay(guid, path, source_units, dev_units):
     return before == [BTR70_CREW_LEAF] and after == [BTR70_CREW_LEAF, BTR70_SMOKE_ANCESTOR]
 
 
-def verified_units_vehicle(guid, path, source_units, dev_units, stock, owned, external_parents):
-    spec = UNITS_VEHICLES.get(guid)
+def verified_units_crew_prefab(guid, path, source_units, dev_units, stock, owned, external_parents):
+    spec = UNITS_CREW_PREFABS.get(guid)
     if (not spec or path != spec[0]
             or source_units.resources.get(guid) != [path] or dev_units.resources.get(guid) != [path]):
         return False
@@ -464,7 +477,9 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
         raise ValueError('crew needs a registered vehicle or composition')
     guid, path = ref[1].upper(), ref[2]
     inherited_turrets = COMPOSITION_TURRETS.get((guid, path), {}) if composition else {}
-    if composition and not (inherited_turrets or (guid, path) in INLINE_TURRET_HOSTS):
+    vehicle_host = composition and composition['kind'] == 'StaticModelEntity' and guid == BTR_DUGOUT
+    if composition and not (vehicle_host or (composition['kind'] == 'GenericEntity'
+                                              and (inherited_turrets or (guid, path) in INLINE_TURRET_HOSTS))):
         raise ValueError('crew needs a reviewed composition turret identity')
     external_vehicle = external_vehicles and external_vehicles.get(guid) == path
     units_owned = guid in source_units.resources or guid in dev_units.resources
@@ -473,7 +488,7 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
                           and source_units.read(path) == dev_units.read(path)
                           and sha256(dev_units.read(path).strip().encode()).hexdigest() == COMPOSITION_OVERRIDES[guid])
     vehicle_overlay = vehicle and external_vehicle and verified_btr70_overlay(guid, path, source_units, dev_units)
-    units_vehicle = vehicle and units_owned and verified_units_vehicle(
+    units_vehicle = (vehicle or vehicle_host) and units_owned and verified_units_crew_prefab(
         guid, path, source_units, dev_units, stock, owned, external_parents or {})
     if (guid in owned or (units_owned and not (inherited_override or vehicle_overlay or units_vehicle))
             or not (stock.contains(guid, path) or external_vehicle or units_vehicle)):
@@ -508,6 +523,12 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
             end = block_end(lines, cursor)
             child = lines[cursor:end + 1]
             if any('TILW_VehicleCrewComponent' in line for line in child):
+                if vehicle_host and not parents and VEHICLE.fullmatch(child[0].strip()):
+                    native = convert([line[2:] for line in child], source_units, dev_units, stock, owned,
+                                     external_vehicles, external_ai, external_parents=external_parents)
+                    rendered.extend('  ' + line for line in native)
+                    cursor = end + 1
+                    continue
                 header = PLACED_CHILD.fullmatch(child[0].strip())
                 ids = [match[1].upper() for item in child[1:-1]
                        if (match := re.fullmatch(r'   ID "([\dA-Fa-f]{16})"', item))]

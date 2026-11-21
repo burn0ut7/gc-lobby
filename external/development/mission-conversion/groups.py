@@ -25,6 +25,8 @@ COLOR_TEAM_VALUES = {'"None"', '"Red"', '"Blue"', '"Yellow"', '"Green"'}
 FORMATION = re.compile(r'AIFormationComponent "\{[\da-fA-F]{16}\}" \{')
 MOVEMENT = 'SCR_AIGroupMovementComponent "{6126A0E02097C7FF}" {'
 MOVEMENT_FIELD = re.compile(r'Enabled [01]|"(?:Min|Max) Speed" \d+(?:\.\d+)?|DefaultFormation "[A-Z_]+"')
+EDITOR_PREVIEW = re.compile(r'SCR_PreviewEntityComponent "\{[\da-fA-F]{16}\}" \{')
+PREVIEW_ENTRY = re.compile(r'SCR_BasePreviewEntry "\{[\da-fA-F]{16}\}" \{')
 AI_CONFIG = 'SCR_AIConfigComponent "{512CC1759AE69D6D}" {'
 AI_CONFIG_FIELD = re.compile(r'(?:Enabled|m_Enable(?:Movement|DangerEvents|Perception|Attack|TakeCover|Looking|'
                             r'Communication)) [01]|m_Skill (?:0(?:\.\d+)?|1(?:\.0+)?)')
@@ -400,6 +402,27 @@ def native_group_symbol(lines, start, end):
             and MILITARY_IDENTITY.fullmatch(lines[start + 1].strip()))
 
 
+def editor_group_preview(lines, start, end):
+    """Retain native preview entries explicitly disabled at runtime."""
+    if end < start + 4 or [line.strip() for line in lines[start + 1:start + 3]] != [
+            'm_bRuntime 0', 'm_aEntries {']:
+        return False
+    if block_end(lines, start + 2) != end - 1:
+        return False
+    index = start + 3
+    while index < end - 1:
+        if not PREVIEW_ENTRY.fullmatch(lines[index].strip()):
+            return False
+        stop = block_end(lines, index)
+        if stop >= end - 1 or any(line.strip().partition(' ')[0] not in {
+                'm_iParentID', 'm_Mesh', 'm_Flags', 'm_Shape', 'm_iPivotID', 'm_vScale',
+                'm_vPosition', 'm_vAngles',
+        } for line in lines[index + 1:stop]):
+            return False
+        index = stop + 1
+    return True
+
+
 def native_group_component(lines, start, end):
     header = lines[start].strip()
     if FORMATION.fullmatch(header):
@@ -414,6 +437,8 @@ def native_group_component(lines, start, end):
         return all(AI_CONFIG_FIELD.fullmatch(line.strip()) for line in lines[start + 1:end])
     if header == GROUP_IDENTITY:
         return native_group_symbol(lines, start + 1, end - 1)
+    if EDITOR_PREVIEW.fullmatch(header):
+        return editor_group_preview(lines, start, end)
     if header != EDITABLE_GROUP or end < start + 3:
         return False
     if end == start + 3 and EMPTY_VARIANT.fullmatch(lines[start + 1].strip()):
