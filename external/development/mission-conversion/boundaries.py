@@ -90,7 +90,13 @@ def settings(lines, extended_shapes, standalone=False):
         end = block_end(lines, i)
         body = lines[i+1:end]
         if extended_shapes and standalone and head[1] == 'TILW_NavmeshRegenComponent' and not body:
-            navmesh = [f'  GC_NavmeshRebuildComponent "{{{head[2]}}}" {{', '  }']
+            navmesh.extend([f'  GC_NavmeshRebuildComponent "{{{head[2]}}}" {{', '  }'])
+        elif extended_shapes and standalone and head[1] == 'Hierarchy' and not body:
+            navmesh.extend([f'  Hierarchy "{{{head[2]}}}" {{', '  }'])
+        elif extended_shapes and standalone and head[1] == 'TILW_AOLimitComponent':
+            result = {'Enabled': '1', **properties(body, ALLOWED)}
+            if result['Enabled'] not in ('0', '1'):
+                raise ValueError('unsupported added AO state')
         elif ids.get(head[1]) != head[2].upper():
             raise ValueError('custom AO component')
         elif head[1] == 'TILW_AOLimitComponent':
@@ -107,7 +113,7 @@ def settings(lines, extended_shapes, standalone=False):
             else:
                 overlay = properties(body, {'Enabled', 'm_drawArea', 'm_drawLine', 'm_color', 'm_invert',
                                             'm_visibleForEmptyFaction', 'm_factionKeys', 'm_lineWidth', 'm_lineColor'})
-                if overlay.get('Enabled', '1' if standalone else '0') != '1':
+                if overlay.get('Enabled', '1' if standalone else '0') not in (('0', '1') if standalone else ('1',)):
                     raise ValueError('unsupported auxiliary map shape')
         i = end+1
     if not standalone and not extended_shapes and not cover and overlay.get('m_drawLine', '0') != '0':
@@ -138,6 +144,8 @@ def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=Fa
     lines = [f'PolylineShapeEntity{name} : "{MAP_SHAPE}" {{', ' components {',
              '  GC_MapShapeComponent "{8F470B543A20D962}" {', '   m_LineColor ' + line_color,
              '   m_bFillEnabled ' + fill, '   m_FillColor ' + color, '   m_bInvertFill ' + invert]
+    if overlay.get('Enabled') == '0':
+        lines.append('   m_bEnabled 0')
     if outline == '1':
         lines.append('   m_fLineWidth ' + line_width)
         if world_width:
@@ -176,7 +184,7 @@ def render_cover(coords, vertices, yaw, cover, pitch=0, roll=0):
 
 
 def convert_instance(lines, name, passive_only=False, allow_public_faction_color=False, split_fill=True,
-                     extended_shapes=False, standalone=False, parent_origin=(0, 0, 0)):
+                     extended_shapes=False, standalone=False, parent_origin=(0, 0, 0), parent_yaw=0):
     values, overlay, cover = {}, {}, {}
     navmesh = []
     placement = []
@@ -234,27 +242,40 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
         else:
             raise ValueError('unsupported boundary property ' + field.split(' ')[0])
         i += 1
-    if coords is None:
+    if coords is None and not (standalone and extended_shapes):
         raise ValueError('missing explicit AO transform')
-    origin = floats(coords, 3)
+    origin = floats(coords, 3) if coords is not None else (0, 0, 0)
     pitch, yaw, roll = angles.get('angles', tuple(angles.get(axis, 0) for axis in ('angleX', 'angleY', 'angleZ')))
     if (pitch or roll) and not extended_shapes:
         raise ValueError('tilted AO needs world-space validation')
     if scale is not None:
         vertices = [tuple(axis * scale for axis in point) for point in vertices]
     passive_overlay = extended_shapes and values.get('Enabled') == '0' and bool(overlay)
-    if closed is not False:
-        world_origin = tuple(local + parent for local, parent in zip(origin, parent_origin))
-        validate_polygon(vertices, world_origin, yaw, pitch, roll)
-    elif (not (standalone or passive_overlay) or cover
-          or not 2 <= len(vertices) <= 128 or overlay.get('m_drawArea', '1') != '0'):
+    standalone_ao = standalone and values.get('Enabled') == '1'
+    visible_standalone = (overlay.get('Enabled') != '0'
+                          and (overlay.get('m_drawArea', '1'), overlay.get('m_drawLine', '0')) != ('0', '0'))
+    if closed is not False or standalone_ao:
+        relative = rotate_point(origin, parent_yaw, 0, 0) if parent_yaw else origin
+        world_origin = tuple(local + parent for local, parent in zip(relative, parent_origin))
+        validate_polygon(vertices, world_origin, yaw + parent_yaw, pitch, roll)
+    if (closed is False and not (standalone_ao and not visible_standalone)
+            and (not (standalone or passive_overlay) or cover
+                 or not 2 <= len(vertices) <= 128 or overlay.get('m_drawArea', '1') != '0')):
         raise ValueError('open map shape requires a passive outline with 2 to 128 points')
+    standalone_overlay = ''
     if standalone:
         if not any(line.startswith(' LineColor ') for line in placement):
             placement.append(' LineColor 1 0 0 1')
-        return convert_passive(name, placement, overlay, standalone=True, navmesh=navmesh), len(vertices)
+        if not standalone_ao:
+            return convert_passive(name, placement, overlay, standalone=True, navmesh=navmesh), len(vertices)
+        if visible_standalone:
+            standalone_overlay = convert_passive('', placement, overlay, standalone=True) + '\n'
+        if closed is False:
+            # The legacy AO closes the polygon for containment and joins the last outline point to the first.
+            placement[placement.index(' IsClosed 0')] = ' IsClosed 1'
+        overlay = {}
     cover_shape = render_cover(origin, vertices, yaw, cover, pitch, roll) + '\n' if cover else ''
-    if passive_only or passive_overlay:
+    if passive_only or (passive_overlay and not standalone_ao):
         if values.get('Enabled') != '0':
             raise ValueError('passive shape requires a disabled AO')
         return cover_shape + convert_passive(name, placement, overlay, world_width=extended_shapes), len(vertices)
@@ -316,36 +337,48 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     if public_tint:
         first_key = re.search(r'"[\w.-]+"', keys)[0]
         lines.extend(['   m_bFactionColor 1', '   m_sOutlineFactionKey ' + first_key])
-    lines.extend(['  }',' }',' m_eBehavior SOFT_KILL',' m_fGraceSeconds '+grace])
+    lines.extend(['  }', *navmesh, ' }',' m_eBehavior SOFT_KILL',' m_fGraceSeconds '+grace])
     if keys:
         lines.extend([' m_aFactionKeys {','  '+keys,' }'])
     if vehicles:
         lines.extend([' m_eVehicleMode EXCEPT_MATCHING',' m_aVehiclePrefabs {','  '+vehicles,' }'])
-    return cover_shape + passive_fill + '\n'.join([*lines,*placement,'}']), len(vertices)
+    return cover_shape + standalone_overlay + passive_fill + '\n'.join([*lines,*placement,'}']), len(vertices)
 
 
-def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0):
+def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, parent_yaw=0):
     child_start = next((i for i, line in enumerate(lines) if line.strip() == '{'), None)
     # Only a brace at the root-property indent opens the entity's child list.
     if child_start is not None:
         indent = min(len(line) - len(line.lstrip()) for line in lines if line.strip())
         child_start = next((i for i, line in enumerate(lines) if line == ' ' * indent + '{'), None)
     if child_start is None or not options['extended_shapes']:
-        return convert_instance(lines, name, parent_origin=parent_origin, **options)
-    if (depth >= 16 or options['standalone'] or child_start == len(lines) - 2
+        return convert_instance(lines, name, parent_origin=parent_origin, parent_yaw=parent_yaw, **options)
+    if (depth >= 16 or child_start == len(lines) - 2
             or block_end(lines, child_start) != len(lines) - 1):
         raise ValueError('unsupported boundary child list')
     fields = [line.strip() for line in lines[:child_start] if line.startswith(' ' * indent)
               and not line.startswith(' ' * (indent + 1))]
-    if any(field.startswith(('angle', 'scale ')) for field in fields):
-        raise ValueError('nested boundary requires an unrotated, unscaled parent')
+    if any(field.startswith(('angleX ', 'angleZ ', 'scale ')) for field in fields):
+        raise ValueError('nested boundary requires an unscaled parent with yaw-only rotation')
+    yaw = 0
+    for field in fields:
+        if field.startswith('angles '):
+            pitch, yaw, roll = floats(field[7:], 3)
+            if pitch or roll:
+                raise ValueError('nested boundary requires an unscaled parent with yaw-only rotation')
+        elif field.startswith('angleY '):
+            yaw, = floats(field[7:], 1)
     position = [floats(field[7:], 3) for field in fields if field.startswith('coords ')]
+    if not position and options['standalone']:
+        position = [(0, 0, 0)]
     if len(position) != 1:
         raise ValueError('nested boundary requires one explicit parent origin')
-    origin = tuple(local + parent for local, parent in zip(position[0], parent_origin))
-    body, count = convert_instance(lines[:child_start], name, parent_origin=parent_origin, **options)
-    if not re.search(r'^GC_AOLimitEntity\b', body, re.M):
-        raise ValueError('nested boundary needs an active parent AO')
+    relative = rotate_point(position[0], parent_yaw, 0, 0) if parent_yaw else position[0]
+    origin = tuple(local + parent for local, parent in zip(relative, parent_origin))
+    body, count = convert_instance(lines[:child_start], name, parent_origin=parent_origin,
+                                   parent_yaw=parent_yaw, **options)
+    if not options['standalone'] and not re.search(r'^GC_AOLimitEntity\b', body, re.M):
+        raise ValueError('nested boundary needs an active AO or standalone map shape')
     children = []
     index = child_start + 1
     while index < len(lines) - 1:
@@ -359,7 +392,8 @@ def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0):
             raise ValueError('nested entity lies outside boundary child list')
         child_name = ' ' + match['name'] if match['name'] else ''
         child, vertices = convert_hierarchy(lines[index + 1:stop], child_name,
-                                            {**options, 'standalone': bool(standalone)}, origin, depth + 1)
+                                            {**options, 'standalone': bool(standalone)}, origin, depth + 1,
+                                            yaw + parent_yaw)
         children.extend('  ' + line for line in child.splitlines())
         count += vertices
         index = stop + 1
