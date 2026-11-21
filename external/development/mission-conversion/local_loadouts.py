@@ -76,7 +76,7 @@ def unchanged_units_parent(source_units, dev_units, resource):
     return reviewed_native_ancestry(native_before, after, dev_units)
 
 
-def collect(source, dev, source_units, dev_units, stock):
+def collect(source, dev, source_units, dev_units, stock, *, normalize_references=None):
     """Return approved asset bodies by unique source GUID."""
     approved = {}
     owned = source.resources.keys() | dev.resources.keys()
@@ -133,8 +133,9 @@ def collect(source, dev, source_units, dev_units, stock):
                 body = first.replace(parent[0], f'"{{{native[0]}}}{native[1]}"', 1) + body[len(first):]
             elif not removed or not stock.contains(resource, parent_path):
                 return None
+        compared = normalize_references(body) if normalize_references and path in dev.files else body
         if (dev.resources.get(guid) not in (None, [path])
-                or (path in dev.files and body.strip() != dev.read(path).strip())):
+                or (path in dev.files and compared.strip() != dev.read(path).strip())):
             return None
         approved[guid] = (path, body)
         return approved[guid]

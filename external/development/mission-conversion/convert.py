@@ -850,8 +850,6 @@ def main():
             ],
         }
     if args.batch:
-        loadouts = local_loadouts.collect(source, dev, source_units, dev_units, stock)
-        reviewed_members = {guid: asset[0] for guid, asset in loadouts.items()}
         ai_loadouts = local_loadouts.collect_ai(source, dev, source_units, dev_units, stock)
         native_ai_members = {guid: asset[0] for guid, asset in ai_loadouts.items()}
         try:
@@ -862,6 +860,10 @@ def main():
             parser.error(str(exc))
         restored = {old: new for old, new in restored.items()
                     if old[0] not in locally_owned and new[0] not in locally_owned}
+        loadouts = local_loadouts.collect(
+            source, dev, source_units, dev_units, stock,
+            normalize_references=lambda body: batch.replace_registered_paths(body, source, dev, asset_aliases))
+        reviewed_members = {guid: asset[0] for guid, asset in loadouts.items()}
 
         def convert_group_block(body, reviewed_ai_members=None, reviewed_playable_members=None):
             return group_layer(body, source_units, dev_units, stock, locally_owned,

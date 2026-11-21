@@ -30,7 +30,7 @@ AI_CONFIG_FIELD = re.compile(r'(?:Enabled|m_Enable(?:Movement|DangerEvents|Perce
                             r'Communication)) [01]|m_Skill (?:0(?:\.\d+)?|1(?:\.0+)?)')
 EDITABLE_GROUP = 'SCR_EditableGroupComponent "{50D291F6C83FA532}" {'
 EDITABLE_UI = 'm_UIInfo SCR_EditableGroupUIInfo "{5298E609432D192D}" {'
-EDITABLE_UI_FIELD = re.compile(r'(?:Name|Description) "[^"\n]*"|m_sFaction "[\w.-]+"|m_Image ' + REF.pattern)
+EDITABLE_UI_FIELD = re.compile(r'(?:Name|Description) "[^"\n]*"|(?:m_sFaction|IconSetName) "[\w.-]+"|m_Image ' + REF.pattern)
 GROUP_IDENTITY = 'SCR_GroupIdentityComponent "{56366C5C50AD3CF2}" {'
 MILITARY_SYMBOL = re.compile(r'm_MilitarySymbol SCR_MilitarySymbol "\{[\dA-Fa-f]{16}\}" \{')
 MILITARY_IDENTITY = re.compile(r'm_Identity (BLUFOR|OPFOR|INDFOR|CIVILIAN)')
@@ -121,6 +121,7 @@ LEGACY_CHARACTER_PARENT_FALLBACKS = {
 RHS_AI_ROLES = {
     '1701B425406974A0': 'SL', '234A37EC8608DFAC': 'Rifleman', '727CB9BA48D9407A': 'SR_GL',
     'A5548567111B86FD': 'AR', 'AFF07941936347BB': 'AAT', 'F11CCA20FCC74AA3': 'AT',
+    '4FDBB4B22FD4640B': 'Spotter_GL',
 }
 
 
@@ -136,7 +137,7 @@ def rhs_ai_characters(workshop):
     characters['A0CAC00219D7EF55'] = ('Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Summer/'
                                       'Character_RHS_RF_MSV_VKPO_S_Rifleman.et')
     characters.update({guid: path for group in RHS_AI_GROUPS.values() for guid, path in group['slots']})
-    for guid, role in {'9D7859DE5E1DA3AB': 'AR', '8DE84439090A3D21': 'SR'}.items():
+    for guid, role in {'9D7859DE5E1DA3AB': 'AR', '8DE84439090A3D21': 'SR', '918062BE34F7C4D7': 'CC'}.items():
         characters[guid] = root + f'Character_RHS_RF_MSV_VKPO_DS_{role}.et'
     return {guid: path for guid, path in characters.items() if registry.contains(guid, path)}, registry
 
@@ -288,7 +289,7 @@ def stock_wrapper_ancestry_matches(source, dev, guid, stock, owned):
     return reviewed_native_ancestry((*before[:-1], native, *underlying), after, dev)
 
 
-def compare_ai_parents(source_units, dev_units, guid):
+def compare_ai_parents(source_units, dev_units, guid, *, replaces_playable_roster=False):
     """Compare native AI group ancestry after removing lobby presentation metadata."""
     def normalize(body):
         lines = body.splitlines()
@@ -314,7 +315,8 @@ def compare_ai_parents(source_units, dev_units, guid):
     new = inheritance(dev_units, guid)
     if not old or tuple(map(normalize, old)) != tuple(map(normalize, new)):
         raise ValueError('inherited AI group behavior differs')
-    if scalar(old, 'm_bSetPlayable') not in (None, 0) or scalar(new, 'm_bPlayable') not in (None, 0):
+    if not replaces_playable_roster and (
+            scalar(old, 'm_bSetPlayable') not in (None, 0) or scalar(new, 'm_bPlayable') not in (None, 0)):
         raise ValueError('inherited AI group playability differs')
     return old
 
@@ -381,9 +383,19 @@ def native_group_component(lines, start, end):
     return True
 
 
+@lru_cache(maxsize=4096)
+def unchanged_disabled_playability(source_units, dev_units, guid):
+    disabled = re.compile(r'^  PS_PlayableComponent "\{5EFCC1946F475F15\}" \{\n   m_bIsPlayable 0\n  \}\n', re.M)
+    before = inheritance(source_units, guid)
+    normalized = tuple(disabled.sub('', body).replace(' components {\n }\n', '') for body in before)
+    # Only legacy AI markers with explicit opt-out and equivalent native ancestry can pass.
+    return normalized != before and reviewed_native_ancestry(normalized, inheritance(dev_units, guid), dev_units)
+
+
 def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai, stock_group=None,
-                        reviewed_ai_members=None):
-    old_chain = () if stock_group else compare_ai_parents(source_units, dev_units, guid)
+                        reviewed_ai_members=None, *, replaces_playable_roster=False):
+    old_chain = () if stock_group else compare_ai_parents(
+        source_units, dev_units, guid, replaces_playable_roster=replaces_playable_roster)
     inherited_stock_slots = {tuple(slot) for slot in stock_group['slots']} if stock_group else set()
     checked = set()
 
@@ -397,15 +409,18 @@ def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, ext
         if resource not in checked:
             path = only_path(source_units, resource)
             character = source_units.read(path)
-            if resource in locally_owned or not character.startswith('SCR_ChimeraCharacter') or legacy_member(source_units, resource, True):
+            former_slot = legacy_member(source_units, resource, True)
+            if (resource in locally_owned or not character.startswith('SCR_ChimeraCharacter')
+                    or (former_slot and not unchanged_disabled_playability(source_units, dev_units, resource))):
                 raise ValueError('AI slots require character playability review ' + resource)
             checked.add(resource)
         return '"{' + resource + '}' + only_path(dev_units, resource) + '"'
 
-    for parent in old_chain:
-        slots = SLOTS.search(parent)
-        if slots:
-            REF.sub(member, slots[1])
+    if not replaces_playable_roster:
+        for parent in old_chain:
+            slots = SLOTS.search(parent)
+            if slots:
+                REF.sub(member, slots[1])
 
     result = []
     index = 0
@@ -443,7 +458,7 @@ def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, ext
             result.append(line)
         elif re.fullmatch(r'm_sCustomNameSet ' + QUOTED, token):
             result.append(line.replace('m_sCustomNameSet ', 'm_sGC_ManualCallsign ', 1))
-        elif token == 'm_bPlayable 0' and stock_group:
+        elif token == 'm_bPlayable 0' and (stock_group or replaces_playable_roster):
             result.append(line)
         elif token != 'm_bSetPlayable 0':
             raise ValueError('AI group field needs review: ' + token.split()[0])
@@ -494,6 +509,19 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                        else scalar(inheritance(dev_units, guid), 'm_bPlayable') == 1)
     slots_start = next((i for i, line in enumerate(lines) if line.strip() == 'm_aUnitPrefabSlots {'), None)
     replace_slots = slots_start is not None
+    switches = [line.strip() for line in lines if line.strip().startswith('m_bSetPlayable ')]
+    if native_playable and native_override is None and switches == ['m_bSetPlayable 0'] and len(authored) == 1 and replace_slots:
+        entries = '\n'.join(lines[slots_start + 1:block_end(lines, slots_start)])
+        slots = REF.findall(entries)
+        known = external_ai or {}
+        if slots and not REF.sub('', entries).strip() and all(
+            known.get(resource.upper()) == path and all(resource.upper() not in assets for assets in
+                                                        (locally_owned, source_units.resources, dev_units.resources))
+            for resource, path in slots
+        ):
+            indent = lines[slots_start].partition('m_aUnitPrefabSlots')[0]
+            return convert_ai_instance([*lines, indent + 'm_bPlayable 0'], guid, source_units, dev_units,
+                                       locally_owned, known, replaces_playable_roster=True)
     restored_playable = False
     if not native_playable and not explicit_force and replace_slots and restored_members:
         end = block_end(lines, slots_start)
