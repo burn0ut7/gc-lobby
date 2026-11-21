@@ -56,6 +56,10 @@ NAVMESH_COMPONENT = re.compile(rf' +TILW_NavmeshRegenComponent {SERIALIZED_ID} \
 DAMAGE_COMPONENT = re.compile(rf'  TILW_Flag_EntityDamage {SERIALIZED_ID} \{{')
 DAMAGE_TARGETS = {
     '78CCABFAE4DC21EF': 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/Dst/CrateStack_01_Dst_2_dark.et',
+    '36BDCC88B17B3BFA': 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_command.et',
+}
+REVIEWED_HIT_ZONES = {
+    ('5CFD8CB5C3E55A4E', 'Prefabs/Vehicles/Tracked/BFV/M2A2_MERDC.et', '"Engine_01"'),
 }
 # The published CIV group chain and base group have no damage manager.
 DAMAGELESS_GROUPS = {
@@ -67,6 +71,14 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/Til/FalconsFlight.conf': (
+        'c7b8968d8bae440cc329ac49db91f89e6c64307b',
+        (('worlds/Til/FalconsFlight/FalconsFlight_Layers/nva.layer',
+          'a2b465b61d72f5b68dcc36038252a863e895c311'),
+         ('worlds/Til/FalconsFlight/FalconsFlight_Layers/us.layer',
+          '20ad0a8ba62948c28c93b0f9b7a89b2b1961ec00')),
+        109, 110,
+    ),
     'Missions/Til/AndresBeacon.conf': (
         'a9ef521d896898eabd7a513d7e8a6c02ca7150ef',
         (('worlds/Til/AndresBeacon/AndresBeacon_Layers/players.layer',
@@ -449,8 +461,7 @@ def damage_flag_rules(source, world, stock, local_resources, source_units):
                 if len(components) != 1 or not ref or not stock or ref[1].upper() in local_resources:
                     raise ValueError('unverified damage objective prefab or component placement')
                 is_group = block[0].startswith('SCR_AIGroup ')
-                if not is_group and (DAMAGE_TARGETS.get(ref[1].upper()) != ref[2] or not stock.contains(*ref.groups())):
-                    raise ValueError('unverified damage objective prefab or component placement')
+                resource = ref[1].upper()
                 start = components[0]
                 stop = block_end(block, start)
                 parent = block.index(' components {')
@@ -458,11 +469,35 @@ def damage_flag_rules(source, world, stock, local_resources, source_units):
                     raise ValueError('damage flag is outside root components')
                 data = properties(block[start + 1:stop],
                                   {'m_flagName', 'm_targetState', 'm_targetZone', 'm_continuous', 'm_initialHealth'})
-                flag = data.get('m_flagName', '')
+                flag = data.get('m_flagName', '""')
+                zone = data.get('m_targetZone', '""')
+                health = data.get('m_initialHealth', '1')
+                if not re.fullmatch(NUMBER, health) or not 0 <= Decimal(health) <= 1:
+                    raise ValueError('unsupported initial hit zone health')
+                initial_health = Decimal(health) < 1
+                stock_default = (zone == '""' and DAMAGE_TARGETS.get(resource) == ref[2]
+                                 and stock.contains(*ref.groups()))
+                verified_zone = (resource, ref[2], zone) in REVIEWED_HIT_ZONES
+                if not (is_group or stock_default or verified_zone):
+                    raise ValueError('unverified damage objective prefab or component placement')
+                initial = []
+                if initial_health and not is_group:
+                    initial = [block[start].replace('TILW_Flag_EntityDamage', 'GC_InitialHitZoneHealthComponent', 1),
+                               f'   m_fInitialHealth {health}']
+                    if zone != '""':
+                        initial.append(f'   m_sHitZoneName {zone}')
+                    initial.append(block[stop])
+                if flag == '""' and initial:
+                    converted = native_placement([*block[:start], *initial, *block[stop + 1:]])
+                    if not converted:
+                        raise ValueError('initial health target has another legacy component')
+                    placements[(path, line)] = converted
+                    audit[location] = {'initialHealth': health, 'hitZone': zone[1:-1]}
+                    continue
                 if (not re.fullmatch(r'"[\w.-]+"', flag) or len(flag.encode()) > 130
                         or data.get('m_targetState', '2') not in ('2', 'DESTROYED')
-                        or data.get('m_targetZone', '""') != '""' or data.get('m_continuous', '0') != '0'
-                        or not re.fullmatch(r'1(?:\.0+)?', data.get('m_initialHealth', '1'))):
+                        or zone != '""' or data.get('m_continuous', '0') != '0'
+                        or (is_group and initial_health)):
                     raise ValueError('unsupported damage flag condition')
                 if is_group:
                     resource = ref[1].upper()
@@ -478,17 +513,17 @@ def damage_flag_rules(source, world, stock, local_resources, source_units):
                     placements[(path, line)] = '\n'.join([*block[:start], *block[stop + 1:]]) + '\n'
                     audit[location] = {'inertGroupFlag': flag[1:-1], 'condition': 'owner has no damage manager'}
                     continue
-                head = re.fullmatch(r'(GenericEntity)(?: ([\w.-]+))?( : .+)', block[0])
+                head = re.fullmatch(r'(GenericEntity|Tank|Vehicle)(?: ([\w.-]+))?( : .+)', block[0])
                 if not head:
                     raise ValueError('damage objective needs an individual placed entity')
                 name = head[2] or 'GC_Damage_' + guid(location)
                 if len(name.encode()) > 128:
                     raise ValueError('damage objective name exceeds the native limit')
-                converted = [head[1] + ' ' + name + head[3], *block[1:start], *block[stop + 1:]]
+                converted = [head[1] + ' ' + name + head[3], *block[1:start], *initial, *block[stop + 1:]]
                 native = native_placement(converted)
                 if not native:
                     raise ValueError('damage objective has another legacy component')
-                candidates[flag[1:-1]].append((path, line, name, native))
+                candidates[flag[1:-1]].append((path, line, name, native, health if initial else None))
             except ValueError as exc:
                 audit[location] = {'gap': str(exc)}
     flags = {}
@@ -501,13 +536,15 @@ def damage_flag_rules(source, world, stock, local_resources, source_units):
         count = len(re.findall(r'(?m)^ +(?:m_condition )?TILW_LiteralTerm [^\n]+\n +m_flagName "'
                                + re.escape(flag) + r'"$', references))
         if len(entries) != 1 or references.count(f'"{flag}"') != count + 1 or flag in script_text(source):
-            for path, line, _, _ in entries:
+            for path, line, *_ in entries:
                 audit[f'{path}:{line}'] = {'gap': 'damage flag has another producer or unsupported use'}
             continue
-        path, line, name, native = entries[0]
+        path, line, name, native, health = entries[0]
         placements[(path, line)] = native
         flags[flag] = name
         audit[f'{path}:{line}'] = {'flag': flag, 'entity': name, 'condition': 'default damage area destroyed'}
+        if health is not None:
+            audit[f'{path}:{line}']['initialHealth'] = health
     return flags, placements, audit
 
 
@@ -1876,6 +1913,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare timing of simultaneous flag changes and their dependent event chains.')
     if damage_flags:
         remaining.append('Compare damage notification timing in Match and confirm no objective damage during staging.')
+    if any('initialHealth' in record for record in row.get('damageFlagCandidates', {}).values()):
+        remaining.append('Compare initial hit zone health and subsequent repairs.')
     if any(item['trigger'] == 'peak player loss' and item.get('inverted')
            for rule in rules.values() if 'trigger' in rule for item in leaves(rule)):
         remaining.append('Compare victory notices below and at the authored casualty threshold after the first sample.')

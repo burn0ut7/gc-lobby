@@ -13,6 +13,9 @@ LEGACY = re.compile(r'\b(?:PS|TILW)_\w+')
 MOVED_CHARACTER_PARENTS = {
     ('B64CD72F4D93A99E', 'worlds/James/newbritnvatvt/Character_UK_1989_Paras_LRDriver_P.et'):
         'worlds/James/JavoryPrelude/Character_UK_1989_Paras_LRDriver_P.et',
+    ('3245F15CEA803F94',
+     'Prefabs/Characters/Factions/BLUFOR/US_Army/1986/Infantry (Woodland)/Character_US_1986_BDU_Mechanic_P.et'):
+        'worlds/Til/CompanyTeamCounterAttack/Prefabs/Character_US_1986_BDU_Mechanic_P.et',
 }
 
 

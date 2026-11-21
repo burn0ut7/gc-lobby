@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import re
 
-from briefings import block_end
+from briefings import QUOTED, block_end
 from catalog import REF
 from scenery import StockPrefabs
 
@@ -16,12 +16,14 @@ INDEX = {'m_iCompanyCallsign': 'm_iGC_CallsignCompany', 'm_iPlatoonCallsign': 'm
          'm_iSquadCallsign': 'm_iGC_CallsignSquad'}
 SLOTS = re.compile(r'^ m_aUnitPrefabSlots \{\n(.*?)^ \}', re.M | re.S)
 NATIVE_GROUP_FIELD = re.compile(r'm_faction "[\w.-]+"|m_iGroupRadioFrequency \d+|'
-                                r'm_bDeleteIfNoPlayer [01]|m_iMaxMembers \d{1,4}|'
+                                r'm_b(?:DeleteWhenEmpty|DeleteIfNoPlayer) [01]|m_iMaxMembers \d{1,4}|'
                                 r'DangerEventRange \d+(?:\.\d+)?')
 STATIC_LINK_FIELDS = {'m_aStaticWaypoints {', 'm_aStaticVehicles {'}
 FORMATION = re.compile(r'AIFormationComponent "\{[\da-fA-F]{16}\}" \{')
 MOVEMENT = 'SCR_AIGroupMovementComponent "{6126A0E02097C7FF}" {'
 MOVEMENT_FIELD = re.compile(r'Enabled [01]|"(?:Min|Max) Speed" \d+(?:\.\d+)?|DefaultFormation "[A-Z_]+"')
+AI_CONFIG = 'SCR_AIConfigComponent "{512CC1759AE69D6D}" {'
+AI_CONFIG_FIELD = re.compile(r'Enabled [01]|m_Skill (?:0(?:\.\d+)?|1(?:\.0+)?)')
 EDITABLE_GROUP = 'SCR_EditableGroupComponent "{50D291F6C83FA532}" {'
 EDITABLE_UI = 'm_UIInfo SCR_EditableGroupUIInfo "{5298E609432D192D}" {'
 EDITABLE_UI_FIELD = re.compile(r'(?:Name|Description) "[^"\n]*"|m_sFaction "[\w.-]+"|m_Image ' + REF.pattern)
@@ -279,6 +281,8 @@ def native_group_component(lines, start, end):
         return True
     if header == MOVEMENT:
         return all(MOVEMENT_FIELD.fullmatch(line.strip()) for line in lines[start + 1:end])
+    if header == AI_CONFIG:
+        return all(AI_CONFIG_FIELD.fullmatch(line.strip()) for line in lines[start + 1:end])
     if header != EDITABLE_GROUP or end < start + 3 or lines[start + 1].strip() != EDITABLE_UI:
         return False
     return (block_end(lines, start + 1) == end - 1
@@ -345,6 +349,8 @@ def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, ext
             index = end
         elif token.startswith(('coords ', 'angles ', 'angleX ', 'angleY ', 'angleZ ', 'scale ', 'm_bSnapToTerrain ')):
             result.append(line)
+        elif re.fullmatch(r'm_sCustomNameSet ' + QUOTED, token):
+            result.append(line.replace('m_sCustomNameSet ', 'm_sGC_ManualCallsign ', 1))
         elif token == 'm_bPlayable 0' and stock_group:
             result.append(line)
         elif token != 'm_bSetPlayable 0':

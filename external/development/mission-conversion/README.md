@@ -786,3 +786,11 @@ The batch converts legacy Set and Add ticket instructions, retaining their facti
 The group converter preserves supported child groups under their original parent and includes them in the slot audit. It rejects unknown child types and keeps all authored relative transforms. The Falcons Flight NVA layer comparison matched eight playable groups and 64 slots, including the nested squads. Its US maintenance prefab and authored engine damage still need migration.
 
 The catalog translated nine ticket instructions across six worlds. Two runs reproduced 218 outputs and left all 213 overlapping earlier drafts unchanged. Workbench MCP compiled the runtime change with zero errors in session `logs_2026-11-20_22-33-50`. Live budget changes, spectator retry order, and deployment of nested groups remain open for representative verification. Other blockers still hold the affected worlds.
+
+## Initial vehicle damage and AI group settings
+
+The batch preserves the authored starting health of verified vehicle hit zones. Falcons Flight's Bradley starts with its Engine_01 hit zone disabled. Desert Sentinel's command truck starts with 30 percent hull health and retains its destruction flag. The Falcons Flight maintenance loadout keeps its original mission-owned parent. The draft renders 110 slots and retains the published 109-player listing. Its original Mi-24P guided variant still blocks installation. The currently registered prefab uses a different guided weapon and requires a separately reviewed replacement or restoration.
+
+For verified AI-only groups, the converter retains the native deletion setting, AI skill, and custom group name. Assault of Thirty Palms now renders for file review and remains held on its 48-player listing versus 46 converted slots. Clearing Out Gorshkovo remains held on its 110-player listing versus 35 converted slots.
+
+Two catalog runs reproduced 277 output files byte for byte. Workbench MCP compiled the initial health component with zero errors in session `logs_2026-11-20_22-33-50`. Representative runtime checks remain for initial engine and hull health, repair, and the AI group settings.
