@@ -27,6 +27,19 @@ def specific_blocker(blocker):
     return f'{rule} · {detail}'
 
 
+def runtime_checks(drafts):
+    remaining = {gap for draft in drafts for gap in draft['behaviorGaps']}
+    checks = []
+    while remaining:
+        draft = min(drafts, key=lambda entry: (
+            -len(remaining.intersection(entry['behaviorGaps'])), entry['world']))
+        covered = remaining.intersection(draft['behaviorGaps'])
+        checks.append({'world': draft['world'], 'launcher': draft['launchers'][0],
+                       'checks': sorted(covered)})
+        remaining.difference_update(covered)
+    return checks
+
+
 def summarize(inventory, review, limit):
     migration = inventory['batchMigration']
     candidates = defaultdict(list)
@@ -73,6 +86,7 @@ def summarize(inventory, review, limit):
 
     priority = defaultdict(lambda: {'worldsAffected': 0, 'soleBlockerWorlds': 0, 'examples': []})
     specific = defaultdict(lambda: {'worldsAffected': 0, 'soleBlockerWorlds': 0, 'examples': []})
+    bundles = defaultdict(list)
     for world, row in sorted(migration['worlds'].items()):
         if row['status'] != 'blocked by conversion rules':
             continue
@@ -103,26 +117,34 @@ def summarize(inventory, review, limit):
             entry['soleBlockerWorlds'] += int(len(by_detail) == 1)
             if len(entry['examples']) < 3:
                 entry['examples'].append({'world': world, **example})
+        if by_detail:
+            bundles[tuple(sorted(by_detail))].append(world)
     rules = sorted(priority, key=lambda rule: (
         -priority[rule]['soleBlockerWorlds'], -priority[rule]['worldsAffected'], rule))
     details = sorted(specific, key=lambda kind: (
         -specific[kind]['soleBlockerWorlds'], -specific[kind]['worldsAffected'], kind))
+    selected = ready[:limit]
     return {
         'source': inventory['source'], 'target': inventory['target'],
         'launcherFileChecks': dict(Counter(row['status'] for row in review['missions'].values())),
         'worldConversionChecks': migration['totals'],
-        'suggestedBatch': ready[:limit], 'additionalDrafts': ready[limit:], 'heldDrafts': held,
+        'suggestedBatch': selected, 'additionalDrafts': ready[limit:], 'heldDrafts': held,
+        'runtimeChecks': runtime_checks(selected),
         'unresolvedResources': review.get('unresolvedResources', []),
         'unavailableDependencyIds': review.get('unavailableDependencyIds', []),
         'rules': [{'rule': rule, **priority[rule]} for rule in rules],
         'specificBlockers': [{'blocker': kind, **specific[kind]} for kind in details],
+        'blockerBundles': [{'blockers': kinds, 'worlds': worlds} for kinds, worlds in
+                           sorted(bundles.items(), key=lambda pair: (-len(pair[1]), len(pair[0]), pair[0]))],
     }
 
 
 def markdown(plan):
     lines = ['# GC Missions batch plan', '', f"Legacy revision `{plan['source']}`",
              f"Dev revision `{plan['target']}`", '',
-             '## Drafts ready for source and Dev file review', '']
+             '## Launcher file audit', '']
+    lines.extend(f"- {status} · {count}" for status, count in sorted(plan['launcherFileChecks'].items()))
+    lines.extend(['', '## Drafts ready for source and Dev file review', ''])
     selected = plan['suggestedBatch']
     if selected:
         for entry in selected:
@@ -132,12 +154,17 @@ def markdown(plan):
                          for path in entry.get('reviewedReplacements', []))
             lines.extend(f'  - Unresolved reference in other layers or resources: `{resource}`'
                          for resource in entry.get('remainingResources', []))
-            lines.extend(f'  - {gap}' for gap in entry['behaviorGaps'])
             lines.extend(f'  - {note}' for note in entry.get('reviewedCapacity', {}).values())
     else:
         lines.append('No drafts cleared the file checks.')
     lines.extend(['', f"Additional drafts that cleared file checks · {len(plan['additionalDrafts'])}",
-                  '', '## Drafts held for file checks', ''])
+                  '', '## Representative Workbench checks', ''])
+    for entry in plan['runtimeChecks']:
+        lines.append(f"- `{entry['launcher']}`")
+        lines.extend(f'  - {check}' for check in entry['checks'])
+    if not plan['runtimeChecks']:
+        lines.append('The selected drafts reported no additional behavior checks.')
+    lines.extend(['', '## Drafts held for file checks', ''])
     for entry in plan['heldDrafts']:
         lines.append(f"- `{entry['world']}`")
         lines.extend(f'  - {issue}' for issue in entry['issues'])
@@ -166,13 +193,20 @@ def markdown(plan):
     for entry in plan['specificBlockers'][:25]:
         blocker = entry['blocker'].replace('|', '\\|')
         lines.append(f"| {blocker} | {entry['soleBlockerWorlds']} | {entry['worldsAffected']} |")
+    lines.extend(['', '## Shared blocker combinations', '',
+                  'Each row lists blockers currently reported together. Clearing them moves the listed '
+                  'worlds to the next file checks.', '',
+                  '| Worlds | Reported blockers |', '| ---: | --- |'])
+    for entry in plan['blockerBundles'][:15]:
+        blockers = '<br>'.join(blocker.replace('|', '\\|') for blocker in entry['blockers'])
+        lines.append(f"| {len(entry['worlds'])} | {blockers} |")
     lines.extend(['', '## Conversion rules to investigate', '',
                   '| Rule | Only reported blocker | Worlds affected |',
                   '| --- | ---: | ---: |'])
     for row in plan['rules']:
         rule = row['rule'].replace('|', '\\|')
         lines.append(f"| {rule} | {row['soleBlockerWorlds']} | {row['worldsAffected']} |")
-    lines.extend(['', 'The JSON plan includes source locations and examples for each rule.'])
+    lines.extend(['', 'The JSON plan lists the worlds in each combination and source examples for each rule.'])
     return '\n'.join(lines) + '\n'
 
 
