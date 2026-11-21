@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import re
 
-from briefings import ALLOWED, STANDARD_DESCRIPTION, block_end, page, properties, render
+from briefings import ALLOWED, STANDARD_DESCRIPTION, block_end, guid, page, properties, render
 from catalog import REF, Snapshot
 from dependencies import dependency_resources
 from install_batch import resource_databases, unregistered_references
@@ -35,6 +35,14 @@ CAF_PATH = 'Prefabs/Groups/BLUFOR/GC_CAF/1987 Canadian Army/'
 PAPER_MAP = 'Prefabs/Items/Equipment/Maps/PaperMap_01_folded.et'
 PAPER_MAP_BLOB = 'ef2d6793df224c5617f480f3baf93bdacb4e4740'
 PAPER_MAP_META = '62e50ac09ac7293fd1201befdaa3e46c34def4a8'
+CATALOGUE = PREFIX + 'RouletteCatalogue.conf'
+TYPES = {
+    'GC_R_Team': 'GC_RouletteTeam',
+    'GC_R_Company': 'GC_RouletteCompany',
+    'GC_R_Platoon': 'GC_RoulettePlatoon',
+    'GC_R_Squad': 'GC_RouletteSquad',
+    'GC_R_Briefing': 'GC_RouletteBriefing',
+}
 
 
 def entity(lines, kind, *, required=False):
@@ -198,6 +206,50 @@ def resolve_prefabs(report, source, target, legacy_units, units, checkouts, data
     return owned_files
 
 
+def native_configuration(report):
+    files = {}
+
+    def add_config(path, lines):
+        identity = guid('roulette/config/' + path)
+        files[path] = '\n'.join([*lines, '']).encode()
+        files[path + '.meta'] = (
+            'MetaFileClass {\n'
+            f' Name "{{{identity}}}{path}"\n'
+            ' Configurations { ResourceClass PC {} ResourceClass XBOX_ONE : PC {}'
+            ' ResourceClass XBOX_SERIES : PC {} ResourceClass PS4 : PC {}'
+            ' ResourceClass PS5 : PC {} ResourceClass HEADLESS : PC {} }\n'
+            '}\n').encode()
+        return f'{{{identity}}}{path}'
+
+    catalogue = ['GC_RouletteCatalogue {', ' m_aScenarios {']
+    indices = {}
+    for index, row in enumerate(report['scenarios']):
+        indices[row['id']] = index
+        catalogue.append(f'  GC_RouletteScenario "{row["id"]}" {{')
+        for line in row['devFields'].splitlines():
+            match = re.match(r'^(\s*)(GC_R_\w+)(?= "\{[A-F0-9]{16}\}" \{$)', line)
+            if match:
+                if match[2] not in TYPES:
+                    raise ValueError('unknown native Roulette type: ' + match[2])
+                line = match[1] + TYPES[match[2]] + line[match.end():]
+            catalogue.append('   ' + line)
+        catalogue.append('  }')
+    catalogue_ref = add_config(CATALOGUE, [*catalogue, ' }', '}'])
+    for mission in report['missions']:
+        path = mission['world'][18:].removesuffix('.ent') + '_Roulette.conf'
+        lines = ['GC_RouletteMap {', f' m_sCatalogue "{catalogue_ref}"']
+        if mission['scenarioOverrides']:
+            lines.append(' m_aOverrides {')
+            for identity, fields in mission['scenarioOverrides'].items():
+                lines.extend([f'  GC_RouletteScenarioOverride "{identity}" {{',
+                              f'   m_iScenarioIndex {indices[identity]}'])
+                lines.extend(f'   {name} {value}' for name, value in fields.items())
+                lines.append('  }')
+            lines.append(' }')
+        mission['nativeConfig'] = add_config(path, [*lines, '}'])
+    return files
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--missions', type=Path, required=True)
@@ -223,6 +275,7 @@ def main():
         files.update(resolve_prefabs(
             report, source, Snapshot(args.missions, 'HEAD'), Snapshot(args.units, args.units_source),
             Snapshot(args.units, 'HEAD'), [Snapshot(repo, 'HEAD') for repo in args.dependency], databases))
+        files.update(native_configuration(report))
     output.mkdir(parents=True, exist_ok=False)
     for name, contents in files.items():
         path = output / name
