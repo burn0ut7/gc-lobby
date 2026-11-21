@@ -135,6 +135,14 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/Cunnah/Arty_Arty_Arty.conf': (
+        'ba9e7fb39aebc6074a15750152a9ec9acefa98de',
+        (('worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/BLUFOR.layer',
+          '8862e65edeb38d4fcf744e6e8c97a54229104026'),
+         ('worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/OPFOR.layer',
+          '1becf9d159310dd07d958b1bd9081801a6e35dda')),
+        58, 57,
+    ),
     'Missions/Gabe/TVT97PowerStruggle/TVT97PowerStruggle.conf': (
         'ab58aad1aec16739e3327402f7f9f7eca62a165a',
         (('worlds/Gabe/PowerStruggle/TVT97PowerStruggle_Layers/Players.layer',
@@ -336,6 +344,12 @@ REVIEWED_CAPACITY = {
         75, 47,
     ),
 }
+REVIEWED_MISSING_SPAWN_ANCHORS = {
+    'worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty.ent': (
+        'worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/default.layer',
+        '475f775d2eac67dd94f1161e277b32a2a8094a55', '650557F5B24BB14C', 'motar_target_8',
+    ),
+}
 REVIEWED_MISSING_WAYPOINTS = {
     'worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Insurgents/Insurgent_AI.layer':
         ('899263002cdc221867c535cfca930b39e55867d9', {'Defend'}),
@@ -450,6 +464,8 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Vegetation/Tree/t_carpinus_betulus/t_carpinus_betulus_2f.et',
     ('8F91FCAFE65FCDA6', 'Prefabs/Vegetation/Tree/t_carpinus_betulus_3s.et'):
         'Prefabs/Vegetation/Tree/t_carpinus_betulus/t_carpinus_betulus_3s.et',
+    ('208FEE0BF258449B', 'Prefabs/SP01/SP01_UAZ469_USSR.et'):
+        'Prefabs/Scenarios/SP01/SP01_UAZ469_USSR.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
     ('7FF511EDC4034D9F', 'Prefabs/Vehicles/Helicopters/Mi24/Mi24V_armed_S5.et'): (
@@ -1096,7 +1112,7 @@ def convert_vehicle_groups(block, convert_group_block):
     return [*rendered, block[-1]], groups, slots
 
 
-def waypoint_gaps(named, assignments, spawned_names, scripts):
+def waypoint_gaps(named, assignments, spawned_names, scripts, crew_spawns=None):
     gaps = set()
     no_ops = set()
     for action in assignments:
@@ -1108,15 +1124,20 @@ def waypoint_gaps(named, assignments, spawned_names, scripts):
             # Both runtimes require an AIGroup. A waypoint cannot assign orders to itself.
             no_ops.add(group)
             continue
-        if len(placements) != 1 or placements[0][0] != 'SCR_AIGroup':
+        crew = (crew_spawns or {}).get(group)
+        if len(placements) == 1 and placements[0][0] == 'SCR_AIGroup':
+            existing_points = '\n'.join(placements[0][1])
+        elif (not placements and crew and group not in spawned_names and group not in scripts
+              and Decimal(crew[0]) < Decimal(action['delaySeconds'])):
+            existing_points = ' '.join(f'"{point}"' for point in crew[1])
+        else:
             gaps.add('expected one placed AI group named ' + group)
             continue
-        group_fields = '\n'.join(placements[0][1])
         for name in action['waypoints']:
             waypoints = named.get(name, [])
             if len(waypoints) != 1 or not re.fullmatch(WAYPOINT_CLASS, waypoints[0][0]):
                 gaps.add('expected one placed AI waypoint named ' + name)
-            elif action['replaceExisting'] and f'"{name}"' in group_fields:
+            elif action['replaceExisting'] and f'"{name}"' in existing_points:
                 gaps.add(f'replacement waypoint {name} may already belong to {group}')
     return sorted(gaps), sorted(no_ops)
 
@@ -2582,10 +2603,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                      for event in rules.values() for item in event.get('convertedActions', []) if 'spawnAnchor' in item]
     prefab_spawns.extend(spawner_audit)
     crew_names = defaultdict(set)
+    crew_name_counts = Counter()
     for spawn in prefab_spawns:
         for group in spawn.get('crewGroups', ()):
             if 'groupName' in group:
                 crew_names[group['groupName']].add(group.get('shadowedByAnchor', False))
+                crew_name_counts[group['groupName']] += 1
     spawn_guids = {REF.fullmatch(item['prefab'])[1].upper() for item in prefab_spawns}
     for resource, asset in sorted(spawned_assets.items()):
         if resource not in roster_assets and asset['flag'] in used_flags and resource not in spawn_guids:
@@ -2606,6 +2629,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'delayed extraction', 'file': world,
                              'detail': 'extraction needs all spawns and one positive consumer per flag'})
     missing_waypoints = []
+    missing_spawn_anchors = set()
     self_waypoints = []
     missing_static_vehicles = []
     crew_waypoints = {name for path, body in draft.items() if path.endswith('.layer')
@@ -2649,8 +2673,16 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             if matches or name in spawned_names or True in policies:
                 blockers.append({'rule': 'named crew group', 'file': world,
                                  'detail': 'crew group name conflicts with another entity: ' + name})
+        reviewed_missing_anchor = REVIEWED_MISSING_SPAWN_ANCHORS.get(world)
         for spawn in prefab_spawns:
             anchor, name = spawn['spawnAnchor'], spawn['spawnName']
+            if (reviewed_missing_anchor and not named.get(anchor) and not name
+                    and anchor not in spawned_names and anchor not in crew_names and anchor not in script_text(source)
+                    and (source.files.get(reviewed_missing_anchor[0]), spawn.get('instructionId'), anchor)
+                    == reviewed_missing_anchor[1:]):
+                # The published spawn instruction returns when its anchor is absent.
+                missing_spawn_anchors.add(anchor)
+                continue
             choices = spawned_names[name]
             mutually_exclusive = None not in choices and len(set(choices)) == len(choices)
             if (len(named.get(anchor, [])) != 1
@@ -2663,9 +2695,19 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     rule = 'AI group spawn' if 'groupWaypoints' in spawn else 'crewed vehicle spawn'
                     blockers.append({'rule': rule, 'file': world,
                                      'detail': 'expected one placed AI waypoint named ' + waypoint})
-        gaps, self_waypoints = waypoint_gaps(named, assignments, spawned_names, script_text(source))
-        for gap in gaps:
-            blockers.append({'rule': 'waypoint assignments', 'file': world, 'detail': gap})
+        for event in rules.values():
+            if not event.get('waypointAssignments'):
+                continue
+            earlier_crews = {group['groupName']: (spawn['delaySeconds'], group['waypoints'])
+                             for spawn in event.get('convertedActions', ())
+                             for group in spawn.get('crewGroups', ())
+                             if group.get('groupName') and crew_name_counts[group['groupName']] == 1
+                             and not group.get('shadowedByAnchor')}
+            gaps, no_ops = waypoint_gaps(named, event['waypointAssignments'], spawned_names,
+                                         script_text(source), earlier_crews)
+            self_waypoints.extend(no_ops)
+            for gap in gaps:
+                blockers.append({'rule': 'waypoint assignments', 'file': world, 'detail': gap})
         for waypoint in sorted(crew_waypoints):
             targets = named.get(waypoint, [])
             if len(targets) != 1 or not re.fullmatch(WAYPOINT_CLASS, targets[0][0]):
@@ -2741,9 +2783,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         if count:
             advertised[header] = int(count[1])
     remaining = []
+    for target in sorted(missing_spawn_anchors):
+        remaining.append(f'The original spawn at {target} has no authored anchor and does not run.')
     for target in sorted(set(missing_waypoints)):
         remaining.append(f'The original static waypoint link to {target} has no authored target.')
-    for target in self_waypoints:
+    for target in sorted(set(self_waypoints)):
         remaining.append(f'The original assignment refers to the waypoint {target} as its group and leaves orders unchanged.')
     for target in sorted(set(missing_static_vehicles)):
         remaining.append(f'The original static vehicle link to {target} has no mission-layer target.')

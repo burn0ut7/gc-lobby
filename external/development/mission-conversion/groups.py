@@ -408,6 +408,21 @@ def unchanged_disabled_playability(source_units, dev_units, guid):
     return normalized != before and reviewed_native_ancestry(normalized, inheritance(dev_units, guid), dev_units)
 
 
+DEPRECATED_STOCK_AI_OVERRIDES = {
+    '3726077BE60962FF', 'E398E44759DA1A43', 'E45F1E163F5CA080', '6058AB54781A0C52',
+}
+
+
+@lru_cache(maxsize=4096)
+def unchanged_deprecated_stock_override(source_units, dev_units, guid, path):
+    directory, name = path.rsplit('/', 1)
+    deprecated = f'{directory}/Deprecated/{name}'
+    if source_units.resources.get(guid) != [deprecated] or dev_units.resources.get(guid) != [deprecated]:
+        return False
+    return (source_units.files[deprecated + '.meta'] == dev_units.files[deprecated + '.meta']
+            and reviewed_native_ancestry(inheritance(source_units, guid), inheritance(dev_units, guid), dev_units))
+
+
 def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai, stock_group=None,
                         reviewed_ai_members=None, *, replaces_playable_roster=False):
     old_chain = () if stock_group else compare_ai_parents(
@@ -419,9 +434,15 @@ def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, ext
         resource = match[1].upper()
         if reviewed_ai_members and reviewed_ai_members.get(resource) == match[2]:
             return match[0]
-        if resource not in locally_owned and resource not in source_units.resources and resource not in dev_units.resources:
-            if external_ai.get(resource) == match[2] or (resource, match[2]) in inherited_stock_slots:
+        if resource not in locally_owned:
+            external = external_ai.get(resource) == match[2]
+            if (resource not in source_units.resources and resource not in dev_units.resources
+                    and (external or (resource, match[2]) in inherited_stock_slots)):
                 return match[0]
+            if external and resource in DEPRECATED_STOCK_AI_OVERRIDES:
+                if unchanged_deprecated_stock_override(source_units, dev_units, resource, match[2]):
+                    return match[0]
+                raise ValueError('stock AI character override needs review ' + resource)
         if resource not in checked:
             path = only_path(source_units, resource)
             character = source_units.read(path)

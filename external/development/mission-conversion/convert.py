@@ -159,6 +159,16 @@ def main():
         '2CDFBF355F3410DD': 'Prefabs/Characters/Factions/CIV/Dockworker/Character_CIV_Dockworker_2.et',
     }
     stock_ai.update({
+        guid: f'Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_{role}.et'
+        for guid, role in {
+            '0B3167BB0FB68110': 'PL', '4FBA24F7BB43E17D': 'Sergeant', '3726077BE60962FF': 'RTO',
+            '26A9756790131354': 'Rifleman', '5B1996C05B1E51A4': 'AR', '84029128FA6F6BB9': 'GL',
+            'E398E44759DA1A43': 'TL', 'E45F1E163F5CA080': 'SL',
+            '1623EA3AEFACA0E4': 'MG', '27BF1FF235DD6036': 'LAT', '6058AB54781A0C52': 'AMG',
+            'C9E4FEAF5AAC8D8C': 'Medic',
+        }.items()
+    })
+    stock_ai.update({
         guid: f'Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_{role}.et'
         for guid, role in {
             '23ADBBC31B6A3DC6': 'AR', '426F7FAAC77A2A6D': 'PL', '1C78331E156A3D65': 'AT',
