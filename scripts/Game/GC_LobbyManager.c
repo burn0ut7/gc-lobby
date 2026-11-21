@@ -551,6 +551,16 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 			return false;
 		}
 
+		if (requestedPhase == SCR_EGameModeState.SLOTTING || requestedPhase == SCR_EGameModeState.BRIEFING)
+		{
+			GC_LobbySetupGateComponent setup = GC_LobbySetupGateComponent.Cast(gameMode.FindComponent(GC_LobbySetupGateComponent));
+			if (setup && !setup.IsLobbySetupReady())
+			{
+				GC_AdminActionLogger.Log(playerId, "advance-phase", requestedPhaseName, "rejected-mission-setup-pending");
+				return false;
+			}
+		}
+
 		if (requestedPhase == SCR_EGameModeState.GAME)
 		{
 			if (gameMode.GetState() != SCR_EGameModeState.BRIEFING)

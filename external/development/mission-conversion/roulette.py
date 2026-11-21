@@ -265,6 +265,20 @@ def native_configuration(report, units):
     return files
 
 
+def attach_startup_components(report, files):
+    suffix = b' }\n}\n'
+    for mission in report['missions']:
+        world = mission['world'][18:]
+        path = world.removesuffix('.ent') + '_GC_Settings.et'
+        if not files[path].endswith(suffix):
+            raise ValueError('unexpected Roulette settings layout: ' + path)
+        component_id = guid(world + '/roulette/setup')
+        component = (f'  GC_RouletteSetupComponent "{{{component_id}}}" {{\n'
+                     f'   m_sMapConfig "{mission["nativeConfig"]}"\n'
+                     '  }\n').encode()
+        files[path] = files[path][:-len(suffix)] + component + suffix
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--missions', type=Path, required=True)
@@ -292,6 +306,7 @@ def main():
             report, source, Snapshot(args.missions, 'HEAD'), Snapshot(args.units, args.units_source),
             units, [Snapshot(repo, 'HEAD') for repo in args.dependency], databases))
         files.update(native_configuration(report, units))
+        attach_startup_components(report, files)
     output.mkdir(parents=True, exist_ok=False)
     for name, contents in files.items():
         path = output / name
