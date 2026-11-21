@@ -199,7 +199,7 @@ def passive_shape_component(lines, key, *, spline=False):
     return converted[1:-1]
 
 
-def render_cover(coords, vertices, yaw, cover, pitch=0, roll=0):
+def render_cover(coords, vertices, yaw, cover, pitch=0, roll=0, *, name='', preserve_origin=False):
     width = float(cover.get('m_ratioWidth', '1.778'))
     if not 1 <= width < float('inf'):
         raise ValueError('invalid cover aspect ratio')
@@ -216,12 +216,15 @@ def render_cover(coords, vertices, yaw, cover, pitch=0, roll=0):
                (half_width, 0, radius), (-half_width, 0, radius)]
     validate_polygon(corners, origin)
     key = 'map cover/' + ' '.join(f'{value:.6f}' for value in origin)
-    placement = [' coords ' + ' '.join(f'{value:.6f}' for value in origin), ' Points {']
+    placement_origin = coords if preserve_origin else origin
+    placement = [' coords ' + ' '.join(f'{value:.6f}' for value in placement_origin), ' Points {']
     for i, corner in enumerate(corners):
+        if preserve_origin:
+            corner = tuple(axis + offset - anchor for axis, offset, anchor in zip(corner, origin, coords))
         placement.extend([f'  ShapePoint "{{{guid(key + "/" + str(i))}}}" {{',
                           '   Position ' + ' '.join(f'{value:.6f}' for value in corner), '  }'])
     placement.extend([' }', ' IsClosed 1'])
-    return convert_passive('', placement, {'m_color': '0 0 0 1', 'm_invert': '1'}, auto_frame=True)
+    return convert_passive(name, placement, {'m_color': '0 0 0 1', 'm_invert': '1'}, auto_frame=True)
 
 
 def convert_instance(lines, name, passive_only=False, allow_public_faction_color=False, split_fill=True,
@@ -337,6 +340,10 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
             # The legacy AO closes the polygon for containment and joins the last outline point to the first.
             placement[placement.index(' IsClosed 0')] = ' IsClosed 1'
         overlay = {}
+    if cover and values.get('Enabled') == '0' and not overlay and not passive_only:
+        if nested or pitch or yaw or roll or world_scale != 1:
+            raise ValueError('cover without AO needs a top-level, unrotated shape at unit scale')
+        return render_cover(origin, vertices, yaw, cover, name=name, preserve_origin=True), len(vertices)
     cover_shape = render_cover(origin, vertices, yaw, cover, pitch, roll) + '\n' if cover else ''
     if passive_only or (passive_overlay and not standalone_ao):
         if values.get('Enabled') != '0':
