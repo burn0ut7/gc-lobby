@@ -47,11 +47,19 @@ Stage the header type for the native exporter with the same committed Dev revisi
 
 Omit header paths for the entire file-cleared set. The preparation edits only the root type of plain `SCR_MissionHeader` files in staging. Existing GC headers can go directly to metadata collection. Custom header types are reported for review so their existing fields survive. The native exporter fills the generated snapshot using the mission subscene, and the direct launcher exports the portable file from that saved header.
 
+Use the full Missions Dev project for native metadata collection when its dependencies compile. To collect limited snapshots while full compilation is blocked, stage the Base and Lobby cohort from the audited revisions.
+
+    python "$tools/prepare_metadata_capture.py" --missions $repo --lobby $lobbyRepo --audit "$output/plan.json" --base-database $baseDatabase --stage $capture
+
+The command copies the committed mission resources to a new directory outside both checkouts and prints a JSON report mapping eligible headers to worlds. It records references outside the capture scope per excluded header. Open the staged `addon.gproj` and the eligible worlds through Workbench MCP. Use **GC → Create Mission Data → Refresh metadata only** on each world. The fixture keeps the Missions Dev identity and limits its dependency list to Base and Lobby. Metadata from this fixture describes the resources observed in that scope. Full-project addon overrides, script-selected content and launch behavior still require verification.
+
 Merge a native metadata capture from an isolated copy of the same Dev files with the same command and `--native-exports $capture`. Supply header paths to select a subset. The merger verifies the captured world, local layers, referenced resources and registration files against Dev. It copies only the generated snapshot so a Workbench re-save cannot remove legacy catalogue fields from the Dev header. After committing the merged header and rerunning the audit, export the file-cleared headers that have snapshots through the standard launcher.
 
     & "$tools/export_metadata.ps1" -Missions $repo -Plan "$output/plan.json" -Output $portableStage
 
 Huey Hill's schema 2 snapshot is in Missions Dev commit `ff74a01f`. The isolated export read 58 entities from the exact Dev mission files. Direct resource ownership checks found all saved references in Missions Dev, Lobby Dev or the base game. The native snapshot reports partial coverage and 3,260 unexpanded resources. The standard launcher exported the merged header using its original scenario and world IDs. The full Missions Dev project mounted its declared dependencies, but its installed RHIB package `5994614FB5AD35C2` prevented Game module compilation with unknown `VehicleDust` references in `SPC_BoatSplash.c`. See Workbench session `logs_2026-11-21_11-22-28`, lines 28659–28688. Launch verification with the full dependency graph remains open.
+
+Coastal Clearance and Last Bastion have schema 2 snapshots in Missions Dev commit `03c4d0ff`. Workbench read 163 entities from each isolated world. The merger verified each captured mission's files against Dev and installed only the generated snapshot. Both exports record partial resource coverage. The other 169 file-cleared GC headers without snapshots have saved references beyond the Base and Lobby capture scope. Kassel Crashers retains its authored scenario-framework header and requires separate metadata handling.
 
 After reviewing the file-cleared drafts, give the installer its plan with `--all-ready` to install them in one pass. The installer checks that the plan came from the exact inventory and validates file hashes, paths, collisions and resources before writing. Omit `--all-ready` to install only the suggested batch. Review the committed files and push grouped deliveries of roughly ten launchers. The number of launchers in a push is independent of the size of the local install.
 
