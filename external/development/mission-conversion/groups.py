@@ -134,6 +134,8 @@ EXTERNAL_PARENT_BRIDGES = {
                          '27bc46c4bd94e55a55363aad3b9f3c927781a70b75301cea113d368efed80b4d'),
     'EDCFF009262F881C': ('Prefabs/Characters/Factions/OPFOR/RHS_AFRF/Character_RHS_AFRF_Base.et',
                          '6bba2563a432f879d466e9ebed1b312e3f1f5def486175ee71e378f72f3b1c05'),
+    'FDAEA6C9F2673B02': ('Prefabs/Characters/Factions/BLUFOR/RHS_USAF/Character_RHS_USAF_Base.et',
+                         '3b6f688b2cd351b9f87fa26d10372fc861a9aa0d2bdeb37039f22f4befd900f0'),
 }
 # These external parents were verified against the published Core/RHS prefabs.
 # Both inherit Character_Base, which the legacy GC Lobby package overlays.

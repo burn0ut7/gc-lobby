@@ -173,6 +173,13 @@ REVIEWED_CAPACITY = {
           '698ea5a6253ae5282ea9967ce112d4ce7869b75f')),
         69, 67,
     ),
+    'Missions/Woody/COTVTXX_Kassel_Crashers_MODERN_REDUX2.conf': (
+        '7bb04df27323e14c9da426b0d291bd3a8da79515',
+        (('worlds/Woody/COTVTXX_Kassel_Crashers_MODERN_REDUX/'
+          'COTVTXX_Kassel_Crashers_MODERN_REDUX_Layers/playergroups.layer',
+          'e49a67187d64d0aeb162a90be8f503efcdc5d2ef'),),
+        69, 72,
+    ),
     'Missions/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky.conf': (
         '68347cf26401cd0d1ebd780e568a9b4cc163363d',
         (('worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/OPFOR_Players/OPFOR_Players.layer',
@@ -619,6 +626,18 @@ WORKSHOP_RESOURCE_ALIASES = {
     ('E49B4C9AEA70BE3F', 'Prefabs/Vehicles/Wheeled/JLTV/OGPK/M2HB/JLTV_OGPK.et'): (
         'WCS_JLTV_5C721177A220B42F', 'E49B4C9AEA70BE3F',
         'Prefabs/Vehicles/Wheeled/JLTV/OGPK/M2HB/JLTV_OGPK_M2HB.et'),
+    ('0F200E9F3D3AD905', 'Prefabs/Vehicles/Wheeled/JLTV/OGPK/M2HB/JLTV_OGPK_Woodland.et'): (
+        'WCS_JLTV_5C721177A220B42F', '0F200E9F3D3AD905',
+        'Prefabs/Vehicles/Wheeled/JLTV/OGPK/M2HB/JLTV_OGPK_M2HB_Woodland.et'),
+    ('2E6481BC1EE9A767', 'Prefabs/Vehicles/Wheeled/JLTV/CROWS_1/M2HB/JLTV_CROWS_Woodland.et'): (
+        'WCS_JLTV_5C721177A220B42F', '2E6481BC1EE9A767',
+        'Prefabs/Vehicles/Wheeled/JLTV/CROWS/M2HB/JLTV_CROWS_M2HB_Woodland.et'),
+    ('8A9444452D28F5B3', 'Prefabs/Vehicles/Wheeled/JLTV/CROWS_1/M240/JLTV_CROWS_M240_Woodland.et'): (
+        'WCS_JLTV_5C721177A220B42F', '8A9444452D28F5B3',
+        'Prefabs/Vehicles/Wheeled/JLTV/CROWS/M240/JLTV_CROWS_M240_Woodland.et'),
+    ('D17CCBF7FE9AAFEC', 'Prefabs/Vehicles/Wheeled/JLTV/CROWS_2/JLTV_CROWSII_Woodland.et'): (
+        'WCS_JLTV_5C721177A220B42F', 'D17CCBF7FE9AAFEC',
+        'Prefabs/Vehicles/Wheeled/JLTV/CROWS_II/M230LF/JLTV_CROWS_II_M230LF_Woodland.et'),
     ('77CA4803A4A2B8E3', 'Prefabs/Drones/FPVBase/FPVRPG.et'): (
         'RealisticCombatDrones_65AD60E204191D37', '77CA4803A4A2B8E3', 'Prefabs/Drones/FPVBase/FPVRpg.et'),
     ('B0DFDF7AAA9C5D39', 'Prefabs/Weapons/Magazines/BC_Shell_12ga_Buckshot.et'): (
@@ -3137,6 +3156,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare placed crew waypoint order, delay and separate idle turret grouping.')
     if any(isinstance(body, str) and '{823CA4130CE90077}' in body for body in draft.values()):
         remaining.append('Compare the AH-6 gun and rocket loadout against the legacy scenario.')
+    if any(isinstance(body, str) and '{D17CCBF7FE9AAFEC}' in body for body in draft.values()):
+        remaining.append('Compare the woodland CROWS II turret and crew stations against the legacy scenario.')
     if any(path.endswith('.layer') and isinstance(body, str) and '{BC07885176C7FF8A}' in body
            for path, body in draft.items()):
         remaining.append('Compare T-72A compartments, storage and appearance against the published addon stack.')

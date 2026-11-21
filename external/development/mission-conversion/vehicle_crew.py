@@ -67,6 +67,16 @@ for provider, directory, variants in (
     ('WCS_T-72_5E0AB16BEB16D6A4', 'Prefabs/Vehicles/Tracked/T72B', {
         '0154275FD6AE2370': 'T72B_Desert',
     }),
+    ('WCS_JLTV_5C721177A220B42F', 'Prefabs/Vehicles/Wheeled/JLTV', {
+        '0F200E9F3D3AD905': 'OGPK/M2HB/JLTV_OGPK_M2HB_Woodland',
+        '2E6481BC1EE9A767': 'CROWS/M2HB/JLTV_CROWS_M2HB_Woodland',
+        '8A9444452D28F5B3': 'CROWS/M240/JLTV_CROWS_M240_Woodland',
+        'BAF198F845DF6BBD': 'OGPK/M134/JLTV_OGPK_M134_Woodland',
+        'D17CCBF7FE9AAFEC': 'CROWS_II/M230LF/JLTV_CROWS_II_M230LF_Woodland',
+    }),
+    ('TacticalFlava-HMMWV_DEADC0DE00000005', 'Prefabs/Vehicles/Wheeled/M998', {
+        '03708F7E58BB7A53': 'M1151_armed_M2HB',
+    }),
     ('TacticalFlava-TIGR_DEADC0DE00000003', 'Prefabs/Vehicles/Wheeled/TIGR', {
         '7A21F47E09038E58': 'ArbaletDM/GAZ_TIGR_v2_Arbalet_KORD',
         'CD4737303AA14C6D': 'KORD/GAZ_TIGR_v2_KORD_SPP',
@@ -351,10 +361,12 @@ def render_component(component, lines, resolve_character, single_turret, resolve
         raise ValueError('ambiguous placed crew configuration')
     index, = configs
     close = block_end(lines, index)
-    outer = properties(lines[:index] + lines[close + 1:], {'m_noTurretDismount', 'm_pregameSpawn'})
-    if outer.get('m_pregameSpawn', '0') != '0' or outer.get('m_noTurretDismount', '0') not in ('0', '1'):
-        raise ValueError('unsupported placed crew timing or deprecated dismount field')
-    # The legacy configured-crew path never reads the component's deprecated dismount field.
+    deprecated = {'m_noTurretDismount', *('m_spawn' + seat for seat in SEAT_TYPES)}
+    outer = properties(lines[:index] + lines[close + 1:], deprecated | {'m_pregameSpawn'})
+    if (outer.get('m_pregameSpawn', '0') != '0'
+            or any(outer[field] not in ('0', '1') for field in deprecated.intersection(outer))):
+        raise ValueError('unsupported placed crew timing or deprecated seat fields')
+    # The configured legacy path reads seat filters and dismount policy only from its config.
     config = crew_config_contents(lines[index:close + 1], resolve_config)
     groups = [i for i, line in enumerate(config) if line.strip() == 'm_crewGroups {']
     if len(groups) != 1:
