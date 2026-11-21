@@ -27,13 +27,15 @@ DEFAULTS = {
     'm_MarkerColor': '1 1 1 1', 'm_sDescription': '""'
 }
 PHASES = ('PREGAME', 'SLOTTING', 'BRIEFING', 'GAME', 'POSTGAME')
-LEGACY_STATES = {'SLOTSELECTION': 'SLOTTING', '1': 'GAME'}
+LEGACY_STATES = {'SLOTSELECTION': 'SLOTTING', '1': 'GAME', '5': 'BRIEFING'}
 UNUSED_STATES = {'CUTSCENE', 'DEBRIEFING', 'NULL'}
 
 
 def phase_fields(value):
     """Project legacy visibility onto the corresponding Lobby phases."""
     hidden = {LEGACY_STATES.get(state, state) for state in value.split()} - UNUSED_STATES
+    if hidden - set(PHASES):
+        raise ValueError('unknown marker phase: ' + ', '.join(sorted(hidden - set(PHASES))))
     if not hidden:
         return []
     if hidden == set(PHASES):
@@ -44,7 +46,7 @@ def phase_fields(value):
             return ['   m_eShowAtGameModeState ' + phase]
         if hidden == set(PHASES[index:]):
             return ['   m_eShowAtGameModeState ' + phase, '   m_bInvertGameModeState 1']
-    raise ValueError('marker phase set needs review')
+    return ['   m_aHiddenPhases {', *('    ' + phase for phase in PHASES if phase in hidden), '   }']
 
 
 def instance(lines, name, inherited=None):

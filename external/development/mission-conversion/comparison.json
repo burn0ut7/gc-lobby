@@ -9258,7 +9258,7 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/CORE/All_Markers.layer": {
-          "gap": "line 2 marker phase set needs review"
+          "gap": "line 32 custom or duplicate field m_iZOrder"
         },
         "worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/Players_Soviets/OPFOR_Markers.layer": {
           "gap": "line 16 custom or duplicate field m_iZOrder"
@@ -10390,7 +10390,7 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 2 marker phase set needs review"
+          "candidateIcons": 2
         },
         "worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo_Layers/CORE/All_Markers.layer": {
           "candidateIcons": 3
@@ -11033,7 +11033,7 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/CORE/Pub_Markers.layer": {
-          "gap": "line 2 marker phase set needs review"
+          "candidateIcons": 2
         },
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/NVA_Players/NVA_Markers.layer": {
           "candidateIcons": 7
@@ -11042,7 +11042,7 @@
           "gap": "line 1 mixed or custom placement"
         },
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/US_Players/US_Markers.layer": {
-          "gap": "line 142 marker phase set needs review"
+          "candidateIcons": 11
         },
         "worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -11160,10 +11160,10 @@
           "candidateIcons": 11
         },
         "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/CORE/Pub_Markers.layer": {
-          "gap": "line 2 marker phase set needs review"
+          "candidateIcons": 2
         },
         "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/SEP_Players/SEP_Markers.layer": {
-          "gap": "line 44 marker phase set needs review"
+          "candidateIcons": 7
         },
         "worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -11889,10 +11889,10 @@
           "candidateIcons": 4
         },
         "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/CORE/Pub_Markers.layer": {
-          "gap": "line 2 marker phase set needs review"
+          "candidateIcons": 2
         },
         "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/SEP_Players/SEP_Markers.layer": {
-          "gap": "line 16 marker phase set needs review"
+          "candidateIcons": 2
         },
         "worlds/HitTheMan/Mountainous Mujahideen/MountainousMujahideen_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -13476,7 +13476,7 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault_Layers/BLUFOR_Players/BLUFOR_Markers.layer": {
-          "gap": "line 20 marker phase set needs review"
+          "candidateIcons": 5
         },
         "worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault_Layers/default.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -13595,7 +13595,7 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/CORE/All_Markers.layer": {
-          "gap": "line 2 marker phase set needs review"
+          "candidateIcons": 2
         },
         "worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/Players_Soviets/OPFOR_Markers.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -13728,7 +13728,7 @@
           "candidateIcons": 9
         },
         "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/CORE/All_Markers.layer": {
-          "gap": "line 1 marker phase set needs review"
+          "candidateIcons": 1
         },
         "worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/OPFOR_Players/OPFOR_Markers.layer": {
           "candidateIcons": 14
@@ -13928,7 +13928,7 @@
       ],
       "markerLayers": {
         "worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn_Layers/CORE/All_Markers.layer": {
-          "gap": "line 14 marker phase set needs review"
+          "candidateIcons": 5
         },
         "worlds/HitTheMan/VDV Sweeping Kamoryn/VDVSweepingKamoryn_Layers/Players_Soviets/OPFOR_Markers.layer": {
           "candidateIcons": 7
@@ -21681,7 +21681,7 @@
       ],
       "markerLayers": {
         "worlds/TheLocalPub/LamentinLosers/LamentinLosers_Layers/MapMarkers.layer": {
-          "gap": "line 192 marker phase set needs review"
+          "candidateIcons": 38
         }
       },
       "groupLayers": {
@@ -22166,7 +22166,7 @@
           "gap": "line 1 mixed or custom placement"
         },
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/OPFOR/Markers.layer": {
-          "gap": "line 2 marker phase set needs review"
+          "candidateIcons": 3
         },
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/SYSTEMS/AllMarkers.layer": {
           "gap": "line 1 mixed or custom placement"
@@ -22361,10 +22361,10 @@
       ],
       "markerLayers": {
         "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/BLUFOR/Markers.layer": {
-          "gap": "line 1 marker phase set needs review"
+          "candidateIcons": 1
         },
         "worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/SYSTEMS/AllMarkers.layer": {
-          "gap": "line 13 marker phase set needs review"
+          "candidateIcons": 5
         }
       },
       "stockPlacementLayers": {

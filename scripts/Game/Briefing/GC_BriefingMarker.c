@@ -4,6 +4,7 @@
 class GC_BriefingMarker
 {
 	static const int MAX_FACTION_KEYS = 16;
+	protected static const int ALL_PHASE_BITS = 31;
 
 	protected string m_sName;
 	protected ResourceName m_sImage;
@@ -27,6 +28,7 @@ class GC_BriefingMarker
 	protected bool m_bExplicitAudience;
 	protected bool m_bExcludeFactionKeys;
 	protected bool m_bVisibleWithoutFaction;
+	protected int m_iHiddenPhases;
 
 	string GetName() { return m_sName; }
 	ResourceName GetImage() { return m_sImage; }
@@ -57,6 +59,7 @@ class GC_BriefingMarker
 		m_bExplicitAudience = false;
 		m_bExcludeFactionKeys = false;
 		m_bVisibleWithoutFaction = false;
+		m_iHiddenPhases = 0;
 		m_sName = name;
 		m_sImage = image;
 		m_sHighlightImage = highlightImage;
@@ -84,6 +87,10 @@ class GC_BriefingMarker
 
 	bool IsVisibleToFaction(Faction faction, SCR_EGameModeState gameModeState)
 	{
+		int phase = GC_LobbyPhase.GetOrdinal(gameModeState);
+		if (phase >= 0 && (m_iHiddenPhases & (1 << phase)) != 0)
+			return false;
+
 		bool stateMatches = GC_LobbyPhase.IsAtOrAfter(gameModeState, m_eShowAtGameModeState);
 		if (m_bInvertGameModeState)
 			stateMatches = !stateMatches;
@@ -150,6 +157,19 @@ class GC_BriefingMarker
 
 	void SetVisible(bool visible) { m_bVisible = visible; }
 
+	void SetHiddenPhases(array<SCR_EGameModeState> phases)
+	{
+		m_iHiddenPhases = 0;
+		if (!phases)
+			return;
+		foreach (SCR_EGameModeState phase : phases)
+		{
+			int ordinal = GC_LobbyPhase.GetOrdinal(phase);
+			if (ordinal >= 0)
+				m_iHiddenPhases |= 1 << ordinal;
+		}
+	}
+
 	void CopyFrom(GC_BriefingMarker source)
 	{
 		if (!source)
@@ -164,6 +184,7 @@ class GC_BriefingMarker
 		m_bExplicitAudience = source.m_bExplicitAudience;
 		m_bExcludeFactionKeys = source.m_bExcludeFactionKeys;
 		m_bVisibleWithoutFaction = source.m_bVisibleWithoutFaction;
+		m_iHiddenPhases = source.m_iHiddenPhases;
 	}
 
 	bool RplSave(ScriptBitWriter writer)
@@ -192,6 +213,7 @@ class GC_BriefingMarker
 		writer.WriteBool(m_bExplicitAudience);
 		writer.WriteBool(m_bExcludeFactionKeys);
 		writer.WriteBool(m_bVisibleWithoutFaction);
+		writer.WriteInt(m_iHiddenPhases);
 		return true;
 	}
 
@@ -226,7 +248,8 @@ class GC_BriefingMarker
 		m_eShowAtGameModeState = showAtGameModeState;
 		if (!reader.ReadBool(m_bInvertGameModeState) || !reader.ReadBool(m_bVisible) || !reader.ReadInt(m_iRevision)
 			|| !reader.ReadBool(m_bExplicitAudience) || !reader.ReadBool(m_bExcludeFactionKeys)
-			|| !reader.ReadBool(m_bVisibleWithoutFaction))
+			|| !reader.ReadBool(m_bVisibleWithoutFaction) || !reader.ReadInt(m_iHiddenPhases)
+			|| (m_iHiddenPhases & ALL_PHASE_BITS) != m_iHiddenPhases)
 			return false;
 
 		return true;
@@ -268,6 +291,7 @@ class GC_BriefingMarker
 		snapshot.SerializeBool(instance.m_bExplicitAudience);
 		snapshot.SerializeBool(instance.m_bExcludeFactionKeys);
 		snapshot.SerializeBool(instance.m_bVisibleWithoutFaction);
+		snapshot.SerializeInt(instance.m_iHiddenPhases);
 		return true;
 	}
 
@@ -313,7 +337,8 @@ class GC_BriefingMarker
 		snapshot.SerializeBool(instance.m_bExplicitAudience);
 		snapshot.SerializeBool(instance.m_bExcludeFactionKeys);
 		snapshot.SerializeBool(instance.m_bVisibleWithoutFaction);
-		return true;
+		snapshot.SerializeInt(instance.m_iHiddenPhases);
+		return (instance.m_iHiddenPhases & ALL_PHASE_BITS) == instance.m_iHiddenPhases;
 	}
 
 	static void Encode(SSnapSerializerBase snapshot, ScriptCtx ctx, ScriptBitSerializer packet)
@@ -339,6 +364,7 @@ class GC_BriefingMarker
 		snapshot.EncodeBool(packet);
 		snapshot.EncodeBool(packet);
 		snapshot.EncodeBool(packet);
+		snapshot.EncodeInt(packet);
 	}
 
 	static bool Decode(ScriptBitSerializer packet, ScriptCtx ctx, SSnapSerializerBase snapshot)
@@ -364,6 +390,7 @@ class GC_BriefingMarker
 		snapshot.DecodeBool(packet);
 		snapshot.DecodeBool(packet);
 		snapshot.DecodeBool(packet);
+		snapshot.DecodeInt(packet);
 		return true;
 	}
 
@@ -384,7 +411,8 @@ class GC_BriefingMarker
 		}
 		return lhs.CompareSnapshots(rhs, 4) && lhs.CompareSnapshots(rhs, 4)
 			&& lhs.CompareSnapshots(rhs, 4) && lhs.CompareSnapshots(rhs, 4)
-			&& lhs.CompareSnapshots(rhs, 4) && lhs.CompareSnapshots(rhs, 4) && lhs.CompareSnapshots(rhs, 4);
+			&& lhs.CompareSnapshots(rhs, 4) && lhs.CompareSnapshots(rhs, 4)
+			&& lhs.CompareSnapshots(rhs, 4) && lhs.CompareSnapshots(rhs, 4);
 	}
 
 	static bool PropCompare(GC_BriefingMarker instance, SSnapSerializerBase snapshot, ScriptCtx ctx)
@@ -419,6 +447,7 @@ class GC_BriefingMarker
 			&& snapshot.CompareInt(instance.m_iRevision)
 			&& snapshot.CompareBool(instance.m_bExplicitAudience)
 			&& snapshot.CompareBool(instance.m_bExcludeFactionKeys)
-			&& snapshot.CompareBool(instance.m_bVisibleWithoutFaction);
+			&& snapshot.CompareBool(instance.m_bVisibleWithoutFaction)
+			&& snapshot.CompareInt(instance.m_iHiddenPhases);
 	}
 }

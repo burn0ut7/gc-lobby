@@ -64,7 +64,7 @@ class GC_LobbyPhase
 
 	//! Explicit ordering is required because modded enum storage values are
 	//! intentionally non-contiguous and must never define lifecycle order.
-	protected static int GetOrdinal(SCR_EGameModeState phase)
+	static int GetOrdinal(SCR_EGameModeState phase)
 	{
 		switch (phase)
 		{

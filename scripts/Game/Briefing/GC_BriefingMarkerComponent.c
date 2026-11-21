@@ -56,6 +56,9 @@ class GC_BriefingMarkerComponent : ScriptComponent
 	[Attribute("0", UIWidgets.CheckBox, "Invert the phase threshold. Off: show from the selected phase onward. On: hide from the selected phase onward")]
 	protected bool m_bInvertGameModeState;
 
+	[Attribute("", UIWidgets.Auto, "Hide the marker in these individual phases, in addition to the phase threshold", enumType: SCR_EGameModeState)]
+	protected ref array<SCR_EGameModeState> m_aHiddenPhases;
+
 	override protected void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);
@@ -133,6 +136,7 @@ class GC_BriefingMarkerComponent : ScriptComponent
 			m_bWorldScale, m_fSize, m_fMinSize, m_sDescription, GC_FactionKeys.ToStrings(m_aFactionKeys),
 			m_eShowAtGameModeState, m_bInvertGameModeState, true, markerColor, m_bAlignTextWithMarkerRotation);
 		marker.SetTextColor(textColor);
+		marker.SetHiddenPhases(m_aHiddenPhases);
 		if (m_bRestrictToListedFactions)
 			marker.SetListedFactionAudience(!m_bHideWithoutFaction);
 		else if (m_bHideWithoutFaction)
