@@ -907,6 +907,7 @@ def main():
             source, dev, source_units, dev_units, stock,
             normalize_references=lambda body: batch.replace_registered_paths(body, source, dev, asset_aliases))
         reviewed_members = {guid: asset[0] for guid, asset in loadouts.items()}
+        local_groups = batch.reviewed_group_aliases(source, dev, source_units, dev_units)
 
         def convert_group_block(body, reviewed_ai_members=None, reviewed_playable_members=None):
             return group_layer(body, source_units, dev_units, stock, locally_owned,
@@ -915,7 +916,7 @@ def main():
                                allow_stock_ai=True, restored_members=restored,
                                reviewed_ai_members={**native_ai_members, **(reviewed_ai_members or {})},
                                forced_external=forced_external,
-                               rhs=rhs_database)
+                               rhs=rhs_database, local_aliases=local_groups)
 
         def convert_crew(block):
             ref = REF.search(block[0])

@@ -145,6 +145,20 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/Huska/MortonBay.conf': (
+        '349110f369ae52809278847d26ee41539ca02d83',
+        (('worlds/Huska/MortonBay/MortonBay_Layers/Players.layer',
+          'a9176e60348f369402dd3e85ea4377946024830c'),),
+        70, 69,
+    ),
+    'Missions/anteante101/Its all uphill from here.conf': (
+        '2ba58c7179dcd5863b8978f31413c4b08c1c4a3d',
+        (('worlds/anteante101/Its all uphill from here/Its all uphill from here_Layers/ION.layer',
+          '4ddb6f0af7125f2a71d30835bc8cde481e437619'),
+         ('worlds/anteante101/Its all uphill from here/Its all uphill from here_Layers/opfor.layer',
+          'bbe5dfa642cb3e770d9a0455068b699c461bec4e')),
+        19, 18,
+    ),
     'Missions/RoseOutTheAshes/FIALeMouleRaid.conf': (
         '55381d7ee37738834726dcde83d4e0256269ccf6',
         (('worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid_layers/players.layer',
@@ -664,6 +678,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/anteante101/Prefabs/group/Group_GC_ION_Uniformed_CAT_WL_AA101.et':
+        'ae267b03015662a0badcfa9210ce86ca18d1c3bf2e06efe19fe8b0b009fe4813',
     'worlds/arc/CommandosReforged/Prefabs/BLU/Barret_m107a1_IR.et':
         '38e719f739bb51dc4924dd16f6ddc92a3a476aaf0c91b6c03bffc8ac1a738ab8',
     'worlds/HitTheMan/Prefabs/Vehicles/BMP1_ZSU_base_HTM.et':
@@ -1294,6 +1310,31 @@ def verified_local_ai_group(source, dev, source_units, dev_units, stock, resourc
     return all(stock.contains(guid, asset)
                and all(guid not in snapshot.resources for snapshot in (source, dev, source_units, dev_units))
                for guid, asset in refs)
+
+
+def reviewed_group_aliases(source, dev, source_units, dev_units):
+    aliases = {}
+    for path, digest in REVIEWED_NATIVE_ASSETS.items():
+        if path not in source.files or path + '.meta' not in source.files:
+            continue
+        body = source.read(path)
+        if not re.fullmatch(r'SCR_AIGroup : "\{[\dA-Fa-f]{16}\}[^"\n]+" \{\n ID "[\dA-Fa-f]{16}"\n\}\s*', body):
+            continue
+        if sha256(body.strip().encode()).hexdigest() != digest:
+            continue
+        identity = META_NAME.search(source.read(path + '.meta'))
+        parent, parent_path = REF.search(body).groups()
+        if (not identity or source.resources.get(identity[2].upper()) != [path]
+                or any(identity[2].upper() in item.resources for item in (source_units, dev_units))
+                or dev.resources.get(identity[2].upper()) not in (None, [path])
+                or (path in dev.files and dev.read(path) != body)
+                or source_units.resources.get(parent) != [parent_path]
+                or dev_units.resources.get(parent) != [parent_path]
+                or not reviewed_native_ancestry(inheritance(source_units, parent),
+                                                inheritance(dev_units, parent), dev_units)):
+            continue
+        aliases[identity[2].upper()] = (path, parent)
+    return aliases
 
 
 def damage_state_flag_placement(block, *, allow_multiple_states=False):
@@ -2275,12 +2316,13 @@ def mode_children(lines, disable_photo=False):
             coords = []
             if rest and rest[0].startswith('   coords ') and FIELD.fullmatch(rest[0].strip()):
                 coords, rest = rest[:1], rest[1:]
-            if len(rest) < 3 or rest[0] != '   Factions {' or block_end(rest, 0) != len(rest) - 1:
-                raise ValueError('custom legacy faction overrides')
-            if LEGACY.search('\n'.join(rest)):
-                raise ValueError('custom legacy faction overrides')
-            output.extend(['  SCR_FactionManager {', '   ID "6ADC9BB66394BE46"', *coords,
-                           '   Factions + {', *rest[1:], '  }'])
+            output.extend(['  SCR_FactionManager {', '   ID "6ADC9BB66394BE46"', *coords])
+            if rest:
+                if (len(rest) < 3 or rest[0] != '   Factions {' or block_end(rest, 0) != len(rest) - 1
+                        or LEGACY.search('\n'.join(rest))):
+                    raise ValueError('custom legacy faction overrides')
+                output.extend(['   Factions + {', *rest[1:]])
+            output.append('  }')
         elif kind in MODE_SINGLETONS:
             previous, current, prefab, defaults = MODE_SINGLETONS[kind]
             if (not fields or fields[0] != f'   ID "{previous}"' or len(fields) > 2

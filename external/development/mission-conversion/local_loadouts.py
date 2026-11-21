@@ -27,6 +27,10 @@ MOVED_AI_PARENTS = {
 }
 REVIEWED_FORCED_CHARACTERS = {
     'A2B3DB1BABEF1F4E': '6cafd343421e6c5329b204b1d796d44a8b7aad751eadf1c97ee40ce7f9d883e0',
+    'ACC80CE64A29F89D': '56089d71da9a346773bd28fc2c1c377afc080e88751a7d3937560a1a20ed7cc3',
+    'EBB5B37321AA1E3D': '3ee530493b6429a192628cd8ce842d59ba24c0fb091d349b2863096f1ba7e09e',
+    '0D39FB782A915648': 'e975d4a56eb21b6a6fc09efb5f6b7e23e1f404679fa0c57552f66e756225b5cd',
+    '6AA3A930760964BD': 'c5f18445f33dca9310e720073b48b4a04f0ff9a52abb363a2cc1451c9466e4ba',
     '899712E13A601488': '4c4f34ec51a307bfee86f7153626906af9a3cfe21064e540408a82bb2f9fa1ff',
     'DADA3692BC2D3EE1': 'e2f4d1d7c1b1ec926064f5832a5d9fde9e7899438fb6df189137655a1f821892',
 }
@@ -111,7 +115,7 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
         parent_asset = evaluate(resource, seen | {guid}) if resource in source.resources else None
         inherited_playable = bool(parent_asset) or legacy_member(source_units, resource, False)
         try:
-            body, removed = migrate_playability(text, inherited_playable=inherited_playable)
+            body, removed = migrate_playability(text, inherited_playable=inherited_playable or verified_forced)
         except ValueError:
             return None
         if LEGACY.search(body):

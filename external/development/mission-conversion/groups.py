@@ -399,6 +399,8 @@ def native_group_component(lines, start, end):
         return True
     if header == 'Persistence "{654CB71D928E041B}" {':
         return end == start + 2 and lines[start + 1].strip() == 'Enabled 0'
+    if header == 'SCR_CallsignBaseComponent "{65455E36B9829D54}" {':
+        return end == start + 1
     if header == MOVEMENT:
         return all(MOVEMENT_FIELD.fullmatch(line.strip()) for line in lines[start + 1:end])
     if header == AI_CONFIG:
@@ -889,7 +891,7 @@ def convert_registered_group(lines, guid, source_units, dev_units, stock, locall
 
 def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset(),
                 reviewed_members=None, external_ai=None, allow_stock_ai=False, restored_members=None,
-                reviewed_ai_members=None, forced_external=None, *, rhs=None, depth=0):
+                reviewed_ai_members=None, forced_external=None, *, rhs=None, depth=0, local_aliases=None):
     if not re.search(r'^(?:\$grp )?SCR_AIGroup\b', text, re.M):
         return None
 
@@ -908,7 +910,8 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
         nested = '\n'.join(line[len(child_prefix):] for line in fields[start + 1:stop])
         children = group_layer(nested, source_units, dev_units, stock, locally_owned, reviewed_callsigns,
                                reviewed_members, external_ai, allow_stock_ai, restored_members,
-                               reviewed_ai_members, forced_external, rhs=rhs, depth=depth + 1)
+                               reviewed_ai_members, forced_external, rhs=rhs, depth=depth + 1,
+                               local_aliases=local_aliases)
         if children is None:
             raise ValueError('unsupported child entity on a group')
         body, members = convert(fields[:start])
@@ -927,7 +930,8 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
         if not match:
             raise ValueError('mixed layer or custom group declaration')
         guid = match['guid'].upper()
-        if guid in locally_owned:
+        local = (local_aliases or {}).get(guid)
+        if guid in locally_owned and (not local or REF.search(lines[i])[2] != local[0]):
             raise ValueError('mission-owned group ' + guid)
         spec = WRAPPERS['groups'].get(guid) if guid not in source_units.resources and stock else None
         native_group = allow_stock_ai and (guid in STOCK_AI_GROUPS or guid in RHS_AI_GROUPS)
@@ -951,10 +955,13 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
                               stock_group=stock_group, reviewed_ai_members=reviewed_ai_members,
                               forced_external=forced_external, reviewed_members=reviewed_members)
         else:
-            _, old = prefab(source_units, guid)
-            dest, new = prefab(dev_units, guid)
+            parent = local[1] if local else guid
+            _, old = prefab(source_units, parent)
+            dest, new = prefab(dev_units, parent)
+            if local:
+                dest = local[0]
             resource = guid
-            convert = partial(convert_instance, guid=guid, old=old, new=new, source_units=source_units,
+            convert = partial(convert_instance, guid=parent, old=old, new=new, source_units=source_units,
                               dev_units=dev_units, stock=stock, locally_owned=locally_owned,
                               reviewed_callsigns=reviewed_callsigns, reviewed_members=reviewed_members,
                               external_ai=external_ai, restored_members=restored_members,
