@@ -22,8 +22,9 @@ from catalog import REF, Snapshot, WORLD, compare
 from delayed_extraction import collect as collect_delayed_extraction
 from event_actions import ACTIONS
 from events import world_events
-from groups import (SLOTS, compare_ai_parents, convert_ai_instance, group_layer, rhs_ai_characters,
-                    verified_rhs_forced_roles, verified_stock_ai_group, verified_uk_forced_roles)
+from groups import (SLOTS, compare_ai_parents, convert_ai_instance, group_layer, inheritance, rhs_ai_characters,
+                    unchanged_deprecated_stock_override, unchanged_disabled_playability, verified_rhs_forced_roles,
+                    verified_stock_ai_group, verified_uk_forced_roles)
 import gwotline
 import hnevice
 import industrial
@@ -218,11 +219,21 @@ def main():
                 if not ancestry[0].startswith('SCR_AIGroup '):
                     return None
                 convert_ai_instance([], resource, source_units, dev_units, locally_owned, external_ai)
-                for parent in ancestry:
+                for parent in inheritance(dev_units, resource):
                     slots = SLOTS.search(parent)
-                    if slots and any(not local_loadouts.unchanged_units_parent(source_units, dev_units, guid)
-                                     and external_ai.get(guid) != path for guid, path in REF.findall(slots[1])):
-                        return None
+                    if not slots:
+                        continue
+                    for member, member_path in REF.findall(slots[1]):
+                        member = member.upper()
+                        if (external_ai.get(member) == member_path and member not in locally_owned
+                                and (not any(member in owner for owner in owners)
+                                     or unchanged_deprecated_stock_override(
+                                         source_units, dev_units, member, member_path))):
+                            continue
+                        if (dev_units.resources.get(member) != [member_path]
+                                or not (local_loadouts.unchanged_units_parent(source_units, dev_units, member)
+                                        or unchanged_disabled_playability(source_units, dev_units, member))):
+                            return None
             except ValueError:
                 return None
             return path

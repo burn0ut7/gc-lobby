@@ -135,6 +135,12 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/VDV Leads The Way/VDVLeadsTheWay.conf': (
+        '9e42d838f05f0498631cca91c04d2a0344014cc7',
+        (('worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_Layers/OPFOR_Players/OPFOR_Players.layer',
+          'fd0e6c248aed7310caad26397b51677a15cffe98'),),
+        79, 66,
+    ),
     'Missions/Cunnah/Arty_Arty_Arty.conf': (
         'ba9e7fb39aebc6074a15750152a9ec9acefa98de',
         (('worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/BLUFOR.layer',
@@ -353,6 +359,8 @@ REVIEWED_MISSING_SPAWN_ANCHORS = {
 REVIEWED_MISSING_WAYPOINTS = {
     'worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Insurgents/Insurgent_AI.layer':
         ('899263002cdc221867c535cfca930b39e55867d9', {'Defend'}),
+    'worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_Layers/AI_Defenders/AI_Encounters_1.layer':
+        ('9b284785753b8cac64f6c6a971f19b198f0120f9', {'DefInside_WPWest_US_1'}),
     'worlds/Reapzr/Deadlock/Deadlock_Layers/Groups/AI.layer':
         ('f539728c37d0fa180a89e171dde57baa0dd4c147', {
             'AIWaypoint_Defend_1', 'AIWaypoint_Patrol_1', 'AIWaypoint_Patrol_2',

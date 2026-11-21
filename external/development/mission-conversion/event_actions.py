@@ -196,7 +196,10 @@ def render_crew_config(config, key, resolve_character, *, shadowed_names=()):
         group = contents(groups[index:end + 1], 'TILW_CrewGroup ' + SERIALIZED_ID)
         stations, fields = split_crew_block(group, 'm_crewStations')
         options = properties(fields, {'m_waypointNames', 'm_waypointDelay', 'm_entityName'})
-        route = target_names(options['m_waypointNames']) if options.get('m_waypointNames') else []
+        authored_route = options.get('m_waypointNames')
+        route = target_names(authored_route, skip_blank=True) if authored_route else []
+        if authored_route and not route and idle == '1':
+            raise ValueError('blank crew route may change idle gunner grouping')
         name = options.get('m_entityName', '""')
         if not re.fullmatch(r'"[\w.-]{0,128}"', name):
             raise ValueError('unsupported crew group name')

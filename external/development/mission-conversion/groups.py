@@ -415,6 +415,8 @@ DEPRECATED_STOCK_AI_OVERRIDES = {
 
 @lru_cache(maxsize=4096)
 def unchanged_deprecated_stock_override(source_units, dev_units, guid, path):
+    if guid not in DEPRECATED_STOCK_AI_OVERRIDES:
+        return False
     directory, name = path.rsplit('/', 1)
     deprecated = f'{directory}/Deprecated/{name}'
     if source_units.resources.get(guid) != [deprecated] or dev_units.resources.get(guid) != [deprecated]:
