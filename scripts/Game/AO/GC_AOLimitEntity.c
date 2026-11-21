@@ -44,7 +44,7 @@ class GC_AOLimitEntity : PolylineShapeEntity
 	protected bool m_bInverted;
 	[Attribute("0", UIWidgets.EditBox, "Higher numbers win among breached applicable limits. Equal priorities are allowed: hard wins, then earliest soft deadline; exact ties retain the first evaluated limit. Other limits keep their timers. Use distinct priorities to explicitly choose a winner.", category: "AO")]
 	protected int m_iPriority;
-	[Attribute("20", UIWidgets.EditBox, "Continuous seconds outside before death. Re-entry or exemption clears this limit's timer. Range 0.1-3600.", category: "AO")]
+	[Attribute("20", UIWidgets.EditBox, "Continuous seconds outside before death. Re-entry or exemption clears the timer. Use 0 for immediate soft enforcement, or 0.1-3600 for a countdown.", category: "AO")]
 	protected float m_fGraceSeconds;
 	[Attribute("RETURN TO AO", UIWidgets.EditBox, "Heading displayed above this AO warning countdown. Keep it short to fit the compact HUD.", category: "AO")]
 	protected string m_sWarningText;
@@ -84,7 +84,7 @@ class GC_AOLimitEntity : PolylineShapeEntity
 	bool SetBehavior(GC_EAOBehavior behavior, float graceSeconds, int priority)
 	{
 		if (!Replication.IsServer() || !m_System || behavior < 0 || behavior > GC_EAOBehavior.SOFT_KILL
-			|| graceSeconds < 0.1 || graceSeconds > 3600)
+			|| !ValidGrace(behavior, graceSeconds))
 			return false;
 		m_eBehavior = behavior;
 		m_fGraceSeconds = graceSeconds;
@@ -145,7 +145,7 @@ class GC_AOLimitEntity : PolylineShapeEntity
 	//------------------------------------------------------------------------------------------------
 	protected bool ValidateSettings()
 	{
-		if (m_fGraceSeconds < 0.1 || m_fGraceSeconds > 3600 || m_eBehavior < 0 || m_eBehavior > GC_EAOBehavior.SOFT_KILL
+		if (!ValidGrace(m_eBehavior, m_fGraceSeconds) || m_eBehavior < 0 || m_eBehavior > GC_EAOBehavior.SOFT_KILL
 			|| m_eVehicleMode < 0 || m_eVehicleMode > GC_EAOListMode.EXCEPT_MATCHING
 			|| m_eVehicleState < 0 || m_eVehicleState > GC_EAOVehicleState.PASSENGER
 			|| m_eItemCondition < 0 || m_eItemCondition > GC_EAOItemCondition.MISSING_ANY)
@@ -155,6 +155,12 @@ class GC_AOLimitEntity : PolylineShapeEntity
 		if (m_eVehicleMode != GC_EAOListMode.IGNORE && (!m_aVehiclePrefabs || m_aVehiclePrefabs.IsEmpty()))
 			return false;
 		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected bool ValidGrace(GC_EAOBehavior behavior, float seconds)
+	{
+		return (behavior == GC_EAOBehavior.SOFT_KILL && seconds == 0) || (seconds >= 0.1 && seconds <= 3600);
 	}
 
 	//------------------------------------------------------------------------------------------------

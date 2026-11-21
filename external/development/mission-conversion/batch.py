@@ -39,10 +39,14 @@ CONSTRUCTION_FIELDS = {
     'm_fGameMultiplier': ('m_fMatchMultiplier', 0.5, 10000000),
 }
 DEFAULT_BUILDING_MANAGER = '  SCR_CampaignBuildingManagerComponent "{61B4DDBF56BF1B48}" {'
+EMPTY_GROUP_FLAGS = [
+    '  SCR_GroupsManagerComponent "{5706EC99934496F5}" {',
+    '   m_aGroupFlags {', '   }', '  }',
+]
 LEGACY_JIP_MODES = {'Deny': 'DISABLED', 'Auto': 'AUTO', 'Manual': 'MANUAL',
                     '0': 'DISABLED', '1': 'AUTO', '2': 'MANUAL'}
 NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|RHS_Tank|Turret|SCR_AIWorld|GameEntity|GenericEntity|GenericTerrainEntity|GenericWorldFogEntity|StaticModelEntity|Tree|'
-                    r'DecalEntity|SCR_DestructibleEntity|SCR_DestructibleTreeV2|SCR_TreeDebrisSmallEntity|'
+                    r'DecalEntity|SCR_DestructibleEntity|SCR_DestructibleTreeV2|SCR_TreeDebrisSmallEntity|SCR_JunctionPowerPole|'
                     r'SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
                     r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity|LightEntity|Projectile|CommentEntity)\b')
 INACTIVE_DOOR_LAYER = 'worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/PROPS/TrainArea.layer'
@@ -3235,7 +3239,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, environment, freeze = '', '', 0
-    building_manager = ''
+    native_overrides = []
     child_placements = []
     disable_photo = None
     lock_editor = None
@@ -3272,8 +3276,9 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
                 elif header == INIT_WEATHER and all(INIT_WEATHER_FIELD.fullmatch(field)
                                                     for field in component_lines[1:-1]):
                     weather += '\n'.join(component_lines) + '\n'
-                elif header == DEFAULT_BUILDING_MANAGER and stop == component + 1:
-                    building_manager = '\n'.join(component_lines) + '\n'
+                elif ((header == DEFAULT_BUILDING_MANAGER and stop == component + 1)
+                      or component_lines == EMPTY_GROUP_FLAGS):
+                    native_overrides.extend(component_lines)
                 else:
                     raise ValueError('custom legacy game mode components')
                 component = stop + 1
@@ -3360,9 +3365,9 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         raise ValueError('mixed game mode rotation representations')
     placement = '\n'.join(f' {field} {value}' for field, value in {'coords': '0 0 0', **transform}.items())
     resource = guid(world + '/resource')
-    settings = building_manager
+    settings = ''.join(line + '\n' for line in native_overrides)
     if construction:
-        if building_manager:
+        if DEFAULT_BUILDING_MANAGER in native_overrides:
             raise ValueError('default building manager with legacy construction multipliers needs review')
         fields = []
         for field, (native, minimum, maximum) in CONSTRUCTION_FIELDS.items():

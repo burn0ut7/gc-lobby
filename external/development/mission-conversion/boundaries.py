@@ -362,10 +362,11 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     visibility = values.get('m_visibility','ALL')
     faction_color = values.get('m_useFactionColor','1')
     grace = values.get('m_killTimer','20')
+    grace_seconds = float(grace)
     width = values.get('m_lineWidth','3')
     color = values.get('m_defaultColor','0 0 0 1')
     if (visibility not in ('ALL','FACTION','NONE') or faction_color not in ('0','1')
-            or not 0.1 <= float(grace) <= 3600 or not 1 <= float(width) <= 20
+            or not (grace_seconds == 0 or 0.1 <= grace_seconds <= 3600) or not 1 <= float(width) <= 20
             or values.get('Enabled','1') != '1' or not all(0 <= x <= 1 for x in floats(color,4))):
         raise ValueError('unsupported boundary settings')
     public_tint = bool(keys) and faction_color == '1' and visibility == 'ALL'
