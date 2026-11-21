@@ -6,12 +6,14 @@ from hashlib import sha256
 import json
 import re
 from pathlib import Path, PurePosixPath
+from subprocess import CalledProcessError
 
 from boundaries import convert_boundaries
 import breach
 import arc_capture
 import batch
 import local_loadouts
+from restore_units_roles import verified_roles
 import vehicle_crew
 import bugout
 from briefings import BriefingAudience, guid, indexed_pages, read_pages, render
@@ -683,6 +685,12 @@ def main():
     if args.batch:
         loadouts = local_loadouts.collect(source, dev, source_units, dev_units, stock)
         reviewed_members = {guid: asset[0] for guid, asset in loadouts.items()}
+        try:
+            restored = verified_roles(dev_units, stock)
+            asset_aliases = batch.resource_aliases(args.workshop_addons, dev_units, stock)
+        except (OSError, ValueError, CalledProcessError) as exc:
+            parser.error(str(exc))
+        reviewed_members.update({guid: path for guid, path in restored.items() if guid not in locally_owned})
 
         def convert_group_block(body):
             return group_layer(body, source_units, dev_units, stock, locally_owned,
@@ -691,10 +699,6 @@ def main():
         def convert_crew(block):
             return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned)
 
-        try:
-            asset_aliases = batch.resource_aliases(args.workshop_addons, dev_units, stock)
-        except (OSError, ValueError) as exc:
-            parser.error(str(exc))
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
                          asset_aliases, loadouts, spawned_assets, convert_crew, delayed_extractions)
     if args.stage:

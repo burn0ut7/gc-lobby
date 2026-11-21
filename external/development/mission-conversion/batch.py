@@ -66,13 +66,23 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Props/Wrecks/BMP1_wreck/BMP1_wreck.et',
     ('AE300E34EA8FF40C', 'Prefabs/Props/Wrecks/Ural4320_wreck_static.et'):
         'Prefabs/Props/Wrecks/Ural4320_wreck/Ural4320_wreck_static.et',
+    ('AF4BFBE29028A9FD', 'Prefabs/Vegetation/Bush/b_corylus_avellana_1l_collision.et'):
+        'Prefabs/Vegetation/Bush/b_corylus_avellana_1l.et',
     ('CAFF4B51059A0F81', 'PrefabLibrary/Walls/Concrete/ConcreteWall_01_3m.et'):
         'PrefabLibrary/DefaultLibrary/Walls/Concrete/ConcreteWall_01_3m.et',
+    ('C98A6C1C2372354E', 'Prefabs/Vegetation/Bush/b_corylus_avellana_1_collision.et'):
+        'Prefabs/Vegetation/Bush/b_corylus_avellana_1.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
     ('36EA87CEC1BE77E0', 'Prefabs/Vehicles/Wheeled/JLTV/OGPK/M2HB/JLTV_OGPK_Olive.et'): (
         'WCS_JLTV_5C721177A220B42F', '36EA87CEC1BE77E0',
         'Prefabs/Vehicles/Wheeled/JLTV/OGPK/M2HB/JLTV_OGPK_M2HB_Olive.et'),
+    ('3868E03D9A4AF186', 'Prefabs/Vehicles/Tracked/BMP1/BMP1P_base.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '3868E03D9A4AF186',
+        'Prefabs/Vehicles/Tracked/BMP1/BMP1P_Base.et'),
+    ('5CFD8CB5C3E55A4E', 'Prefabs/Vehicles/Tracked/BFV/M2A2_MERDC.et'): (
+        'WCS_M2A2_63120AE07E6C0966', '5CFD8CB5C3E55A4E',
+        'Prefabs/Vehicles/Tracked/M2A2/M2A2_MERDC.et'),
     ('77CA4803A4A2B8E3', 'Prefabs/Drones/FPVBase/FPVRPG.et'): (
         'RealisticCombatDrones_65AD60E204191D37', '77CA4803A4A2B8E3', 'Prefabs/Drones/FPVBase/FPVRpg.et'),
     ('B0DFDF7AAA9C5D39', 'Prefabs/Weapons/Magazines/BC_Shell_12ga_Buckshot.et'): (

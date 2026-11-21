@@ -10,7 +10,7 @@ from groups import inheritance, legacy_member, reviewed_native_ancestry, stock_c
 CHARACTER = re.compile(r'SCR_ChimeraCharacter : "\{[\da-fA-F]{16}\}[^"\n]+\.et" \{')
 PLAYABLE = '  PS_PlayableComponent "{5EFCC1946F475F15}" {'
 LEGACY = re.compile(r'\b(?:PS|TILW)_\w+')
-def migrate_playability(text):
+def migrate_playability(text, *, inherited_playable=False):
     """Remove the reviewed legacy slot marker and retain its authored role label."""
     lines = text.splitlines(keepends=True)
     if PLAYABLE + '\n' not in lines:
@@ -25,7 +25,7 @@ def migrate_playability(text):
     stop = block_end(lines, component)
     data = properties([line.rstrip('\n') for line in lines[component + 1:stop]],
                       {'m_bIsPlayable', 'm_sName', 'm_name'})
-    if (data.get('m_bIsPlayable') != '1'
+    if (data.get('m_bIsPlayable', '1' if inherited_playable else '0') != '1'
             or any(not re.fullmatch(QUOTED, data[field]) for field in ('m_sName', 'm_name') if field in data)):
         raise ValueError('unsupported legacy playability values')
     authored_name = data.get('m_sName', '""')
