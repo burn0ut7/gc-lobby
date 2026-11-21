@@ -18,7 +18,7 @@ from groups import inheritance
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer
-from outcomes import FRAMEWORK, leaves, render as render_outcome
+from outcomes import FRAMEWORK, leaves, render as render_outcome, render_capture_trackers
 import polygon_capture
 from respawns import authored_respawn_fields, read_respawns
 import teleports
@@ -237,6 +237,15 @@ WORKSHOP_RESOURCE_ALIASES = {
     ('65FE6DD2E27E366E', 'Prefabs/Vehicles/Wheeled/JLTV/CROWS_2/Javelin/JLTV_CROWSII_Javelin_Olive.et'): (
         'WCS_JLTV_5C721177A220B42F', '65FE6DD2E27E366E',
         'Prefabs/Vehicles/Wheeled/JLTV/CROWS_II/Javelin/JLTV_CROWS_II_Javelin_Olive.et'),
+    ('9B906EE7402FDA06', 'Prefabs/Vehicles/Wheeled/JLTV/CROWS_2/Javelin/JLTV_CROWSII_Javelin.et'): (
+        'WCS_JLTV_5C721177A220B42F', '9B906EE7402FDA06',
+        'Prefabs/Vehicles/Wheeled/JLTV/CROWS_II/Javelin/JLTV_CROWS_II_Javelin.et'),
+    ('A19889DD96914B75', 'Prefabs/Vehicles/Wheeled/JLTV/CROWS_1/M2HB/JLTV_CROWS.et'): (
+        'WCS_JLTV_5C721177A220B42F', 'A19889DD96914B75',
+        'Prefabs/Vehicles/Wheeled/JLTV/CROWS/M2HB/JLTV_CROWS_M2HB.et'),
+    ('E49B4C9AEA70BE3F', 'Prefabs/Vehicles/Wheeled/JLTV/OGPK/M2HB/JLTV_OGPK.et'): (
+        'WCS_JLTV_5C721177A220B42F', 'E49B4C9AEA70BE3F',
+        'Prefabs/Vehicles/Wheeled/JLTV/OGPK/M2HB/JLTV_OGPK_M2HB.et'),
     ('77CA4803A4A2B8E3', 'Prefabs/Drones/FPVBase/FPVRPG.et'): (
         'RealisticCombatDrones_65AD60E204191D37', '77CA4803A4A2B8E3', 'Prefabs/Drones/FPVBase/FPVRpg.et'),
     ('B0DFDF7AAA9C5D39', 'Prefabs/Weapons/Magazines/BC_Shell_12ga_Buckshot.et'): (
@@ -1103,7 +1112,7 @@ def area_rules(source, world, dev=None):
                 audit[f'{layer}:{line}'] = {'gap': str(exc)}
                 continue
             conditions.update(result)
-            placements[(layer, line)] = ({flag[1:-1] for flag in result}, ''.join(areas))
+            placements[(layer, line)] = (result, ''.join(areas))
             if capture_details:
                 audit[f'{layer}:{line}'] = capture_details
     return conditions, placements, audit
@@ -1565,6 +1574,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         rule_text += schedules
         used_flags.update(entry['flag'] for entry in spawner_audit if entry['trigger'] == 'area capture')
     unused_flags = []
+    status_areas = {}
+    flag_references = None
     for layer in source.layers[world.lower()]:
         if layer in staged:
             parts[layer] = [staged[layer]]
@@ -1617,8 +1628,23 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         result.append(startup_cleanup(block))
                     except ValueError as exc:
                         blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
-                elif (layer, line) in area_placements and area_placements[(layer, line)][0] <= used_flags:
-                    areas = area_placements[(layer, line)][1]
+                elif (layer, line) in area_placements:
+                    checks, areas = area_placements[(layer, line)]
+                    status_checks = {flag: check for flag, check in checks.items() if flag[1:-1] not in used_flags}
+                    if status_checks:
+                        if flag_references is None:
+                            flag_references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                                                       if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+                        for flag, check in status_checks.items():
+                            # An event's display name is separate from the flag read by its condition.
+                            name_fields = len(re.findall(r'^ +m_name ' + re.escape(flag) + r'\s*$', flag_references, re.M))
+                            if (not any('m_Messages ' in item for item in check)
+                                    or flag_references.count(flag) != 1 + name_fields
+                                    or flag[1:-1] in script_text(source)):
+                                blockers.append({'rule': kind, 'file': layer, 'line': line,
+                                                 'detail': 'capture flag may have an unconverted consumer ' + flag})
+                            else:
+                                status_areas[flag] = check
                     area_names.extend(re.findall(r'^(?:GC_RadiusAreaEntity|PolylineShapeEntity) ([\w.-]+) ', areas, re.M))
                     result.append(areas)
                 elif (gap := row.get('captureCandidate', {}).get(f'{layer}:{line}', {}).get('gap')):
@@ -1661,6 +1687,15 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         except ValueError as exc:
             blockers.append({'rule': 'layer conversion', 'file': layer, 'detail': str(exc)})
 
+    if status_areas:
+        names = {event['name'] for event in rules.values()}
+        trackers = {flag[1:-1]: 'GC_MigrationAreaStatus_' + guid(world + '/status/' + flag)
+                    for flag in status_areas}
+        if names.intersection(trackers.values()):
+            blockers.append({'rule': 'framework events', 'file': world,
+                             'detail': 'generated area status tracker name collides with a mission event'})
+        else:
+            rule_text += '\n'.join(render_capture_trackers(world, trackers, status_areas, set())) + '\n'
     if mode is None:
         blockers.append({'rule': 'mode placement', 'file': world})
     else:
@@ -1837,6 +1872,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare victory notices below and at the authored casualty threshold after the first sample.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Compare framing and zoom against the legacy cover.')
+    if status_areas:
+        remaining.append('Compare capture and loss notices for areas with no outcome rule.')
+    if any('GC_NavmeshRebuildComponent' in body for bodies in boundaries.values() for body in bodies):
+        remaining.append('Compare navmesh rebuilds for map shape placements.')
     if mode and any(line.startswith((' m_iReconnectTime ', ' m_iReconnectTimeAfterBriefing ')) for line in mode):
         remaining.append('Compare reconnect reservations before and after entering Match.')
     if mode and any(line.strip() in ('m_bOverrideGeocoords 1', 'm_bOverrideTimeZoneInfo 1') for line in mode):

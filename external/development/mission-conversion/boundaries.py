@@ -78,17 +78,22 @@ def validate_polygon(vertices, origin, yaw=0, pitch=0, roll=0):
 
 def settings(lines, extended_shapes, standalone=False):
     result, overlay, cover = {}, {}, {}
+    navmesh = []
     ids = {'TILW_MapShapeComponent': '6508F5526836BC09'} if standalone else COMPONENTS
     seen = set()
     i = 0
     while i < len(lines):
         head = re.fullmatch(r'(\w+) "\{([A-Fa-f0-9]{16})\}" \{', lines[i].strip())
-        if not head or ids.get(head[1]) != head[2].upper() or head[1] in seen:
+        if not head or head[1] in seen:
             raise ValueError('custom AO component')
         seen.add(head[1])
         end = block_end(lines, i)
         body = lines[i+1:end]
-        if head[1] == 'TILW_AOLimitComponent':
+        if extended_shapes and standalone and head[1] == 'TILW_NavmeshRegenComponent' and not body:
+            navmesh = [f'  GC_NavmeshRebuildComponent "{{{head[2]}}}" {{', '  }']
+        elif ids.get(head[1]) != head[2].upper():
+            raise ValueError('custom AO component')
+        elif head[1] == 'TILW_AOLimitComponent':
             result = properties(body, ALLOWED)
         # The standard legacy AO prefab disables both visual components.
         # An instance can store style values without enabling either component.
@@ -107,10 +112,10 @@ def settings(lines, extended_shapes, standalone=False):
         i = end+1
     if not standalone and not extended_shapes and not cover and overlay.get('m_drawLine', '0') != '0':
         raise ValueError('zoom-dependent auxiliary outline needs separate conversion')
-    return result, overlay, cover
+    return result, overlay, cover, navmesh
 
 
-def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=False, world_width=False):
+def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=False, world_width=False, navmesh=()):
     keys = overlay.get('m_factionKeys', '')
     empty = overlay.get('m_visibleForEmptyFaction', '1')
     color = overlay.get('m_color', '0 0 0 0.75')
@@ -142,7 +147,7 @@ def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=Fa
     if keys:
         lines.extend(['   m_aFactionKeys {', '    ' + keys.replace('\n', '\n    '), '   }',
                       '   m_bVisibleWithoutFaction ' + empty])
-    return '\n'.join([*lines, '  }', ' }', *placement, '}'])
+    return '\n'.join([*lines, '  }', *navmesh, ' }', *placement, '}'])
 
 
 def render_cover(coords, vertices, yaw, cover, pitch=0, roll=0):
@@ -173,6 +178,7 @@ def render_cover(coords, vertices, yaw, cover, pitch=0, roll=0):
 def convert_instance(lines, name, passive_only=False, allow_public_faction_color=False, split_fill=True,
                      extended_shapes=False, standalone=False, parent_origin=(0, 0, 0)):
     values, overlay, cover = {}, {}, {}
+    navmesh = []
     placement = []
     vertices = []
     coords = None
@@ -184,7 +190,7 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
         field = lines[i].strip()
         if field == 'components {':
             end = block_end(lines, i)
-            values, overlay, cover = settings(lines[i+1:end], extended_shapes, standalone)
+            values, overlay, cover, navmesh = settings(lines[i+1:end], extended_shapes, standalone)
             i = end
         elif field == 'Points {':
             end = block_end(lines, i)
@@ -244,7 +250,7 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     if standalone:
         if not any(line.startswith(' LineColor ') for line in placement):
             placement.append(' LineColor 1 0 0 1')
-        return convert_passive(name, placement, overlay, standalone=True), len(vertices)
+        return convert_passive(name, placement, overlay, standalone=True, navmesh=navmesh), len(vertices)
     cover_shape = render_cover(origin, vertices, yaw, cover, pitch, roll) + '\n' if cover else ''
     if passive_only or (extended_shapes and values.get('Enabled') == '0' and overlay):
         if values.get('Enabled') != '0':
