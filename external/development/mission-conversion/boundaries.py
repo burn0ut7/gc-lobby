@@ -141,7 +141,7 @@ def settings(lines, extended_shapes, standalone=False, passive_cover=False, *, b
 
 
 def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=False, world_width=False,
-                    navmesh=(), require_assigned=False):
+                    navmesh=(), require_assigned=False, open_fill=False):
     keys = overlay.get('m_factionKeys', '')
     if '""' in keys and re.fullmatch(r'(?:\s*"[\w.-]*"\s*)+', keys):
         assigned = re.findall(r'"[\w.-]+"', keys)
@@ -171,6 +171,8 @@ def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=Fa
              '   m_bFillEnabled ' + fill, '   m_FillColor ' + color, '   m_bInvertFill ' + invert]
     if overlay.get('Enabled') == '0':
         lines.append('   m_bEnabled 0')
+    if open_fill:
+        lines.append('   m_bFillOpenShape 1')
     if outline == '1':
         lines.append('   m_fLineWidth ' + line_width)
         if world_width:
@@ -309,13 +311,16 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
             placement.remove(' IsClosed 1')
         placement.append(' IsClosed 0')
         closed = False
-    if closed is not False or standalone_ao:
+    open_fill = (extended_shapes and closed is False and not cover and not standalone_ao
+                 and (standalone or passive_overlay) and overlay.get('m_drawArea', '1') == '1'
+                 and overlay.get('m_drawLine') == '1' and overlay.get('m_invert', '0' if standalone else '1') == '0')
+    if closed is not False or standalone_ao or open_fill:
         relative = tuple(axis * parent_scale for axis in origin)
         if parent_yaw:
             relative = rotate_point(relative, parent_yaw, 0, 0)
         world_origin = tuple(local + parent for local, parent in zip(relative, parent_origin))
         validate_polygon(vertices, world_origin, yaw + parent_yaw, pitch, roll)
-    if (closed is False and not (standalone_ao and not visible_standalone)
+    if (closed is False and not open_fill and not (standalone_ao and not visible_standalone)
             and (not (standalone or passive_overlay) or cover
                  or not 2 <= len(vertices) <= 128 or overlay.get('m_drawArea', '1') != '0')):
         raise ValueError('open map shape requires a passive outline with 2 to 128 points')
@@ -324,7 +329,8 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
         if not any(line.startswith(' LineColor ') for line in placement):
             placement.append(' LineColor 1 0 0 1')
         if not standalone_ao:
-            return convert_passive(name, placement, overlay, standalone=True, navmesh=navmesh), len(vertices)
+            return convert_passive(name, placement, overlay, standalone=True, navmesh=navmesh,
+                                   open_fill=open_fill), len(vertices)
         if visible_standalone:
             standalone_overlay = convert_passive('', placement, overlay, standalone=True) + '\n'
         if closed is False:
@@ -335,7 +341,8 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     if passive_only or (passive_overlay and not standalone_ao):
         if values.get('Enabled') != '0':
             raise ValueError('passive shape requires a disabled AO')
-        return cover_shape + convert_passive(name, placement, overlay, world_width=extended_shapes), len(vertices)
+        return cover_shape + convert_passive(name, placement, overlay, world_width=extended_shapes,
+                                             open_fill=open_fill), len(vertices)
     keys = values.get('m_factionKeys','')
     vehicles = values.get('m_ignoredVehicles','')
     if keys and not re.fullmatch(r'(?:\s*"[\w.-]+"\s*)+', keys):

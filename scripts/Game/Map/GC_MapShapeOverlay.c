@@ -84,7 +84,7 @@ class GC_MapShapeOverlay
 		foreach (int index, int count : counts)
 		{
 			bool open = openLines && openLines.Contains(index);
-			if (count < 2 || (!open && count < 3) || (open && (fills[index] != 0 || inverted[index])))
+			if (count < 2 || ((!open || fills[index] != 0) && count < 3) || (open && inverted[index]))
 				return;
 			total += count;
 		}

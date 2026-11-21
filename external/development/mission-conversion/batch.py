@@ -890,6 +890,9 @@ UNITS_PREFAB_ALIASES = {
     ('B343AB76B0725657', 'Prefabs/Items/Equipment/Radios/Radio_R187P1_OLD_Separatist.et'): (
         'B343AB76B0725657', 'Prefabs/Items/Equipment/Radios/RU/Radio_R187P1_OLD.et',
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
+    ('B343AB76B0725657', 'Prefabs/Items/Equipment/Radios/Radio_R187P1_OLD_Insurgent.et'): (
+        'B343AB76B0725657', 'Prefabs/Items/Equipment/Radios/RU/Radio_R187P1_OLD.et',
+        '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
     ('B343AB76B0725657', 'Prefabs/Items/Equipment/Radios/Radio_R187P1_OLD_Single_Separatist.et'): (
         'B343AB76B0725657', 'Prefabs/Items/Equipment/Radios/RU/Radio_R187P1_OLD.et',
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
@@ -2601,8 +2604,24 @@ def area_rules(source, world, dev=None):
                         placement, (trigger, fields), vertices = polygon_capture.read(fields, TRIGGER)
                     elif ' {' in fields:
                         fields, attached, amounts = attached_trigger_map(fields, dev)
-                    flag_field = next(value.strip() for value in fields if value.strip().startswith('m_flagName '))
+                    flag_field = next((value.strip() for value in fields if value.strip().startswith('m_flagName ')),
+                                      'm_flagName ""')
                     flag = flag_field.removeprefix('m_flagName ')
+                    status_only = flag == '""'
+                    if status_only:
+                        if (not name or shape or trigger['kind'] != 'Faction'
+                                or not any(field.strip() == 'm_sendStatusMessages 1' for field in fields)):
+                            raise ValueError('area trigger has no explicit flag')
+                        if references is None:
+                            references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                                                   if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+                        if scripts is None:
+                            scripts = script_text(source)
+                        flag = f'"GC_MigrationStatus_{guid(f"{layer}:{line}/{name}")}"'
+                        if flag in references or flag[1:-1] in scripts or f'"{name}"' in scripts:
+                            raise ValueError('capture status name conflicts with authored mission content')
+                        fields = [field for field in fields if field.strip() != 'm_flagName ""']
+                        fields.append(' m_flagName ' + flag)
                     if not LEGACY_FLAG.fullmatch(flag) or len(flag.encode()) > 130:
                         raise ValueError('invalid area flag ' + flag)
                     if flag in conditions or flag in flags:
@@ -2631,6 +2650,8 @@ def area_rules(source, world, dev=None):
                     elif trigger['kind'] == 'Faction' and trigger['guid'] == '8C576D46F6579229':
                         built, area, details = capture_instance(world, area_name, fields, polygon=bool(shape))
                         capture_details[flag[1:-1]] = {'area': area_name, **details}
+                        if status_only:
+                            capture_details[flag[1:-1]]['statusOnly'] = True
                         rule = built[flag]
                     else:
                         raise ValueError('inconsistent trigger identity')
@@ -2664,9 +2685,6 @@ def area_rules(source, world, dev=None):
                         capture_details.setdefault(flag[1:-1], {'area': area_name}).update(amounts)
                     result[flag] = rule
                     areas.append(area)
-            except StopIteration:
-                audit[f'{layer}:{line}'] = {'gap': 'area trigger has no explicit flag'}
-                continue
             except (ArithmeticError, KeyError, ValueError) as exc:
                 audit[f'{layer}:{line}'] = {'gap': str(exc)}
                 continue
@@ -3288,8 +3306,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         for flag, check in status_checks.items():
                             # An event's display name is separate from the flag read by its condition.
                             name_fields = len(re.findall(r'^ +m_name ' + re.escape(flag) + r'\s*$', flag_references, re.M))
+                            status_only = row.get('captureCandidate', {}).get(f'{layer}:{line}', {}).get(
+                                flag[1:-1], {}).get('statusOnly')
                             if (not any('m_Messages ' in item for item in check)
-                                    or flag_references.count(flag) != 1 + name_fields
+                                    or flag_references.count(flag) != (0 if status_only else 1 + name_fields)
                                     or flag[1:-1] in script_text(source)):
                                 blockers.append({'rule': kind, 'file': layer, 'line': line,
                                                  'detail': 'capture flag may have an unconverted consumer ' + flag})
@@ -3771,6 +3791,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(isinstance(text, str) and '{3B62608C6AB716B9}' in text and 'm_fSize 128000\n' in text
            for text in draft.values()):
         remaining.append('Compare the oversized cover marker at the authored scale across map zoom levels.')
+    if any(' m_bFillOpenShape 1' in body for bodies in boundaries.values() for body in bodies):
+        remaining.append('Compare polygon fill and confirm the authored open outline has no closing segment.')
     if any(' IsClosed 0' in body for bodies in boundaries.values() for body in bodies):
         remaining.append('Compare open briefing map outlines as zoom and faction view change.')
     if any(path.endswith('.layer') and isinstance(body, str)

@@ -27,6 +27,8 @@ class GC_MapShapeComponent : ScriptComponent
 	protected FactionKey m_sOutlineFactionKey;
 	[Attribute("1", UIWidgets.CheckBox, "Draw a uniform solid fill. Disable for outline only.", category: "Fill")]
 	protected bool m_bFillEnabled;
+	[Attribute("0", UIWidgets.CheckBox, "Fill the polygon while keeping its authored outline open.", category: "Fill")]
+	protected bool m_bFillOpenShape;
 	[Attribute("0", UIWidgets.CheckBox, "Fill outside the polygon instead of inside. The interior remains clear.", category: "Fill")]
 	protected bool m_bInvertFill;
 	[Attribute("0.2 0.5 1 0.2", UIWidgets.ColorPicker, "Solid fill color and opacity. Low opacity keeps terrain and grid readable.", category: "Fill")]
@@ -144,7 +146,7 @@ class GC_MapShapeComponent : ScriptComponent
 		else
 		{
 			closed = m_Shape.IsClosed();
-			if (!closed && (m_bFillEnabled || !openLines))
+			if (!closed && (!openLines || (m_bFillEnabled && (!m_bFillOpenShape || m_bInvertFill))))
 				return;
 			splineOutline = !m_bFillEnabled && !m_bInvertFill && SplineShapeEntity.Cast(m_Shape);
 			m_Shape.GetPointsPositions(polygon);
@@ -161,7 +163,7 @@ class GC_MapShapeComponent : ScriptComponent
 				polygon[i] = m_Shape.CoordToParent(polygon[i]);
 		}
 		// Spline outlines can cross themselves because they never need triangulation.
-		if (polygon.Count() < 2 || (closed && !splineOutline && !ValidPolygon(polygon)))
+		if (polygon.Count() < 2 || ((closed || m_bFillEnabled) && !splineOutline && !ValidPolygon(polygon)))
 			return;
 		if (m_bAutoFrameMap && frameBounds)
 		{
