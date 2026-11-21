@@ -447,7 +447,7 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             for item in lines[i+1:end]:
                 if REF.sub('', item).replace('""', '').strip():
                     raise ValueError('unsupported slot list')
-                out.append(REF.sub(slot, item))
+                out.append(REF.sub(slot, item).rstrip())
             out.append(lines[end])
             i = end
         elif (end := native_group_field_end(lines, i)) is not None:

@@ -25,7 +25,7 @@ import teleports
 from scenery import FIELD, StockPrefabs, WAYPOINT_CLASS
 from weather import convert_weather
 
-LEGACY = re.compile(r'\b(?:TILW|PS)_\w+')
+LEGACY = re.compile(r'\b(?:(?:TILW|PS)_\w+|PK_Entity(?:Deleter|ProtectorComponent))\b')
 MODE = re.compile(r'^PS_GameModeCoop(?: [\w.-]+)? : "'
                   r'(?:\{4CFD54745CD45673\}Prefabs/MP/Modes/PS_GameMode_Lobby_(?:GC|TILWMF)\.et'
                   r'|\{9C2001FE7A2F2281\}Prefabs/MP/Modes/PS_GameMode_Lobby\.et)" \{$')
@@ -63,6 +63,14 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/IronFunnelEvent/MSN2.conf': (
+        '0bd1338b3736f1caa0e5418a9e996696bb14b41e',
+        (('worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/BLUFOR/Players.layer',
+          '7dd2280de0c2199652506029973cf7428ff0c085'),
+         ('worlds/IronFunnelEvent/MSN2/ScoutsOut_Layers/OPFOR/PlayerOPFOR.layer',
+          '33881ef2ecfaa07dcd497d15716e0e99517202a9')),
+        108, 107,
+    ),
     'Missions/Jub/MissionWithAssets.conf': (
         '00bd356069766c8d7d0c7235edf17f9992941a32',
         (('worlds/Jub/MissionWithAssets/MissionWithAssets_Layers/players_RU.layer',
@@ -223,17 +231,68 @@ def blocks(text):
         index = end + 1
 
 
+STARTUP_CLEANUP = re.compile(r'(?P<group>\$grp )?PK_EntityDeleter(?: (?P<name>[\w.-]+))? \{')
+STARTUP_PROTECTION = re.compile(rf' +PK_EntityProtectorComponent {SERIALIZED_ID} \{{')
+STARTUP_FIELDS = {
+    'm_fRadius': 'm_fRadius',
+    'm_excludePrefabsInList': 'm_bExcludePrefabs',
+    'm_bVObjectsOnly': 'm_bVisualObjectsOnly',
+    'm_bByParentOnly': 'm_bRootsOnly',
+    'm_bPreviewShape': 'm_bPreviewShape',
+}
+
+
+def startup_cleanup(block):
+    root = STARTUP_CLEANUP.fullmatch(block[0])
+    if not root:
+        raise ValueError('unsupported startup cleanup placement')
+    output = []
+    for name, lines in polygon_capture.members(block, root['group'], root['name']):
+        values = properties(lines, STARTUP_FIELDS.keys() | CAPTURE_TRANSFORM | {'m_prefabFilterList'})
+        transform = {key: value for key, value in values.items() if key in CAPTURE_TRANSFORM}
+        if ('coords' not in transform or any(not FIELD.fullmatch(f'{key} {v}') for key, v in transform.items())
+                or ('angles' in transform and any(axis in transform for axis in ('angleX', 'angleY', 'angleZ')))):
+            raise ValueError('unsupported cleanup transform')
+        radius = values.get('m_fRadius', '20')
+        if not re.fullmatch(NUMBER, radius) or not 0 <= Decimal(radius) <= 1000:
+            raise ValueError('startup cleanup radius is out of range')
+        if any(values.get(field, '0') not in ('0', '1') for field in STARTUP_FIELDS if field != 'm_fRadius'):
+            raise ValueError('unsupported startup cleanup option')
+        filters = values.get('m_prefabFilterList', '')
+        entries = [ref[0] for ref in REF.finditer(filters)]
+        if (REF.sub('', filters).replace('""', '').strip()
+                or any(not REF.fullmatch(entry)[2].endswith('.et') for entry in entries)):
+            raise ValueError('unsupported startup cleanup prefab filter')
+        entity = 'GC_StartupCleanupEntity' + (f' {name}' if name else '')
+        output.extend([f'{entity} {{', *(f' {key} {v}' for key, v in transform.items()),
+                       *(f' {native} {values[key]}' for key, native in STARTUP_FIELDS.items() if key in values)])
+        if entries:
+            output.extend([' m_aPrefabs {', *(f'  {entry}' for entry in entries), ' }'])
+        output.append('}')
+    if not output:
+        raise ValueError('empty startup cleanup group')
+    return '\n'.join([*output, ''])
+
+
 def native_placement(block):
     if not NATIVE.match(block[0]):
         return None
     lines = block
-    if any('TILW_NavmeshRegenComponent' in line for line in block):
+    if any('TILW_NavmeshRegenComponent' in line or 'PK_EntityProtectorComponent' in line for line in block):
         lines = block.copy()
         stack = []
         for index, line in enumerate(block):
             if (NAVMESH_COMPONENT.fullmatch(line) and stack and stack[-1] == 'components {'
                     and block[index + 1] == ' ' * (len(line) - len(line.lstrip())) + '}'):
                 lines[index] = line.replace('TILW_NavmeshRegenComponent', 'GC_NavmeshRebuildComponent', 1)
+            if STARTUP_PROTECTION.fullmatch(line) and stack and stack[-1] == 'components {':
+                end = block_end(block, index)
+                values = properties(block[index + 1:end], {'m_keepEntityAfterDelete'})
+                if values.get('m_keepEntityAfterDelete', '1') not in ('0', '1'):
+                    raise ValueError('unsupported cleanup protection settings')
+                lines[index] = line.replace('PK_EntityProtectorComponent', 'GC_StartupCleanupProtectionComponent', 1)
+                for field in range(index + 1, end):
+                    lines[field] = ''
             if line.endswith(' {'):
                 stack.append(line.strip())
             elif line.strip() == '}':
@@ -1349,6 +1408,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         converted, count, slots = convert_group_block(interaction_placements.get((layer, line), body))
                         result.append(converted)
                         group_blocks.append({'file': layer, 'line': line, 'groups': count, 'slots': slots})
+                    except ValueError as exc:
+                        blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
+                elif kind == 'PK_EntityDeleter':
+                    try:
+                        result.append(startup_cleanup(block))
                     except ValueError as exc:
                         blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
                 elif (layer, line) in area_placements and area_placements[(layer, line)][0] <= used_flags:
