@@ -82,6 +82,8 @@ STOCK_RESOURCE_ALIASES = {
         'PrefabLibrary/DefaultLibrary/Walls/Net/NetFence_04_8m.et',
     ('25B265F3E7CBDFC8', 'Prefabs/Props/Wrecks/BMP1_wreck.et'):
         'Prefabs/Props/Wrecks/BMP1_wreck/BMP1_wreck.et',
+    ('75FEF1CA582431F3', 'Prefabs/Props/Wrecks/BTR70_wreck.et'):
+        'Prefabs/Props/Wrecks/BTR70_Wreck/BTR70_wreck.et',
     ('AE300E34EA8FF40C', 'Prefabs/Props/Wrecks/Ural4320_wreck_static.et'):
         'Prefabs/Props/Wrecks/Ural4320_wreck/Ural4320_wreck_static.et',
     ('AF4BFBE29028A9FD', 'Prefabs/Vegetation/Bush/b_corylus_avellana_1l_collision.et'):
@@ -123,6 +125,9 @@ WORKSHOP_RESOURCE_ALIASES = {
         'Bystrany_6626CB89B6B9C913', '0C931F860C09AC4C', 'Worlds/Bystrany/Bystrany.topo'),
 }
 UNITS_PREFAB_ALIASES = {
+    ('AAB3119124C9167A', 'Prefabs/Vehicles/Wheeled/BTR70/1980 Mot Rifle/BTR70_MSV80.et'): (
+        'AAB3119124C9167A', 'Prefabs/Vehicles/Wheeled/BTR70/USSR/BTR70_USSR.et',
+        '6ff98c749e6e58fb337ad80c11bdb2cabcf5beebe84afdf0fc8a1e6e917bdd94'),
     ('F503F71C08BE3F7D', 'Prefabs/Vehicles/Helicopters/AUS_MH60/AUS_UH60_armed.et'): (
         '48F288F5BFF10D8B', 'Prefabs/Vehicles/Helicopters/AUS_MH60/AUS_UH60_armed.et',
         '67ea7fa93be8a84811d12f1be66ae2bce2b58f0a881dbd4375e0a89cbeeee5cd'),

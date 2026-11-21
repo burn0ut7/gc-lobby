@@ -100,7 +100,7 @@ def instance(lines, name, inherited=None, *, draw_order=False):
 
 
 def relocate_images(text, dev):
-    pattern = re.compile(r'(?m)^(   m_s(?:ImageSetOrImage|HighlightImageSet) "\{)([\da-fA-F]{16})(\})([^"\n]+)(")$')
+    pattern = re.compile(r'(?m)^( {3,}m_s(?:ImageSetOrImage|HighlightImageSet) "\{)([\da-fA-F]{16})(\})([^"\n]+)(")$')
 
     def resolve(match):
         guid = match[2].upper()
@@ -116,12 +116,53 @@ def relocate_images(text, dev):
     return pattern.sub(resolve, text)
 
 
+def marker_fields(match):
+    guid = match['guid'].upper()
+    if guid == BASE:
+        return None
+    preset = PRESETS.get(guid)
+    if not preset or preset['path'] != match['path']:
+        raise ValueError(f'inherited marker preset {guid}')
+    return preset['fields']
+
+
+def convert_instance(lines, name, inherited, draw_order, depth=0):
+    # Preserve parent-relative coordinates and rotation by keeping the same hierarchy.
+    if not lines or lines[-1].strip() != '}':
+        return instance(lines, name, inherited, draw_order=draw_order), 1
+    indent = ' ' * (len(lines[-1]) - len(lines[-1].lstrip()))
+    start = next((i for i, line in enumerate(lines) if line == indent + '{'), None)
+    if start is None:
+        return instance(lines, name, inherited, draw_order=draw_order), 1
+    stop = block_end(lines, start)
+    if stop != len(lines) - 1 or depth >= 16:
+        raise ValueError('unsupported marker hierarchy')
+    marker = instance(lines[:start], name, inherited, draw_order=draw_order).splitlines()
+    children = []
+    count = 1
+    index = start + 1
+    while index < stop:
+        head = lines[index].removeprefix(indent + ' ')
+        child = LEGACY.fullmatch(head)
+        if not child or child['group']:
+            raise ValueError('unsupported child of marker: ' + head.strip().partition(' ')[0])
+        end = block_end(lines, index)
+        nested, nested_count = convert_instance(lines[index + 1:end],
+                                                (' ' + child['name']) if child['name'] else '',
+                                                marker_fields(child), draw_order, depth + 1)
+        children.extend('  ' + line for line in nested.splitlines())
+        count += nested_count
+        index = end + 1
+    return '\n'.join([*marker[:-1], ' {', *children, ' }', marker[-1]]), count
+
+
 def convert_layer(text, dev=None, *, draw_order=False):
     """Process complete icon-only layers. Mixed layers keep their original ordering for review."""
     if not re.search(r'^(?:\$grp )?PS_ManualMarker\b', text, re.M):
         return None
     lines = text.splitlines()
     result = []
+    count = 0
     i = 0
     while i < len(lines):
         if not lines[i].strip():
@@ -130,15 +171,10 @@ def convert_layer(text, dev=None, *, draw_order=False):
         match = LEGACY.fullmatch(lines[i])
         if not match:
             raise ValueError(f'line {i + 1} mixed or custom placement')
-        inherited = None
-        if match['guid'].upper() != BASE:
-            preset = PRESETS.get(match['guid'].upper())
-            if not preset or preset['path'] != match['path']:
-                raise ValueError(f'line {i + 1} inherited marker preset {match["guid"]}')
-            inherited = preset['fields']
         start = i
         stop = block_end(lines, i)
         try:
+            inherited = marker_fields(match)
             if match['group']:
                 i += 1
                 while i < stop:
@@ -146,14 +182,18 @@ def convert_layer(text, dev=None, *, draw_order=False):
                     if not head:
                         raise ValueError('custom grouped instance')
                     end = block_end(lines, i)
-                    result.append(instance(lines[i + 1:end], (' ' + head['name']) if head['name'] else '', inherited,
-                                           draw_order=draw_order))
+                    rendered, converted = convert_instance(lines[i + 1:end], (' ' + head['name']) if head['name'] else '',
+                                                           inherited, draw_order)
+                    result.append(rendered)
+                    count += converted
                     i = end + 1
             else:
-                result.append(instance(lines[i + 1:stop], (' ' + match['name']) if match['name'] else '', inherited,
-                                       draw_order=draw_order))
+                rendered, converted = convert_instance(lines[i + 1:stop], (' ' + match['name']) if match['name'] else '',
+                                                       inherited, draw_order)
+                result.append(rendered)
+                count += converted
         except ValueError as exc:
             raise ValueError(f'line {i + 1 if match["group"] else start + 1} {exc}') from exc
         i = stop + 1
     output = '\n'.join(result) + '\n'
-    return (relocate_images(output, dev) if dev else output), len(result)
+    return (relocate_images(output, dev) if dev else output), count
