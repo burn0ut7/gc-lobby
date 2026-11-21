@@ -61,6 +61,12 @@ STOCK_FORCED_CALLSIGNS = {
     '68B49475034AE9C4', '68B49475050A0FED', '68B4947507BD96A1', '68B494750A66A9AD',
     '68B494753290ECAA', '68B494751EAA3C6F', '68B494751D89F7E5', '68B49475189DF08B',
 }
+# These overrides were resolved by spawning the source component layouts
+# and looking up the assigner the same way the legacy playable manager does.
+VERIFIED_PLACED_CALLSIGNS = {
+    '651367042C5F047E', '657D06A2A8998A83', '68D0CC3F0387DDD0',
+    '68D0CC3F2FF116CA', '68D0CC3F63B3DF75',
+}
 BASE_CHARACTER = ('37578B1666981FCE', 'Prefabs/Characters/Core/Character_Base.et')
 UK_CHARACTER_BASE = ('542CBB6908CA71D8', 'Prefabs/Characters/Factions/BLUFOR/UK_Army/Character_UK_Base.et')
 UK_PROVIDER = 'BritishForces_5AE50EC5B8D6F4AE'
@@ -752,7 +758,14 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             while j < end:
                 last = block_end(lines, j)
                 match = CALL.fullmatch(lines[j])
-                if match and (match[1].upper() == STANDARD_CALLSIGN or match[1].upper() in reviewed_callsigns):
+                if (match and match[1].upper() == '65136701CA021D8F'
+                        and assigned == (STANDARD_CALLSIGN, {'Enabled': 1})):
+                    placed = callsign(lines[j+1:last])
+                    if placed != {'Enabled': 0, 'm_iCompanyCallsign': 1, 'm_iSquadCallsign': 1}:
+                        raise ValueError('changed secondary callsign component')
+                elif match and (match[1].upper() == STANDARD_CALLSIGN
+                                or match[1].upper() in VERIFIED_PLACED_CALLSIGNS
+                                or match[1].upper() in reviewed_callsigns):
                     identity = match[1].upper()
                     placed = callsign(lines[j+1:last])
                     if assigned is not None:
