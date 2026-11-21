@@ -10,10 +10,11 @@ from pathlib import Path, PurePosixPath
 import re
 import subprocess
 
+from briefings import block_end
 from catalog import REF, SOURCE_TEXT, Snapshot, TYPES
 from dependencies import dependency_resources
 from install_batch import resource_databases, unregistered_references
-from launchers import META_NAME, WORLD_REF, launcher
+from launchers import GENERATED, META_NAME, WORLD_REF, launcher
 from scenery import StockPrefabs
 from terrain_parents import LONGMOOR_PARENT, LONGMOOR_PROVIDER, has_reviewed_longmoor, is_longmoor_subscene
 
@@ -49,6 +50,14 @@ def facts(snapshot, path):
     if PurePosixPath(path).suffix.lower() not in SOURCE_TEXT:
         return {}, [], []
     text = snapshot.read(path)
+    if path.endswith('.conf') and text.lstrip().startswith('GC_MissionHeader'):
+        lines = text.splitlines()
+        for start, line in enumerate(lines):
+            if GENERATED.fullmatch(line):
+                stop = block_end(lines, start)
+                # Snapshot rows contain diagnostic resource origins as well as actual resources.
+                lines[start:stop + 1] = [''] * (stop - start + 1)
+        text = '\n'.join(lines)
     categories = {}
     for no, line in enumerate(text.splitlines(), 1):
         line = line.strip()

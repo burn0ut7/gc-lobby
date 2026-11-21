@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import subprocess
 
+from briefings import block_end
 from catalog import Snapshot
 
 
@@ -20,6 +21,7 @@ BUSTERS = 'worlds/Corax/SerriffBusters/SerrifBusters.ent'
 TOPDOWN = 'worlds/Delfer/Topdown/Topdown.ent'
 LEGACY_HEADER_TYPE = re.compile(rb'\A((?:\xef\xbb\xbf)?[ \t\r\n]*)SCR_MissionHeader(?=\s*\{)')
 GC_HEADER_TYPE = re.compile(rb'\A(?:\xef\xbb\xbf)?[ \t\r\n]*GC_MissionHeader(?=\s*\{)')
+GENERATED = re.compile(r' m_GC_GeneratedMetadata GC_GeneratedMissionMetadata(?: "[^"]+")? \{')
 
 
 def replace_reference(text, pattern, guid, path):
@@ -28,6 +30,10 @@ def replace_reference(text, pattern, guid, path):
         raise ValueError(f'expected one resource reference for {path}')
     match = matches[0]
     return text[:match.start(2)] + guid + '}' + path + text[match.end(3):]
+
+
+def native_header(body):
+    return LEGACY_HEADER_TYPE.sub(rb'\g<1>GC_MissionHeader', body, count=1)
 
 
 def launcher(source, dev, header):
@@ -68,22 +74,74 @@ def launcher(source, dev, header):
             raise ValueError(f'{guid} already belongs to another Dev resource')
         if path in dev.files and path not in dev.resources.get(guid, []):
             raise ValueError(f'{path} already has a different Dev identity')
+    body = replace_reference(text, WORLD_REF, world_id, world)
     files = {
-        header: replace_reference(text, WORLD_REF, world_id, world),
+        header: native_header(body.encode()).decode(),
         header + '.meta': replace_reference(header_meta, META_NAME, header_id, header),
         world + '.meta': replace_reference(source.read(world + '.meta'), META_NAME, world_id, world),
     }
     return world, world_id, files
 
 
-def prepare_metadata_headers(dev, plan, headers):
+def merge_metadata_header(dev, header, world, capture, body):
+    """Retain the authoritative header and copy only the native export's snapshot."""
+    world_files = dev.closure(world) | {header + '.meta'}
+    world_files.update(path + '.meta' for path in tuple(world_files) if path + '.meta' in dev.files)
+    for path in sorted(world_files):
+        original = dev.read_raw(path)
+        captured = (capture / path).read_bytes()
+        if original.replace(b'\r\n', b'\n') != captured.replace(b'\r\n', b'\n'):
+            raise ValueError(f'{path} differs from the captured Dev world')
+    exported = (capture / header).read_text(encoding='utf-8-sig')
+    matches = list(WORLD_REF.finditer(exported))
+    before = WORLD_REF.search(dev.read(header))
+    if len(matches) != 1 or matches[0].groups()[1:3] != before.groups()[1:3]:
+        raise ValueError(f'{header} export identifies a different world')
+
+    def metadata_span(lines):
+        matches = [i for i, line in enumerate(lines) if GENERATED.fullmatch(line.rstrip('\r\n'))]
+        if len(matches) > 1:
+            raise ValueError(f'{header} has duplicate generated snapshots')
+        if matches:
+            start, = matches
+            return start, block_end(lines, start) + 1
+        return None
+
+    export_lines = exported.splitlines()
+    span = metadata_span(export_lines)
+    if not span:
+        raise ValueError(f'{header} has no native snapshot to merge')
+    start, stop = span
+    metadata = export_lines[start:stop]
+    if ('  m_iSchemaVersion 2' not in metadata
+            or f'  m_sWorld "{{{before[2]}}}{world}"' not in metadata
+            or '  m_sResourceCoverage "authored_container_graph_partial"' not in metadata):
+        raise ValueError(f'{header} snapshot has an unexpected schema, world or coverage')
+    lines = body.decode('utf-8').splitlines(keepends=True)
+    newline = '\r\n' if b'\r\n' in body else '\n'
+    destination = metadata_span(lines)
+    if destination:
+        start, stop = destination
+    else:
+        start = stop = max((i for i, line in enumerate(lines) if line.rstrip('\r\n') == '}'), default=-1)
+        if start < 1 or any(line.strip() for line in lines[start + 1:]):
+            raise ValueError(f'{header} does not have a canonical root close')
+    lines[start:stop] = [line + newline for line in metadata]
+    return ''.join(lines).encode()
+
+
+def prepare_metadata_headers(dev, plan, headers, capture=None):
     """Stage only the root type of file-cleared launchers for the native metadata exporter."""
     if plan.get('target') != dev.commit:
         raise ValueError('the metadata plan was generated for a different Dev commit')
     eligible = plan.get('committedLauncherMetadata')
     if not eligible:
         raise ValueError('the metadata plan contains no file-cleared launcher checks')
-    selected = set(headers) if headers else set(eligible)
+    selected = set(headers) if headers else {
+        header for header in eligible if not capture or (capture / header).is_file()
+    }
+    if not selected:
+        raise ValueError('no audited launcher headers were found in the capture directory')
     if selected - eligible.keys():
         raise ValueError('the plan did not clear these launchers: ' + ', '.join(sorted(selected - eligible.keys())))
     prepared, unsupported = {}, {}
@@ -97,9 +155,15 @@ def prepare_metadata_headers(dev, plan, headers):
                 or not world or dev.resources.get(world[2].upper()) != [world[3]]):
             raise ValueError(f'{header} has a missing or ambiguous launcher or world registration')
         if GC_HEADER_TYPE.match(body):
+            if capture:
+                updated = merge_metadata_header(dev, header, world[3], capture, body)
+                if updated != body:
+                    prepared[header] = updated
             continue
-        updated, changed = LEGACY_HEADER_TYPE.subn(rb'\g<1>GC_MissionHeader', body, count=1)
-        if not changed:
+        if capture:
+            raise ValueError(f'{header} must be a GC_MissionHeader before merging its snapshot')
+        updated = native_header(body)
+        if updated == body:
             unsupported[header] = dev.read(header).lstrip().split(maxsplit=1)[0]
             continue
         prepared[header] = updated
@@ -114,8 +178,12 @@ def main():
     parser.add_argument('--stage', required=True, type=Path)
     parser.add_argument('--prepare-metadata', type=Path, metavar='PLAN',
                         help='stage GC header types for the file-cleared Dev launchers in this plan')
+    parser.add_argument('--native-exports', type=Path, metavar='CAPTURE',
+                        help='merge native metadata from an unchanged captured copy of the Dev mission files')
     parser.add_argument('headers', nargs='*', help='launcher paths, defaults to all eligible launchers')
     args = parser.parse_args()
+    if args.native_exports and not args.prepare_metadata:
+        parser.error('--native-exports requires --prepare-metadata')
     stage = args.stage.resolve()
     if any(stage.is_relative_to(root.resolve()) for root in [args.missions, Path(__file__).resolve().parents[3]]):
         parser.error('use an external staging directory')
@@ -123,7 +191,7 @@ def main():
     if args.prepare_metadata:
         try:
             output, count, unsupported = prepare_metadata_headers(
-                dev, json.loads(args.prepare_metadata.read_text(encoding='utf-8')), args.headers)
+                dev, json.loads(args.prepare_metadata.read_text(encoding='utf-8')), args.headers, args.native_exports)
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
     else:
