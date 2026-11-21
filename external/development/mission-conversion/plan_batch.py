@@ -260,6 +260,7 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         'authoredFileNotesByLauncher': file_notes,
         'unresolvedResources': review.get('unresolvedResources', []),
         'sourceDependencyLeads': review.get('sourceDependencyLeads', []),
+        'outcomeFlagLeads': review.get('outcomeFlagLeads', {}),
         'resourceRecoveryQueue': resource_recovery_queue(review.get('unresolvedResources', []), held),
         'dependencyRecoveryQueue': dependency_recovery_queue(review.get('unresolvedResources', []), held),
         'unavailableDependencyIds': review.get('unavailableDependencyIds', []),
@@ -384,6 +385,18 @@ def markdown(plan):
     for entry in plan['specificBlockers'][:25]:
         blocker = entry['blocker'].replace('|', '\\|')
         lines.append(f"| {blocker} | {entry['soleBlockerWorlds']} | {entry['worldsAffected']} |")
+    if flag_leads := plan.get('outcomeFlagLeads'):
+        owners = Counter()
+        for flags in flag_leads.values():
+            owners.update({site['owner'] for lead in flags.values() for site in lead['sourceFields']
+                           if site['owner'] and site['owner'] != 'TILW_LiteralTerm'})
+        lines.extend(['', '## Source leads for unresolved outcome flags', '',
+                      f'The JSON plan lists exact flag references for {len(flag_leads)} worlds, with '
+                      'event locations, serialized fields and matching script literals. '
+                      'A reference can read or write the flag and must be checked in context.', '',
+                      '| Serialized owner outside literal conditions | Worlds |', '| --- | ---: |'])
+        for owner, count in sorted(owners.items(), key=lambda entry: (-entry[1], entry[0])):
+            lines.append(f'| `{owner}` | {count} |')
     lines.extend(['', '## Shared blocker combinations', '',
                   'Each row lists blockers currently reported together. Clearing them moves the listed '
                   'worlds to the next file checks.', '',

@@ -331,6 +331,12 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
         end = block_end(lines, index)
         if end >= stop:
             raise ValueError('invalid compound outcome operand list')
+        if (depth == 0 and not threshold and inverted == '0' and index == start + 1 and end == stop - 1
+                and (literal := TERM.fullmatch(lines[index])) and literal[1] == 'Literal'):
+            values = properties(lines[index + 1:end], {'m_flagName', 'm_invertTerm'})
+            if values.get('m_flagName', '""') == '""' and values.get('m_invertTerm') == '1':
+                # A one-operand wrapper preserves the inverted empty literal's constant true result.
+                return {'trigger': 'Match start'}
         operands.append(read_term(lines[index:end + 1], flags, captures, ai, objective_flags, event_flags,
                                   depth + 1, derived=derived, inactive=inactive))
         index = end + 1

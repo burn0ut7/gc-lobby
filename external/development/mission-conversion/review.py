@@ -18,6 +18,8 @@ from scenery import StockPrefabs
 from terrain_parents import LONGMOOR_PARENT, LONGMOOR_PROVIDER, has_reviewed_longmoor, is_longmoor_subscene
 
 LEGACY = re.compile(r'^(?:TILW|PS)_')
+UNRESOLVED_OUTCOME_FLAG = re.compile(r'unresolved or unsupported outcome flag ("[^"]*")')
+SERIALIZED_FLAG_FIELD = re.compile(r'(m_\w*[Ff]lag\w*) ("[^"]+")')
 LEGACY_PRESENTATION_RESOURCES = {
     ('3136BE42592F3B1B', 'PrefabsEditable/MissionDescription/EditableMissionDescription.et'),
     ('CD85ADE9E0F54679', 'PrefabsEditable/Markers/EditableMarker.et'),
@@ -266,6 +268,54 @@ def source_dependency_leads(source, missions, notes, dependencies, databases, pr
     return external_resource_review(rows, databases, providers, reference_field='legacyInputs')
 
 
+def outcome_flag_leads(source, notes, worlds):
+    """Locate literal source references for the flags that stopped outcome conversion."""
+    results = {}
+    for world in sorted(worlds):
+        note = notes.get(world, {})
+        if note.get('batchDraft', {}).get('status') != 'blocked by conversion rules':
+            continue
+        events = note.get('outcomeCandidate', {}).get('events', {})
+        flags = defaultdict(lambda: {'outcomes': [], 'sourceFields': [], 'scriptLiterals': []})
+        for location, event in events.items():
+            if match := UNRESOLVED_OUTCOME_FLAG.fullmatch(event.get('gap', '')):
+                flags[match[1]]['outcomes'].append(location)
+        if not flags:
+            continue
+        for path in sorted(source.closure(world)):
+            if PurePosixPath(path).suffix.lower() not in SOURCE_TEXT:
+                continue
+            owners = []
+            for number, line in enumerate(source.read(path).splitlines(), 1):
+                token = line.strip()
+                if token.endswith('{'):
+                    owner = next((word for word in token.split() if LEGACY.match(word)), '')
+                    owners.append(owner or (owners[-1] if owners else ''))
+                elif token == '}' and owners:
+                    owners.pop()
+                elif (match := SERIALIZED_FLAG_FIELD.fullmatch(token)) and match[2] in flags:
+                    flags[match[2]]['sourceFields'].append({
+                        'file': path, 'line': number, 'owner': owners[-1] if owners else '', 'field': match[1],
+                    })
+        results[world] = flags
+
+    by_literal = defaultdict(list)
+    for flags in results.values():
+        for literal, lead in flags.items():
+            if literal != '""':
+                by_literal[literal].append(lead)
+    if by_literal:
+        for path in sorted(source.files):
+            if not path.lower().endswith('.c'):
+                continue
+            for number, line in enumerate(source.read_raw(path).decode('utf-8-sig').splitlines(), 1):
+                for literal in set(re.findall(r'"[^"\\]*"', line)).intersection(by_literal):
+                    for lead in by_literal[literal]:
+                        lead['scriptLiterals'].append({'file': path, 'line': number})
+    return {world: {literal[1:-1]: lead for literal, lead in sorted(flags.items())}
+            for world, flags in results.items()}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--missions', required=True, type=Path)
@@ -336,6 +386,9 @@ def main():
     missions = {header: compare_mission(source, target, header, notes, dependencies, stock, unresolved, longmoor)
                 for header in sorted(selected)}
     report = {'source': source.commit, 'target': target.commit, 'missions': missions}
+    if notes:
+        worlds = {mission['world'] for mission in missions.values() if mission.get('world')} if args.mission else notes
+        report['outcomeFlagLeads'] = outcome_flag_leads(source, notes, worlds)
     if args.draft_stage:
         report['includesDraft'] = True
     if args.workshop_addons:
