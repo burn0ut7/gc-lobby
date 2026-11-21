@@ -498,12 +498,12 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                 raise ValueError('spawner flag lacks a verified producer: ' + flag)
         fields = ['        m_aWaypoints {', *('         ' + point for point in waypoints), '        }'] if waypoints else []
         actions = defaultdict(list)
-        crew_waypoints = []
+        crew_groups = []
         for sequence, delay in enumerate(timings):
             spawn_key = f'{key}/{sequence}'
             kind = 'GC_AIGroupSpawn' if group else 'GC_PrefabSpawn'
             if config is not None:
-                fields, crew_waypoints = render_crew_config(config, spawn_key, resolve_crew)
+                fields, crew_groups = render_crew_config(config, spawn_key, resolve_crew)
                 kind = 'GC_CrewedVehicleSpawn'
             seconds, action = render_spawn({**details, 'delay': delay}, spawn_key, kind, fields)
             actions[seconds].extend(action)
@@ -517,7 +517,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         audit.append({'spawnAnchor': anchor, 'spawnName': details['area'], 'prefab': details['prefab'],
                       'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in waypoints], **term})
         if config is not None:
-            audit[-1]['crewWaypoints'] = crew_waypoints
+            audit[-1]['crewWaypoints'] = [point for group in crew_groups for point in group['waypoints']]
     if not audit:
         raise ValueError('empty placed spawner group')
     return '\n'.join(placements) + '\n', '\n'.join(rules) + '\n', audit

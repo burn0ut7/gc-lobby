@@ -21,7 +21,7 @@ def message(lines, key, *, multiline=False):
             or sum(len(part.encode()) - 2 for part in parts) + len(parts) - 1 > 512
             or any(c in title or c in body for c in '<>')):
         raise ValueError('message formatting or length needs review')
-    if not any(part[1:-1].strip() for part in parts):
+    if not title[1:-1].strip() and not any(part[1:-1].strip() for part in parts):
         raise ValueError('empty notification')
     factions = data.get('m_factionKeys', '')
     admin = data.get('m_adminOnly', '0')

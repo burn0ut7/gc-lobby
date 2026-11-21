@@ -162,7 +162,9 @@ class GC_RuleAction
 					return false;
 				if (m_sMessageTitle.Length() > 80 || m_sMessageTitle.Contains("<") || m_sMessageTitle.Contains(">"))
 					return false;
-				if (m_sTextOrName.IsEmpty() || m_sTextOrName.Length() > 512 || m_sTextOrName.Contains("<") || m_sTextOrName.Contains(">"))
+				if (m_sTextOrName.IsEmpty() && m_sMessageTitle.IsEmpty())
+					return false;
+				if (m_sTextOrName.Length() > 512 || m_sTextOrName.Contains("<") || m_sTextOrName.Contains(">"))
 					return false;
 				if (m_aFlagNames)
 				{

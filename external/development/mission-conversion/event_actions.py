@@ -173,7 +173,7 @@ def render_crew_config(config, key, resolve_character):
     if seated not in ('0', '1') or idle not in ('0', '1'):
         raise ValueError('invalid crew options')
     output = ['        m_aCrewGroups {']
-    waypoints = []
+    crew = []
     index = 0
     count = 0
     while index < len(groups):
@@ -188,19 +188,19 @@ def render_crew_config(config, key, resolve_character):
         group_key = f'{key}/crew/{count}'
         output.extend([f'         GC_SpawnCrewGroup "{{{guid(group_key)}}}" {{', '          m_aStations {'])
         start = 0
-        station_count = 0
+        characters = []
         while start < len(stations):
             stop = block_end(stations, start)
             flags, roles = crew_station(stations[start:stop + 1], resolve_character, allow_empty=True)
-            station_id = guid(f'{group_key}/station/{station_count}')
+            station_id = guid(f'{group_key}/station/{len(characters)}')
             output.extend([f'           GC_SpawnCrewStation "{{{station_id}}}" {{',
                            *(f'            m_b{native} 0' for legacy, native in
                              zip(SEAT_TYPES, ('Driver', 'Gunners', 'Passengers')) if flags[legacy] == '0'),
                            '            m_aCharacters {', *('             ' + role for role in roles),
                            '            }', '           }'])
             start = stop + 1
-            station_count += 1
-        if not 1 <= station_count <= 16:
+            characters.append(roles)
+        if not 1 <= len(characters) <= 16:
             raise ValueError('unsupported number of crew stations')
         output.append('          }')
         if seated == '1':
@@ -210,65 +210,60 @@ def render_crew_config(config, key, resolve_character):
                 output.append('          m_bSeparateOrderedGunners 1')
             output.extend(['          m_fWaypointDelay ' + delay, '          m_aWaypoints {',
                            *('           ' + point for point in route), '          }'])
-            waypoints.extend(point[1:-1] for point in route)
+        crew.append({'stations': characters, 'waypoints': [point[1:-1] for point in route],
+                     'waypointDelaySeconds': delay if route else '0'})
         output.append('         }')
         index = end + 1
         count += 1
     if not 1 <= count <= 16:
         raise ValueError('unsupported number of crew groups')
-    return [*output, '        }'], waypoints
+    return [*output, '        }'], crew
 
 
 def vehicle_spawn(lines, key, resolve_resource, resolve_character):
     if any(line.strip().startswith('m_crewConfig ') for line in lines):
         config, spawn = split_crew_block(lines, 'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID)
-        groups, config_fields = split_crew_block(config, 'm_crewGroups')
-        config_options = properties(config_fields, {'m_noTurretDismount', 'm_useIdleGroups'})
-        group = contents(groups, 'TILW_CrewGroup ' + SERIALIZED_ID)
-        stations, group_fields = split_crew_block(group, 'm_crewStations')
-        options = properties(group_fields, {'m_waypointNames', 'm_waypointDelay'})
-        flags, roles = crew_station(stations, resolve_character, allow_empty=True)
         data = properties(spawn, SPAWN_FIELDS)
-        stay_seated = config_options.get('m_noTurretDismount', '0')
-        idle = config_options.get('m_useIdleGroups', '1')
-        waypoint_delay = options.get('m_waypointDelay', '0')
+        fields, groups = render_crew_config(config, key, resolve_character)
+        crew = {'crewGroups': groups, 'crewWaypoints': [point for group in groups for point in group['waypoints']]}
     else:
         data = properties(lines, SPAWN_FIELDS | {
             'm_customCrew', 'm_waypointNames', 'm_waypointDelay', 'm_idleGroup',
             *('m_spawn' + position for position in SEAT_TYPES),
         })
-        options = data
-        flags = {position: data.get('m_spawn' + position, '1') for position in SEAT_TYPES}
-        roles = crew_roles(data.get('m_customCrew', ''), flags, resolve_character, allow_empty=True)
-        stay_seated = '0'
-        idle = data.get('m_idleGroup', '0')
-        waypoint_delay = options.get('m_waypointDelay', '5')
-    waypoints = target_names(options['m_waypointNames']) if options.get('m_waypointNames') else []
-    if (stay_seated not in ('0', '1') or idle not in ('0', '1')
-            or (waypoints and (not re.fullmatch(NUMBER, waypoint_delay) or Decimal(waypoint_delay) > 86400))):
-        raise ValueError('unsupported crew order delay or configuration')
-    if waypoints and idle == '1' and flags['Turret'] == '1':
-        raise ValueError('separate idle gunner groups need separate conversion')
+        fields, crew = render_legacy_crew(data, key, resolve_character)
     ref = REF.fullmatch(data.get('m_prefab', ''))
     if not ref or not ref[2].startswith('Prefabs/Vehicles/'):
         raise ValueError('crewed spawn requires a vehicle prefab')
     details = spawn_details(data, resolve_resource)
+    seconds, body = render_spawn(details, key, 'GC_CrewedVehicleSpawn', fields)
+    return seconds, body, {'instruction': 'TILW_SpawnVehicleInstruction', 'delaySeconds': details['delay'],
+                          'spawnAnchor': details['anchor'], 'spawnName': details['area'], 'prefab': details['prefab'],
+                          **crew}
+
+
+def render_legacy_crew(data, key, resolve_character):
+    flags = {position: data.get('m_spawn' + position, '1') for position in SEAT_TYPES}
+    roles = crew_roles(data.get('m_customCrew', ''), flags, resolve_character, allow_empty=True)
+    idle = data.get('m_idleGroup', '0')
+    waypoint_delay = data.get('m_waypointDelay', '5')
+    waypoints = target_names(data['m_waypointNames']) if data.get('m_waypointNames') else []
+    if (idle not in ('0', '1')
+            or (waypoints and (not re.fullmatch(NUMBER, waypoint_delay) or Decimal(waypoint_delay) > 86400))):
+        raise ValueError('unsupported crew order delay or configuration')
+    if waypoints and idle == '1' and flags['Turret'] == '1':
+        raise ValueError('separate idle gunner groups need separate conversion')
     flags_native = zip(SEAT_TYPES, ('Driver', 'Gunners', 'Passengers'))
     fields = ['        m_aCrewGroups {', f'         GC_SpawnCrewGroup "{{{guid(key + "/crew")}}}" {{',
               *(f'          m_b{native} 0' for legacy, native in flags_native if flags[legacy] == '0'),
               '          m_aCharacters {', *('           ' + role for role in roles), '          }']
-    if stay_seated == '1':
-        fields.append('          m_bKeepGunnersSeated 1')
     if waypoints:
         if Decimal(waypoint_delay):
             fields.append('          m_fWaypointDelay ' + waypoint_delay)
         fields.extend(['          m_aWaypoints {', *('           ' + name for name in waypoints), '          }'])
     fields.extend(['         }', '        }'])
-    seconds, body = render_spawn(details, key, 'GC_CrewedVehicleSpawn', fields)
-    return seconds, body, {'instruction': 'TILW_SpawnVehicleInstruction', 'delaySeconds': details['delay'],
-                          'spawnAnchor': details['anchor'], 'spawnName': details['area'], 'prefab': details['prefab'],
-                          'crew': roles, 'crewWaypoints': [waypoint[1:-1] for waypoint in waypoints],
-                          'crewWaypointDelaySeconds': waypoint_delay if waypoints else '0'}
+    return fields, {'crew': roles, 'crewWaypoints': [waypoint[1:-1] for waypoint in waypoints],
+                    'crewWaypointDelaySeconds': waypoint_delay if waypoints else '0'}
 
 
 ACTIONS = {
