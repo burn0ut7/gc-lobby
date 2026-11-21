@@ -700,6 +700,7 @@ def main():
         try:
             restored = verified_roles(dev_units, stock)
             asset_aliases = batch.resource_aliases(args.workshop_addons, dev_units, stock)
+            external_vehicles = vehicle_crew.workshop_vehicles(args.workshop_addons)
         except (OSError, ValueError, CalledProcessError) as exc:
             parser.error(str(exc))
         reviewed_members.update({guid: path for guid, path in restored.items() if guid not in locally_owned})
@@ -710,10 +711,10 @@ def main():
 
         def convert_crew(block):
             return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned,
-                                        rhs_database, external_ai)
+                                        external_vehicles, external_ai)
 
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
-                         asset_aliases, loadouts, spawned_assets, convert_crew, delayed_extractions)
+                         asset_aliases, loadouts, spawned_assets, convert_crew, resolve_spawn, delayed_extractions)
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
                         for path, contents in out.items()}

@@ -68,6 +68,10 @@ The placed crew rule accepts verified RHS vehicle and crew identities and carrie
 
 Missions Dev commit `7b650e52` ports JEFRMCWAC with 28 slots. File review verified the two original BRDM-2 placements, six crew entries, the stay-seated settings and the unchanged native fog entity. Live crew behavior and AI casualty timing remain unverified.
 
+The batch spawner rule applies to placed spawners with verified prefab identities, an authored transform and Match-only behavior. It keeps the delay of each spawn and the waypoint order of supported AI groups. A positive one-shot capture or a verified mission flag can start the schedule. Each accepted trigger is remembered for its later spawns, as in the published TilW spawner. The rule checks that the generated or retained anchor, requested names and destination waypoints resolve uniquely. Pregame spawns, multiple named spawns whose names depend on spawn success, unverified prefab ancestry and complex crew configurations remain in review.
+
+The catalog recognized 22 placed spawners across three worlds. The Workshop registration also verified the original M113 prefab in Landay Haul, clearing its placed-crew blocker. Its reinforcement spawners still need multiple crew stations and the separate gunner-group behavior. The authorized Development checkouts are the basis for these checks.
+
 Desert Heat is the first installed batch draft in Missions Dev commit a07bcbdb. The installer verified every referenced GUID and path against the draft files, current addon checkouts and installed resource databases. Its existing boundary was reused and only the missing boundary was added. Two runs with different Python hash seeds reproduced the draft and inventory byte-for-byte. File review covers the full 277-launcher catalog.
 
 ## Coverage

@@ -1,6 +1,7 @@
 """Apply common migration rules to legacy missions and report unsupported authoring."""
 from collections import Counter, defaultdict
-from functools import lru_cache
+from decimal import Decimal
+from functools import lru_cache, partial
 from hashlib import sha256
 from pathlib import PurePosixPath
 import re
@@ -9,12 +10,12 @@ from arc_capture import CAPTURE_EDITOR_FIELDS, capture_instance
 from boundaries import convert_boundaries
 from briefings import block_end, guid, properties
 from catalog import REF, SOURCE_TEXT
-from event_actions import SPAWN, SPAWN_FIELDS
+from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, render_spawn, spawn_details, target_names
 from extraction import condition as extraction_condition
 from interactions import convert_block as convert_interaction_block
 from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer
-from outcomes import FRAMEWORK, leaves
+from outcomes import FRAMEWORK, leaves, render as render_outcome
 import polygon_capture
 from respawns import read_respawns, uses_default_respawn_budget
 import teleports
@@ -45,6 +46,10 @@ DAMAGE_COMPONENT = re.compile(rf'  TILW_Flag_EntityDamage {SERIALIZED_ID} \{{')
 DAMAGE_TARGETS = {
     '78CCABFAE4DC21EF': 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/Dst/CrateStack_01_Dst_2_dark.et',
 }
+PLACED_SPAWNER = re.compile(
+    r'(?P<group>\$grp )?TILW_PrefabSpawnerEntity(?: (?P<name>[\w.-]+))? : '
+    r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
+SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 MATERIAL_OVERRIDE = re.compile(
     rf'SCR_DestructibleBuildingEntity : "\{{[\da-fA-F]{{16}}\}}Prefabs/Structures/[^"\n]+\.et" \{{\n'
     rf' ID "[\da-fA-F]{{16}}"\n components \{{\n  MeshObject {SERIALIZED_ID} \{{\n   Materials \{{\n'
@@ -434,6 +439,95 @@ def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, obje
     return path if stock.contains(guid, path) else None
 
 
+def placed_spawn(block, location, resolve_resource, captures, flags, used_flags):
+    root = PLACED_SPAWNER.fullmatch(block[0])
+    if not root:
+        raise ValueError('unverified placed spawner prefab')
+    placements, rules, audit = [], [], []
+    for index, (name, lines) in enumerate(polygon_capture.members(block, root['group'], root['name'])):
+        data = properties(lines, SPAWNER_TRANSFORM | {
+            'm_prefab', 'm_conditionFlag', 'm_spawnTimings', 'm_setEntityNames', 'm_waypointNames', 'm_pregameSpawn',
+        })
+        transform = [f'{key} {value}' for key, value in data.items() if key in SPAWNER_TRANSFORM]
+        if ('coords' not in data or any(not FIELD.fullmatch(line) for line in transform)
+                or data.get('m_pregameSpawn', '0') != '0'):
+            raise ValueError('spawner needs a placed Match-only transform')
+        timings = data.get('m_spawnTimings', '').split() or ['0']
+        if not 1 <= len(timings) <= 128 or any(
+                not re.fullmatch(NUMBER, delay) or Decimal(delay) > 86400 for delay in timings):
+            raise ValueError('invalid placed spawner schedule')
+        names = target_names(data['m_setEntityNames']) if data.get('m_setEntityNames') else []
+        if names and (len(names) != 1 or len(timings) != 1):
+            raise ValueError('multiple spawns have success-dependent entity naming')
+        waypoints = target_names(data['m_waypointNames']) if data.get('m_waypointNames') else []
+        ref = REF.fullmatch(data.get('m_prefab', ''))
+        group = bool(ref and ref[2].startswith('Prefabs/Groups/'))
+        if waypoints and not group:
+            raise ValueError('spawner waypoints need a verified AI group')
+        key = f'{location}/spawner/{index}'
+        anchor = name or 'GC_Spawner_' + guid(key)
+        details = spawn_details({
+            'm_prefab': data.get('m_prefab', ''), 'm_locationName': f'"{anchor}"',
+            'm_setEntityName': names[0] if len(names) == 1 else '""', 'm_executionDelay': '0',
+        }, lambda resource, path: resolve_resource(resource, path, group=group))
+        flag = data.get('m_conditionFlag', '""')
+        term = {'trigger': 'Match start'}
+        if flag != '""':
+            check = captures.get(flag, ())
+            if any(line.strip() == 'm_bStopAfterFirstChange 1' for line in check):
+                term = {'trigger': 'area capture', 'flag': flag[1:-1]}
+                if flag[1:-1] not in used_flags and any('m_Messages ' in line for line in check):
+                    raise ValueError('capture-gated spawner needs a shared status-message owner')
+            elif flag[1:-1] in flags and re.fullmatch(r'"[\w.-]+"', flag):
+                term = {'trigger': 'interaction flag', 'flag': flag[1:-1]}
+            else:
+                raise ValueError('spawner flag lacks a verified producer: ' + flag)
+        fields = ['        m_aWaypoints {', *('         ' + point for point in waypoints), '        }'] if waypoints else []
+        actions = defaultdict(list)
+        for sequence, delay in enumerate(timings):
+            seconds, action = render_spawn({**details, 'delay': delay}, f'{key}/{sequence}',
+                                          'GC_AIGroupSpawn' if group else 'GC_PrefabSpawn', fields)
+            actions[seconds].extend(action)
+        label = 'GC_MigratedSpawn_' + guid(key)
+        rendered = render_outcome(key, label, term, actions, captures, {flag}, {})
+        if term['trigger'] == 'interaction flag':
+            rendered[3:3] = [f'      GC_GameModeStateCondition "{{{guid(key + "/match")}}}" {{',
+                             '       m_eGameModeState GAME', '      }']
+        rules.extend(rendered)
+        placements.extend([f'GenericEntity {anchor} {{', *(' ' + line for line in transform), '}'])
+        audit.append({'spawnAnchor': anchor, 'spawnName': details['area'], 'prefab': details['prefab'],
+                      'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in waypoints], **term})
+    if not audit:
+        raise ValueError('empty placed spawner group')
+    return '\n'.join(placements) + '\n', '\n'.join(rules) + '\n', audit
+
+
+def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, blockers):
+    placements, schedules, audit = {}, [], []
+    for layer in source.layers[world.lower()]:
+        text = source.read(layer)
+        if 'TILW_PrefabSpawnerEntity' not in text:
+            continue
+        try:
+            for line, block in blocks(text):
+                if not re.match(r'^(?:\$grp )?TILW_PrefabSpawnerEntity\b', block[0]):
+                    continue
+                try:
+                    native, scheduled, info = placed_spawn(
+                        block, f'{layer}:{line}', resolve_spawn, captures, flags, used_flags)
+                except ValueError as exc:
+                    blockers.append({'rule': 'TILW_PrefabSpawnerEntity', 'file': layer, 'line': line,
+                                     'detail': str(exc)})
+                    placements[(layer, line)] = ''
+                    continue
+                placements[(layer, line)] = native
+                schedules.append(scheduled)
+                audit.extend({'file': layer, 'line': line, 'startupChoice': None, **entry} for entry in info)
+        except ValueError as exc:
+            blockers.append({'rule': 'placed spawner layer', 'file': layer, 'detail': str(exc)})
+    return placements, ''.join(schedules), audit
+
+
 def resource_aliases(workshop, units, stock):
     aliases = {(guid, old): (guid, new) for (guid, old), new in STOCK_RESOURCE_ALIASES.items()
                if stock and stock.contains(guid, new)}
@@ -793,7 +887,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
 
 
 def world_draft(source, dev, world, row, staged, area_placements, interactions, convert_group_block, asset_aliases,
-                local_loadouts, spawned_assets, convert_crew, delayed=None):
+                local_loadouts, spawned_assets, convert_crew, resolve_spawn, delayed=None):
     draft, blockers = {}, []
     reviewed_replacements = {}
     if row.get('playtestCandidate') or row.get('raceConversion'):
@@ -842,6 +936,14 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if unresolved_event_flags:
         blockers.append({'rule': 'framework events', 'file': world,
                          'detail': {'missingConvertedFlagProducers': sorted(unresolved_event_flags)}})
+    spawners, spawner_audit = {}, []
+    if row['serializedTypes'].get('TILW_PrefabSpawnerEntity'):
+        captures, placed_areas, _ = area_rules(source, world)
+        area_placements = {**placed_areas, **area_placements}
+        spawners, schedules, spawner_audit = world_spawners(source, world, resolve_spawn, captures,
+                                                           set(objective_flags) | event_flags, used_flags, blockers)
+        rule_text += schedules
+        used_flags.update(entry['flag'] for entry in spawner_audit if entry['trigger'] == 'area capture')
     unused_flags = []
     for layer in source.layers[world.lower()]:
         if layer in staged:
@@ -887,6 +989,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append(areas)
                 elif (layer, line) in interaction_placements:
                     result.append(interaction_placements[(layer, line)])
+                elif (layer, line) in spawners:
+                    result.append(spawners[(layer, line)])
                 elif kind == 'PS_ManualMarker':
                     result.append(convert_layer(body, dev, draw_order=True)[0])
                 elif 'TILW_AOLimit.et' in head or 'TILW_MapShape.et' in head:
@@ -948,6 +1052,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                              'detail': f'briefing {order} has multiple reveal actions'})
     prefab_spawns = [{**item, 'startupChoice': event['flag'] if event['trigger'] == 'startup choice' else None}
                      for event in rules.values() for item in event.get('convertedActions', []) if 'spawnAnchor' in item]
+    prefab_spawns.extend(spawner_audit)
     spawn_guids = {REF.fullmatch(item['prefab'])[1].upper() for item in prefab_spawns}
     for resource, asset in sorted(spawned_assets.items()):
         if asset['flag'] in used_flags and resource not in spawn_guids:
@@ -1077,17 +1182,19 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         'verifiedPlayableSlots': slots, 'advertisedSlots': advertised,
         **({'reviewedReplacements': reviewed_replacements} if reviewed_replacements else {}),
         **({'unusedRandomFlags': unused_flags} if unused_flags else {}),
+        **({'placedSpawners': spawner_audit} if spawner_audit else {}),
         **({'remainingBehavior': remaining} if remaining else {}),
     }
 
 
 def plan(source, dev, report, staged, area_placements, interactions, convert_group_block, asset_aliases,
-         local_loadouts, spawned_assets, convert_crew, delayed_extractions):
+         local_loadouts, spawned_assets, convert_crew, resolve_spawn, delayed_extractions):
     results, emitted, totals, families = {}, {}, Counter(), Counter()
     for world, row in report['worlds'].items():
         draft, result = world_draft(source, dev, world, row, staged, area_placements.get(world, {}),
                                     interactions.get(world, ((), {})), convert_group_block, asset_aliases,
                                     local_loadouts, spawned_assets.get(world, {}), convert_crew,
+                                    partial(resolve_spawn, spawned_assets.get(world, {})),
                                     delayed_extractions.get(world))
         results[world] = result
         totals[result['status']] += 1

@@ -7,6 +7,7 @@ from catalog import REF
 from groups import legacy_member
 from local_loadouts import unchanged_units_parent
 from polygon_capture import members
+from scenery import StockPrefabs
 
 VEHICLE = re.compile(
     r'(?P<group>\$grp )?(?:Vehicle|Tank|Turret)(?: (?P<name>[\w.-]+))? : '
@@ -14,7 +15,21 @@ VEHICLE = re.compile(
 COMPONENT = re.compile(r'  TILW_VehicleCrewComponent (?P<id>"\{[\da-fA-F]{16}\}") \{')
 SERIALIZED_ID = r'"\{[\da-fA-F]{16}\}"'
 SEAT_TYPES = ('Pilot', 'Turret', 'Cargo')
-RHS_VEHICLES = {'9AEDF323A812F9ED': 'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2_AFRF.et'}
+WORKSHOP_VEHICLES = {
+    '9AEDF323A812F9ED': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2_AFRF.et'),
+    '18378FFFC82F30BF': ('M113APC_5E5C154FEE1094BB', 'Prefabs/Vehicles/Tracked/M113/M113_APC.et'),
+}
+
+
+def workshop_vehicles(workshop):
+    result = {}
+    if not workshop:
+        return result
+    for resource, (provider, path) in WORKSHOP_VEHICLES.items():
+        registry = workshop / provider / 'resourceDatabase.rdb'
+        if registry.is_file() and StockPrefabs(registry).contains(resource, path):
+            result[resource] = path
+    return result
 
 
 def contents(lines, field):
@@ -86,14 +101,14 @@ def render_component(component, lines, resolve_character):
             '   m_aCharacters {', *('    ' + role for role in roles), '   }', '  }']
 
 
-def convert(block, source_units, dev_units, stock, owned, rhs=None, external_ai=None):
+def convert(block, source_units, dev_units, stock, owned, external_vehicles=None, external_ai=None):
     if not any('TILW_VehicleCrewComponent' in line for line in block):
         return block
     root = VEHICLE.fullmatch(block[0])
     if not root:
         raise ValueError('crew needs a registered stock vehicle')
     guid, path = root['guid'].upper(), root['path']
-    external_vehicle = rhs and RHS_VEHICLES.get(guid) == path and rhs.contains(guid, path)
+    external_vehicle = external_vehicles and external_vehicles.get(guid) == path
     if (guid in owned or guid in source_units.resources or guid in dev_units.resources
             or not (stock.contains(guid, path) or external_vehicle)):
         raise ValueError('unverified crew vehicle ' + guid)
