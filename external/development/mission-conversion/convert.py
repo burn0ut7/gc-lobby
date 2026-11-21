@@ -167,6 +167,7 @@ def main():
         '22E43956740A6794': 'Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized.et',
         '8A97F7055F1A003A': 'Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_CottonShirt_6.et',
         '2CDFBF355F3410DD': 'Prefabs/Characters/Factions/CIV/Dockworker/Character_CIV_Dockworker_2.et',
+        'D97EAE64721478F3': 'Prefabs/Characters/Factions/CIV/ConstructionWorker/Character_CIV_ConstructionWorker_Randomized.et',
     }
     stock_ai.update({
         guid: f'Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_{role}.et'
