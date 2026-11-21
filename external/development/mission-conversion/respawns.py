@@ -25,6 +25,10 @@ def read_respawns(text, path):
                 if not match:
                     raise ValueError(f'unsupported entry at line {j + 1}')
                 end = block_end(lines, j)
+                if end == j + 1:
+                    # The unconfigured legacy entry has no faction and zero tickets.
+                    j = end + 1
+                    continue
                 fields = properties(lines[j+1:end], FIELDS)
                 key = json.loads(fields.get('m_sFactionKey', '""'))
                 position = json.loads(fields.get('m_sPosition', '""'))
