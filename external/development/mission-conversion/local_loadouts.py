@@ -64,11 +64,19 @@ def migrate_playability(text, *, inherited_playable=False):
             lines[end:end] = [EDITABLE, EDITABLE_INFO, name, '   }\n', '  }\n']
         else:
             index = editable[0]
-            if len(editable) != 1:
+            if len(editable) != 1 or lines[index:index + 2] != [EDITABLE, EDITABLE_INFO]:
                 raise ValueError('existing character presentation needs review')
-            if lines[index:index + 5] != [EDITABLE, EDITABLE_INFO, name, '   }\n', '  }\n']:
-                if lines[index:index + 4] != [EDITABLE, EDITABLE_INFO, '   }\n', '  }\n']:
-                    raise ValueError('existing character presentation needs review')
+            info_end = block_end(lines, index + 1)
+            if info_end + 1 != block_end(lines, index):
+                raise ValueError('existing character presentation needs review')
+            fields = properties(lines[index + 2:info_end], {'Name', 'Icon'})
+            if (not re.fullmatch(QUOTED, fields.get('Name', '""'))
+                    or ('Icon' in fields and not REF.fullmatch(fields['Icon']))):
+                raise ValueError('existing character presentation needs review')
+            if 'Name' in fields:
+                name_index = next(i for i in range(index + 2, info_end) if lines[i].strip().startswith('Name '))
+                lines[name_index] = name
+            else:
                 lines.insert(index + 2, name)
                 if index < component:
                     component += 1
@@ -82,12 +90,16 @@ def unchanged_units_parent(source_units, dev_units, resource):
     try:
         before = inheritance(source_units, resource)
         after = inheritance(dev_units, resource)
-        native_before = tuple(migrate_playability(text)[0] for text in before)
+        native_before = []
+        for text in before:
+            parent = REF.search(text.partition('\n')[0])
+            inherited = bool(parent and legacy_member(source_units, parent[1], False))
+            native_before.append(migrate_playability(text, inherited_playable=inherited)[0])
     except ValueError:
         return False
     if not before or not after or any(not CHARACTER.fullmatch(text.partition('\n')[0]) for text in (*before, *after)):
         return False
-    return reviewed_native_ancestry(native_before, after, dev_units)
+    return reviewed_native_ancestry(tuple(native_before), after, dev_units)
 
 
 def collect(source, dev, source_units, dev_units, stock, *, normalize_references=None):

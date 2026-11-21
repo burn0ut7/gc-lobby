@@ -567,6 +567,8 @@ AI_WORLD_ALIASES = {
                          'Prefabs/AI/SCR_AIWorld_Eden.et'),
 }
 STOCK_RESOURCE_ALIASES = {
+    ('2D556E41F306336C', 'Configs/Destruction/MultiphaseDestruction/FX_Debris/FX_Debris_Snadbags_Plastic.conf'):
+        'Configs/Destruction/MultiphaseDestruction/FX_Debris/FX_Debris_Sandbags_Plastic.conf',
     ('2B24356C351A2538', 'Prefabs/Props/Wrecks/M113_wreck.et'):
         'Prefabs/Props/Wrecks/M113_wreck/M113_wreck.et',
     ('6BDDFE9FA1D4B2F0', 'Prefabs/Props/Wrecks/UAZ469_wreck.et'):
@@ -846,6 +848,60 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/Aurelas/Spearhead Air Support/Prefabs/HQ_USSR_Simple.et':
+        'f2a2d8a7f3d24e45c7d2773920168bf272e9bee1158faab7dcc1b78fa43a0777',
+    'worlds/Blue/Bangalorious/Data/M252PIT_NOARSENAL.et':
+        '2d378e69fd2a331f702d635b90dafbd0f93b605b9c89af17dd64180863740371',
+    'worlds/Blue/Bangalorious/Data/Trenches/ErodedEmbankment_01_dirt_straight_GREEN.et':
+        '578197d9e7526e6d4a15a2c60861fdabb443ecb1d5241bb6796080b1b696e6c2',
+    'worlds/Blue/Ruckusberg/Prefabs/LR_3Series/3Series_LWB_Transport_EXPANDEDSTORAGE.et':
+        '7ed00aa822c1c0bb716eefa5ac3a6181b85de3b2dbf9c094a54126f2c67bfefd',
+    'worlds/FSM/Prefabs/Props/Military/Sandbags/FSM_Sandbag_01_end_high_plastic_low_placeable.et':
+        'b77d4439f47dd8452582fcd9b8bebf5db826d51117a9d5e4186a35feb9334a62',
+    'worlds/FSM/Prefabs/Props/Military/Sandbags/FSM_Sandbag_01_end_high_plastic_placeable.et':
+        'a7b2487984061cc3d6a020abc129f2908c0711d3019edc37c75bb22ae84d70b3',
+    'worlds/FSM/Prefabs/Props/Military/Sandbags/FSM_Sandbag_Wall_Round.et':
+        '37cfb3d12c54adc6d226c8847031a7b925d0a26ab2ce371c51e4a05e8baafe1c',
+    'worlds/FSM/Prefabs/Props/Military/Sandbags/FSM_Sandbag_Wall_Tall.et':
+        '476dbb7847accdd576f3f4d29b69280aa6dd4f465625f247a12757e8d9baee8c',
+    'worlds/FSM/Prefabs/Props/Military/Sandbags/FSM_Sandbag_Wall_Tall_Window.et':
+        '2afa48319772152dc3d008ed4969183e004e30aa55db624ef926786382927656',
+    'worlds/FSM/Prefabs/Props/Military/Sandbags/FSM_Sandbag_Wall_long.et':
+        'bc8b2c0ab3eba61460d4232985c91a9bd06b3d45f8f656bcb36a149cfb76f08b',
+    'worlds/FSM/Prefabs/Vegetation/Cuttings/FSM_Placeable_Juniperus_Communis.et':
+        'ca6596393d8b0a9b786774139919e3cd44938a02ab9092bdcf78f5fb09d46196',
+    'worlds/FSM/Prefabs/Vegetation/Cuttings/FSM_Placeable_Malus_domestica.et':
+        '6d38a6cf1ce4048a32c4fc5b4d7a9b6c9638e9502b8877e3cff35bb62e58efaa',
+    'worlds/FSM/Prefabs/Vegetation/Cuttings/FSM_Placeable_Pinus_sylvestris_medium_01.et':
+        '6edb925d66607b633511de2a204201e3b2f976b4d826a6f637ac73f5e68004b1',
+    'worlds/FSM/Prefabs/Vegetation/Cuttings/FSM_Placeable_abies_bush.et':
+        '49159627e2835d6551c9a9416269892d4ce95906a33228ec6d9cadde2d78ad47',
+    'worlds/FSM/Prefabs/Vegetation/Cuttings/FSM_Placeable_pendula_pendula.et':
+        '3ba599adf536e5f4f0e674acd23d078f87416823507ab53d51f11df4f5b253d2',
+    'worlds/Gabe/BlocParty/Prefabs/GAZ_TIGR_v2_AGS17_Gabe.et':
+        'a0d24dd42e4091b9606d03c586af25963c59c90fefa6d92930848a336b26584c',
+    'worlds/Gabe/BlocParty/Prefabs/GAZ_TIGR_v2_KORD_Gabe.et':
+        '053dc32088587e8d5fea21baeb5f3df559d7e74a833482639e7f7a13f288e791',
+    'worlds/Gabe/BlocParty/Prefabs/Ural4320_transport_Gabe.et':
+        '12755e43dc29609547ce1fd643e5cc843c938b5dfab536c2a802f70076778042',
+    'worlds/HitTheMan/Prefabs/Lights/LampFluorescent_01_HTM.et':
+        '065ba341fe6d6b630bdda1f4edb5bcfff9688602f91716f82e57aa589c90620f',
+    'worlds/HotMic/Prefabs/Trucks/truck_engineer_box_wo_commandPost_HotMic.et':
+        'd86339702bbe500b500e2c0269628498f7d62e8d26fe417d0c2fd2d4220418ad',
+    'worlds/Perfk/Prefabs/Structures/PK_WaterTower_01.et':
+        '39b5382023c3757f702c9af4e92feec3dfe496077905c45a3c43b38b89a59ce2',
+    'worlds/TheLocalPub/BlockDefenders/Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance_UK_BlockDefenders.et':
+        '75c6bd60f5725209ac7ddf136c97941623ebccf495769dd82273f0dccf671abd',
+    'worlds/TheLocalPub/RailroadReactions/Prefabs/Vegetation/Cuttings/PUB_Placeable_Juniperus_Communis.et':
+        '24481fd8fda0d0fd768e2836cf274980d8b9cf2e229609d59aee175260038ac4',
+    'worlds/TheLocalPub/RailroadReactions/Prefabs/Vegetation/Cuttings/PUB_Placeable_Malus_domestica.et':
+        '35eeff5787c2342b5ffe498c62d1f1697f084021951ad5b9e659b229c3757675',
+    'worlds/TheLocalPub/RailroadReactions/Prefabs/Vegetation/Cuttings/PUB_Placeable_Pinus_sylvestris_medium_01.et':
+        'fa8bd0abe0edfe579948a9a08fc02327333cd074c3227b95adb3331b92291865',
+    'worlds/TheLocalPub/RailroadReactions/Prefabs/Vegetation/Cuttings/PUB_Placeable_abies_bush.et':
+        '28dfe2f10480b70980b909ac6bd0708190aa87f102dab63d935d8140f5dbe83b',
+    'worlds/TheLocalPub/RailroadReactions/Prefabs/Vegetation/Cuttings/PUB_Placeable_pendula_pendula.et':
+        'fed6352bd3dc8ef8229af2bc3575852299696e720ae71f7d104eef528f48f185',
     'worlds/HitTheMan/Battle For Rasman/Mine_TM62M_EffectModuleEntity_HTM.et':
         'd4e0941b7f09ffed2432b3f6ef369ea509d3a7b02e557074668fa32faed411ce',
     'worlds/HitTheMan/Battle For Rasman/Warhead_Mine_TM62M_HTM.et':
