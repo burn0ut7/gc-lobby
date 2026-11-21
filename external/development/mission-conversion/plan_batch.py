@@ -64,6 +64,37 @@ def resource_recovery_queue(resources, held):
     ]
 
 
+def dependency_recovery_queue(resources, held):
+    """Find installed packages that could resolve several exact references together."""
+    providers_by_ref = {
+        f"{{{entry['guid']}}}{entry['path']}": {
+            registration['provider'] for registration in entry['registrations']
+            if registration['path'] == entry['path'] and not registration['declaredDependency']
+        }
+        for entry in resources
+    }
+    packages = {}
+    for draft in held:
+        blockers = {issue for issue in draft['issues']
+                    if not issue.endswith(' — Unresolved external resource references')}
+        references_by_provider = defaultdict(set)
+        for reference in blockers:
+            for provider in providers_by_ref.get(reference, ()):
+                references_by_provider[provider].add(reference)
+        for provider, references in references_by_provider.items():
+            package = packages.setdefault(provider, {
+                'provider': provider, 'references': set(), 'worlds': [], 'onlyMissingPackage': [],
+            })
+            package['references'].update(references)
+            package['worlds'].append(draft['world'])
+            if references == blockers:
+                package['onlyMissingPackage'].append(draft['world'])
+    for package in packages.values():
+        package['references'] = sorted(package['references'])
+    return sorted(packages.values(), key=lambda package: (
+        -len(package['onlyMissingPackage']), -len(package['worlds']), package['provider']))
+
+
 def authored_file_note(note):
     # Carry forward file evidence from older plans that put it in the runtime queue.
     return re.fullmatch(
@@ -198,6 +229,7 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         'authoredFileNotesByLauncher': file_notes,
         'unresolvedResources': review.get('unresolvedResources', []),
         'resourceRecoveryQueue': resource_recovery_queue(review.get('unresolvedResources', []), held),
+        'dependencyRecoveryQueue': dependency_recovery_queue(review.get('unresolvedResources', []), held),
         'unavailableDependencyIds': review.get('unavailableDependencyIds', []),
         'rules': ranked_blockers(priority, 'rule'),
         'specificBlockers': ranked_blockers(specific, 'blocker'),
@@ -252,6 +284,15 @@ def markdown(plan):
                      for resource in entry.get('remainingResources', []))
     if not plan['heldDrafts']:
         lines.append('None.')
+    if plan['dependencyRecoveryQueue']:
+        lines.extend(['', '## Installed packages outside the Dev dependency graph', '',
+                      'These packages register exact IDs and paths. Verify their contents and '
+                      'dependencies before changing the Dev project.', '',
+                      '| Package | Worlds with only this package missing | Held worlds | References |',
+                      '| --- | ---: | ---: | ---: |'])
+        for entry in plan['dependencyRecoveryQueue']:
+            lines.append(f"| `{entry['provider']}` | {len(entry['onlyMissingPackage'])} | "
+                         f"{len(entry['worlds'])} | {len(entry['references'])} |")
     if plan['resourceRecoveryQueue']:
         lines.extend(['', '## Dependency recovery priorities for complete drafts', '',
                       '| Resource | Only missing asset | Held worlds | ID registered in Dev graph |',

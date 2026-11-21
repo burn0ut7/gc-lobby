@@ -558,6 +558,9 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Scenarios/SP01/SP01_UAZ469_USSR.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('C1EAE57BFC75D349', 'Prefabs/Structures/Bulding/HouseK/House_K_8_EP1_full.et'): (
+        'ArmaTerrainCore_60B524F7A5AE96A8', 'F4D545DC6824850D',
+        'Prefabs/Structures/Bulding/HouseK/House_K_8_EP1_full.et'),
     ('2FA364D8E326CB3C', 'Prefabs/Vehicles/Helicopters/Mi24/Mi24P_armed_9M114.et'): (
         'WCS_Mi-24V_628933A0D3A0D700', '2FA364D8E326CB3C',
         'Prefabs/Vehicles/Helicopters/Mi24/Mi24P_Armed_B8V20A_X4.et'),
@@ -3305,6 +3308,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare the registered Army Cobra rocket loadout against the legacy scenario.')
     if any(isinstance(body, str) and '{2FA364D8E326CB3C}' in body for body in draft.values()):
         remaining.append('Compare the Mi-24P control, pylon selection and turret in the current WCS release.')
+    if any(isinstance(body, str) and '{F4D545DC6824850D}' in body for body in draft.values()):
+        remaining.append('Compare House K door interaction and destruction in the current terrain package.')
     if any(isinstance(body, str) and RHIB_PATH in body for body in draft.values()):
         remaining.append('Compare RHIB boarding, flotation and the authored front and rear mounts.')
     if any(isinstance(body, str) and '{42232FFE6E7AC415}' in body for body in draft.values()):
