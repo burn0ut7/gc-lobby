@@ -108,6 +108,30 @@ def authored_file_note(note):
     ) is not None
 
 
+def shared_conversion_queue(blockers_by_world):
+    """Schedule shared rule bundles by worlds moved to the next checks per fix."""
+    pending = dict(blockers_by_world)
+    queue = []
+    while pending:
+        covered = defaultdict(list)
+        for world, blockers in pending.items():
+            covered[blockers].append(world)
+        candidates = []
+        for blockers in sorted(covered):
+            worlds = sorted(world for required, members in covered.items()
+                            if set(required).issubset(blockers) for world in members)
+            if len(worlds) > 1:
+                candidates.append((blockers, worlds))
+        if not candidates:
+            break
+        blockers, worlds = min(candidates, key=lambda entry: (
+            -len(entry[1]) / len(entry[0]), -len(entry[1]), entry[0]))
+        queue.append({'blockers': list(blockers), 'worlds': worlds})
+        pending = {world: remaining for world, prior in pending.items() if world not in worlds
+                   if (remaining := tuple(rule for rule in prior if rule not in blockers))}
+    return queue
+
+
 def summarize(inventory, review, limit, previous_checks=None, previous_notes=None):
     migration = inventory['batchMigration']
     candidates = defaultdict(list)
@@ -160,6 +184,7 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
     priority = defaultdict(list)
     specific = defaultdict(list)
     bundles = defaultdict(list)
+    blockers_by_world = {}
     for world, row in sorted(migration['worlds'].items()):
         if row['status'] != 'blocked by conversion rules':
             continue
@@ -183,7 +208,9 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         for kind, example in by_detail.items():
             specific[kind].append((len(by_detail) == 1, {'world': world, **example}))
         if by_detail:
-            bundles[tuple(sorted(by_detail))].append(world)
+            blockers = tuple(sorted(by_detail))
+            bundles[blockers].append(world)
+            blockers_by_world[world] = blockers
 
     def ranked_blockers(blockers, label):
         rows = []
@@ -235,6 +262,7 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         'unavailableDependencyIds': review.get('unavailableDependencyIds', []),
         'rules': ranked_blockers(priority, 'rule'),
         'specificBlockers': ranked_blockers(specific, 'blocker'),
+        'sharedConversionQueue': shared_conversion_queue(blockers_by_world),
         'blockerBundles': [{'blockers': kinds, 'worlds': worlds} for kinds, worlds in
                            sorted(bundles.items(), key=lambda pair: (-len(pair[1]), len(pair[0]), pair[0]))],
     }
@@ -249,6 +277,16 @@ def markdown(plan):
              'without relying on a staged draft.', '',
              '## Launcher file audit including staged drafts', '']
     lines.extend(f"- {status} · {count}" for status, count in sorted(plan['launcherFileChecks'].items()))
+    if plan['sharedConversionQueue']:
+        lines.extend(['', '## Shared conversion work', '',
+                      'Work down this list before taking on mission-specific ports. Each estimate '
+                      'counts worlds advanced to their next file checks and assumes earlier rows '
+                      'are complete. Rerun the audit after each bundle to refresh the queue.', '',
+                      '| Worlds advanced | Reported blockers to address together |',
+                      '| ---: | --- |'])
+        for entry in plan['sharedConversionQueue']:
+            blockers = '<br>'.join(blocker.replace('|', '\\|') for blocker in entry['blockers'])
+            lines.append(f"| {len(entry['worlds'])} | {blockers} |")
     lines.extend(['', '## Drafts ready for source and Dev file review', ''])
     selected = plan['suggestedBatch']
     if selected:
@@ -265,14 +303,19 @@ def markdown(plan):
     lines.extend(['', f"Additional drafts that cleared file checks · {len(plan['additionalDrafts'])}",
                   '', '## Representative Workbench checks across file-cleared missions', '',
                   'After bulk installation, compile once and run one lobby-to-after-action smoke test. '
-                  'Start with the first installed representative that can exercise the full flow. '
-                  'Credit checks observed during that run and use the queue for remaining behaviors. '
-                  'Record any checks left unverified.', ''])
-    for entry in plan['runtimeChecks']:
+                  'Use that run for as many shared behavior checks as possible, then run up to four '
+                  'more targeted representatives. Review the results before opening further worlds. '
+                  'Run additional checks for release-critical behavior that the first pass did not cover '
+                  'and record the remaining gaps.', ''])
+    first_pass = plan['runtimeChecks'][:5]
+    for entry in first_pass:
         lines.append(f"- `{entry['launcher']}`")
         lines.extend(f'  - {check}' for check in entry['checks'])
-    if not plan['runtimeChecks']:
+    if not first_pass:
         lines.append('The file-cleared missions reported no additional behavior checks.')
+    if plan['runtimeChecks'][5:]:
+        lines.extend(['', f"{len(plan['runtimeChecks']) - len(first_pass)} additional representatives "
+                      'for uncovered behaviors are listed in `plan.json`.'])
     if plan['authoredFileNotesByLauncher']:
         lines.extend(['', '## Inactive behavior confirmed in source files', ''])
         for header, notes in sorted(plan['authoredFileNotesByLauncher'].items()):
