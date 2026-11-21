@@ -12,7 +12,7 @@ from briefings import block_end, guid, properties
 from catalog import REF, SOURCE_TEXT
 from event_actions import (NUMBER, SPAWN, SPAWN_FIELDS, render_crew_config, render_spawn, spawn_details,
                            split_crew_block, target_names)
-from events import peak_flags
+from events import LEGACY_FLAG, peak_flags
 from extraction import condition as extraction_condition
 from groups import inheritance
 from interactions import convert_block as convert_interaction_block
@@ -130,12 +130,18 @@ STOCK_RESOURCE_ALIASES = {
         'PrefabLibrary/DefaultLibrary/Walls/Net/NetFence_04_8m.et',
     ('25B265F3E7CBDFC8', 'Prefabs/Props/Wrecks/BMP1_wreck.et'):
         'Prefabs/Props/Wrecks/BMP1_wreck/BMP1_wreck.et',
+    ('626C85F8D51AC829', 'PrefabLibrary/Props/Military/ObstacleBridge_01_platform.et'):
+        'PrefabLibrary/DefaultLibrary/Props/Military/ObstacleBridge_01_platform.et',
     ('75FEF1CA582431F3', 'Prefabs/Props/Wrecks/BTR70_wreck.et'):
         'Prefabs/Props/Wrecks/BTR70_Wreck/BTR70_wreck.et',
     ('AE300E34EA8FF40C', 'Prefabs/Props/Wrecks/Ural4320_wreck_static.et'):
         'Prefabs/Props/Wrecks/Ural4320_wreck/Ural4320_wreck_static.et',
     ('AF4BFBE29028A9FD', 'Prefabs/Vegetation/Bush/b_corylus_avellana_1l_collision.et'):
         'Prefabs/Vegetation/Bush/b_corylus_avellana_1l.et',
+    ('C1E318C4198DFA2A', 'PrefabLibrary/Props/Military/Duckboard_01.et'):
+        'PrefabLibrary/DefaultLibrary/Props/Military/Duckboard_01.et',
+    ('C433B56E102780AA', 'PrefabLibrary/Props/Military/ObstacleRamp_01_start.et'):
+        'PrefabLibrary/DefaultLibrary/Props/Military/ObstacleRamp_01_start.et',
     ('CAFF4B51059A0F81', 'PrefabLibrary/Walls/Concrete/ConcreteWall_01_3m.et'):
         'PrefabLibrary/DefaultLibrary/Walls/Concrete/ConcreteWall_01_3m.et',
     ('C98A6C1C2372354E', 'Prefabs/Vegetation/Bush/b_corylus_avellana_1_collision.et'):
@@ -800,10 +806,15 @@ def area_rules(source, world, dev=None):
                         fields, attached, amounts = attached_trigger_map(fields, dev)
                     flag_field = next(value.strip() for value in fields if value.strip().startswith('m_flagName '))
                     flag = flag_field.removeprefix('m_flagName ')
-                    if not re.fullmatch(r'"\w+"', flag) or flag in conditions or flag in flags:
-                        raise ValueError('invalid or duplicate area flag')
+                    if not LEGACY_FLAG.fullmatch(flag) or len(flag.encode()) > 130:
+                        raise ValueError('invalid area flag ' + flag)
+                    if flag in conditions or flag in flags:
+                        raise ValueError('duplicate area flag ' + flag)
                     flags.add(flag)
-                    area_name = 'GC_MigrationArea_' + flag[1:-1]
+                    token = flag[1:-1]
+                    if len(token.encode()) > 100 or not re.fullmatch(r'[\w.-]+', token):
+                        token = guid(world + '/area/' + flag)
+                    area_name = 'GC_MigrationArea_' + token
                     if shape or trigger['kind'] == 'Faction':
                         area_name = name or area_name
                     if trigger['kind'] == 'Extraction' and trigger['guid'] == '192ABD6B9232E064':
@@ -852,7 +863,7 @@ def extraction_rule(world, area_name, flag, fields, *, polygon=False):
     if data.get('m_stopAfterFirstChange') != '1' or data.get('m_playersOnly', '1') != '1':
         raise ValueError('unsupported extraction settings')
     faction, coords = data['m_factionKey'], data.get('coords', '')
-    radius = data.get('m_queryRadius', '25') if polygon else data['m_queryRadius']
+    radius = data.get('m_queryRadius', '25')
     hold, ratio = data.get('m_captureTime', '0'), data.get('m_ratioThreshold', '1')
     if not (re.fullmatch(r'"[\w.-]+"', faction) and (polygon or 0.1 <= float(radius) <= 100000)
             and (float(hold) == 0 or 0.1 <= float(hold) <= 86400)
@@ -945,7 +956,8 @@ def mode_children(lines):
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
-    weather, environment, coords, freeze, children = '', '', ' coords 0 0 0', 0, ''
+    weather, environment, freeze, children = '', '', 0, ''
+    transform = {}
     immediate_release = False
     construction = {}
     jip = {}
@@ -961,8 +973,11 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
                 raise ValueError('custom legacy game mode components')
             weather, environment = convert_weather(world, root[index + 1:end])
             index = end
-        elif re.fullmatch(r' coords [-+\d.]+ [-+\d.]+ [-+\d.]+', line):
-            coords = line
+        elif line.strip().partition(' ')[0] in SPAWNER_TRANSFORM and FIELD.fullmatch(line.strip()):
+            field, _, value = line.strip().partition(' ')
+            if field in transform:
+                raise ValueError('duplicate game mode transform ' + field)
+            transform[field] = value
         elif re.fullmatch(r' m_iFreezeTime \d+', line):
             freeze, fraction = divmod(int(line.split()[-1]), 1000)
             if fraction and freeze:
@@ -1009,6 +1024,9 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             jip_fields += f' m_iJipOpenSeconds {max(60, int(opening))}\n'
     if (zones and not (freeze or immediate_release)) or len(set(zones)) != len(zones):
         raise ValueError('staging duration requires uniquely named restriction zones')
+    if 'angles' in transform and any(axis in transform for axis in ('angleX', 'angleY', 'angleZ')):
+        raise ValueError('mixed game mode rotation representations')
+    placement = '\n'.join(f' {field} {value}' for field, value in {'coords': '0 0 0', **transform}.items())
     resource = guid(world + '/resource')
     settings = ''
     if construction:
@@ -1090,7 +1108,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     return f'''GC_LobbyGameMode GC_MigratedMission : "{{{resource}}}{preset}" {{
  components {{
 {weather}{environment}{settings} }}
-{coords}
+{placement}
 {jip_fields}{children}}}
 '''
 
@@ -1221,8 +1239,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     else:
                         boundaries.setdefault(layer, []).append(converted)
                         converted_cover |= 'm_bAutoFrameMap 1' in converted
-                elif PERCEPTION.fullmatch(head) and (len(block) == 2 or
-                                                     (len(block) == 3 and block[1].startswith(' coords '))):
+                elif PERCEPTION.fullmatch(head) and all(
+                    field.strip().partition(' ')[0] in SPAWNER_TRANSFORM and FIELD.fullmatch(field.strip())
+                    for field in block[1:-1]
+                ):
                     continue
                 elif kind == 'SCR_EditorRestrictionZoneEntity' and not LEGACY.search(body):
                     names, converted = restriction_zones(block, len(zones) + 1)

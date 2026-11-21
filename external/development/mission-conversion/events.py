@@ -166,6 +166,7 @@ def latched_script_event(key, name, condition, delay, action):
 
 
 PEAK_FLAG = re.compile(r'^  TILW_FactionPlayersKilledFlag "\{[\da-fA-F]{16}\}" \{$')
+LEGACY_FLAG = re.compile(r'"[\w.-]+(?: [\w.-]+)*"')
 
 
 def peak_flags(lines, declaration=PEAK_FLAG):
@@ -177,7 +178,7 @@ def peak_flags(lines, declaration=PEAK_FLAG):
         data = properties(lines[start + 1:stop], {'m_flagName', 'm_factionKey', 'm_casualtyRatio'})
         flag, faction = [data.get(field, '') for field in ('m_flagName', 'm_factionKey')]
         ratio = data.get('m_casualtyRatio', '1')
-        if (flag in flags or not re.fullmatch(r'"[\w.-]+"', flag)
+        if (flag in flags or not LEGACY_FLAG.fullmatch(flag) or len(flag.encode()) > 130
                 or not re.fullmatch(r'"[\w.-]+"', faction)
                 or not re.fullmatch(r'\d+(?:\.\d+)?', ratio) or not 0 <= Decimal(ratio) <= 1):
             raise ValueError('unsupported or duplicate peak population flag')

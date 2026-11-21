@@ -497,7 +497,11 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         return [], audit, 'generated startup selection name collides with a mission event'
     tracked = {item['flag'] for _, _, term, _ in parsed for item in leaves(term)
                if item['trigger'] == 'area capture' and item.get('inverted')}
-    tracked_areas = {flag: 'GC_MigrationCapture_' + flag for flag in sorted(tracked)}
+    tracked_areas = {
+        flag: 'GC_MigrationCapture_' + (flag if len(flag.encode()) <= 100 and re.fullmatch(r'[\w.-]+', flag)
+                                       else guid(world + '/capture tracker name/' + flag))
+        for flag in sorted(tracked)
+    }
     if set(tracked_areas.values()) & names:
         return [], audit, 'generated capture tracker name collides with a mission event'
     compiled = render_startup_selection(world, startup) if used_choices else []

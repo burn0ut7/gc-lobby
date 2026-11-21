@@ -628,3 +628,11 @@ Barn Busters is in local Missions Dev commit `0fd4483a`. File review matched 60 
 The batch can follow a reviewed legacy playable wrapper to its registered stock parent. For a Units role it compares the full resulting Dev ancestry, including any prefab shared through the stock GUID. The published Core US base overlay matches the Units Dev overlay byte for byte. Authored `m_sName` labels are migrated to the native editable-character name. The published Playable Component and its TilW extension have no `m_name` field. The converter removes that obsolete field from otherwise supported placements and retains their inherited native labels.
 
 The rule approved 76 additional mission-owned loadouts and reproduced the 187 previously approved outputs unchanged. The full pass cleared 31 roster placement blockers. Direction Found now generates 39 playable slots, including its custom gunner, VDV squad leader and machine-gunner prefabs. The audit holds the draft on the M113A3 APC and violet RDG-2 smoke. The current APC GUID resolves to an M113A2 and the smoke GUID has no installed registration. The two catalog runs reproduced the same drafts and diagnostics.
+
+## Authored trigger names and placement
+
+Area and faction casualty conditions retain legacy flag names that contain spaces. The converter uses stable identifiers for generated entities while keeping the exact authored flag for matching producers and consumers. A second producer with the same name still holds the draft. An extraction trigger with no radius override uses the legacy prefab default of 25 metres. The mode keeps its authored position and rotation. An otherwise unconfigured stock perception manager uses the singleton supplied by the native mode.
+
+The stock obstacle bridge platform, duckboard and ramp start now resolve through their registered DefaultLibrary paths with the same GUIDs.
+
+Fight For USS Concrete is in local Missions Dev commit `01fb4489`. The committed files matched the generated draft and the resource audit passed. File review preserved 57 playable slots, the 12-metre tower capture area, its 120-second hold and six status messages, both casualty notices and the 2,220- and 2,820-second time notices. Two catalog scans reproduced all 196 report and draft files. Map cover framing and the combined capture and casualty behavior remain representative runtime checks.
