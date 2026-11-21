@@ -422,11 +422,22 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_empty.et',
     ('DCAF0585D17B917A', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_ranomized.et'):
         'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_randomized.et',
+    ('0C55DFF2B0385FFE', 'Prefabs/Structures/Agriculture/Hayloft/Hayloft_E_01_wood.et'):
+        'Prefabs/Structures/Agriculture/Hayloft/Hayloft_E_01/Hayloft_E_01_wood.et',
+    ('2D10FC11D64DCE60', 'Prefabs/Structures/Agriculture/Manure/SilageStorage_E_01.et'):
+        'Prefabs/Structures/Agriculture/Manure/SilageStorage_E_01/SilageStorage_E_01.et',
+    ('4B176F8E58FA9D53', 'Prefabs/Vegetation/Tree/t_carpinus_betulus_2f.et'):
+        'Prefabs/Vegetation/Tree/t_carpinus_betulus/t_carpinus_betulus_2f.et',
+    ('8F91FCAFE65FCDA6', 'Prefabs/Vegetation/Tree/t_carpinus_betulus_3s.et'):
+        'Prefabs/Vegetation/Tree/t_carpinus_betulus/t_carpinus_betulus_3s.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
     ('7FF511EDC4034D9F', 'Prefabs/Vehicles/Helicopters/Mi24/Mi24V_armed_S5.et'): (
         'WCS_Mi-24V_628933A0D3A0D700', '7FF511EDC4034D9F',
         'Prefabs/Vehicles/Helicopters/Mi24/Mi24V_Armed_UB1657_X4.et'),
+    ('38DE44985B0AD338', 'Prefabs/Vehicles/Helicopters/Mi24/Mi24P_base.et'): (
+        'WCS_Mi-24V_628933A0D3A0D700', '38DE44985B0AD338',
+        'Prefabs/Vehicles/Helicopters/Mi24/Mi24P_Base.et'),
     ('2B9DB09AC8BEA673', 'Prefabs/Vehicles/Tracked/T-72A/T72A_FIA.et'): (
         'WCS_T-72_5E0AB16BEB16D6A4', '2B9DB09AC8BEA673', 'Prefabs/Vehicles/Tracked/T72A/T72A_FIA.et'),
     ('8A7ECB6BDF6ADC0F', 'Assets/Weapons/Launchers/9K38_IGLA/IGLA.xob'): (
