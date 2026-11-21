@@ -63,6 +63,14 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault.conf': (
+        '81326ea91d4371e361190f44e19758ad03b59072',
+        (('worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/NVA_Players/NVA_Players.layer',
+          '7b1d1cc3fd884ea62fc95ef25782b8471ba7d751'),
+         ('worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/US_Players/US_Players.layer',
+          '786f9c2fc60bf64dcea4a035d66f9c1846622965')),
+        79, 59,
+    ),
     'Missions/arc/StationSmashers.conf': (
         '7bcb2beb501cba2cb14a896d7fe8fad1f267e705',
         (('worlds/arc/StationSmashers/StationSmashers_Layers/players_ins.layer',

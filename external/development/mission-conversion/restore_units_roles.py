@@ -1,6 +1,7 @@
 """Stage previously shipped Units loadouts with their original equipment and native parents."""
 import argparse
 from pathlib import Path
+import re
 from subprocess import CalledProcessError
 
 from briefings import guid
@@ -8,11 +9,13 @@ from catalog import REF, Snapshot
 from groups import only_path, stock_character
 from install_batch import resource_databases, unresolved_resources
 from launchers import META_NAME, replace_reference
-from local_loadouts import CHARACTER, LEGACY, migrate_playability
+from local_loadouts import CHARACTER, LEGACY, migrate_playability, unchanged_units_parent
 from scenery import StockPrefabs
 
 
 ARCHIVE = 'cda6d96940cd5fca0984087f7d2e58553d9bacb3'
+MSV85_ARCHIVE = '08b79772e2f628b8d52dd6c1b5a0321e2d9ef6cc'
+MSV85_DIRECTORY = 'Prefabs/Characters/Factions/OPFOR/USSR_Army/MotorRifle_MSV85A/'
 DIRECTORY = 'Prefabs/Characters/Factions/OPFOR/USSR_Army/MotorRifle_MSV80/Legacy/'
 DEPUTY = '07299990D00B0823'
 MEDIC = 'D1BA3D1164545A8D'
@@ -62,6 +65,36 @@ def verified_roles(units, stock):
         if path not in units.files or units.read(path) != body:
             raise ValueError('archived loadout differs from the reviewed recovery: ' + path)
     return {(original, path): RESTORED[original] for original, path in AUTHORED_PATHS.items()}
+
+
+def verified_msv85_wrappers(source, units):
+    archive = Snapshot(units.repo, MSV85_ARCHIVE)
+    result = {}
+    for resource, paths in archive.resources.items():
+        if len(paths) != 1:
+            continue
+        path, = paths
+        if not path.startswith(MSV85_DIRECTORY + 'P/') or not path.endswith('_P.et'):
+            continue
+        body = archive.read(path)
+        header, _, fields = body.partition('\n')
+        if not CHARACTER.fullmatch(header) or not re.fullmatch(
+                r' ID "[\dA-F]{16}"\n components \{\n'
+                r'  PS_PlayableComponent "\{5EFCC1946F475F15\}" \{\n'
+                r'   m_bIsPlayable 1\n  \}\n \}\n\}', fields.strip('\n')):
+            continue
+        parent = REF.search(header)[1].upper()
+        # The wrapper only opted the existing loadout into slot selection.
+        # Require the archived, published Units and Dev loadout chains to agree.
+        if not (unchanged_units_parent(archive, units, parent) and unchanged_units_parent(source, units, parent)):
+            continue
+        native = (parent, only_path(units, parent))
+        meta = META_NAME.search(archive.read(path + '.meta'))
+        if not meta or meta[2].upper() != resource:
+            raise ValueError('unexpected archived role metadata: ' + path)
+        for authored in (path, MSV85_DIRECTORY + Path(path).name, meta[3]):
+            result[(resource, authored)] = native
+    return result
 
 
 def main():

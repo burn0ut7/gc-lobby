@@ -57,6 +57,8 @@ def verified_uk_forced_roles(workshop, owned):
     return result
 # These exact Units Dev overlays came from the published legacy Core package.
 EXTERNAL_PARENT_BRIDGES = {
+    '5346CF7E39A65A6B': ('Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Base.et',
+                         'd2c7fb0178245be7ceaa32f52746a76d624a3d9e5573b68192764e9564fe73db'),
     '7A9EE19AB67B298B': ('Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_base.et',
                          '6bba2563a432f879d466e9ebed1b312e3f1f5def486175ee71e378f72f3b1c05'),
     '836E7E39AAC5888B': ('Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Base.et',
@@ -393,7 +395,19 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             if not all(slot in restored_members or legacy_member(source_units, slot[0], False) for slot in slots):
                 raise ValueError('mixed playability alongside restored legacy roles')
             restored_playable = True
-    if not native_playable and not explicit_force and not restored_playable:
+    character_playable = False
+    if not (native_playable or explicit_force or restored_playable):
+        # The old lobby registered playable characters independently of the group's native flag.
+        authored = [i for i, line in enumerate(lines) if re.fullmatch(r'\s*m_aUnitPrefabSlots (?:\+ ?)?\{', line)]
+        if len(authored) <= 1:
+            base = SLOTS.search(old)
+            members = REF.findall(base[1]) if base and not replace_slots else []
+            if authored:
+                start = authored[0]
+                members.extend(REF.findall('\n'.join(lines[start + 1:block_end(lines, start)])))
+            character_playable = bool(members) and all(
+                legacy_member(source_units, resource, False) for resource, _ in members)
+    if not (native_playable or explicit_force or restored_playable or character_playable):
         return convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai or {},
                                    reviewed_ai_members=reviewed_ai_members)
     roster = []
@@ -438,35 +452,35 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                 last = block_end(lines, j)
                 match = CALL.fullmatch(lines[j])
                 if match and (match[1].upper() == STANDARD_CALLSIGN or match[1].upper() in reviewed_callsigns):
+                    identity = match[1].upper()
                     placed = callsign(lines[j+1:last])
                     if assigned is not None:
                         # A unification pass reused the same ID for the retained numeric
                         # override and the old disabled default. Enabled has no bearing on
                         # the numeric reads made by the legacy playable manager.
-                        if not reviewed_callsigns and not (
-                                assigned[0] == match[1].upper() and set(assigned[1]) & INDEX.keys()
-                                and placed == {'Enabled': 0}):
+                        if reviewed_callsigns or (assigned[0] == identity and placed == {'Enabled': 0}
+                                                  and set(assigned[1]) & INDEX.keys()):
+                            j = last + 1
+                            continue
+                        if not (assigned == (identity, {'Enabled': 0}) and set(placed) & INDEX.keys()):
                             raise ValueError('ambiguous duplicate callsign component')
-                        j = last + 1
-                        continue
-                    # PS_PlayableManager reads the component even when Enabled is zero.
-                    # Unspecified attributes inherit through the Units prefab chain, then
-                    # use the three zero defaults of PS_GroupCallsignAssigner.
-                    effective = dict.fromkeys(INDEX, 0)
-                    for body in reversed(inheritance(source_units, guid)):
-                        source_lines = body.splitlines()
-                        for pos, item in enumerate(source_lines):
-                            inherited_call = CALL.fullmatch(item)
-                            if inherited_call and inherited_call[1].upper() == match[1].upper():
-                                effective.update(callsign(source_lines[pos+1:block_end(source_lines, pos)]))
-                    effective.update(placed)
-                    metadata.extend(indent + f'{dest} "{effective[k]}"' for k, dest in INDEX.items())
-                    assigned = (match[1].upper(), placed)
+                    assigned = (identity, placed)
                 elif native_group_component(lines, j, last):
                     components.extend(lines[j:last+1])
                 else:
                     raise ValueError('group component needs review: ' + lines[j].strip().split()[0])
                 j = last + 1
+            if assigned is not None:
+                # Unspecified indices inherit through Units, then use the three zero defaults.
+                effective = dict.fromkeys(INDEX, 0)
+                for body in reversed(inheritance(source_units, guid)):
+                    source_lines = body.splitlines()
+                    for pos, item in enumerate(source_lines):
+                        inherited_call = CALL.fullmatch(item)
+                        if inherited_call and inherited_call[1].upper() == assigned[0]:
+                            effective.update(callsign(source_lines[pos+1:block_end(source_lines, pos)]))
+                effective.update(assigned[1])
+                metadata.extend(indent + f'{dest} "{effective[k]}"' for k, dest in INDEX.items())
             if components:
                 out.extend([line, *components, lines[end]])
             i = end
@@ -519,7 +533,7 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             metadata.append(line.replace('m_sCustomNameSet ', 'm_sGC_Description ', 1))
         elif token in ('m_bSetPlayable 0', 'm_bSetPlayable 1'):
             pass
-        elif token == 'm_bPlayable 0' and (explicit_force or restored_playable):
+        elif token == 'm_bPlayable 0' and (explicit_force or restored_playable or character_playable):
             # Legacy character playability was independent of this native group setting.
             pass
         elif token.startswith(('coords ', 'angles ', 'angleX ', 'angleY ', 'angleZ ', 'scale ', 'm_bSnapToTerrain ')) or token == 'm_bPlayable 1':
