@@ -2066,6 +2066,12 @@ NATIVE_VEHICLE_OVERRIDES = re.compile(
     rf'    \}}\n   \}}\n  \}}\n)?'
     rf' \}}\n)?(?: {FIELD.pattern}\n)*\}}'
 )
+REVIEWED_LOCKED_M113 = {
+    'worlds/Blue/Bangalorious/Data/M113_APC_LOCKED.et':
+        ('ccdb45f9107caa5d70e3d92402f2abd5d6d522fa5117529caceb569ec782af6a', ''),
+    'worlds/Blue/Bangalorious/Data/M2HB_LOCKED.et':
+        ('50d848fd6fea260904624ca33b67647a9ee227da83086723ecbc378fbbc071cc', '   m_bIsLocked 1\n'),
+}
 
 
 def passive_asset(source, path):
@@ -2081,8 +2087,17 @@ def passive_asset(source, path):
         body = source.read(path)
         if re.match(r'MatPBR(?:Basic|Decal) \{\n', body) and not LEGACY.search(body):
             return body
+        if (path == 'worlds/Blue/Bangalorious/Data/ErodedEmbankment_01_EMPTY_grass.emat'
+                and sha256(body.strip().encode()).hexdigest()
+                == '55f8a99c8737ac091d599e6f9dd4ce38aa47a7e58dc7af389298dda89ba22b84'):
+            return body
     if suffix == '.et':
         body = source.read(path)
+        if path in REVIEWED_LOCKED_M113:
+            digest, native_lock = REVIEWED_LOCKED_M113[path]
+            if sha256(body.strip().encode()).hexdigest() != digest:
+                raise ValueError('locked M113 prefab changed')
+            return body.replace('   m_lockPilot 1\n   m_lockTurret 1\n', native_lock)
         if path == BLOODY_GARRISON_PREFAB:
             if any(source.files.get(file) != blob for file, blob in BLOODY_GARRISON_BLOBS.items()):
                 raise ValueError('garrison resource or placement changed')
