@@ -846,7 +846,12 @@ def area_rules(source, world, dev=None):
                         rule, area, details = presence_rule(world, area_name, flag, fields)
                         capture_details[flag[1:-1]] = {'area': area_name, **details}
                     elif trigger['kind'] == 'Extraction' and trigger['guid'] == '192ABD6B9232E064':
-                        rule, area = extraction_rule(world, area_name, flag, fields, polygon=bool(shape))
+                        if scripts is None:
+                            scripts = script_text(source)
+                        if (name and f'"{name}"' in scripts) or flag in scripts:
+                            raise ValueError('extraction trigger may be controlled by mission scripts')
+                        rule, area, details = extraction_rule(world, area_name, flag, fields, polygon=bool(shape))
+                        capture_details[flag[1:-1]] = {'area': area_name, **details}
                     elif trigger['kind'] == 'Faction' and trigger['guid'] == '8C576D46F6579229':
                         built, area, details = capture_instance(world, area_name, fields, polygon=bool(shape))
                         capture_details[flag[1:-1]] = {'area': area_name, **details}
@@ -952,25 +957,43 @@ def presence_rule(world, area_name, flag, fields):
 
 
 def extraction_rule(world, area_name, flag, fields, *, polygon=False):
-    data = properties(fields, {'coords', 'm_queryRadius', 'm_captureTime', 'm_flagName',
-                               'm_stopAfterFirstChange', 'm_factionKey', 'm_ratioThreshold', 'm_playersOnly'}
-                      | CAPTURE_EDITOR_FIELDS)
-    if data.get('m_stopAfterFirstChange') != '1' or data.get('m_playersOnly', '1') != '1':
+    data = properties(fields, {'m_queryRadius', 'm_captureTime', 'm_flagName', 'm_stopAfterFirstChange',
+                               'm_factionKey', 'm_ratioThreshold', 'm_playersOnly', 'm_comparisonMode',
+                               'm_skipFirstQuery', 'm_eventsOnlyDuringGame'} | CAPTURE_TRANSFORM | CAPTURE_EDITOR_FIELDS)
+    players = data.get('m_playersOnly', '1')
+    stops = data.get('m_stopAfterFirstChange', '0')
+    discovery = data.get('m_skipFirstQuery', '0')
+    mode = data.get('m_comparisonMode', 'EQUAL_OR_MORE')
+    if (any(value not in ('0', '1') for value in (players, stops, discovery))
+            or mode not in ('0', '1', 'EQUAL_OR_LESS', 'EQUAL_OR_MORE')
+            or data.get('m_eventsOnlyDuringGame', '1') != '1'):
         raise ValueError('unsupported extraction settings')
-    faction, coords = data['m_factionKey'], data.get('coords', '')
+    faction = data['m_factionKey']
+    transform = {key: value for key, value in data.items() if key in CAPTURE_TRANSFORM}
     radius = data.get('m_queryRadius', '25')
     hold, ratio = data.get('m_captureTime', '0'), data.get('m_ratioThreshold', '1')
-    if not (re.fullmatch(r'"[\w.-]+"', faction) and (polygon or 0.1 <= float(radius) <= 100000)
-            and (float(hold) == 0 or 0.1 <= float(hold) <= 86400)
-            and 0 <= float(ratio) <= 1 and (polygon or re.fullmatch(r'[-+\d.]+ [-+\d.]+ [-+\d.]+', coords))):
+    if (not re.fullmatch(r'"[\w.-]+"', faction)
+            or not all(re.fullmatch(NUMBER, value) for value in (radius, hold, ratio))
+            or not 0 <= Decimal(hold) <= 86400 or not 0 <= Decimal(ratio) <= 1
+            or (not polygon and ('coords' not in transform or not Decimal('0.1') <= Decimal(radius) <= 100000))
+            or any(not FIELD.fullmatch(f'{key} {value}') for key, value in transform.items())):
         raise ValueError('invalid extraction settings')
-    check = extraction_condition(world, flag[1:-1], area_name, faction, ratio, hold if float(hold) else None)
+    at_most = mode in ('0', 'EQUAL_OR_LESS')
+    check = extraction_condition(world, flag[1:-1], area_name, faction, ratio, hold,
+                                 skip_discovery=discovery == '1', latch=stops == '1', players_only=players == '1',
+                                 at_most=at_most, whole_number_quotient=True)
+    position = ''.join(f' {field} {value}\n' for field, value in transform.items())
     area = '' if polygon else f'''GC_RadiusAreaEntity {area_name} : "{{2C4447C53A1E450B}}Prefabs/Logic/Mission/RadiusArea.et" {{
- coords {coords}
- m_fRadius {radius}
+{position} m_fRadius {radius}
 }}
 '''
-    return ['      ' + value for value in check.splitlines()], area
+    return ['      ' + value for value in check.splitlines()], area, {
+        'population': 'players' if players == '1' else 'players and AI',
+        'faction': faction[1:-1], 'seconds': float(hold), 'ratio': float(ratio),
+        'comparison': 'at most' if at_most else 'at least', 'quotient': 'whole number',
+        'stopsAfterFirstChange': stops == '1', 'skipDiscovery': discovery == '1',
+        **({} if polygon else {'radiusMeters': float(radius)}),
+    }
 
 
 def restriction_zones(block, base):

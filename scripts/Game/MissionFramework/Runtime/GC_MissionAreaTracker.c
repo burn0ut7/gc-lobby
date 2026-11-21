@@ -324,11 +324,7 @@ class GC_MissionAreaObservation
 				denominator = m_iTotal;
 			if (denominator == 0)
 				return check.m_bShareAtMost;
-			float share = selected;
-			share /= denominator;
-			if (check.m_bShareAtMost)
-				return share <= check.m_fAreaProportion;
-			return share >= check.m_fAreaProportion;
+			return PassesProportion(selected, denominator, check.m_fAreaProportion, check.m_bShareAtMost, check.m_bAreaWholeNumberQuotient);
 		}
 		if (check.m_bAreaProportion)
 		{

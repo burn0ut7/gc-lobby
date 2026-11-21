@@ -7,6 +7,8 @@ class GC_LocalFactionShare : GC_LivingRequirementBase
 	bool m_bWholeMission;
 	[Attribute("0", UIWidgets.CheckBox, "Unchecked: share must be at least the threshold. Checked: at most. An empty comparison population fails At least and passes At most.")]
 	bool m_bAtMost;
+	[Attribute("0", UIWidgets.CheckBox, "Use a whole-number quotient for converted missions that divided integer counts.")]
+	bool m_bWholeNumberQuotient;
 	[Attribute("", UIWidgets.Auto, "Factions excluded from both sides of the ratio, for example civilians. Unlisted factions compete regardless of their diplomatic relations. A capturing faction cannot also be ignored.")]
 	ref array<FactionKey> m_aIgnoredFactions;
 
@@ -17,6 +19,7 @@ class GC_LocalFactionShare : GC_LivingRequirementBase
 		check.m_bShareWholeMission = m_bWholeMission;
 		check.m_fAreaProportion = m_fRequiredShare;
 		check.m_bShareAtMost = m_bAtMost;
+		check.m_bAreaWholeNumberQuotient = m_bWholeNumberQuotient;
 		check.m_aIgnoredFactions = {};
 		if (m_aIgnoredFactions)
 			check.m_aIgnoredFactions.Copy(GC_FactionKeys.ToStrings(m_aIgnoredFactions));
