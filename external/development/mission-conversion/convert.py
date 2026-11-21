@@ -929,7 +929,7 @@ def main():
 
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
                          asset_aliases, {**loadouts, **ai_loadouts}, spawned_assets, convert_crew, resolve_spawn, resolve_crew,
-                         delayed_extractions)
+                         delayed_extractions, batch.reviewed_faction_assets(source, dev, source_units, dev_units))
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
                         for path, contents in out.items()}

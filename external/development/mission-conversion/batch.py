@@ -14,7 +14,7 @@ from catalog import REF, SOURCE_TEXT
 from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, render_crew_config, render_spawn, spawn_details, split_crew_block
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, MISSING_STATUS, condition as extraction_condition
-from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, inheritance
+from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, inheritance, reviewed_native_ancestry
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
 from markers import DEST as MAP_MARKER_PREFAB, convert_layer
@@ -1780,6 +1780,48 @@ def registered_alias(resource, path, source, dev, aliases):
     return None
 
 
+def reviewed_faction_assets(source, dev, source_units, dev_units):
+    path = 'worlds/TheLocalPub/BebbleIslandRaid/Configs/Factions/Argentina.conf'
+    identity = '0BE3E7B63E7C70AC'
+    if (source.files.get(path) != '02c5b555c513edaca3fa97238261294d15bdca5b'
+            or source.resources.get(identity) != [path]
+            or dev_units.resources.get(identity) != ['Configs/Factions/GC_ARG.conf']):
+        return {}
+    # The mission profile adds its own catalog and faction settings to INDFOR.
+    # Units already uses the original GUID for a different faction profile.
+    destination = path.removesuffix('.conf') + '_GC.conf'
+    resource = guid(destination)
+    if any(resource in item.resources for item in (source, source_units, dev_units)):
+        return {}
+    body = source.read(path)
+    paths = {}
+    for dependency, original in REF.findall(body):
+        if not original.startswith('worlds/'):
+            continue
+        current = dev_units.resources.get(dependency, [])
+        if len(current) != 1 or PurePosixPath(current[0]).suffix != PurePosixPath(original).suffix:
+            return {}
+        if original.endswith('.et') and not reviewed_native_ancestry(inheritance(source_units, dependency),
+                                                                    inheritance(dev_units, dependency), dev_units):
+            return {}
+        if original.endswith('.emat'):
+            legacy = source.resources.get(dependency, [])
+            if len(legacy) != 1:
+                return {}
+            old_material = REF.sub(r'\1', source.read(legacy[0])).strip()
+            new_material = REF.sub(r'\1', dev_units.read(current[0])).strip()
+            if old_material != new_material:
+                return {}
+        paths[(dependency, original)] = current[0]
+    body = REF.sub(lambda ref: f'"{{{ref[1]}}}{paths[ref.groups()]}"' if ref.groups() in paths else ref[0], body)
+    meta = replace_reference(source.read(path + '.meta'), META_NAME, resource, destination)
+    files = {destination: body, destination + '.meta': meta}
+    if (dev.resources.get(resource) not in (None, [destination])
+            or any(file in dev.files and dev.read(file) != text for file, text in files.items())):
+        return {}
+    return {(identity, path): (resource, destination, files)}
+
+
 def replace_registered_paths(text, source, dev, aliases):
     return REF.sub(lambda ref: registered_alias(ref[1].upper(), ref[2], source, dev, aliases) or ref[0], text)
 
@@ -1809,7 +1851,7 @@ def repair_existing_layers(source, dev, world, aliases):
     return repairs, original_hashes
 
 
-def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets):
+def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets, faction_assets):
     files = list(draft)
     blockers = set()
     for owner in files:
@@ -1818,6 +1860,10 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
 
         def relocate(ref):
             resource, path = ref[1].upper(), ref[2]
+            if faction := faction_assets.get((resource, path)):
+                identity, destination, assets = faction
+                draft.update(assets)
+                return f'"{{{identity}}}{destination}"'
             alias = registered_alias(resource, path, source, dev, asset_aliases)
             if alias:
                 return alias
@@ -2459,7 +2505,8 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
 
 
 def world_draft(source, dev, world, row, staged, area_placements, interactions, convert_group_block, asset_aliases,
-                local_loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew, delayed=None):
+                local_loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew, delayed=None,
+                faction_assets=None):
     draft, blockers = {}, []
     reviewed_replacements = {}
     if row.get('playtestCandidate') or row.get('raceConversion'):
@@ -2883,7 +2930,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'launcher', 'file': header, 'detail': str(exc)})
     if delayed:
         draft.update(delayed.assets)
-    blockers.extend(migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets))
+    blockers.extend(migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets,
+                                   faction_assets or {}))
     for path, text in draft.items():
         if path not in dev.files:
             continue
@@ -2965,6 +3013,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare character damage flags as the default hit zone changes, including death and removal.')
     if any(record.get('sharedDamageFlags') for record in row.get('damageFlagCandidates', {}).values()):
         remaining.append('Compare shared damage flags as separate producers reach or leave their target states.')
+    if any(asset in draft for _, _, files in (faction_assets or {}).values() for asset in files):
+        remaining.append('Compare faction presentation and flag textures against the legacy mission.')
     if any(action.get('instruction') == 'TILW_DeleteEntitiesInstruction'
            for event in rules.values() if event.get('trigger') == 'startup choice'
            for action in event.get('convertedActions', ())):
@@ -3058,14 +3108,15 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
 
 
 def plan(source, dev, report, staged, area_placements, interactions, convert_group_block, asset_aliases,
-         local_loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew, delayed_extractions):
+         local_loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew, delayed_extractions,
+         faction_assets=None):
     results, emitted, totals, families = {}, {}, Counter(), Counter()
     for world, row in report['worlds'].items():
         draft, result = world_draft(source, dev, world, row, staged, area_placements.get(world, {}),
                                     interactions.get(world, ((), {})), convert_group_block, asset_aliases,
                                     local_loadouts, spawned_assets.get(world, {}), convert_crew,
                                     partial(resolve_spawn, spawned_assets.get(world, {})), resolve_crew,
-                                    delayed_extractions.get(world))
+                                    delayed_extractions.get(world), faction_assets)
         results[world] = result
         totals[result['status']] += 1
         families.update({blocker['rule'] for blocker in result.get('blockers', [])})

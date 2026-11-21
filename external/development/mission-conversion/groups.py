@@ -182,6 +182,8 @@ def verified_stock_ai_group(guid, path, stock, locally_owned, source_units, dev_
     provider = rhs if rhs_spec else stock
     if not spec or not provider or path != spec['path'] or not provider.contains(guid, path):
         return None
+    if inherited_slots and not spec['slots']:
+        return None
     def registered(reference, *, slot=False):
         resource, registered_path = reference
         if resource in locally_owned or not (
@@ -395,6 +397,8 @@ def native_group_component(lines, start, end):
     header = lines[start].strip()
     if FORMATION.fullmatch(header):
         return True
+    if header == 'Persistence "{654CB71D928E041B}" {':
+        return end == start + 2 and lines[start + 1].strip() == 'Enabled 0'
     if header == MOVEMENT:
         return all(MOVEMENT_FIELD.fullmatch(line.strip()) for line in lines[start + 1:end])
     if header == AI_CONFIG:
@@ -440,11 +444,15 @@ def native_group_component(lines, start, end):
 
 @lru_cache(maxsize=4096)
 def unchanged_disabled_playability(source_units, dev_units, guid):
-    disabled = re.compile(r'^  PS_PlayableComponent "\{5EFCC1946F475F15\}" \{\n   m_bIsPlayable 0\n  \}\n', re.M)
+    marker = re.compile(r'^  PS_PlayableComponent "\{5EFCC1946F475F15\}" \{\n   m_bIsPlayable ([01])\n  \}\n', re.M)
     before = inheritance(source_units, guid)
-    normalized = tuple(disabled.sub('', body).replace(' components {\n }\n', '') for body in before)
+    authored = [value for body in before for value in marker.findall(body)]
+    if not authored or authored[0] != '0' or legacy_member(source_units, guid, False):
+        return False
+    normalized = tuple(marker.sub('', body).replace(' components {\n }\n', '') for body in before)
+    after = tuple(body.replace(' components {\n }\n', '') for body in inheritance(dev_units, guid))
     # Only legacy AI markers with explicit opt-out and equivalent native ancestry can pass.
-    return normalized != before and reviewed_native_ancestry(normalized, inheritance(dev_units, guid), dev_units)
+    return reviewed_native_ancestry(normalized, after, dev_units)
 
 
 DEPRECATED_STOCK_AI_OVERRIDES = {
@@ -843,6 +851,8 @@ def convert_registered_group(lines, guid, source_units, dev_units, stock, locall
         start, = rosters
         entries = '\n'.join(lines[start + 1:block_end(lines, start)])
         authored_slots = REF.findall(entries)
+    if not stock_group['slots'] and (not authored_slots or REF.sub('', entries).strip()):
+        raise ValueError('native group base needs a complete authored roster ' + guid)
     unverified_slots = stock_group.get('unverifiedSlots')
     if unverified_slots and (
             not authored_slots or REF.sub('', entries).strip()

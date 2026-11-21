@@ -1,4 +1,12 @@
 {
+  "EE8D60FCE6D3B856": {
+    "path": "Prefabs/Groups/BLUFOR/RHS_USAF/RHS_USAF_USMC_MEF/Group_USAF_USMC_MEF_Base.et",
+    "sha256": "f457c1281c726a08d7420d121ff75a7c411183c6e842a9ecd48ff7d018827a12",
+    "inheritedGroups": [
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": []
+  },
   "0ACD74AD27EEEE7D": {
     "path": "Prefabs/Groups/OPFOR/RHS_AFRF/MSV/VKPO_Demiseason/Group_RHS_RF_MSV_VKPO_DS_FireGroup.et",
     "sha256": "30c89a670663d3fe0665b87659ba3260456c6649d3d5719ebbe12ef737c95e93",

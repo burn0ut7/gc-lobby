@@ -6,7 +6,8 @@ import re
 
 from briefings import QUOTED, block_end, properties
 from catalog import REF
-from groups import inheritance, legacy_member, reviewed_native_ancestry, stock_character, stock_wrapper_ancestry_matches
+from groups import (inheritance, inherits_legacy_playable_base, legacy_member, reviewed_native_ancestry,
+                    stock_character, stock_wrapper_ancestry_matches)
 
 CHARACTER = re.compile(r'SCR_ChimeraCharacter : "\{[\da-fA-F]{16}\}[^"\n]+\.et" \{')
 PLAYABLE = '  PS_PlayableComponent "{5EFCC1946F475F15}" {'
@@ -25,6 +26,7 @@ MOVED_AI_PARENTS = {
         'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/2020/Character_SEP_SL.et',
 }
 REVIEWED_FORCED_CHARACTERS = {
+    'A2B3DB1BABEF1F4E': '6cafd343421e6c5329b204b1d796d44a8b7aad751eadf1c97ee40ce7f9d883e0',
     '899712E13A601488': '4c4f34ec51a307bfee86f7153626906af9a3cfe21064e540408a82bb2f9fa1ff',
     'DADA3692BC2D3EE1': 'e2f4d1d7c1b1ec926064f5832a5d9fde9e7899438fb6df189137655a1f821892',
 }
@@ -99,6 +101,8 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
         if not path.lower().startswith(('worlds/', 'missions/')) or PurePosixPath(path).suffix.lower() != '.et':
             return None
         text = source.read(path)
+        expected = REVIEWED_FORCED_CHARACTERS.get(guid)
+        verified_forced = expected and sha256(text.strip().encode()).hexdigest() == expected
         first = text.partition('\n')[0]
         if not CHARACTER.fullmatch(first):
             return None
@@ -126,7 +130,9 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
             stock_wrapper = stock_wrapper_ancestry_matches(source_units, dev_units, resource, stock, owned)
             if not stock_wrapper and not unchanged_units_parent(source_units, dev_units, resource):
                 return None
-            if not removed and not stock_wrapper and not legacy_member(source_units, resource, False):
+            if (not removed and not stock_wrapper and not legacy_member(source_units, resource, False)
+                    and not (verified_forced and inherits_legacy_playable_base(source_units, resource,
+                                                                              stock, dev_units))):
                 return None
             canonical, = dev_units.resources[resource]
             if not canonical.lower().startswith('prefabs/characters/'):
@@ -146,8 +152,6 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
                     return None
                 body = first.replace(parent[0], f'"{{{native[0]}}}{native[1]}"', 1) + body[len(first):]
             else:
-                expected = REVIEWED_FORCED_CHARACTERS.get(guid)
-                verified_forced = expected and sha256(text.strip().encode()).hexdigest() == expected
                 if not (removed or verified_forced) or not stock.contains(resource, parent_path):
                     return None
         compared = normalize_references(body) if normalize_references and path in dev.files else body
