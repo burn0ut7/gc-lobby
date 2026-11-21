@@ -27,7 +27,11 @@ LEGACY = re.compile(r'\b(?:TILW|PS)_\w+')
 MODE = re.compile(r'^PS_GameModeCoop(?: [\w.-]+)? : "'
                   r'(?:\{4CFD54745CD45673\}Prefabs/MP/Modes/PS_GameMode_Lobby_(?:GC|TILWMF)\.et'
                   r'|\{9C2001FE7A2F2281\}Prefabs/MP/Modes/PS_GameMode_Lobby\.et)" \{$')
-CONSTRUCTION_FIELDS = {'m_fPrepDuration', 'm_fPrepMultiplier', 'm_fGameMultiplier'}
+CONSTRUCTION_FIELDS = {
+    'm_fPrepDuration': ('m_fPreparationSeconds', 0, 2147483),
+    'm_fPrepMultiplier': ('m_fPreparationMultiplier', 0.5, 10000000),
+    'm_fGameMultiplier': ('m_fMatchMultiplier', 0.5, 10000000),
+}
 LEGACY_JIP_MODES = {'Deny': 'DISABLED', 'Auto': 'AUTO', 'Manual': 'MANUAL',
                     '0': 'DISABLED', '1': 'AUTO', '2': 'MANUAL'}
 NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|Turret|SCR_AIWorld|GameEntity|GenericEntity|GenericTerrainEntity|GenericWorldFogEntity|StaticModelEntity|Tree|'
@@ -830,9 +834,6 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         else:
             raise ValueError('game mode field or child requires a conversion rule: ' + line.strip())
         index += 1
-    if construction:
-        authored = ', '.join(f'{field} {value}' for field, value in sorted(construction.items()))
-        raise ValueError('legacy construction progress settings need runtime support: ' + authored)
     jip_fields = ''
     if jip:
         mode = LEGACY_JIP_MODES.get(jip.get('m_eJIPState', 'Manual'))
@@ -847,6 +848,25 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         raise ValueError('staging duration requires uniquely named restriction zones')
     resource = guid(world + '/resource')
     settings = ''
+    if construction:
+        fields = []
+        for field, (native, minimum, maximum) in CONSTRUCTION_FIELDS.items():
+            if field not in construction:
+                continue
+            value = construction[field]
+            if not re.fullmatch(NUMBER, value) or not minimum <= Decimal(value) <= maximum:
+                raise ValueError('construction progress setting outside supported range: ' + field)
+            fields.append(f'    {native} {value}\n')
+        layout = '{96A8B496A076F1C0}scripts/Game/Building/CampaignBuildingCompositionOutline.conf'
+        settings += f'''  SCR_CampaignBuildingManagerComponent "{{{guid(world + '/construction')}}}" {{
+   m_sFreeRoamBuildingClientTrigger "{{5E191CEAF4B95816}}Prefabs/MP/FreeRoamBuildingClientTrigger.et"
+   m_BudgetType CAMPAIGN
+   m_iCompositionRefundPercentage 100
+   m_OutlineManager GC_ConstructionOutlineManager "{{{guid(world + '/construction outlines')}}}" : "{layout}" {{
+{''.join(fields)}   }}
+   m_sPrefabsToBuildResource "{{D2527D9AA5B4A33E}}Configs/Editor/PlaceableEntities/Compositions/Compositions_FreeRoamBuilding.conf"
+  }}
+'''
     if additional_rules:
         settings += f'''  GC_PeakFactionPopulationComponent "{{{guid(world + '/population')}}}" {{
   }}
