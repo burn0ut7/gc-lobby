@@ -1360,6 +1360,17 @@ CORE_INITIAL_DAMAGE = re.compile(
     r'PK_HitzoneData "\{[\da-fA-F]{16}\}" \{\nm_fHealthPercentage 0\n\}\n\}\n\}\n\}'
 )
 LEGACY_SENTRY_TREE = 'OverrideAIBehaviorData "{1E81FF0F3EC49323}AI/BehaviorTrees/Chimera/Soldier/TILW_StaticAI.bt"'
+UK_AMMO_BOX = '{E0E74C1EF4CD0C60}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_Ammunition_HQ_UK.et'
+STOCK_US_AMMO_BOX = '{5FFD91CF507BFFFB}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_Ammunition_US.et'
+# These six rows are inherited by the authored placements from British Forces 1.0.67.
+UK_AMMO_BOX_ITEMS = {
+    '6490E7E5E9391AF4': ('RIFLE', '68CFC7B6DE0CC75F', 'Magazine_762x51_FAL_Commonwealth_20rnd_Ball.et'),
+    '6490E7E5E9391AED': ('', 'E882742A33858D5A', 'Magazine_556x45_STANAG_30rnd_RadwayGreen_Ball.et'),
+    '6490E7E5E9391AE0': ('PISTOL', '8B853CDD11BA916E', 'Magazine_9x18_PM_8rnd_Ball.et'),
+    '6490E7E5E9391AE2': ('', 'A827B610B7CD4158', 'Vz58/Magazine_762x39_Vz58_30rnd_Last_5Tracer.et'),
+    '6490E7E5E9391AE4': ('', '0A84AA5A3884176F', 'Magazine_545x39_AK_30rnd_Last_5Tracer.et'),
+    '649CE5C7B75FD778': ('RIFLE', '91EA3DF1BA0AB1EF', 'Magazine_9x19_L2A3_34rnd_Ball.et'),
+}
 PLACED_CHARACTER = re.compile(
     r'(?P<group>\$grp )?SCR_ChimeraCharacter(?: (?P<name>[\w.-]+))? : ' + REF.pattern + r' \{')
 SENTRY_CONTROL = re.compile(
@@ -1411,6 +1422,51 @@ def placed_static_sentries(block, resolve_character):
     if count != len(members) or result is None:
         raise ValueError('sentry placement has another legacy declaration')
     return result
+
+
+def restore_uk_ammo_boxes(block, path, source_blob):
+    """Materialize the inherited stock of Another Hill's authored boxes on their original stock parent."""
+    if (path != 'worlds/Jub/Another Hill/Another Hill_Layers/defences.layer'
+            or source_blob != 'e6725abe700b8cf61ef7c86a46744cab941ca56f'):
+        raise ValueError('UK ammunition box authoring needs review')
+    authored_boxes = polygon_capture.members(block, True, None)
+    if len(authored_boxes) != 4:
+        raise ValueError('reviewed UK ammunition box count changed')
+    result = [block[0].replace(UK_AMMO_BOX, STOCK_US_AMMO_BOX, 1)]
+    for name, fields in authored_boxes:
+        for index, line in enumerate(fields):
+            if line == '  SCR_ArsenalComponent "{589F01C9C8D4A475}" {':
+                break
+        else:
+            raise ValueError('UK ammunition box is missing the authored arsenal component')
+        arsenal_end = block_end(fields, index)
+        arsenal = '\n'.join(fields[index:arsenal_end])
+        inherited_items = []
+        for entry, (kind, identity, prefab) in UK_AMMO_BOX_ITEMS.items():
+            header = f'     SCR_ArsenalItemStandalone "{{{entry}}}" {{'
+            stub = header + '\n     }\n'
+            if header in arsenal and arsenal.count(stub) != 1:
+                raise ValueError('reviewed UK ammunition list changed')
+            arsenal = arsenal.replace(stub, '', 1)
+            item = [header]
+            if kind:
+                item.append('      m_eItemType ' + kind)
+            item.extend(['      m_eItemMode AMMUNITION', '      m_iSupplyCost 0',
+                         f'      m_ItemResourceName "{{{identity}}}Prefabs/Weapons/Magazines/{prefab}"', '     }'])
+            inherited_items.extend(item)
+        items_header = '    m_aArsenalItems {\n'
+        if arsenal.count(items_header) != 1:
+            raise ValueError('reviewed UK ammunition list format changed')
+        # Native inheritance retains all six rows even where a placement lists only its additions.
+        arsenal = arsenal.replace(items_header, items_header + '\n'.join(inherited_items) + '\n', 1)
+        inherited = ['   m_bCheckFactionForOverwriteArsenalConfig 1', '   m_eArsenalSaveType SAVING_DISABLED', '  }',
+                     '  SCR_ServicePointComponent "{5C7489C2D2BCCFA0}" {', '   m_sDelegatePrefab ""', '  }']
+        if not any(field.startswith('  SCR_FactionAffiliationComponent ') for field in fields):
+            inherited.extend(['  SCR_FactionAffiliationComponent "{5A50E7650A1AE9EC}" {',
+                              '   "faction affiliation" "UK"', '  }'])
+        rendered = [*fields[:index], *arsenal.splitlines(), *inherited, *fields[arsenal_end + 1:]]
+        result.extend([f' {name} {{' if name else ' {', *(' ' + field for field in rendered), ' }'])
+    return '\n'.join([*result, '}', ''])
 
 
 def restore_rhib_mounts(block, aliases, source_blob):
@@ -3962,6 +4018,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                             result.append(converted)
                 elif kind == 'SCR_ChimeraCharacter' and LEGACY_SENTRY_TREE in body:
                     result.append(placed_static_sentries(block, resolve_crew))
+                elif head == '$grp GenericEntity : "' + UK_AMMO_BOX + '" {':
+                    result.append(restore_uk_ammo_boxes(block, layer, source.files[layer]))
                 elif NATIVE.match(head):
                     try:
                         if f'{{{BLOODY_GARRISON}}}' in head:
