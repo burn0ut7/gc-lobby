@@ -123,8 +123,8 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
                 return {'trigger': 'area capture', 'flag': flag[1:-1]}
             if invert == '1' and any(line.strip() == 'm_bStopAfterFirstChange 1' for line in captures[flag]):
                 return {'trigger': 'area capture', 'flag': flag[1:-1], 'inverted': True}
-        if invert == '0' and flag[1:-1] in objective_flags:
-            return {'trigger': 'interaction flag', 'flag': flag[1:-1]}
+        if invert in ('0', '1') and flag[1:-1] in objective_flags:
+            return {'trigger': 'interaction flag', 'flag': flag[1:-1], **({'inverted': True} if invert == '1' else {})}
         if invert in ('0', '1') and flag[1:-1] in event_flags:
             return {'trigger': 'event flag', 'flag': flag[1:-1], **({'inverted': True} if invert == '1' else {})}
         raise ValueError('unresolved or unsupported outcome flag ' + flag)
@@ -231,9 +231,10 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         raise ValueError('unsupported pregame action')
     if assignments and term['trigger'] not in ('Match start', 'dormant'):
         capture = captures.get('"' + term.get('flag', '') + '"', [])
-        if (term['trigger'] != 'area capture' or term.get('inverted')
-                or not any(line.strip() == 'm_bStopAfterFirstChange 1' for line in capture)):
-            raise ValueError('waypoint assignments need a positive one-shot capture or Match start')
+        one_shot_capture = term['trigger'] == 'area capture' and any(
+            line.strip() == 'm_bStopAfterFirstChange 1' for line in capture)
+        if term.get('inverted') or not (one_shot_capture or term['trigger'] == 'interaction flag'):
+            raise ValueError('waypoint assignments need a positive one-shot capture, objective flag, or Match start')
     audit = {'announcements': notices, 'instructionDelaysSeconds': [f'{delay:f}' for delay in actions]}
     if assignments:
         audit['waypointAssignments'] = assignments
@@ -301,7 +302,8 @@ def render(key, name, term, actions, captures, capture_messages, tracked_areas):
     dormant = term['trigger'] == 'dormant'
     condition = term['trigger'] not in ('Match start', 'dormant')
     startup = term['trigger'] == 'startup choice'
-    needs_match = any(item['trigger'] == 'event flag' and item.get('inverted') for item in leaves(term))
+    needs_match = any(item['trigger'] in ('event flag', 'interaction flag') and item.get('inverted')
+                      for item in leaves(term))
 
     def match_condition(identity):
         if not needs_match:
