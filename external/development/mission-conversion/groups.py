@@ -19,6 +19,8 @@ NATIVE_GROUP_FIELD = re.compile(r'm_faction "[\w.-]+"|m_iGroupRadioFrequency \d+
                                 r'm_b(?:DeleteWhenEmpty|DeleteIfNoPlayer) [01]|m_iMaxMembers \d{1,4}|'
                                 r'DangerEventRange \d+(?:\.\d+)?')
 STATIC_LINK_FIELDS = {'m_aStaticWaypoints {', 'm_aStaticVehicles {'}
+COLOR_TEAM_ARRAY = 'm_aUnitPrefabColorTeams {'
+COLOR_TEAM_VALUES = {'"None"', '"Red"', '"Blue"', '"Yellow"', '"Green"'}
 FORMATION = re.compile(r'AIFormationComponent "\{[\da-fA-F]{16}\}" \{')
 MOVEMENT = 'SCR_AIGroupMovementComponent "{6126A0E02097C7FF}" {'
 MOVEMENT_FIELD = re.compile(r'Enabled [01]|"(?:Min|Max) Speed" \d+(?:\.\d+)?|DefaultFormation "[A-Z_]+"')
@@ -274,6 +276,11 @@ def native_group_field_end(lines, index):
         # An empty name is a serialized placeholder. All nonempty names remain in order.
         if any(not re.fullmatch(r'\s*(?:"[\w.-]*"\s*)+', entry) for entry in lines[index + 1:end]):
             raise ValueError('unsupported static group link')
+        return end
+    if field == COLOR_TEAM_ARRAY:
+        end = block_end(lines, index)
+        if any(value not in COLOR_TEAM_VALUES for line in lines[index + 1:end] for value in line.split()):
+            raise ValueError('unsupported group color team')
         return end
     return None
 

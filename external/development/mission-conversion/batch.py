@@ -15,7 +15,7 @@ from event_actions import (NUMBER, SPAWN, SPAWN_FIELDS, render_crew_config, rend
                            split_crew_block, target_names)
 from events import LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, MISSING_STATUS, condition as extraction_condition
-from groups import inheritance
+from groups import COLOR_TEAM_ARRAY, inheritance
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer
@@ -2215,6 +2215,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
            and re.search(r'^ {2,}(?:\$grp )?SCR_AIGroup\b', body, re.M)
            for path, body in draft.items()):
         remaining.append('Compare nested group placement, child roster registration and slot order.')
+    if any(path.endswith('.layer') and isinstance(body, str) and COLOR_TEAM_ARRAY in body
+           for path, body in draft.items()):
+        remaining.append('Compare authored group color teams and their slot assignments.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Compare framing and zoom against the legacy cover.')
     if status_areas:

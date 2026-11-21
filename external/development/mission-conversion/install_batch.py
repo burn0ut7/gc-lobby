@@ -81,7 +81,9 @@ def main():
     parser.add_argument('--missions', required=True, type=Path)
     parser.add_argument('--inventory', required=True, type=Path)
     parser.add_argument('--stage', required=True, type=Path)
-    parser.add_argument('--mission', action='append', help='exact legacy launcher path, repeat to select a batch')
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument('--mission', action='append', help='exact legacy launcher path, repeat to select a batch')
+    selection.add_argument('--plan', type=Path, help='install the suggested batch from a file audit plan')
     parser.add_argument('--dependency', action='append', type=Path, default=[], help='addon checkout at HEAD for resource checks')
     parser.add_argument('--base-database', type=Path, help='verify draft resource references before installing')
     parser.add_argument('--workshop-addons', type=Path, help='include installed provider databases in resource checks')
@@ -94,7 +96,8 @@ def main():
         return subprocess.check_output(['git', '-C', str(args.missions), *command]).decode().strip()
 
     try:
-        inventory = json.loads(args.inventory.read_text(encoding='utf-8'))
+        inventory_bytes = args.inventory.read_bytes()
+        inventory = json.loads(inventory_bytes)
         batch = inventory['batchMigration']
         if git('branch', '--show-current') != 'dev' or git('rev-parse', 'HEAD') != inventory['target']:
             raise ValueError('use the Dev checkout at the inventory target revision')
@@ -104,9 +107,21 @@ def main():
             raise ValueError('use an external staging directory')
         candidates = {world: row for world, row in batch['worlds'].items()
                       if row['status'] == 'generated for file review'}
-        if args.mission:
+        missions = args.mission
+        if args.plan:
+            plan = json.loads(args.plan.read_text(encoding='utf-8'))
+            if (plan['source'], plan['target']) != (inventory['source'], inventory['target']):
+                raise ValueError('plan and inventory describe different revisions')
+            if plan.get('inventorySha256') != sha256(inventory_bytes).hexdigest():
+                raise ValueError('plan and inventory come from different file audits')
+            missions = [header for row in plan['suggestedBatch'] for header in row['launchers']]
+            if not missions:
+                raise ValueError('the plan has no suggested drafts')
+            if not args.base_database:
+                raise ValueError('--plan requires --base-database for the installation resource audit')
+        if missions:
             worlds = set()
-            for header in args.mission:
+            for header in missions:
                 record = inventory['headers'].get(header, {})
                 destination = record.get('destinationWorld', '').split('}', 1)[-1]
                 if destination not in candidates:

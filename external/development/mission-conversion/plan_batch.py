@@ -1,6 +1,7 @@
 """Generate, audit and prioritize GC Missions conversion work in one pass."""
 import argparse
 from collections import Counter, defaultdict
+from hashlib import sha256
 import json
 from pathlib import Path
 import re
@@ -32,7 +33,7 @@ def runtime_checks(drafts):
     checks = []
     while remaining:
         draft = min(drafts, key=lambda entry: (
-            -len(remaining.intersection(entry['behaviorGaps'])), entry['world']))
+            -len(remaining.intersection(entry['behaviorGaps'])), entry['world'], entry['launchers'][0]))
         covered = remaining.intersection(draft['behaviorGaps'])
         checks.append({'world': draft['world'], 'launcher': draft['launchers'][0],
                        'checks': sorted(covered)})
@@ -40,7 +41,7 @@ def runtime_checks(drafts):
     return checks
 
 
-def summarize(inventory, review, limit):
+def summarize(inventory, review, limit, previous_checks=None):
     migration = inventory['batchMigration']
     candidates = defaultdict(list)
     for header, row in inventory['headers'].items():
@@ -52,10 +53,12 @@ def summarize(inventory, review, limit):
     for world, headers in sorted(candidates.items()):
         draft = migration['worlds'][world]
         issues = []
+        gaps = set(draft.get('remainingBehavior', []))
         remaining_resources = set()
         layer_repairs = set(draft['files']) if draft.get('existingLayerRepairs') else set()
         for header in sorted(headers):
             comparison = review['missions'][header]
+            gaps.update(comparison.get('documentedGaps', []))
             issues.extend(f'{header} — {issue}' for issue in comparison['issues']
                           if not layer_repairs or issue != 'Unresolved external resource references')
             for entry in comparison.get('unresolvedExternalReferences', []):
@@ -72,7 +75,7 @@ def summarize(inventory, review, limit):
                 issues.append(f"{header} — {advertised} advertised slots, "
                               f"{draft['verifiedPlayableSlots']} converted")
         record = {'world': world, 'launchers': sorted(headers),
-                  'behaviorGaps': draft.get('remainingBehavior', [])}
+                  'behaviorGaps': sorted(gaps)}
         if draft.get('reviewedCapacity'):
             record['reviewedCapacity'] = draft['reviewedCapacity']
         if draft.get('reviewedReplacements'):
@@ -124,12 +127,24 @@ def summarize(inventory, review, limit):
     details = sorted(specific, key=lambda kind: (
         -specific[kind]['soleBlockerWorlds'], -specific[kind]['worldsAffected'], kind))
     selected = ready[:limit]
+    draft_checks = {header: entry['behaviorGaps'] for entry in ready for header in entry['launchers']}
+    held_headers = {header for entry in held for header in entry['launchers']}
+    recorded_checks = dict(previous_checks or {})
+    runtime_candidates = []
+    for header, row in sorted(review['missions'].items()):
+        gaps = sorted(set(recorded_checks.get(header, ()))
+                      | set(row.get('documentedGaps', ())) | set(draft_checks.get(header, ())))
+        if row['status'] != 'compare' or header in held_headers or not gaps:
+            continue
+        recorded_checks[header] = gaps
+        runtime_candidates.append({'world': row['world'], 'launchers': [header], 'behaviorGaps': gaps})
     return {
         'source': inventory['source'], 'target': inventory['target'],
         'launcherFileChecks': dict(Counter(row['status'] for row in review['missions'].values())),
         'worldConversionChecks': migration['totals'],
         'suggestedBatch': selected, 'additionalDrafts': ready[limit:], 'heldDrafts': held,
-        'runtimeChecks': runtime_checks(selected),
+        'runtimeChecksByLauncher': recorded_checks,
+        'runtimeChecks': runtime_checks(runtime_candidates),
         'unresolvedResources': review.get('unresolvedResources', []),
         'unavailableDependencyIds': review.get('unavailableDependencyIds', []),
         'rules': [{'rule': rule, **priority[rule]} for rule in rules],
@@ -158,12 +173,14 @@ def markdown(plan):
     else:
         lines.append('No drafts cleared the file checks.')
     lines.extend(['', f"Additional drafts that cleared file checks · {len(plan['additionalDrafts'])}",
-                  '', '## Representative Workbench checks', ''])
+                  '', '## Representative Workbench checks across file-cleared missions', '',
+                  'Run these after assembling the conversion batch. A representative in an additional '
+                  'draft is playable after its installation.', ''])
     for entry in plan['runtimeChecks']:
         lines.append(f"- `{entry['launcher']}`")
         lines.extend(f'  - {check}' for check in entry['checks'])
     if not plan['runtimeChecks']:
-        lines.append('The selected drafts reported no additional behavior checks.')
+        lines.append('The file-cleared missions reported no additional behavior checks.')
     lines.extend(['', '## Drafts held for file checks', ''])
     for entry in plan['heldDrafts']:
         lines.append(f"- `{entry['world']}`")
@@ -223,6 +240,7 @@ def main():
     parser.add_argument('--workshop-addons', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path, help='output directory outside the addons')
     parser.add_argument('--batch-size', default=10, type=int, help='maximum worlds in the suggested batch')
+    parser.add_argument('--previous-plan', type=Path, help='carry forward runtime checks from the previous batch')
     args = parser.parse_args()
     if args.batch_size < 1:
         parser.error('--batch-size must be positive')
@@ -248,8 +266,17 @@ def main():
         providers = [item for path in dependencies for item in ('--dependency', path)]
         run_tool('review', [*common, *providers, '--inventory', inventory, '--draft-stage', stage,
                             '--report', review, '--summary', output / 'review.md'])
-        plan = summarize(json.loads(inventory.read_text(encoding='utf-8')),
-                         json.loads(review.read_text(encoding='utf-8')), args.batch_size)
+        inventory_bytes = inventory.read_bytes()
+        inventory_data = json.loads(inventory_bytes)
+        previous_checks = None
+        if args.previous_plan:
+            prior = json.loads(args.previous_plan.read_text(encoding='utf-8'))
+            if prior.get('source') != inventory_data['source']:
+                parser.error('the previous plan describes a different legacy revision')
+            previous_checks = prior.get('runtimeChecksByLauncher')
+        plan = summarize(inventory_data, json.loads(review.read_text(encoding='utf-8')),
+                         args.batch_size, previous_checks)
+        plan['inventorySha256'] = sha256(inventory_bytes).hexdigest()
         (output / 'plan.json').write_text(json.dumps(plan, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
         (output / 'plan.md').write_text(markdown(plan), encoding='utf-8')
         print(f"{len(plan['suggestedBatch'])} suggested worlds, {len(plan['heldDrafts'])} held drafts. "
