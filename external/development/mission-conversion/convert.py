@@ -30,7 +30,7 @@ from launchers import launcher
 from markers import convert_layer as convert_markers
 from markers import relocate_images
 from outcomes import compile_outcomes
-from respawns import read_respawns, ticket_event
+from respawns import authored_respawn_fields, read_respawns, ticket_event
 from scenery import StockPrefabs, placements
 from race_ruha import ruha_files, WORLD as RUHA_WORLD
 from race_day import PRIOR_KUNAR_LAYERS, race_files, WORLD as RACE_WORLD
@@ -287,15 +287,23 @@ def main():
             if 'PS_MissionDescription' in source.read(path):
                 gaps.append(path + ' contains an inherited or prefab-owned briefing')
         event = ticket_event(world, respawns, ticket_gaps)
+        authored_respawns = False
+        if args.batch and event:
+            try:
+                authored_respawns = bool(authored_respawn_fields(world, respawns, ticket_gaps))
+            except ValueError:
+                pass
         if respawns or ticket_gaps:
             follow_up = []
-            if any(r['tickets'] != 0 for r in respawns):
+            if authored_respawns:
+                follow_up.append('Verify death-triggered ticket spending, scheduled replacement, and spectator handoff in Match')
+            elif any(r['tickets'] != 0 for r in respawns):
                 follow_up.append('Compare eligible dead slots, ticket consumption on failed replacement and disconnect handling')
-            if any(r['tickets'] > 0 and not r['wave'] for r in respawns):
+            if not authored_respawns and any(r['tickets'] > 0 and not r['wave'] for r in respawns):
                 follow_up.append('Restore individual death-to-respawn scheduling using the recorded interval in milliseconds')
-            if any(r['tickets'] > 0 and r['wave'] for r in respawns):
+            if not authored_respawns and any(r['tickets'] > 0 and r['wave'] for r in respawns):
                 follow_up.append('Restore wave scheduling aligned to legacy world time')
-            if any(r['tickets'] != 0 and r['destination'] for r in respawns):
+            if not authored_respawns and any(r['tickets'] != 0 and r['destination'] for r in respawns):
                 follow_up.append('Resolve the named destination at death and preserve original-slot fallback')
             if any(r['tickets'] == -1 for r in respawns):
                 follow_up.append('Port the ordered per-character replacement prefab list and exhaustion behavior')
@@ -395,9 +403,9 @@ def main():
                 row['outcomeCandidate'] = outcome
             except ValueError as exc:
                 row['outcomeCandidate'] = {'gap': str(exc)}
-        mode_events = event
+        mode_events = [] if authored_respawns else event
         if messages:
-            mode_events = ['   m_aMissionEvents + {', *event[1:-1], *messages, '   }']
+            mode_events = ['   m_aMissionEvents + {', *mode_events[1:-1], *messages, '   }']
         if briefing or mode_events:
             try:
                 body, compact = render(world, briefing, mode_events)
@@ -420,7 +428,7 @@ def main():
                     row['renumberedInSourceOrder'] = compact
                 if messages:
                     row['notificationModePreset'] = dest
-                if event:
+                if event and not authored_respawns:
                     row['respawn']['ticketModePreset'] = dest
             except ValueError as exc:
                 gaps.append(str(exc))

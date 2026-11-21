@@ -431,7 +431,12 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 			GetGame().GetCallqueue().Remove(CompleteLobbyGameStart);
 		}
 		if (state != SCR_EGameModeState.GAME)
+		{
 			GC_LobbyManager.Cast(this).GC_CancelRespawnWaves();
+			GC_LobbyManager.Cast(this).GC_CancelAuthoredRespawns();
+		}
+		else
+			GC_LobbyManager.Cast(this).GC_StartAuthoredRespawns();
 		UpdateMissionGameState(state);
 
 		string role = "proxy";
@@ -1330,6 +1335,7 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 		if (GetLobbyPhase() == SCR_EGameModeState.GAME)
 		{
 			slot.MarkKIA();
+			GC_LobbyManager.Cast(this).GC_QueueAuthoredRespawn(slot);
 			int playerId = slot.GetPlayerId();
 			if (playerId > 0)
 			{
@@ -3483,7 +3489,7 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 	//! A failed spawn/possession keeps the original slot and character intact.
 	//! All replacement-character paths resolve their destination here before changing the slot.
 	//! Explicit location policies override the faction default; current/original are fallback positions only.
-	protected string RespawnAdminSlot(GC_Slot slot, bool atCurrentPosition, GC_RespawnLocation location = null, int locationIndex = 0)
+	protected string RespawnAdminSlot(GC_Slot slot, bool atCurrentPosition, GC_RespawnLocation location = null, int locationIndex = 0, bool keepResolvedPrefab = false)
 	{
 		if (!Replication.IsServer() || GetManager() != this || m_bShutdown || !slot || locationIndex < 0)
 			return "rejected-respawn-state";
@@ -3516,7 +3522,7 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 		replacement.SetGroupSlotIndex(slot.GetGroupSlotIndex());
 		replacement.SetAuthoredPrefab(slot.GetAuthoredPrefab());
 		ResourceName prefab = slot.GetResolvedPrefab();
-		if (slot.GetVariantPolicy() == GC_SlotVariantPolicy.REROLL_ON_RESPAWN)
+		if (!keepResolvedPrefab && slot.GetVariantPolicy() == GC_SlotVariantPolicy.REROLL_ON_RESPAWN)
 			prefab = SCR_EditableEntityComponentClass.GetRandomVariant(slot.GetAuthoredPrefab());
 		if (prefab.IsEmpty())
 			return "failed-prefab-resolution";
@@ -4905,6 +4911,7 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 		m_bShutdown = true;
 		m_bStartGamePending = false;
 		GC_LobbyManager.Cast(this).GC_CancelRespawnWaves();
+		GC_LobbyManager.Cast(this).GC_CancelAuthoredRespawns();
 		GetGame().GetCallqueue().Remove(CompleteLobbyGameStart);
 		StopMissionRules();
 		GC_LobbyGameMode gameMode = GC_LobbyGameMode.Cast(GetOwner());

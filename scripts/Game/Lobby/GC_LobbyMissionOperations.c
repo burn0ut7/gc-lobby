@@ -265,4 +265,115 @@ modded class GC_LobbyManager
 				SCR_EntityHelper.DeleteEntityAndChildren(character);
 		}
 	}
+
+	[Attribute("", UIWidgets.Object, "Optional faction respawn policies triggered by a registered slot's death.")]
+	protected ref array<ref GC_AuthoredFactionRespawn> m_aAuthoredRespawns;
+
+	protected bool m_bGC_AuthoredRespawnsStarted;
+	protected ref map<int, ref GC_AuthoredRespawnRequest> m_mGC_AuthoredRespawns = new map<int, ref GC_AuthoredRespawnRequest>();
+
+	protected void GC_StartAuthoredRespawns()
+	{
+		if (!m_aAuthoredRespawns || m_bGC_AuthoredRespawnsStarted || !HasMissionRuleAuthority())
+			return;
+		m_bGC_AuthoredRespawnsStarted = true;
+		foreach (GC_AuthoredFactionRespawn policy : m_aAuthoredRespawns)
+		{
+			if (policy && policy.m_iTickets > 0 && policy.m_iIntervalMs >= 0 && (!policy.m_bWave || policy.m_iIntervalMs > 0))
+				GC_SetFactionRespawnTickets(policy.m_sFaction, policy.m_iTickets);
+		}
+	}
+
+	protected void GC_QueueAuthoredRespawn(GC_Slot slot)
+	{
+		if (!m_bGC_AuthoredRespawnsStarted || !HasMissionRuleAuthority() || GetLobbyPhase() != SCR_EGameModeState.GAME)
+			return;
+		SCR_AIGroup group = ResolveSlotGroup(slot);
+		if (!group || !group.GetFaction())
+			return;
+		FactionKey faction = group.GetFaction().GetFactionKey();
+		if (GC_GetFactionRespawnTickets(faction) <= 0)
+			return;
+		foreach (GC_AuthoredFactionRespawn policy : m_aAuthoredRespawns)
+		{
+			if (!policy || policy.m_sFaction != faction || policy.m_iTickets <= 0
+				|| policy.m_iIntervalMs < 0 || (policy.m_bWave && policy.m_iIntervalMs == 0))
+				continue;
+			GC_AuthoredRespawnRequest request = new GC_AuthoredRespawnRequest();
+			request.m_Slot = slot;
+			request.m_Claim = new GC_RespawnWaveCandidate(slot);
+			request.m_Policy = policy;
+			m_mGC_AuthoredRespawns.Set(slot.GetID(), request);
+			GetGame().GetCallqueue().CallLater(GC_AdmitAuthoredRespawn, 200, false, request);
+			return;
+		}
+	}
+
+	protected bool GC_IsAuthoredRespawnEligible(GC_AuthoredRespawnRequest request)
+	{
+		if (!request || !HasMissionRuleAuthority() || GetLobbyPhase() != SCR_EGameModeState.GAME)
+			return false;
+		GC_Slot slot = GetSlot(request.m_Claim.m_iSlot);
+		if (!slot || slot != request.m_Slot || !slot.IsKIA() || slot.GetPlayerId() != request.m_Claim.m_iPlayer
+			|| slot.GetUUID() != request.m_Claim.m_sIdentity)
+			return false;
+		SCR_AIGroup group = ResolveSlotGroup(slot);
+		if (!group || !group.GetFaction() || group.GetFaction().GetFactionKey() != request.m_Policy.m_sFaction)
+			return false;
+		if (slot.GetPlayerId() <= 0)
+			return !slot.HasClaim();
+		string faction;
+		return GC_CanJoinRespawnWave(slot, null, faction);
+	}
+
+	protected void GC_AdmitAuthoredRespawn(GC_AuthoredRespawnRequest request)
+	{
+		if (!request)
+			return;
+		int slotId = request.m_Claim.m_iSlot;
+		if (m_mGC_AuthoredRespawns.Get(slotId) != request)
+			return;
+		GC_AuthoredFactionRespawn policy = request.m_Policy;
+		int tickets = GC_GetFactionRespawnTickets(policy.m_sFaction);
+		if (tickets <= 0 || !GC_IsAuthoredRespawnEligible(request) || !GC_SetFactionRespawnTickets(policy.m_sFaction, tickets - 1))
+		{
+			m_mGC_AuthoredRespawns.Remove(slotId);
+			return;
+		}
+		BaseWorld world = GetOwner().GetWorld();
+		IEntity anchor;
+		if (!policy.m_sAnchor.IsEmpty())
+			anchor = world.FindEntityByName(policy.m_sAnchor);
+		if (anchor)
+			request.m_Destination = new GC_AuthoredRespawnDestination(anchor);
+		else
+			request.m_Destination = new GC_RespawnLocation();
+		int delay = policy.m_iIntervalMs;
+		if (policy.m_bWave)
+			delay -= Math.Mod(world.GetWorldTime(), delay);
+		GetGame().GetCallqueue().CallLater(GC_ApplyAuthoredRespawn, delay, false, request);
+	}
+
+	protected void GC_ApplyAuthoredRespawn(GC_AuthoredRespawnRequest request)
+	{
+		if (!request)
+			return;
+		int slotId = request.m_Claim.m_iSlot;
+		if (m_mGC_AuthoredRespawns.Get(slotId) != request)
+			return;
+		m_mGC_AuthoredRespawns.Remove(slotId);
+		if (!GC_IsAuthoredRespawnEligible(request))
+			return;
+		string result = RespawnAdminSlot(request.m_Slot, false, request.m_Destination, 0, true);
+		UpdateSlot(request.m_Slot);
+		PrintFormat("GC | Authored respawn | faction=%1 slot=%2 result=%3", request.m_Policy.m_sFaction, slotId, result);
+	}
+
+	protected void GC_CancelAuthoredRespawns()
+	{
+		GetGame().GetCallqueue().Remove(GC_AdmitAuthoredRespawn);
+		GetGame().GetCallqueue().Remove(GC_ApplyAuthoredRespawn);
+		m_mGC_AuthoredRespawns.Clear();
+		m_bGC_AuthoredRespawnsStarted = false;
+	}
 }

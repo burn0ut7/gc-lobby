@@ -20,7 +20,7 @@ from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer
 from outcomes import FRAMEWORK, leaves, render as render_outcome
 import polygon_capture
-from respawns import read_respawns, uses_default_respawn_budget
+from respawns import authored_respawn_fields, read_respawns
 import teleports
 from scenery import FIELD, StockPrefabs, WAYPOINT_CLASS
 from weather import convert_weather
@@ -1147,6 +1147,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     construction = {}
     jip = {}
     respawn_table_seen = False
+    respawn_fields = ''
     safe_start_seen = False
     index = 1
     while index < len(root) - 1:
@@ -1171,8 +1172,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         elif line == ' m_aFactionRespawnCount {' and not respawn_table_seen:
             end = block_end(root, index)
             records, gaps = read_respawns('\n'.join([root[0], *root[index:end + 1], '}']), world)
-            if not uses_default_respawn_budget({'factions': records, 'ticketGaps': gaps}):
-                raise ValueError('legacy faction respawn behavior requires a conversion rule')
+            respawn_fields = authored_respawn_fields(world, records, gaps)
             respawn_table_seen = True
             index = end
         elif line.startswith((' m_eJIPState ', ' m_denyJIPTime ')):
@@ -1276,7 +1276,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
      }}
     }}
 '''
-    if additional_rules or objective_flags:
+    if additional_rules or objective_flags or respawn_fields:
         flags = ''
         if objective_flags:
             flag_lines = []
@@ -1293,7 +1293,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         events = f'   m_aMissionEvents + {{\n{additional_rules}   }}\n' if additional_rules else ''
         settings += f'''
   GC_LobbyManager "{{6A137A39106A4973}}" {{
-{flags}{events}  }}
+{flags}{events}{respawn_fields}  }}
 '''
     return f'''GC_LobbyGameMode GC_MigratedMission : "{{{resource}}}{preset}" {{
  components {{
@@ -1320,8 +1320,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     preset = row.get('briefingModePreset')
     if not preset or row['briefingGaps']:
         blockers.append({'rule': 'briefing preset', 'file': world, 'detail': row['briefingGaps']})
-    if row.get('respawn') and not uses_default_respawn_budget(row['respawn']):
-        blockers.append({'rule': 'respawn', 'file': world})
+    if respawn := row.get('respawn'):
+        try:
+            authored_respawn_fields(world, respawn['factions'], respawn['ticketGaps'])
+        except ValueError as exc:
+            blockers.append({'rule': 'respawn', 'file': world, 'detail': str(exc)})
     outcome = row.get('outcomeCandidate', {})
     rules = outcome.get('events', {})
     notices = {location for location, entry in row.get('frameworkEvents', {}).items()

@@ -68,5 +68,27 @@ def ticket_event(world, records, gaps):
     return lines + ['     }', '    }', '   }']
 
 
-def uses_default_respawn_budget(audit):
-    return (not audit['ticketGaps'] and all(row['tickets'] == 0 for row in audit['factions']))
+def authored_respawn_fields(world, records, gaps):
+    if gaps or len({row['faction'] for row in records}) != len(records):
+        raise ValueError('invalid or duplicate faction respawn records')
+    funded = [row for row in records if row['tickets']]
+    if not funded:
+        return ''
+    lines = ['   m_aAuthoredRespawns {']
+    for row in funded:
+        faction = row['faction']
+        count = row['tickets']
+        interval = row['intervalMs']
+        anchor = row['destination']
+        if (not 0 < count <= 1000000 or not 0 <= interval <= 2147483647 or (row['wave'] and not interval)
+                or (anchor and not re.fullmatch(r'[\w.-]+', anchor))):
+            raise ValueError('unsupported faction respawn settings for ' + faction)
+        key = guid(world + '/scheduled respawn/' + faction)
+        lines.extend([f'    GC_AuthoredFactionRespawn "{{{key}}}" {{', f'     m_sFaction "{faction}"',
+                      f'     m_iTickets {count}', f'     m_iIntervalMs {interval}'])
+        if row['wave']:
+            lines.append('     m_bWave 1')
+        if anchor:
+            lines.append(f'     m_sAnchor "{anchor}"')
+        lines.append('    }')
+    return '\n'.join([*lines, '   }', ''])
