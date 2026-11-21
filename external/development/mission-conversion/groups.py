@@ -499,16 +499,20 @@ def native_group_component(lines, start, end):
     return True
 
 
-@lru_cache(maxsize=4096)
 def unchanged_disabled_playability(source_units, dev_units, guid):
+    return unchanged_explicit_playability(source_units, dev_units, guid, False)
+
+
+@lru_cache(maxsize=4096)
+def unchanged_explicit_playability(source_units, dev_units, guid, playable):
     marker = re.compile(r'^  PS_PlayableComponent "\{5EFCC1946F475F15\}" \{\n   m_bIsPlayable ([01])\n  \}\n', re.M)
     before = inheritance(source_units, guid)
     authored = [value for body in before for value in marker.findall(body)]
-    if not authored or authored[0] != '0' or legacy_member(source_units, guid, False):
+    if not authored or authored[0] != str(int(playable)) or legacy_member(source_units, guid, False) != playable:
         return False
     normalized = tuple(marker.sub('', body).replace(' components {\n }\n', '') for body in before)
     after = tuple(body.replace(' components {\n }\n', '') for body in inheritance(dev_units, guid))
-    # Only legacy AI markers with explicit opt-out and equivalent native ancestry can pass.
+    # Compare ancestors after removing the exact legacy marker with no role metadata.
     return reviewed_native_ancestry(normalized, after, dev_units)
 
 

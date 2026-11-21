@@ -16,7 +16,8 @@ from event_actions import (FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, V
 from vehicle_crew import CREW_CONFIG_FIELD, VERIFIED_DEFAULT_CREW, crew_config_contents, split_crew_block
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
-from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, SLOTS, inheritance, reviewed_native_ancestry
+from groups import (COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, SLOTS, inheritance, reviewed_native_ancestry,
+                    unchanged_explicit_playability)
 from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_prefab
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
@@ -79,6 +80,7 @@ SPLINE_RECORD = re.compile(
 NAVMESH_COMPONENT = re.compile(rf' +TILW_NavmeshRegenComponent {SERIALIZED_ID} \{{')
 DAMAGE_COMPONENT = re.compile(rf'  TILW_Flag_EntityDamage {SERIALIZED_ID} \{{')
 DAMAGE_TARGETS = {
+    '82CCE96E35DC6A6E': 'Prefabs/Structures/Military/Antennas/Antenna_BARS_01/Antenna_BARS_01_transmitter.et',
     '78CCABFAE4DC21EF': 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/Dst/CrateStack_01_Dst_2_dark.et',
     '7D39683D0F8EDB59': 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/Dst/CrateStack_01_Dst_3_dark.et',
     'D042CEA90B8CB14D': 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/CrateStack_01_decals_02.et',
@@ -1022,7 +1024,9 @@ REVIEWED_NATIVE_ASSETS = {
     'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Grenades/Smoke_ANM8HC_US.et':
         '8f65ccfdb561457e84aef0ceabb73c1297a9460d07c764c8920626c8a8917d04',
 }
+ROCKY_CIVILIANS = 'worlds/Burn0ut7/Rocky Road/Prefabs/CiV_Group.et'
 REVIEWED_PLAYABLE_GROUPS = {
+    ROCKY_CIVILIANS: '6ab575e5895921c869d63aa3c896bd59f52a4b809317a1c80f3717514a4de117',
     'worlds/FSM/Prefabs/Groups/OPFOR/Seperatists/P/FSM_Playable_Seperatists_HQ.et':
         'ebef299d474f67109ec80c182beb374979d253f886600006d3ff1d0e7c56f358',
     'worlds/FSM/Prefabs/Groups/OPFOR/Seperatists/P/FSM_Playable_Seperatists_RifleSquad.et':
@@ -1555,7 +1559,8 @@ def verified_rhs_damage(resource, path, source_units, dev_units, rhs):
 
 def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs, *, workshop_targets=()):
     ref = REF.search(block[0])
-    if (not ref or not re.match(r'^\$grp (Vehicle|Tank|RHS_Tank|GameEntity|GenericEntity|SCR_ChimeraCharacter) ', block[0])
+    if (not ref or not re.match(
+            r'^\$grp (Vehicle|Tank|RHS_Tank|GameEntity|GenericEntity|StaticModelEntity|SCR_ChimeraCharacter) ', block[0])
             or ref[1].upper() in owned):
         raise ValueError('unverified grouped damage objective prefab')
     resource, path = ref[1].upper(), ref[2]
@@ -1833,6 +1838,8 @@ def passive_asset(source, path):
 def playable_group_prefab(body, path):
     if sha256(body.strip().encode()).hexdigest() != REVIEWED_PLAYABLE_GROUPS[path] or LEGACY.search(body):
         raise ValueError('playable group prefab needs review')
+    if path == ROCKY_CIVILIANS:
+        return body.replace('\n}', '\n m_bPlayable 1\n}', 1)
     return body.replace('\n m_bSetPlayable 1\n', '\n m_bPlayable 1\n').replace(
         '\n m_sCustomNameSet ', '\n m_sGC_Description ')
 
@@ -1852,6 +1859,27 @@ def verified_local_ai_group(source, dev, source_units, dev_units, stock, resourc
     return all((stock.contains(guid, asset) or external_ai.get(guid) == asset)
                and all(guid not in snapshot.resources for snapshot in (source, dev, source_units, dev_units))
                for guid, asset in refs)
+
+
+def reviewed_rocky_civilian(source, dev, source_units, dev_units, stock, guid, path):
+    if (guid, path) != ('A339CCBF0627477D', 'Prefabs/Characters/Factions/CIV/Afghan/P/Civ_Random_P.et'):
+        return False
+    if source_units.resources.get(guid) != [path] or dev_units.resources.get(guid) != [path]:
+        return False
+    variants = [REF.fullmatch(line.strip().removeprefix('m_sVariantPrefab '))
+                for line in source_units.read(path).splitlines() if line.strip().startswith('m_sVariantPrefab ')]
+    stock_parent = ('37578B1666981FCE', 'Prefabs/Characters/Core/Character_Base.et')
+    if len(variants) != 3 or not all(variants) or not stock.contains(*stock_parent):
+        return False
+    for member, member_path in [(guid, path), *(variant.groups() for variant in variants)]:
+        if (member in source.resources or member in dev.resources
+                or source_units.resources.get(member) != [member_path] or dev_units.resources.get(member) != [member_path]
+                or not unchanged_explicit_playability(source_units, dev_units, member, True)):
+            return False
+        parent = REF.search(inheritance(dev_units, member)[-1].partition('\n')[0])
+        if not parent or parent.groups() != stock_parent:
+            return False
+    return True
 
 
 def reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed_members):
@@ -1877,7 +1905,10 @@ def reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed
             slots = SLOTS.search(body)
             if (not stock or not stock.contains(parent, parent_path) or not slots
                     or any(parent in snapshot.resources for snapshot in (source, dev, source_units, dev_units))
-                    or any(reviewed_members.get(guid) != member for guid, member in REF.findall(slots[1]))):
+                    or any(reviewed_members.get(guid) != member and (
+                        path != ROCKY_CIVILIANS or not reviewed_rocky_civilian(
+                            source, dev, source_units, dev_units, stock, guid, member))
+                           for guid, member in REF.findall(slots[1]))):
                 continue
         elif (source_units.resources.get(parent) != [parent_path]
                 or dev_units.resources.get(parent) != [parent_path]
