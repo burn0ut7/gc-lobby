@@ -648,7 +648,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     explicit_force = any(l.strip() == 'm_bSetPlayable 1' for l in lines)
     native_override = next((l.strip()[-1] for l in lines if l.strip() in ('m_bPlayable 0', 'm_bPlayable 1')), None)
     native_playable = (native_override == '1' if native_override is not None
-                       else scalar(inheritance(dev_units, guid), 'm_bPlayable') == 1)
+                       else (scalar((new,), 'm_bPlayable') == 1
+                             or scalar(inheritance(dev_units, guid), 'm_bPlayable') == 1))
     slots_start = next((i for i, line in enumerate(lines) if line.strip() == 'm_aUnitPrefabSlots {'), None)
     replace_slots = slots_start is not None
     switches = [line.strip() for line in lines if line.strip().startswith('m_bSetPlayable ')]
@@ -702,7 +703,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
         roster, converted_wrappers = inherited_playable_roster(
             old, new, stock, (locally_owned, source_units.resources, dev_units.resources))
     override = next((l.strip()[-1] for l in lines if l.strip().startswith('m_bSetPlayable ')), None)
-    force = override == '1' if override is not None else scalar(inheritance(source_units, guid), 'm_bSetPlayable') == 1
+    force = (override == '1' if override is not None else
+             (scalar((old,), 'm_bSetPlayable') == 1 or scalar(inheritance(source_units, guid), 'm_bSetPlayable') == 1))
     forced_external = (forced_external or {}) if force else {}
     approved_external = set()
     out = []
@@ -1010,8 +1012,11 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
                               forced_external=forced_external, reviewed_members=reviewed_members)
         else:
             parent = local[1] if local else guid
-            _, old = prefab(source_units, parent)
-            dest, new = prefab(dev_units, parent)
+            if local and local[2]:
+                old, new = local[2]
+            else:
+                _, old = prefab(source_units, parent)
+                dest, new = prefab(dev_units, parent)
             if local:
                 dest = local[0]
             resource = guid

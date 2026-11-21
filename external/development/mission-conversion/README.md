@@ -133,6 +133,8 @@ The published GC Lobby description prefab supplies `Description title` and `Desc
 
 Owl's Prey, The Adjacent Wave and Zarichne Front use the TilW static soldier behavior tree. The published tree stays at the assigned position, selects and attacks targets, changes its aim while idle, and can self-bandage. Its attack branch references a separate TilW tree. Recovery requires a supported native behavior with verified equivalent behavior or an independent implementation. The current file audit holds those placements.
 
+Unowald Cache and Zherebets River Cache share two mission-owned playable group prefabs. The converter keeps their original identifiers, ordered six- and eight-role rosters, editable previews and native loadout metadata. It maps the legacy playable and description fields to the Lobby fields. The resource audit still holds the worlds on equipment dependencies inside those rosters. Eleven referenced uniforms and tracer meshes have no matching GUID in the installed registries. Three other references have same-GUID alternate paths and still need provider checks. Verify those assets before installing either world.
+
 | Source behavior | GC Lobby comparison and pending work |
 | --- | --- |
 | Phase and mode ownership | Replace the legacy root once per world, preserving terrain AI, perception, faction overrides, weather, chat and radio ownership. Check lobby/roles → briefing → match → after-action report on authority and clients. |

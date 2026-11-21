@@ -67,15 +67,12 @@ def migrate_playability(text, *, inherited_playable=False):
             if len(editable) != 1 or lines[index:index + 2] != [EDITABLE, EDITABLE_INFO]:
                 raise ValueError('existing character presentation needs review')
             info_end = block_end(lines, index + 1)
-            if info_end + 1 != block_end(lines, index):
+            names = [i for i in range(index + 2, info_end) if lines[i].startswith('    Name ')]
+            if (len(names) > 1 or (names and not re.fullmatch(QUOTED, lines[names[0]].removeprefix('    Name ').strip()))
+                    or any(line.startswith('   m_UIInfo ') for line in lines[info_end + 1:block_end(lines, index)])):
                 raise ValueError('existing character presentation needs review')
-            fields = properties(lines[index + 2:info_end], {'Name', 'Icon'})
-            if (not re.fullmatch(QUOTED, fields.get('Name', '""'))
-                    or ('Icon' in fields and not REF.fullmatch(fields['Icon']))):
-                raise ValueError('existing character presentation needs review')
-            if 'Name' in fields:
-                name_index = next(i for i in range(index + 2, info_end) if lines[i].strip().startswith('Name '))
-                lines[name_index] = name
+            if names:
+                lines[names[0]] = name
             else:
                 lines.insert(index + 2, name)
                 if index < component:

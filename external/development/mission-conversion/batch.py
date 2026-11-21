@@ -15,7 +15,7 @@ from event_actions import FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, re
 from vehicle_crew import VERIFIED_DEFAULT_CREW, crew_config_contents
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
-from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, inheritance, reviewed_native_ancestry
+from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, SLOTS, inheritance, reviewed_native_ancestry
 from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_prefab
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
@@ -875,6 +875,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/FSM/Prefabs/Weapons/Explosives/DemoBlock_M112/FSM_DemoBlock_M112.et':
+        'b0f3de095593e9567db7ee6d08c54f12a0cc01d59b13f1af973f45ca64b713fb',
     'worlds/TheLocalPub/RailroadReactions/Prefabs/AI/Groups/MSV_Flora_RifleSquad.et':
         '0a5ac894b9d00d95a61ab7bff77bbda73bc0a1adf45e26b8a630587850f3ea09',
     'worlds/HitTheMan/Prefabs/Vehicles/BMP1_Desert_ZU_HTM.et':
@@ -971,6 +973,12 @@ REVIEWED_NATIVE_ASSETS = {
         '4915c486c26c3c384c5306930c966c5f45d747d9f295142e48098bf99ae7b827',
     'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Grenades/Smoke_ANM8HC_US.et':
         '8f65ccfdb561457e84aef0ceabb73c1297a9460d07c764c8920626c8a8917d04',
+}
+REVIEWED_PLAYABLE_GROUPS = {
+    'worlds/FSM/Prefabs/Groups/OPFOR/Seperatists/P/FSM_Playable_Seperatists_HQ.et':
+        'ebef299d474f67109ec80c182beb374979d253f886600006d3ff1d0e7c56f358',
+    'worlds/FSM/Prefabs/Groups/OPFOR/Seperatists/P/FSM_Playable_Seperatists_RifleSquad.et':
+        'f38d729add3e1a2d89d005dcde68e189e52d7b73fe747ff6bcb1d0af8c33f9a2',
 }
 
 
@@ -1750,6 +1758,8 @@ def passive_asset(source, path):
             return body
     if suffix == '.et':
         body = source.read(path)
+        if path in REVIEWED_PLAYABLE_GROUPS:
+            return playable_group_prefab(body, path)
         if path == BLACKBOX[1]:
             return blackbox_prefab(body)
         if STORAGE_BOX.fullmatch(body.rstrip('\n')):
@@ -1766,6 +1776,13 @@ def passive_asset(source, path):
                         and '{' not in line and '}' not in line for line in [lines[1], *lines[7:-1]])):
             return body
     raise ValueError('requires a resource conversion rule')
+
+
+def playable_group_prefab(body, path):
+    if sha256(body.strip().encode()).hexdigest() != REVIEWED_PLAYABLE_GROUPS[path] or LEGACY.search(body):
+        raise ValueError('playable group prefab needs review')
+    return body.replace('\n m_bSetPlayable 1\n', '\n m_bPlayable 1\n').replace(
+        '\n m_sCustomNameSet ', '\n m_sGC_Description ')
 
 
 def verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path, external_ai):
@@ -1785,28 +1802,37 @@ def verified_local_ai_group(source, dev, source_units, dev_units, stock, resourc
                for guid, asset in refs)
 
 
-def reviewed_group_aliases(source, dev, source_units, dev_units):
+def reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed_members):
     aliases = {}
-    for path, digest in REVIEWED_NATIVE_ASSETS.items():
+    for path, digest in (REVIEWED_NATIVE_ASSETS | REVIEWED_PLAYABLE_GROUPS).items():
         if path not in source.files or path + '.meta' not in source.files:
             continue
         body = source.read(path)
-        if not re.fullmatch(r'SCR_AIGroup : "\{[\dA-Fa-f]{16}\}[^"\n]+" \{\n ID "[\dA-Fa-f]{16}"\n\}\s*', body):
+        playable = path in REVIEWED_PLAYABLE_GROUPS
+        if not playable and not re.fullmatch(r'SCR_AIGroup : "\{[\dA-Fa-f]{16}\}[^"\n]+" \{\n ID "[\dA-Fa-f]{16}"\n\}\s*', body):
             continue
         if sha256(body.strip().encode()).hexdigest() != digest:
             continue
         identity = META_NAME.search(source.read(path + '.meta'))
-        parent, parent_path = REF.search(body).groups()
+        parent, parent_path = REF.search(body.partition('\n')[0]).groups()
+        native = playable_group_prefab(body, path) if playable else body
         if (not identity or source.resources.get(identity[2].upper()) != [path]
                 or any(identity[2].upper() in item.resources for item in (source_units, dev_units))
                 or dev.resources.get(identity[2].upper()) not in (None, [path])
-                or (path in dev.files and dev.read(path) != body)
-                or source_units.resources.get(parent) != [parent_path]
+                or (path in dev.files and dev.read(path) != native)):
+            continue
+        if playable:
+            slots = SLOTS.search(body)
+            if (not stock or not stock.contains(parent, parent_path) or not slots
+                    or any(parent in snapshot.resources for snapshot in (source, dev, source_units, dev_units))
+                    or any(reviewed_members.get(guid) != member for guid, member in REF.findall(slots[1]))):
+                continue
+        elif (source_units.resources.get(parent) != [parent_path]
                 or dev_units.resources.get(parent) != [parent_path]
                 or not reviewed_native_ancestry(inheritance(source_units, parent),
                                                 inheritance(dev_units, parent), dev_units)):
             continue
-        aliases[identity[2].upper()] = (path, parent)
+        aliases[identity[2].upper()] = (path, parent, (body, native) if playable else None)
     return aliases
 
 
