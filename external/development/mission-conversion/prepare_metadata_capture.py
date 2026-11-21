@@ -5,7 +5,8 @@ import json
 from pathlib import Path, PurePosixPath
 import re
 
-from catalog import SOURCE_TEXT, Snapshot
+from briefings import block_end
+from catalog import REF, SOURCE_TEXT, Snapshot
 from dependencies import BASE_GAME, DEPENDENCIES, checkout_project, database_project, dependency_catalogue
 from install_batch import resource_databases, unregistered_references
 from launchers import WORLD_REF
@@ -15,6 +16,22 @@ from terrain_parents import LONGMOOR_PARENT, has_reviewed_longmoor, is_longmoor_
 
 
 AUTHORED_CATALOGUE = re.compile(r'^[ \t]*m_aEntityCatalogs\b', re.M)
+CATALOGUE_BLOCK = re.compile(r'[ \t]*m_aEntityCatalogs\s*(?:\+\s*)?\{\s*')
+STOCK_ADDONS = {BASE_GAME, '5614BBCCBB55ED1C'}
+
+
+def catalogue_references(dev, paths):
+    refs = set()
+    for path in paths:
+        lines = dev.read(path).splitlines()
+        for index, line in enumerate(lines):
+            if not AUTHORED_CATALOGUE.match(line):
+                continue
+            if not CATALOGUE_BLOCK.fullmatch(line):
+                raise ValueError(f'unsupported faction catalogue declaration in {path}:{index + 1}')
+            block = '\n'.join(lines[index:block_end(lines, index) + 1])
+            refs.update((guid.upper(), asset) for guid, asset in REF.findall(block))
+    return refs
 
 
 def capture_dependencies(project, local, installed, omit):
@@ -41,11 +58,11 @@ def capture_dependencies(project, local, installed, omit):
     return retained, scoped, full - scoped
 
 
-def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=frozenset()):
+def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=frozenset(), only_authored=False):
     if audit['target'] != dev.commit:
         raise ValueError('rerun the mission audit against the current Dev commit')
     lobby_id, lobby_dependencies = checkout_project(lobby)
-    _, dev_dependencies = checkout_project(dev)
+    mission_id, dev_dependencies = checkout_project(dev)
     base_scope = (BASE_GAME, lobby_id)
     if not set(base_scope) <= set(dev_dependencies) or set(lobby_dependencies) != {BASE_GAME}:
         raise ValueError('expected the Missions Dev and Lobby Dev dependency manifests')
@@ -89,6 +106,7 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
         )
         if catalogue_paths:
             authored_catalogues[header] = catalogue_paths
+        if bool(catalogue_paths) != only_authored:
             continue
         candidates[header] = world, paths, inspect(dev, paths)[2]
     missing = unregistered_references({
@@ -96,6 +114,11 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
     }, providers)
     longmoor = LONGMOOR_PARENT in missing and has_reviewed_longmoor(providers)
     eligible = {}
+    catalogue_evidence = {}
+    if only_authored:
+        registries = {guid: StockPrefabs(db) for guid, (db, _) in installed.items()
+                      if guid in scope and guid not in local}
+        checkouts = {mission_id: dev, **{guid: repo for guid, (repo, _) in local.items() if guid in scope}}
     for header, (world, paths, refs) in candidates.items():
         unresolved = sorted(
             ref for ref, owners in refs.items()
@@ -107,6 +130,19 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
         if unresolved:
             excluded[header] = unresolved
             continue
+        if only_authored:
+            evidence = []
+            for guid, asset in sorted(catalogue_references(dev, authored_catalogues[header])):
+                owners = {addon for addon, db in registries.items() if db.contains(guid, asset)}
+                owners.update(addon for addon, repo in checkouts.items() if repo.resources.get(guid) == [asset])
+                if not owners:
+                    raise ValueError(f'no exact catalogue asset registration for {header}: {guid} {asset}')
+                evidence.append({'guid': guid, 'path': asset, 'addonIds': sorted(owners)})
+            catalogue_evidence[header] = {
+                'sourceBlobs': {path: dev.files[path] for path in authored_catalogues[header]},
+                'references': evidence,
+                'requiredAddonIds': sorted({addon for row in evidence for addon in row['addonIds']} - STOCK_ADDONS),
+            }
         files.update(paths)
         eligible[header] = world
 
@@ -133,6 +169,7 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
         'eligible': eligible,
         'referencesOutsideScope': excluded,
         'authoredCataloguesForReview': authored_catalogues,
+        'authoredCatalogueEvidence': catalogue_evidence,
     }
 
 
@@ -145,6 +182,8 @@ def main():
     parser.add_argument('--workshop', type=Path)
     parser.add_argument('--dependency-checkout', type=Path, action='append', default=[])
     parser.add_argument('--exclude-addon', action='append', default=[], help='omit addon GUID and all dependents')
+    parser.add_argument('--only-authored-catalogues', action='store_true',
+                        help='stage catalogue review fixtures and report their exact asset owners')
     parser.add_argument('--stage', type=Path, required=True)
     args = parser.parse_args()
     audit = json.loads(args.audit.read_text(encoding='utf-8'))
@@ -153,6 +192,7 @@ def main():
         resource_databases(args.base_database, args.workshop), audit, args.stage,
         [Snapshot(repo, 'HEAD') for repo in args.dependency_checkout],
         {guid.upper() for guid in args.exclude_addon},
+        only_authored=args.only_authored_catalogues,
     )
     print(json.dumps(report, indent=2))
 

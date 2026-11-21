@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory)][string]$Missions,
     [Parameter(Mandatory)][string]$Plan,
     [Parameter(Mandatory)][string]$Output,
-    [string[]]$Header
+    [string[]]$Header,
+    [string]$CatalogueReport
 )
 $ErrorActionPreference = 'Stop'
 $missionsRoot = (Resolve-Path -LiteralPath $Missions).Path
@@ -39,6 +40,25 @@ if (!$ready.Count) {
     throw 'No file-cleared GC mission headers in this plan have generated snapshots.'
 }
 
+$catalogues = $null
+if ($CatalogueReport) {
+    $report = Get-Content -LiteralPath $CatalogueReport -Raw -Encoding UTF8 | ConvertFrom-Json
+    if (!$report.authoredCatalogueEvidence) { throw 'Use the report from --only-authored-catalogues.' }
+    $catalogues = $report.authoredCatalogueEvidence.PSObject.Properties
+    foreach ($entry in $catalogues) {
+        if ($entry.Name -cnotin $ready) { continue }
+        if (!$entry.Value.sourceBlobs.PSObject.Properties) {
+            throw "Catalogue report has no source revisions for $($entry.Name)."
+        }
+        foreach ($sourceBlob in $entry.Value.sourceBlobs.PSObject.Properties) {
+            $actual = git -C $missionsRoot rev-parse --verify "${revision}:$($sourceBlob.Name)"
+            if ($LASTEXITCODE -ne 0 -or $actual -cne $sourceBlob.Value) {
+                throw "Catalogue source changed since review: $($sourceBlob.Name)"
+            }
+        }
+    }
+}
+
 $exporter = Join-Path $PSScriptRoot '../../source/mission-launcher/Start-GCMission.ps1'
 foreach ($relative in $ready) {
     $source = [IO.Path]::GetFullPath((Join-Path $missionsRoot $relative))
@@ -48,6 +68,22 @@ foreach ($relative in $ready) {
     }
     $destination = Join-Path $outputRoot ([IO.Path]::ChangeExtension($relative, 'launch.json'))
     New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
-    & $exporter $source -ExportMetadata $destination
+    if ($catalogues -and ($catalogue = $catalogues[$relative])) {
+        $temporary = Join-Path (Split-Path -Parent $destination) ([IO.Path]::GetRandomFileName() + '.json')
+        try {
+            if (Test-Path -LiteralPath $destination) {
+                Copy-Item -LiteralPath $destination -Destination $temporary
+            }
+            & $exporter $source -ExportMetadata $temporary
+            $metadata = Get-Content -LiteralPath $temporary -Raw -Encoding UTF8 | ConvertFrom-Json
+            $missing = @($catalogue.Value.requiredAddonIds | Where-Object { $_ -cnotin $metadata.requiredAddonIds })
+            if ($missing.Count) { throw ("Catalogue addon coverage missing for $relative " + ($missing -join ', ')) }
+            Move-Item -LiteralPath $temporary -Destination $destination -Force
+        } finally {
+            if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary }
+        }
+    } else {
+        & $exporter $source -ExportMetadata $destination
+    }
 }
 Write-Output "Exported $($ready.Count) portable GC mission metadata files."
