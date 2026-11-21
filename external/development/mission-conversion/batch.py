@@ -135,6 +135,14 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite.conf': (
+        '22a47682027e05164c8343d14fb3d1be146d06aa',
+        (('worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/CDF_Players/CDF_Players.layer',
+          '343e5c23ac781fef81ea50712fcfc2569dffd31f'),
+         ('worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/SEP_Players/SEP_Players.layer',
+          '85d59bd8662dc90c8127759c8d5e04b82b3b5c83')),
+        79, 76,
+    ),
     'Missions/Cunnah/A_Hop_Skip_And_A_Jump.conf': (
         '727183f983e89f5ccbbdc75856d72c7c420fe90d',
         (('worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/BLUFOR.layer',

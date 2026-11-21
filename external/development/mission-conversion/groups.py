@@ -602,7 +602,15 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                                                   and set(assigned[1]) & INDEX.keys()):
                             j = last + 1
                             continue
-                        if not (assigned == (identity, {'Enabled': 0}) and set(placed) & INDEX.keys()):
+                        # Enfusion 1.9 keeps the later same-ID active override as
+                        # a whole. Omitted indices still inherit from the prefab.
+                        same_active_component = (
+                            identity == STANDARD_CALLSIGN == assigned[0]
+                            and placed.get('Enabled') == assigned[1].get('Enabled') == 1
+                            and set(placed) & INDEX.keys()
+                            and set(assigned[1]) & INDEX.keys())
+                        if not same_active_component and not (
+                                assigned == (identity, {'Enabled': 0}) and set(placed) & INDEX.keys()):
                             raise ValueError('ambiguous duplicate callsign component')
                     assigned = (identity, placed)
                 elif native_group_component(lines, j, last):
