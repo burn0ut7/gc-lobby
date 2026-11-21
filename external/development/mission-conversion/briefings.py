@@ -138,6 +138,16 @@ def page(lines, origin, name='', layouts=STANDARD_LAYOUTS, *, standard_parent=Fa
         raise ValueError('inherited title or content')
     title = values['m_sTitle']
     body = values['m_sTextData']
+    # Workbench accepts m_sTextData repeated where a continued string expects
+    # another literal. The last complete assignment is the text it loads.
+    segments = body.split('\\\n')
+    last_assignment = 0
+    for index, segment in enumerate(segments):
+        if index and segment.startswith('m_sTextData '):
+            segments[index] = segment.removeprefix('m_sTextData ')
+            last_assignment = index
+    if last_assignment and all(re.fullmatch(QUOTED, segment) for segment in segments):
+        body = '\\\n'.join(segments[last_assignment:])
     if not all(re.fullmatch(QUOTED, part) for value in (title, body) for part in value.split('\\\n')):
         raise ValueError('unsupported serialized briefing string')
     if len(title.encode()) - 2 > 128 or len(body.encode()) - 2 > 16384:
