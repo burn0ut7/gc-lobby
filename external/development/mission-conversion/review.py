@@ -127,11 +127,29 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
         'devOnly': sorted(outgoing - incoming),
     }
     notes_for_world = notes.get(world, {})
+    metadata = {}
+    if header in target.files:
+        body = target.read(header)
+        identity = META_NAME.search(target.read(header + '.meta')) if header + '.meta' in target.files else None
+        metadata = {
+            'registeredLauncher': bool(identity and identity[3] == header
+                                       and target.resources.get(identity[2].upper()) == [header]),
+            'registeredWorld': target.resources.get(resource) == [world],
+            'gcMissionHeader': bool(re.match(r'\s*GC_MissionHeader\b', body)),
+            'generatedSnapshot': bool(re.search(
+                r'^\s*m_GC_GeneratedMetadata\s+GC_GeneratedMissionMetadata(?:\s+"[^"]+")?\s*\{', body, re.M)),
+            'catalogueMetadata': bool(re.search(
+                r'^\s*m_GC_Catalog\s+GC_CatalogMissionMetadata(?:\s+"[^"]+")?\s*\{', body, re.M)),
+            'explicitRequiredAddons': bool(re.search(r'^\s*m_aRequiredAddonIds\s*\{\s*"', body, re.M)),
+            'portableLaunchMetadata': any(path in target.files for path in (
+                header + '.launch.json', header.removesuffix('.conf') + '.launch.json')),
+        }
     return {
         'world': world,
         'status': 'missing' if header not in target.files or world not in target.files else 'review' if issues else 'compare',
         'issues': issues, 'files': files, 'legacyDeclarations': legacy, 'missionResourceReferences': local_refs,
         'unresolvedExternalReferences': missing,
+        'launcherMetadata': metadata,
         **({'pathResolvedTerrainParents': path_resolved_parents} if path_resolved_parents else {}),
         'areas': {area: {'source': before.get(area, {}), 'dev': after.get(area, {})}
                   for area in AREAS if area in before or area in after},

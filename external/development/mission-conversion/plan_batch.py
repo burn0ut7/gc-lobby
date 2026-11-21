@@ -232,6 +232,7 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
     file_notes = dict(previous_notes or {})
     runtime_candidates = []
     cleared_committed = 0
+    committed_metadata = {}
     for header, row in sorted(review['missions'].items()):
         gaps = sorted(set(recorded_checks.get(header, ()))
                       | set(row.get('documentedGaps', ())) | set(draft_checks.get(header, ())))
@@ -245,6 +246,7 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
             continue
         if header in committed and header not in draft_checks:
             cleared_committed += 1
+            committed_metadata[header] = row.get('launcherMetadata', {})
         if checks:
             recorded_checks[header] = checks
             runtime_candidates.append({'world': row['world'], 'launchers': [header],
@@ -253,6 +255,7 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         'source': inventory['source'], 'target': inventory['target'],
         'committedLaunchersWithWorld': len(committed),
         'committedLaunchersCleared': cleared_committed,
+        'committedLauncherMetadata': committed_metadata,
         'legacyLaunchers': len(inventory['headers']),
         'launcherFileChecks': dict(Counter(row['status'] for row in review['missions'].values())),
         'worldConversionChecks': migration['totals'],
@@ -283,6 +286,23 @@ def markdown(plan):
              'without relying on a staged draft.', '',
              '## Launcher file audit including staged drafts', '']
     lines.extend(f"- {status} · {count}" for status, count in sorted(plan['launcherFileChecks'].items()))
+    if metadata := plan.get('committedLauncherMetadata'):
+        lines.extend(['', '## GC launcher metadata on file-cleared Dev missions', '',
+                      '| Metadata | Launchers |', '| --- | ---: |'])
+        for field, label in (
+            ('registeredLauncher', 'Unique launcher resource registration'),
+            ('registeredWorld', 'Unique world resource registration'),
+            ('gcMissionHeader', 'Native GC mission header'),
+            ('generatedSnapshot', 'GC generated mission snapshot'),
+            ('catalogueMetadata', 'GC catalogue metadata'),
+            ('explicitRequiredAddons', 'Explicit per-mission addon IDs'),
+            ('portableLaunchMetadata', 'Portable launch metadata file'),
+        ):
+            count = sum(row.get(field, False) for row in metadata.values())
+            lines.append(f'| {label} | {count} of {len(metadata)} |')
+        lines.extend(['', 'The file audit checks resource references against the addon dependency graph. '
+                      'The direct GC mission launcher also requires a generated header snapshot or portable metadata. '
+                      'This table checks for those fields and files. The published build still needs its own launch verification.'])
     if plan['sharedConversionQueue']:
         lines.extend(['', '## Shared conversion work', '',
                       'Work down this list before taking on mission-specific ports. Each estimate '
