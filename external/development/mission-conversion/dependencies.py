@@ -31,9 +31,7 @@ def checkout_project(snapshot):
     return read_project(snapshot.read_raw(projects[0]), snapshot.repo / projects[0])
 
 
-def dependency_resources(target, checkouts, databases):
-    """Use each supplied checkout in preference to the installed copy of the same addon."""
-    root, requires = checkout_project(target)
+def dependency_catalogue(checkouts, databases):
     local = {}
     for snapshot in checkouts:
         guid, children = checkout_project(snapshot)
@@ -50,6 +48,13 @@ def dependency_resources(target, checkouts, databases):
         if guid in installed:
             raise ValueError(f'multiple installed copies of dependency {guid}')
         installed[guid] = database, children
+    return local, installed
+
+
+def dependency_resources(target, checkouts, databases):
+    """Use each supplied checkout in preference to the installed copy of the same addon."""
+    root, requires = checkout_project(target)
+    local, installed = dependency_catalogue(checkouts, databases)
 
     selected = [databases[0]]
     resources = defaultdict(list)

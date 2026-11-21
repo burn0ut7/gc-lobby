@@ -11,6 +11,8 @@ class GC_MissionResourceReferences
 	protected string m_sError;
 	protected ref array<string> m_aExcludedFields = {};
 	protected bool m_bLoadoutFields;
+	protected static const int MISSION_CONTAINER_LIMIT = 3000000;
+	protected static const int LOADOUT_CONTAINER_LIMIT = 1000000;
 
 	//------------------------------------------------------------------------------------------------
 	//! Only native equipment/identity references; excludes gameplay services and catalogues.
@@ -65,7 +67,7 @@ class GC_MissionResourceReferences
 	//------------------------------------------------------------------------------------------------
 	void AddResource(ResourceName name, string origin)
 	{
-		if (name.IsEmpty() || !WithinBudget(0) || m_mResources.Contains(name))
+		if (name.IsEmpty() || !WithinBudget(0, origin) || m_mResources.Contains(name))
 			return;
 		GC_MissionMetadataResource row = new GC_MissionMetadataResource();
 		row.m_sResource = name;
@@ -109,9 +111,11 @@ class GC_MissionResourceReferences
 	//------------------------------------------------------------------------------------------------
 	bool Expand()
 	{
-		for (int i; i < m_aQueue.Count() && WithinBudget(0); i++)
+		for (int i; i < m_aQueue.Count(); i++)
 		{
 			ResourceName name = m_aQueue[i];
+			if (!WithinBudget(0, name))
+				break;
 			Resource resource = BaseContainerTools.LoadContainer(name);
 			BaseContainer container;
 			if (resource && resource.IsValid())
@@ -185,13 +189,17 @@ class GC_MissionResourceReferences
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected bool WithinBudget(int depth)
+	protected bool WithinBudget(int depth, string origin = "")
 	{
 		if (!m_sError.IsEmpty())
 			return false;
-		if (depth > 64 || m_iContainers >= 1000000 || m_mResources.Count() >= 50000 || System.GetTickCount(m_iStarted) > 30000)
+		int containerLimit = MISSION_CONTAINER_LIMIT;
+		if (m_bLoadoutFields)
+			containerLimit = LOADOUT_CONTAINER_LIMIT;
+		int elapsed = System.GetTickCount(m_iStarted);
+		if (depth > 64 || m_iContainers >= containerLimit || m_mResources.Count() >= 50000 || elapsed > 30000)
 		{
-			m_sError = string.Format("Resource scan exceeded a safety limit: depth=%1, containers=%2, resources=%3, elapsed=%4ms. Metadata was not refreshed.", depth, m_iContainers, m_mResources.Count(), System.GetTickCount(m_iStarted));
+			m_sError = string.Format("Metadata was not refreshed. Resource scan exceeded a safety limit at %1: depth=%2, containers=%3, resources=%4, elapsed=%5ms.", origin, depth, m_iContainers, m_mResources.Count(), elapsed);
 			return false;
 		}
 		return true;
@@ -200,7 +208,7 @@ class GC_MissionResourceReferences
 	//------------------------------------------------------------------------------------------------
 	protected void Visit(BaseContainer container, string origin, int depth, bool children = true)
 	{
-		if (!container || !WithinBudget(depth))
+		if (!container || !WithinBudget(depth, origin))
 			return;
 		if (m_bLoadoutFields)
 		{
@@ -210,14 +218,19 @@ class GC_MissionResourceReferences
 				return;
 		}
 		m_iContainers++;
-		for (int v; v < container.GetNumVars() && WithinBudget(depth); v++)
+		string fieldPrefix = origin + "/" + container.GetClassName() + ".";
+		for (int v, count = container.GetNumVars(); v < count && WithinBudget(depth, origin); v++)
 		{
+			DataVarType type = container.GetDataVarType(v);
+			if (type != DataVarType.RESOURCE_NAME && type != DataVarType.STRING
+				&& type != DataVarType.RESOURCE_NAME_ARRAY && type != DataVarType.STRING_ARRAY
+				&& type != DataVarType.OBJECT && type != DataVarType.OBJECT_ARRAY)
+				continue;
 			string key = container.GetVarName(v);
 			// Saved evidence is output, never a new dependency input.
 			if (key == "m_GC_GeneratedMetadata" || m_aExcludedFields.Contains(key))
 				continue;
-			string field = origin + "/" + container.GetClassName() + "." + key;
-			DataVarType type = container.GetDataVarType(v);
+			string field = fieldPrefix + key;
 			if (type == DataVarType.RESOURCE_NAME || type == DataVarType.STRING)
 			{
 				if (m_bLoadoutFields && !IsLoadoutReference(container, key))
@@ -241,11 +254,11 @@ class GC_MissionResourceReferences
 			else if (type == DataVarType.OBJECT_ARRAY)
 			{
 				BaseContainerList objects = container.GetObjectArray(key);
-				for (int o; objects && o < objects.Count() && WithinBudget(depth); o++)
+				for (int o; objects && o < objects.Count() && WithinBudget(depth, field); o++)
 					Visit(objects.Get(o), field + "[" + o + "]", depth + 1);
 			}
 		}
-		for (int child; children && child < container.GetNumChildren() && WithinBudget(depth); child++)
+		for (int child; children && child < container.GetNumChildren() && WithinBudget(depth, origin); child++)
 			Visit(container.GetChild(child), origin + "/child[" + child + "]", depth + 1);
 	}
 }
