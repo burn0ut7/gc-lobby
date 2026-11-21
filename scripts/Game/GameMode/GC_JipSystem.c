@@ -83,17 +83,22 @@ class GC_JipSystem
 			return record;
 		Connected(playerId);
 		record = new GC_JipPlayer();
-		record.m_bEligible = m_mConnections.Get(playerId) >= MINIMUM_JOIN_SECONDS && WindowOpen();
+		record.m_bEligible = m_mConnections.Get(playerId) >= MINIMUM_JOIN_SECONDS && CanStillOpen();
 		m_mPlayers.Set(identity, record);
 		return record;
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected bool WindowOpen()
+	protected bool CanStillOpen()
 	{
 		return IsActive() && m_Mode.GetState() == SCR_EGameModeState.GAME
 			&& m_Mode.GetJipMode() != GC_EJipMode.DISABLED
 			&& (m_Mode.GetJipDenySeconds() <= 0 || Elapsed() < m_Mode.GetJipDenySeconds());
+	}
+
+	protected bool WindowOpen()
+	{
+		return CanStillOpen() && Elapsed() >= m_Mode.GetJipOpenSeconds();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -133,11 +138,13 @@ class GC_JipSystem
 			GC_JipPlayer record = Register(playerId);
 			if (!record || !record.m_bEligible || record.m_bConsumed)
 				continue;
-			if (!WindowOpen())
+			if (!CanStillOpen())
 			{
 				record.m_bConsumed = true;
 				continue;
 			}
+			if (Elapsed() < m_Mode.GetJipOpenSeconds())
+				continue;
 			ChimeraCharacter character = LivingCharacter(playerId);
 			if (record.m_bOffered)
 			{

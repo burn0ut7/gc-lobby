@@ -9,6 +9,9 @@ modded class GC_LobbyGameMode
 	[Attribute("0", UIWidgets.EditBox, "Seconds after mission start when JIP closes for everyone. Zero disables the cutoff.", category: "Join in progress", params: "0 inf 1")]
 	protected int m_iJipDenySeconds;
 
+	[Attribute("0", UIWidgets.EditBox, "Seconds after Match starts before eligible players can use JIP. Zero opens the window immediately.", category: "Join in progress", params: "0 inf 1")]
+	protected int m_iJipOpenSeconds;
+
 	protected ref GC_JipSystem m_Jip;
 
 	//------------------------------------------------------------------------------------------------
@@ -37,6 +40,11 @@ modded class GC_LobbyGameMode
 	int GetJipDenySeconds()
 	{
 		return m_iJipDenySeconds;
+	}
+
+	int GetJipOpenSeconds()
+	{
+		return m_iJipOpenSeconds;
 	}
 
 	//------------------------------------------------------------------------------------------------

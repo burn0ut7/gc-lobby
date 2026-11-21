@@ -66,3 +66,7 @@ def ticket_event(world, records, gaps):
                       f'       m_sFaction "{row["faction"]}"', '       m_iOperation 0',
                       f'       m_iAmount {row["tickets"]}', '      }'])
     return lines + ['     }', '    }', '   }']
+
+
+def uses_default_respawn_budget(audit):
+    return (not audit['ticketGaps'] and all(row['tickets'] == 0 for row in audit['factions']))

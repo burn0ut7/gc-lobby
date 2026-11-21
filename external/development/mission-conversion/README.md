@@ -46,6 +46,8 @@ The batch marker rule preserves the legacy draw order at rest and on hover. Lega
 
 For existing batch-converted worlds, the planner can stage a draw-order repair when the original conversion reproduces the entire Dev marker layer at the same path. The installer verifies the original layer hash and requires `--replace-reviewed`. Six layers matched and received 28 marker corrections in Missions Dev commit `4ff10132`. The dedicated conversion recipes retain their original output.
 
+The batch mode rule preserves explicitly disabled JIP teleport and the legacy opening delay. Despite its name, `m_denyJIPTime` denied requests before the configured time. The rule uses GC Lobby's Match-relative opening time and retains the legacy 60-second floor. GC Lobby's existing connection eligibility, destination checks and single-offer policy still apply. The mode rule also accepts faction respawn tables containing only zero-ticket entries when the table parses cleanly. Funded tables still require scheduling, destination and replacement behavior review. The published GC Core JIP handler and legacy GC Lobby respawn configuration supplied the reference. Workbench MCP compiled the updated JIP window with zero errors in session `logs_2026-11-20_19-23-11`. Remote request timing and delivery remain unverified.
+
 Desert Heat is the first installed batch draft in Missions Dev commit a07bcbdb. The installer verified every referenced GUID and path against the draft files, current addon checkouts and installed resource databases. Its existing boundary was reused and only the missing boundary was added. Two runs with different Python hash seeds reproduced the draft and inventory byte-for-byte. File review covers the full 277-launcher catalog.
 
 ## Coverage

@@ -16,6 +16,7 @@ from launchers import META_NAME, launcher, replace_reference
 from markers import convert_layer
 from outcomes import FRAMEWORK, leaves
 import polygon_capture
+from respawns import read_respawns, uses_default_respawn_budget
 import teleports
 from scenery import FIELD, StockPrefabs, WAYPOINT_CLASS
 from weather import convert_weather
@@ -25,6 +26,8 @@ MODE = re.compile(r'^PS_GameModeCoop(?: [\w.-]+)? : "'
                   r'(?:\{4CFD54745CD45673\}Prefabs/MP/Modes/PS_GameMode_Lobby_(?:GC|TILWMF)\.et'
                   r'|\{9C2001FE7A2F2281\}Prefabs/MP/Modes/PS_GameMode_Lobby\.et)" \{$')
 CONSTRUCTION_FIELDS = {'m_fPrepDuration', 'm_fPrepMultiplier', 'm_fGameMultiplier'}
+LEGACY_JIP_MODES = {'Deny': 'DISABLED', 'Auto': 'AUTO', 'Manual': 'MANUAL',
+                    '0': 'DISABLED', '1': 'AUTO', '2': 'MANUAL'}
 NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|Turret|SCR_AIWorld|GameEntity|GenericEntity|GenericTerrainEntity|StaticModelEntity|Tree|'
                     r'DecalEntity|SCR_DestructibleEntity|SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
                     r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity|LightEntity)\b')
@@ -588,6 +591,8 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     weather, environment, coords, freeze, children = '', '', ' coords 0 0 0', 0, ''
     immediate_release = False
     construction = {}
+    jip = {}
+    respawn_table_seen = False
     index = 1
     while index < len(root) - 1:
         line = root[index]
@@ -605,6 +610,18 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             if fraction and freeze:
                 raise ValueError('nonintegral staging seconds')
             immediate_release = not freeze
+        elif line == ' m_aFactionRespawnCount {' and not respawn_table_seen:
+            end = block_end(root, index)
+            records, gaps = read_respawns('\n'.join([root[0], *root[index:end + 1], '}']), world)
+            if not uses_default_respawn_budget({'factions': records, 'ticketGaps': gaps}):
+                raise ValueError('legacy faction respawn behavior requires a conversion rule')
+            respawn_table_seen = True
+            index = end
+        elif line.startswith((' m_eJIPState ', ' m_denyJIPTime ')):
+            field, value = line.strip().split(' ', 1)
+            if field in jip:
+                raise ValueError('duplicate legacy JIP setting ' + field)
+            jip[field] = value
         elif line.strip().partition(' ')[0] in CONSTRUCTION_FIELDS:
             field, _, value = line.strip().partition(' ')
             if field in construction:
@@ -620,6 +637,16 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     if construction:
         authored = ', '.join(f'{field} {value}' for field, value in sorted(construction.items()))
         raise ValueError('legacy construction progress settings need runtime support: ' + authored)
+    jip_fields = ''
+    if jip:
+        mode = LEGACY_JIP_MODES.get(jip.get('m_eJIPState', 'Manual'))
+        opening = jip.get('m_denyJIPTime', '-1')
+        if not mode or not re.fullmatch(r'-?\d+', opening) or not -2147483648 <= int(opening) <= 2147483647:
+            raise ValueError('unsupported legacy JIP settings')
+        jip_fields = f' m_eJipMode {mode}\n'
+        if mode != 'DISABLED':
+            # Legacy blocks requests before this value, despite the field's name.
+            jip_fields += f' m_iJipOpenSeconds {max(60, int(opening))}\n'
     if (zones and not (freeze or immediate_release)) or len(set(zones)) != len(zones):
         raise ValueError('staging duration requires uniquely named restriction zones')
     resource = guid(world + '/resource')
@@ -679,7 +706,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
  components {{
 {weather}{environment}{settings} }}
 {coords}
-{children}}}
+{jip_fields}{children}}}
 '''
 
 
@@ -700,7 +727,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     preset = row.get('briefingModePreset')
     if not preset or row['briefingGaps']:
         blockers.append({'rule': 'briefing preset', 'file': world, 'detail': row['briefingGaps']})
-    if row.get('respawn'):
+    if row.get('respawn') and not uses_default_respawn_budget(row['respawn']):
         blockers.append({'rule': 'respawn', 'file': world})
     outcome = row.get('outcomeCandidate', {})
     rules = outcome.get('events', {})
