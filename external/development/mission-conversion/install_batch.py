@@ -11,6 +11,7 @@ from catalog import REF, SOURCE_TEXT, Snapshot
 from dependencies import dependency_resources
 from launchers import META_NAME
 from scenery import StockPrefabs
+from terrain_parents import has_reviewed_longmoor, is_longmoor_subscene
 
 
 def unresolved_resources(files, target, checkouts, databases):
@@ -18,13 +19,20 @@ def unresolved_resources(files, target, checkouts, databases):
     available = {(guid, path) for resources in (target.resources, dependencies)
                  for guid, paths in resources.items() for path in paths}
     refs = set()
+    longmoor = None
     for path, body in files.items():
         if path.endswith('.meta'):
             meta = META_NAME.search(body.decode('utf-8-sig'))
             if meta and meta[3] == path[:-5] and path[:-5] in files:
                 available.add((meta[2].upper(), meta[3]))
         elif PurePosixPath(path).suffix.lower() in SOURCE_TEXT:
-            refs.update((guid.upper(), ref) for guid, ref in REF.findall(body.decode('utf-8-sig')))
+            text = body.decode('utf-8-sig')
+            if is_longmoor_subscene(path, text.replace('\r\n', '\n')):
+                if longmoor is None:
+                    longmoor = has_reviewed_longmoor(providers)
+                if longmoor:
+                    continue
+            refs.update((guid.upper(), ref) for guid, ref in REF.findall(text))
     return unregistered_references(refs - available, providers)
 
 

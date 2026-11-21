@@ -80,16 +80,17 @@ def collect(source, dev, source_units, dev_units, stock):
         first = text.partition('\n')[0]
         if not CHARACTER.fullmatch(first):
             return None
+        parent = REF.search(first)
+        resource, parent_path = parent[1].upper(), parent[2]
+        parent_asset = evaluate(resource, seen | {guid}) if resource in source.resources else None
+        inherited_playable = bool(parent_asset) or legacy_member(source_units, resource, False)
         try:
-            body, removed = migrate_playability(text)
+            body, removed = migrate_playability(text, inherited_playable=inherited_playable)
         except ValueError:
             return None
         if LEGACY.search(body):
             return None
-        parent = REF.search(first)
-        resource, parent_path = parent[1].upper(), parent[2]
         if resource in source.resources:
-            parent_asset = evaluate(resource, seen | {guid})
             if not parent_asset or (parent_path != parent_asset[0]
                                     and MOVED_CHARACTER_PARENTS.get((resource, parent_path)) != parent_asset[0]):
                 return None

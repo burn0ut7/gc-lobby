@@ -15,6 +15,7 @@ from dependencies import dependency_resources
 from install_batch import resource_databases, unregistered_references
 from launchers import META_NAME, WORLD_REF, launcher
 from scenery import StockPrefabs
+from terrain_parents import LONGMOOR_PARENT, LONGMOOR_PROVIDER, has_reviewed_longmoor, is_longmoor_subscene
 
 LEGACY = re.compile(r'^(?:TILW|PS)_')
 AREAS = {
@@ -65,7 +66,7 @@ def inspect(snapshot, paths):
     return areas, declarations, references
 
 
-def compare_mission(source, target, header, notes, dependencies, stock, unresolved=None):
+def compare_mission(source, target, header, notes, dependencies, stock, unresolved=None, longmoor=False):
     issues = []
     try:
         world, resource, _ = launcher(source, target, header)
@@ -92,6 +93,7 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
         issues.append('GC Lobby mode placement or native-mode exception needs review')
     local_refs = []
     missing = []
+    path_resolved_parents = []
     for (guid, path), owners in sorted(refs.items()):
         owned = target.resources.get(guid, [])
         target_paths = owned or dependencies.get(guid, [])
@@ -101,7 +103,12 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
                 continue
             local_refs.append({'guid': guid, 'path': path, 'devPaths': target_paths, 'referencedBy': sorted(owners)})
         elif unresolved is not None and (guid, path) in unresolved:
-            missing.append({'guid': guid, 'path': path, 'referencedBy': sorted(owners)})
+            reference = {'guid': guid, 'path': path, 'referencedBy': sorted(owners)}
+            if (longmoor and (guid, path) == LONGMOOR_PARENT and owners == {world}
+                    and is_longmoor_subscene(world, target.read(world))):
+                path_resolved_parents.append({**reference, 'provider': LONGMOOR_PROVIDER, 'version': '3.2.1'})
+            else:
+                missing.append(reference)
     if local_refs:
         issues.append('Mission-owned resource identities or paths need review')
     if missing:
@@ -119,11 +126,14 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
         'status': 'missing' if header not in target.files or world not in target.files else 'review' if issues else 'compare',
         'issues': issues, 'files': files, 'legacyDeclarations': legacy, 'missionResourceReferences': local_refs,
         'unresolvedExternalReferences': missing,
+        **({'pathResolvedTerrainParents': path_resolved_parents} if path_resolved_parents else {}),
         'areas': {area: {'source': before.get(area, {}), 'dev': after.get(area, {})}
                   for area in AREAS if area in before or area in after},
         'documentedGaps': [
             *notes_for_world.get('playtestCandidate', {}).get('remainingBehavior', []),
             *notes_for_world.get('batchDraft', {}).get('remainingBehavior', []),
+            *(['Compare the authored locations against the historical Longmoor terrain.']
+              if path_resolved_parents else []),
         ],
     }
 
@@ -138,6 +148,8 @@ def markdown(source, target, missions):
     for name, row in missions.items():
         files = row['files']
         issues = ', '.join(row['issues']).replace('|', '\\|')
+        if row.get('pathResolvedTerrainParents'):
+            issues = ', '.join(filter(None, [issues, 'Longmoor 3.2.1 terrain loads by path']))
         lines.append(f'| `{name}` | {row["status"]} | {len(files.get("changed", []))} | '
                      f'{len(files.get("sourceOnly", []))} | {len(files.get("devOnly", []))} | {issues} |')
     return '\n'.join(lines) + '\n'
@@ -254,6 +266,7 @@ def main():
     checkouts = [Snapshot(addon, 'HEAD') for addon in args.dependency]
     stock = StockPrefabs(args.base_database) if args.base_database else None
     unresolved = None
+    longmoor = False
     if args.workshop_addons:
         try:
             databases = resource_databases(args.base_database, args.workshop_addons)
@@ -270,13 +283,14 @@ def main():
             unresolved = unregistered_references(
                 {(guid, path) for guid, path in references
                  if path not in (target.resources.get(guid) or dependencies.get(guid, []))}, providers)
+            longmoor = LONGMOOR_PARENT in unresolved and has_reviewed_longmoor(providers)
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
     else:
         for checkout in checkouts:
             for resource, paths in checkout.resources.items():
                 dependencies[resource].extend(path for path in paths if path not in dependencies[resource])
-    missions = {header: compare_mission(source, target, header, notes, dependencies, stock, unresolved)
+    missions = {header: compare_mission(source, target, header, notes, dependencies, stock, unresolved, longmoor)
                 for header in sorted(selected)}
     report = {'source': source.commit, 'target': target.commit, 'missions': missions}
     if args.draft_stage:
