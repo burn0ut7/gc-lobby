@@ -60,6 +60,10 @@ The damage flag rule replaces supported placed legacy damage callbacks with one-
 
 Makeup is committed to Missions Dev as `4727175e`. The draft preserved all 82 roster slots, both caches and all authored health and placement values. Both individual cache notices, the combined cache notice and the two casualty notices retain the source five-second delay. Resource checks passed against the Dev dependency graph. Live damage timing and staging behavior still need verification. Map cover framing follows native map opens, and the auxiliary outline uses screen width.
 
+The batch rule now applies waypoint replacements after a positive one-shot capture, using the same named group and waypoint checks as Match-start assignments. A top-level blank positive literal becomes a disabled event with its action and delay preserved. The legacy framework ignores writes to the empty flag, so the original event could not fire. Blank inverted Match-start notifications keep their existing scheduling.
+
+Missions Dev commit `d26e0433` ports Le Moule Approach Redux with 62 slots. The file review verified both capture spheres and the three five-second waypoint replacements to the sawmill. The 2,825-second timeout notice remains active. The unused casualty notice stays dormant because its source condition has no flag. Live capture timing and waypoint execution remain unverified.
+
 Desert Heat is the first installed batch draft in Missions Dev commit a07bcbdb. The installer verified every referenced GUID and path against the draft files, current addon checkouts and installed resource databases. Its existing boundary was reused and only the missing boundary was added. Two runs with different Python hash seeds reproduced the draft and inventory byte-for-byte. File review covers the full 277-launcher catalog.
 
 ## Coverage

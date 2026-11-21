@@ -92,7 +92,7 @@ def waypoint_action(lines, key):
     return Decimal(delay), [*body, '      }'], details
 
 
-def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0):
+def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0, *, allow_dormant=False):
     match = TERM.fullmatch(lines[0])
     if not match or depth > 8:
         raise ValueError('unsupported outcome term')
@@ -102,6 +102,9 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0)
         invert = values.get('m_invertTerm', '0')
         if flag == '""' and invert == '1' and depth == 0:
             return {'trigger': 'Match start'}
+        if flag == '""' and invert == '0' and allow_dormant and depth == 0:
+            # Legacy AdjustMissionFlag rejects the empty string.
+            return {'trigger': 'dormant'}
         if invert == '0' and flag in flags:
             faction, ratio = flags[flag]
             return {'trigger': 'peak player loss', 'flag': flag[1:-1], 'faction': faction, 'ratio': ratio}
@@ -155,7 +158,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
             if literal_flag in startup_flags:
                 term = {'trigger': 'startup choice', 'flag': literal_flag[1:-1]}
             else:
-                term = read_term(fields[i:end + 1], flags, captures, ai, objective_flags, event_flags)
+                term = read_term(fields[i:end + 1], flags, captures, ai, objective_flags, event_flags,
+                                 allow_dormant=compound)
             i = end
         elif line == '   m_instructions {':
             end = block_end(fields, i)
@@ -216,8 +220,11 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                     or any(action['instruction'] not in ('TILW_SpawnPrefabInstruction', 'TILW_EditMapItemInstruction')
                            for action in converted_actions)):
         raise ValueError('unsupported pregame action')
-    if assignments and term['trigger'] != 'Match start':
-        raise ValueError('waypoint assignments after Match start require a separate rule')
+    if assignments and term['trigger'] not in ('Match start', 'dormant'):
+        capture = captures.get('"' + term.get('flag', '') + '"', [])
+        if (term['trigger'] != 'area capture' or term.get('inverted')
+                or not any(line.strip() == 'm_bStopAfterFirstChange 1' for line in capture)):
+            raise ValueError('waypoint assignments need a positive one-shot capture or Match start')
     audit = {'announcements': notices, 'instructionDelaysSeconds': [f'{delay:f}' for delay in actions]}
     if assignments:
         audit['waypointAssignments'] = assignments
@@ -279,7 +286,8 @@ def render_check(term, key, captures, capture_messages, tracked_areas):
 
 
 def render(key, name, term, actions, captures, capture_messages, tracked_areas):
-    condition = term['trigger'] != 'Match start'
+    dormant = term['trigger'] == 'dormant'
+    condition = term['trigger'] not in ('Match start', 'dormant')
     startup = term['trigger'] == 'startup choice'
     latch = 'GC_MigrationChoice_' + term['flag'] if startup else name
     result = []
@@ -300,9 +308,13 @@ def render(key, name, term, actions, captures, capture_messages, tracked_areas):
         if condition:
             result.extend(['     m_aConditions {', f'      GC_MissionEventCondition "{{{guid(delivery + "/latch")}}}" {{',
                            f'       m_sEventName "{latch}"', '      }', '     }'])
-        if delay:
-            result.extend([f'     m_Advanced GC_EventOptions "{{{guid(delivery + "/delay")}}}" {{',
-                           f'      m_fDelay {delay:f}', '     }'])
+        if delay or dormant:
+            result.append(f'     m_Advanced GC_EventOptions "{{{guid(delivery + "/delay")}}}" {{')
+            if delay:
+                result.append(f'      m_fDelay {delay:f}')
+            if dormant:
+                result.append('      m_bDisabled 1')
+            result.append('     }')
         result.extend(['     m_aActions {', *body, '     }', '    }'])
     return result
 
@@ -450,7 +462,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns,
                 resolve_spawn, resolve_crew, startup, hidden_briefings)
             emitted_names = {f'{name} ({delay:f}s)' for delay in actions}
-            if term['trigger'] not in ('Match start', 'startup choice'):
+            if term['trigger'] not in ('Match start', 'startup choice', 'dormant'):
                 emitted_names.add(name)
             if emitted_names & names:
                 raise ValueError('duplicate generated event name')
