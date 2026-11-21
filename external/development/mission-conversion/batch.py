@@ -135,6 +135,12 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky.conf': (
+        '68347cf26401cd0d1ebd780e568a9b4cc163363d',
+        (('worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/OPFOR_Players/OPFOR_Players.layer',
+          '7183aac2e553552ca13179c56cf49e4a1eb65d3e'),),
+        79, 64,
+    ),
     'Missions/HitTheMan/VDV Leads The Way/VDVLeadsTheWay.conf': (
         '9e42d838f05f0498631cca91c04d2a0344014cc7',
         (('worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_Layers/OPFOR_Players/OPFOR_Players.layer',
@@ -361,12 +367,20 @@ REVIEWED_MISSING_WAYPOINTS = {
         ('899263002cdc221867c535cfca930b39e55867d9', {'Defend'}),
     'worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_Layers/AI_Defenders/AI_Encounters_1.layer':
         ('9b284785753b8cac64f6c6a971f19b198f0120f9', {'DefInside_WPWest_US_1'}),
+    'worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/AI_Defenders/AI_Defenders_South.layer':
+        ('93dda27768ebdc5519b0ee2ef9ef57304cb44b1e', {f'DefInside_WPWest_US_{i}' for i in range(1, 15)}),
+    'worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/AI_Defenders/AI_Defenders_Spawned.layer':
+        ('28aafa42d617068b2b6a530ac89bff70e62b1de7', {'DefInside_WPWest_US_8', 'Spawned_Def_WPMain_'}),
     'worlds/Reapzr/Deadlock/Deadlock_Layers/Groups/AI.layer':
         ('f539728c37d0fa180a89e171dde57baa0dd4c147', {
             'AIWaypoint_Defend_1', 'AIWaypoint_Patrol_1', 'AIWaypoint_Patrol_2',
             'AIWaypoint_Scout_1', 'AIWaypoint_Scout_2',
             'AIWaypoint_SearchandDestroy_1', 'AIWaypoint_SearchandDestroy_2',
         }),
+}
+REVIEWED_MISSING_SPAWN_WAYPOINTS = {
+    'worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/AI_Defenders/AI_Defenders_South.layer':
+        ('93dda27768ebdc5519b0ee2ef9ef57304cb44b1e', 'Def_WPMain_US_10'),
 }
 REVIEWED_MISSING_STATIC_VEHICLES = {
     'worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/OPFOR.layer':
@@ -476,6 +490,9 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Scenarios/SP01/SP01_UAZ469_USSR.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('9AA441DE6DAB6D94', 'Prefabs/Vehicles/Helicopters/Mi24/Mi24V_armed_S8.et'): (
+        'WCS_Mi-24V_628933A0D3A0D700', '9AA441DE6DAB6D94',
+        'Prefabs/Vehicles/Helicopters/Mi24/Mi24V_Armed_B8V20A_X4.et'),
     ('5CFD8CB5C3E55A4E', 'Prefabs/Vehicles/Tracked/BFV/M2A2_MERDC.et'): (
         'WCS_M2A2_63120AE07E6C0966', '5CFD8CB5C3E55A4E',
         'Prefabs/Vehicles/Tracked/M2A2/M2A2_MERDC.et'),
@@ -1509,7 +1526,8 @@ def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, obje
     return path if (guid, path) in workshop_resources or stock.contains(guid, path) else None
 
 
-def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, shadowed_names=()):
+def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *,
+                 shadowed_names=(), missing_waypoint=None):
     root = PLACED_SPAWNER.fullmatch(block[0])
     if not root:
         raise ValueError('unverified placed spawner prefab')
@@ -1547,6 +1565,11 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         waypoints = target_names(data['m_waypointNames'], skip_blank=True) if data.get('m_waypointNames') else []
         ref = REF.fullmatch(data.get('m_prefab', ''))
         group = bool(ref and ref[2].startswith('Prefabs/Groups/'))
+        absent = f'"{missing_waypoint}"' if missing_waypoint else None
+        if group and absent in waypoints:
+            waypoints = [point for point in waypoints if point != absent]
+        else:
+            absent = None
         if config is not None and (not ref or not ref[2].startswith('Prefabs/Vehicles/')):
             raise ValueError('crewed spawner needs a verified vehicle')
         if waypoints and not group and config is None:
@@ -1592,6 +1615,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         placements.extend([f'GenericEntity {anchor} {{', *(' ' + line for line in transform), *children, '}'])
         audit.append({'spawnAnchor': anchor, 'spawnName': details['area'], 'prefab': details['prefab'],
                       'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in group_waypoints], **term})
+        if absent:
+            audit[-1]['missingGroupWaypoint'] = absent[1:-1]
         if config is not None:
             audit[-1]['crewWaypoints'] = [point for group in crew_groups for point in group['waypoints']]
             audit[-1]['crewGroups'] = crew_groups
@@ -1633,13 +1658,21 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
     shadowed = shadowed_crew_names(source, world, layers) if any('m_entityName ' in text for text in layers.values()) else ()
     for layer, text in layers.items():
         try:
+            reviewed = REVIEWED_MISSING_SPAWN_WAYPOINTS.get(layer)
+            missing_waypoint = None
+            if reviewed and source.files[layer] == reviewed[0] and reviewed[1] not in script_text(source):
+                name = reviewed[1]
+                token = re.compile(r'(?<![\w.-])' + re.escape(name) + r'(?![\w.-])')
+                if sum(len(token.findall(source.read(p))) for p in source.closure(world)
+                       if PurePosixPath(p).suffix.lower() in SOURCE_TEXT) == 1:
+                    missing_waypoint = name
             for line, block in blocks(text):
                 if not re.match(r'^(?:\$grp )?TILW_PrefabSpawnerEntity\b', block[0]):
                     continue
                 try:
                     native, scheduled, info = placed_spawn(
                         block, f'{layer}:{line}', resolve_spawn, captures, flags, used_flags, resolve_crew,
-                        shadowed_names=shadowed)
+                        shadowed_names=shadowed, missing_waypoint=missing_waypoint)
                 except ValueError as exc:
                     blockers.append({'rule': 'TILW_PrefabSpawnerEntity', 'file': layer, 'line': line,
                                      'detail': str(exc)})
@@ -2690,6 +2723,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         reviewed_missing_anchor = REVIEWED_MISSING_SPAWN_ANCHORS.get(world)
         for spawn in prefab_spawns:
             anchor, name = spawn['spawnAnchor'], spawn['spawnName']
+            missing_route = spawn.get('missingGroupWaypoint')
+            if missing_route and (missing_route in named or missing_route in spawned_names
+                                  or missing_route in crew_names):
+                blockers.append({'rule': 'AI group spawn', 'file': world,
+                                 'detail': 'reviewed missing waypoint now resolves: ' + missing_route})
             if (reviewed_missing_anchor and not named.get(anchor) and not name
                     and anchor not in spawned_names and anchor not in crew_names and anchor not in script_text(source)
                     and (source.files.get(reviewed_missing_anchor[0]), spawn.get('instructionId'), anchor)
@@ -2797,6 +2835,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         if count:
             advertised[header] = int(count[1])
     remaining = []
+    for target in sorted({spawn['missingGroupWaypoint'] for spawn in prefab_spawns if 'missingGroupWaypoint' in spawn}):
+        remaining.append(f'The original reinforcement waypoint {target} has no authored target.')
     for target in sorted(missing_spawn_anchors):
         remaining.append(f'The original spawn at {target} has no authored anchor and does not run.')
     for target in sorted(set(missing_waypoints)):
@@ -2840,6 +2880,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(path.endswith('.layer') and '{7FF511EDC4034D9F}Prefabs/Vehicles/Helicopters/Mi24/Mi24V_Armed_UB1657_X4.et'
            in body for path, body in draft.items()):
         remaining.append('Compare the registered Mi-24V S5 loadout with the historical mission loadout.')
+    if any(path.endswith('.layer') and '{9AA441DE6DAB6D94}Prefabs/Vehicles/Helicopters/Mi24/Mi24V_Armed_B8V20A_X4.et'
+           in body for path, body in draft.items()):
+        remaining.append('Compare the registered Mi-24V S8 loadout with the historical mission loadout.')
     if damage_flags:
         remaining.append('Compare damage notification timing in Match and confirm no objective damage during staging.')
     if any(asset.get('playable') for asset in roster_assets.values()):

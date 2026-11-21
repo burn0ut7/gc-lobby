@@ -53,12 +53,15 @@ def migrate_playability(text, *, inherited_playable=False):
             lines[end:end] = [EDITABLE, EDITABLE_INFO, name, '   }\n', '  }\n']
         else:
             index = editable[0]
-            if len(editable) != 1 or lines[index:index + 4] != [EDITABLE, EDITABLE_INFO, '   }\n', '  }\n']:
+            if len(editable) != 1:
                 raise ValueError('existing character presentation needs review')
-            lines.insert(index + 2, name)
-            if index < component:
-                component += 1
-                stop += 1
+            if lines[index:index + 5] != [EDITABLE, EDITABLE_INFO, name, '   }\n', '  }\n']:
+                if lines[index:index + 4] != [EDITABLE, EDITABLE_INFO, '   }\n', '  }\n']:
+                    raise ValueError('existing character presentation needs review')
+                lines.insert(index + 2, name)
+                if index < component:
+                    component += 1
+                    stop += 1
     del lines[component:stop + 1]
     return ''.join(lines), True
 

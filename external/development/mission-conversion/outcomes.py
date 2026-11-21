@@ -38,6 +38,23 @@ DORMANT_NOTICES = {
      'worlds/Jub/MissionWithAssets/MissionWithAssets_Layers/default.layer',
      '65DAD44B20B959A8'): '"USMC_KIA"',
 }
+REVIEWED_INACTIVE_FLAGS = {
+    'worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/default.layer':
+        ('ec2d8e9742da07dccacdb9f37beebfb23449e213', '"Industrial"', 2),
+}
+
+
+def inactive_flags(source, world, path, scripts):
+    reference = REVIEWED_INACTIVE_FLAGS.get(path)
+    if not reference or scripts is None or any(api in scripts for api in SCRIPT_FLAG_APIS):
+        return ()
+    blob, flag, uses = reference
+    if source.files[path] != blob or flag in scripts:
+        return ()
+    if sum(source.read(p).count(flag) for p in source.closure(world)
+           if PurePosixPath(p).suffix.lower() in SOURCE_TEXT) != uses:
+        return ()
+    return (flag,)
 
 
 def instruction_flags(source, world, framework_path, lines, scripts, flag_reads):
@@ -212,7 +229,7 @@ def deactivate_events(lines, key, named_events):
 
 
 def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0, *,
-              allow_dormant=False, derived=None, negate=False):
+              allow_dormant=False, derived=None, negate=False, inactive=()):
     match = TERM.fullmatch(lines[0])
     if not match or depth > 8:
         raise ValueError('unsupported outcome term')
@@ -224,7 +241,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
             invert = str(int(invert == '0'))
         if derived and flag in derived and invert in ('0', '1'):
             resolved = read_term(derived[flag], flags, captures, ai, objective_flags, event_flags, depth + 1,
-                                 derived=derived, negate=invert == '1')
+                                 derived=derived, negate=invert == '1', inactive=inactive)
             return {**resolved, 'requiresMatch': True, 'derivedFlag': flag[1:-1]}
         if flag == '""' and invert == '1' and depth == 0:
             return {'trigger': 'Match start'}
@@ -247,6 +264,9 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
             return {'trigger': 'interaction flag', 'flag': flag[1:-1], **({'inverted': True} if invert == '1' else {})}
         if invert in ('0', '1') and flag[1:-1] in event_flags:
             return {'trigger': 'event flag', 'flag': flag[1:-1], **({'inverted': True} if invert == '1' else {})}
+        if invert == '0' and flag in inactive:
+            return {'trigger': 'inactive flag' if depth else 'dormant', 'flag': flag[1:-1],
+                    'reason': 'no legacy flag producer', 'requiresMatch': True}
         raise ValueError('unresolved or unsupported outcome flag ' + flag)
     kind = match[1]
     threshold = COUNT_FIELDS.get(kind)
@@ -267,7 +287,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
         if end >= stop:
             raise ValueError('invalid compound outcome operand list')
         operands.append(read_term(lines[index:end + 1], flags, captures, ai, objective_flags, event_flags,
-                                  depth + 1, derived=derived))
+                                  depth + 1, derived=derived, inactive=inactive))
         index = end + 1
     if not 1 <= len(operands) <= 64:
         raise ValueError('unsupported number of outcome operands')
@@ -296,7 +316,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
 
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
                resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None,
-               log_only=False, named_events=()):
+               log_only=False, named_events=(), inactive=()):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -324,7 +344,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 term = {'trigger': 'dormant', 'flag': literal_flag[1:-1], 'reason': 'no legacy flag producer'}
             else:
                 term = read_term(fields[i:end + 1], flags, captures, ai, objective_flags, event_flags,
-                                 allow_dormant=compound, derived=derived)
+                                 allow_dormant=compound, derived=derived, inactive=inactive)
             i = end
         elif line == '   m_instructions {':
             end = block_end(fields, i)
@@ -426,6 +446,9 @@ def leaves(term):
 
 def render_check(term, key, captures, capture_messages, tracked_areas):
     trigger = term['trigger']
+    if trigger == 'inactive flag':
+        return [f'      GC_GameModeStateCondition "{{{guid(key + "/inactive flag")}}}" {{',
+                '       m_eGameModeState GAME', '       m_bRequireOtherState 1', '      }']
     if trigger in ('interaction flag', 'event flag'):
         check = [f'      GC_MissionFlagCondition "{{{guid(key + "/objective")}}}" {{',
                  f'       m_sFlagName "{term["flag"]}"']
@@ -742,6 +765,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             startup = startup_flags(source, world, path, body, scripts or '')
     sampled_flags = {flag for sample in samples for flag in sample['flags']}
     event_flags = {*event_flags, *sampled_flags}
+    inactive = inactive_flags(source, world, path, scripts) if compound else ()
     match_only_flags = {*match_only_flags, *sampled_flags}
     parsed, audit = [], {}
     names = set()
@@ -780,7 +804,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns,
                 resolve_spawn, resolve_crew, startup, hidden_briefings,
                 DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived,
-                log_only=log_only, named_events=source_names)
+                log_only=log_only, named_events=source_names, inactive=inactive)
             if any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
                 term['requiresMatch'] = True
             suffixes = {f' ({delay:f}s)' for delay in actions}
