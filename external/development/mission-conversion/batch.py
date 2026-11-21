@@ -176,6 +176,12 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/James/OrbSturm.conf': (
+        '0fdc64807190cbe82f0b3f53a9fea06efde34c2d',
+        (('worlds/James/OrbSturm/OrbSturm_Layers/nva_players.layer',
+          'a31eb2a2de4cb35c2ea41998494dace2bc4ed84e'),),
+        79, 76,
+    ),
     'Missions/Blue/SimonsAbatis.conf': (
         'fb882b62a84b29bb8933e27e00761cd8936bceb0',
         (('worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/BLUFOR/BLUFORPlayer.layer',
@@ -776,6 +782,9 @@ WIRECUTTER_PREFAB = ('42232FFE6E7AC415', 'Prefabs/Items/Core/Wirecutters/wirecut
 LEGACY_WIRECUTTER = re.compile(
     r'\$grp GenericEntity : "\{8554ED3F088BADA6\}Prefabs/Items/Core/Wirecutters/wirecutters(?:old)?\.et" \{')
 UNITS_PREFAB_ALIASES = {
+    ('C00B26E6C8808EF8', 'Prefabs/Vehicles/Wheeled/M998/CRX_M1025_armed_M2HB_gunshield_MERDC.et'): (
+        'C00B26E6C8808EF8', 'Prefabs/Vehicles/Wheeled/M998/CRX_M1025_armed_M2HB_gunshield_DESERT.et',
+        '99815cf48312662ac44de7615b5a3c027287de6b28c1c96bf36f5d8b9a9d4d1c'),
     ('84EEEF18361F752D', 'Prefabs/Groups/OPFOR/GC_NVA/Group_GC_NVA_RifleSquad.et'): (
         '84EEEF18361F752D', 'Prefabs/Groups/OPFOR/GC_NVA/Group_NVA_RifleSquad.et',
         'f046a4d8717e2e9b23d830f420a53d84e454eea1acad22ab3356d896619ad845'),
@@ -817,6 +826,12 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/HitTheMan/Battle For Rasman/Mine_TM62M_EffectModuleEntity_HTM.et':
+        'd4e0941b7f09ffed2432b3f6ef369ea509d3a7b02e557074668fa32faed411ce',
+    'worlds/HitTheMan/Battle For Rasman/Warhead_Mine_TM62M_HTM.et':
+        '0adf5e900bc9dfe9907a2a575e47f9035d9cc888f3a636b0fb8bb9f8cd7879cc',
+    'worlds/James/OrbSturm/EffectModule_Zoned_MortarBarrage_Larger.et':
+        'a6625b775c00556a34ccaea78274e53207614fe97718959028ce226270b7e9f3',
     'worlds/FSM/Prefabs/Props/Military/Sandbags/FSM_Sandbag_Wall_Round_Low.et':
         '32c230dad35e78b1da7b8b93351f4c3e7a4962b0918299be45e16c1a5b4d8cbc',
     'worlds/TheLocalPub/LamentinLosers/Prefabs/Weapons/Explosives/Mine_TM62M/Mine_TM62M_LamentinLosers.et':

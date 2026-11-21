@@ -923,10 +923,11 @@ def main():
 
         def convert_crew(block):
             ref = REF.search(block[0])
-            if ref and ref[1].upper() in external_vehicles:
+            if (ref and vehicle_crew.VEHICLE.fullmatch(block[0])
+                    and any('TILW_VehicleCrewComponent' in line for line in block)):
                 guid = ref[1].upper()
                 alias = batch.registered_alias(guid, ref[2], source, dev, asset_aliases)
-                if alias == f'"{{{guid}}}{external_vehicles[guid]}"':
+                if alias and REF.fullmatch(alias)[1] == guid:
                     block = [block[0][:ref.start()] + alias + block[0][ref.end():], *block[1:]]
             return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned,
                                         external_vehicles, external_ai, external_parents=external_vehicle_parents)

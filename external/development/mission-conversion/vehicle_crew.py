@@ -33,6 +33,7 @@ WORKSHOP_VEHICLES = {
     '3868E03D9A4AF186': ('WCS_BMP-1_5E524E4FEECCA92B', 'Prefabs/Vehicles/Tracked/BMP1/BMP1P_Base.et'),
     '447CFE8D73F95C3E': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_AFRF.et'),
     '5CFD8CB5C3E55A4E': ('WCS_M2A2_63120AE07E6C0966', 'Prefabs/Vehicles/Tracked/M2A2/M2A2_MERDC.et'),
+    '72018C87FBDC9F8C': ('WCS_M2A2_63120AE07E6C0966', 'Prefabs/Vehicles/Tracked/M2A2/M2A2_Desert.et'),
     '6B7CD408BDFB94F5': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM_Green.et'),
     '7BC76F92B882889D': ('TacticalFlava-TIGR_DEADC0DE00000003',
@@ -47,6 +48,7 @@ WORKSHOP_VEHICLES = {
     'AC12E5669B411D57': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/KORD/GAZ_TIGR_v2_KORD.et'),
     'AF1C02364D45CC5B': ('WCS_T-72_5E0AB16BEB16D6A4', 'Prefabs/Vehicles/Tracked/T72A/T72A_Desert.et'),
+    'E9BEA9042617CAAD': ('M113APC_5E5C154FEE1094BB', 'Prefabs/Vehicles/Tracked/M113/M113A2_APC_MERDC.et'),
     'FD109F3702AAB392': ('ZU-23_5C9AD9EF76F6B5EA', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ZU23.et'),
 }
 for provider, directory, variants in (
@@ -132,6 +134,7 @@ BTR70_CREW_LEAF = '81a8ccf59bed709f4eb87c25c260e529acd6cbb74dab97d09566adf828395
 BTR70_SMOKE_ANCESTOR = 'ae982b43b504904f7b97947e7fc45c83f584e46ce5f7fa8d7c08c05e386eee74'
 USSR_BTR70_LEAF = '6ff98c749e6e58fb337ad80c11bdb2cabcf5beebe84afdf0fc8a1e6e917bdd94'
 CDF_BTR70_LEAF = 'da0a998e4f08c0ec1940ba0ee8aee889a9a8c5cbf727df7f7cb9df90c98a1389'
+CRX_HMMWV_LEAF = '99815cf48312662ac44de7615b5a3c027287de6b28c1c96bf36f5d8b9a9d4d1c'
 BTR_DUGOUT = '7CF4F44DAD409258'
 BTR_DUGOUT_LEAF = '6d19ae2e9bcfc0d707ed9d86d8724b8b49f4c132c33dd6cdaab50730e48e7155'
 STOCK_VEHICLE_HOSTS = {
@@ -139,11 +142,18 @@ STOCK_VEHICLE_HOSTS = {
 }
 VERIFIED_DEFAULT_CREW = {
     ('B47110AA1A806556', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_FIA.et'),
+    ('C00B26E6C8808EF8', 'Prefabs/Vehicles/Wheeled/M998/CRX_M1025_armed_M2HB_gunshield_DESERT.et'),
+    ('E9BEA9042617CAAD', 'Prefabs/Vehicles/Tracked/M113/M113A2_APC_MERDC.et'),
 }
 NVA_BTR70_LEAF = 'ac360b5e120fa0f5ba97deee2e1ee68ef6d415fd9e856710c5104efdd8ea551f'
 NVA_T72A_LEAF = '30fdb038e061492f404c19340d7b0e1da08746c49abd8f57faf46fb7264d38a2'
 NVA_BRDM2_LEAF = 'bbe74f54370ac1a41343d200b834335650508e87632449c8781d5bae490371e4'
 UNITS_CREW_PREFABS = {
+    'C00B26E6C8808EF8': (
+        'Prefabs/Vehicles/Wheeled/M998/CRX_M1025_armed_M2HB_gunshield_DESERT.et',
+        ('DD774A8FD0989A78', 'Prefabs/Vehicles/Wheeled/M998/M1025_armed_M2HB_MERDC.et'),
+        (CRX_HMMWV_LEAF,), (CRX_HMMWV_LEAF,),
+    ),
     'FCEC036D7F903A66': (
         'Prefabs/Vehicles/Wheeled/BTR70/CDF/BTR70_CDF.et',
         ('B47110AA1A806556', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_FIA.et'),
@@ -401,7 +411,8 @@ def render_crew_config(config, key, resolve_character, *, shadowed_names=(), pla
     return [*output, '        }'], crew
 
 
-def render_component(component, lines, resolve_character, single_turret, resolve_config=None):
+def render_component(component, lines, resolve_character, single_turret, resolve_config=None, *,
+                     allow_default_crew=False):
     configs = [i for i, line in enumerate(lines) if line.strip().startswith('m_crewConfig ')]
     if not configs:
         data = properties(lines, {'m_customCrew', 'm_noTurretDismount', 'm_idleGroup', 'm_pregameSpawn',
@@ -462,11 +473,14 @@ def render_component(component, lines, resolve_character, single_turret, resolve
     station_records = group[start + 1:end]
     if station_records and block_end(station_records, 0) < len(station_records) - 1:
         return render_structured_placement(component, config, resolve_character)
-    flags, roles = crew_station(station_records, resolve_character, allow_empty=True)
+    flags, roles = crew_station(station_records, resolve_character, allow_empty=True,
+                                allow_default_crew=allow_default_crew)
     if route:
         if idle == '1':
             route.insert(0, '   m_bSeparateOrderedGunners 1')
         route.insert(0, '   m_bAssignInitialCrewOrders 1')
+    if not roles:
+        route.insert(0, '   m_bUseDefaultCrew 1')
     return crew_fields(component, flags, seated, roles, route)
 
 
@@ -552,7 +566,7 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
             or not (stock.contains(guid, path) or external_vehicle or units_vehicle)):
         raise ValueError('unverified crew vehicle ' + guid)
 
-    def replace_crew(lines, single_turret):
+    def replace_crew(lines, single_turret, *, allow_default_crew=False):
         if not any('TILW_VehicleCrewComponent' in line for line in lines):
             return lines
         roots = [index for index, line in enumerate(lines) if line == ' components {']
@@ -568,7 +582,8 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
         replacement = render_component(
             component, lines[index + 1:end],
             lambda guid, path: character_reference(guid, path, source_units, dev_units, stock, owned, external_ai),
-            single_turret, lambda guid, path: verified_crew_config(source_units, guid, path, owned))
+            single_turret, lambda guid, path: verified_crew_config(source_units, guid, path, owned),
+            allow_default_crew=allow_default_crew)
         return [*lines[:index], *replacement, *lines[end + 1:]]
 
     def convert_children(lines, parents=()):
@@ -623,7 +638,8 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
             return lines
         if composition:
             return convert_children(lines)
-        return replace_crew(lines, (guid, path) in SINGLE_SEAT_TURRETS)
+        return replace_crew(lines, (guid, path) in SINGLE_SEAT_TURRETS,
+                            allow_default_crew=(guid, path) in VERIFIED_DEFAULT_CREW)
 
     root = vehicle or composition
     if not root['group']:
