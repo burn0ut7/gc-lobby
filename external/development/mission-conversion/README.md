@@ -664,3 +664,11 @@ The committed audit matched 83 playable slots, three 60-second objectives, both 
 The batch maps the archived TilW `Marker_AMP.et` to the native GC Lobby marker while retaining its base-game AMP imageset, black default tint, quad 3, size 45 and public audience. It applies authored overrides on top of those defaults. The archived prefab hash and each serialized field matched the preset. The base-game resource database resolves the imageset and its texture atlas, and the imageset contains the default quad.
 
 The catalog pass cleared this inherited preset blocker in 13 worlds. Ten standalone layers became readable for review and contain 99 icons including their nested icons. The 159 prior draft files still under review remained byte-identical, and two complete scans reproduced all 164 output files. Other blockers held the affected worlds. The mission-owned Bangalorious barbed-wire marker is also referenced by wall authoring and remains separate from the static preset rule.
+
+## Mission ArmaVision settings
+
+The batch preserves the authored ArmaVision disable switch through the native editor settings entity's manager prefab field. An opted-in world selects a child of the stock editor manager that skips PHOTO creation while a GC Lobby game mode is active. All other editor modes and stock configurations use the inherited path. The converter requires the verified legacy editor settings child and retains its legal-editor flag and transform.
+
+The published legacy GC Lobby source, `PS_M_SCR_EditorManagerEntity.c`, removed the PHOTO entity after it was created. The installed base-game `SCR_EditorManagerCore.c` uses the world editor settings to select its manager prefab, and the pause menu checks for the installed PHOTO mode. The new prefab uses that native selection point with GC Lobby ownership.
+
+Workbench MCP compiled the subclass with zero errors in session `logs_2026-11-20_21-26-34`. Its current native profile does not support prefab inspection. The representative runtime check still needs mode creation and pause menu availability in a migrated world, with Game Master and an ordinary Lobby as baselines. Two catalog scans reproduced all 164 files and left all 159 existing drafts unchanged. The field blocker cleared in 15 worlds, with other file checks still holding them.
