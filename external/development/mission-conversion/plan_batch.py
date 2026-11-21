@@ -128,7 +128,7 @@ def markdown(plan):
         for entry in selected:
             lines.append(f"- `{entry['world']}`")
             lines.extend(f'  - `{header}`' for header in entry['launchers'])
-            lines.extend(f'  - Existing Dev layer repair in `{path}`'
+            lines.extend(f'  - Reviewed Dev file update in `{path}`'
                          for path in entry.get('reviewedReplacements', []))
             lines.extend(f'  - Unresolved reference in other layers or resources: `{resource}`'
                          for resource in entry.get('remainingResources', []))

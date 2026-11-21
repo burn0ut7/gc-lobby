@@ -54,9 +54,9 @@ def resource_databases(base, addons):
     return databases
 
 
-def replace_layer(path, before, after):
+def replace_reviewed_file(path, before, after):
     if path.read_bytes() != before:
-        raise OSError('layer changed during installation: ' + str(path))
+        raise OSError('file changed during installation: ' + str(path))
     temporary = None
     try:
         with NamedTemporaryFile(dir=path.parent, delete=False) as stream:
@@ -78,7 +78,7 @@ def main():
     parser.add_argument('--base-database', type=Path, help='verify draft resource references before installing')
     parser.add_argument('--workshop-addons', type=Path, help='include installed provider databases in resource checks')
     parser.add_argument('--replace-reviewed', action='store_true',
-                        help='install reviewed repairs to existing, unmodified Dev layers')
+                        help='install reviewed updates to existing, unmodified Dev layers or generated settings')
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
 
@@ -110,6 +110,7 @@ def main():
 
         repairs = {path: digest for row in candidates.values()
                    for path, digest in row.get('reviewedReplacements', {}).items()}
+        settings_paths = {str(PurePosixPath(world).with_suffix('')) + '_GC_Settings.et' for world in candidates}
         writes, replacements, files = {}, {}, {}
         for relative in sorted({path for entry in candidates.values() for path in entry['files']}):
             origin, target = (stage / relative).resolve(), (root / relative).resolve()
@@ -127,16 +128,17 @@ def main():
                 normalized = original.replace(b'\r\n', b'\n')
                 if target.suffix.lower() != '.edds' and normalized == body:
                     continue
-                if (target.suffix != '.layer' or sha256(normalized.removeprefix(b'\xef\xbb\xbf')).hexdigest()
+                if ((target.suffix != '.layer' and relative not in settings_paths)
+                        or sha256(normalized.removeprefix(b'\xef\xbb\xbf')).hexdigest()
                         != repairs.get(relative)
                         or git('--literal-pathspecs', 'status', '--porcelain', '--', relative)):
                     raise ValueError('would overwrite different contents: ' + relative)
                 if not args.replace_reviewed:
-                    raise ValueError('review the existing layer repair and use --replace-reviewed: ' + relative)
+                    raise ValueError('review the existing file update and use --replace-reviewed: ' + relative)
                 replacements[target] = (original, body)
                 continue
             if relative in repairs:
-                raise ValueError('reviewed Dev layer is missing: ' + relative)
+                raise ValueError('reviewed Dev file is missing: ' + relative)
             writes[target] = body
         if args.base_database:
             databases = resource_databases(args.base_database, args.workshop_addons)
@@ -153,18 +155,18 @@ def main():
                         created.append(path)
                         stream.write(body)
                 for path, (original, body) in replacements.items():
-                    replace_layer(path, original, body)
+                    replace_reviewed_file(path, original, body)
                     repaired.append(path)
             except OSError:
                 for path in reversed(repaired):
                     original, body = replacements[path]
-                    replace_layer(path, body, original)
+                    replace_reviewed_file(path, body, original)
                 for path in created:
                     if path.is_file() and writes[path].startswith(path.read_bytes()):
                         path.unlink()
                 raise
         action = 'Checked' if args.dry_run else 'Installed'
-        repaired_count = f' and {len(replacements)} reviewed layer repairs' if replacements else ''
+        repaired_count = f' and {len(replacements)} reviewed file updates' if replacements else ''
         print(f'{action} {len(candidates)} mission drafts with {len(writes)} new files{repaired_count}')
     except (KeyError, OSError, ValueError, subprocess.CalledProcessError) as exc:
         parser.error(str(exc))

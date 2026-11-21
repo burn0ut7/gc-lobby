@@ -1592,7 +1592,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             continue
         data = dev.read_raw(path) if isinstance(text, bytes) else dev.read_raw(path).decode('utf-8-sig').replace('\r\n', '\n')
         if data.strip() != text.strip():
-            if (path.endswith('.layer') and isinstance(data, str) and DUPLICATE_CALLSIGNS.search(data)
+            if (path == preset and isinstance(data, str)
+                    and sha256(data.encode()).hexdigest() == row.get('reviewedTicketPreset', {}).get(path)):
+                reviewed_replacements[path] = sha256(data.encode()).hexdigest()
+            elif (path.endswith('.layer') and isinstance(data, str) and DUPLICATE_CALLSIGNS.search(data)
                     and DUPLICATE_CALLSIGNS.sub(r'\g<first>', data).strip() == text.strip()):
                 reviewed_replacements[path] = sha256(data.encode()).hexdigest()
             else:

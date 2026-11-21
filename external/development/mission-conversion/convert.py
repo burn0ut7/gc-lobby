@@ -416,13 +416,27 @@ def main():
                     raise ValueError('generated resource GUID collision')
                 old_name = next(line.strip() for line in template.splitlines() if line.strip().startswith('Name '))
                 meta = template.replace(old_name, f'Name "{{{resource}}}{dest}"')
+                prior_ticket_preset = None
                 for path, contents in [(dest, body), (dest + '.meta', meta)]:
-                    if path in dev.files and dev.read(path).strip() != contents.strip():
-                        prior_versions = [render(world, briefing, event)[0], render(world, briefing)[0]]
-                        if path != dest or dev.read(path).strip() not in (v.strip() for v in prior_versions):
+                    if path not in dev.files:
+                        continue
+                    existing = dev.read(path)
+                    if existing.strip() != contents.strip():
+                        if path != dest:
                             raise ValueError('Dev already has differing ' + path)
+                        ticket_versions = [render(world, briefing, event)[0].strip()] if event else []
+                        if authored_respawns and messages:
+                            with_tickets = ['   m_aMissionEvents + {', *event[1:-1], *messages, '   }']
+                            ticket_versions.append(render(world, briefing, with_tickets)[0].strip())
+                        previous_briefing = render(world, briefing)[0].strip()
+                        if existing.strip() not in [previous_briefing, *ticket_versions]:
+                            raise ValueError('Dev already has differing ' + path)
+                        if authored_respawns and existing.strip() in ticket_versions:
+                            prior_ticket_preset = sha256(existing.encode()).hexdigest()
                 out[dest] = body
                 out[dest + '.meta'] = meta
+                if prior_ticket_preset:
+                    row['reviewedTicketPreset'] = {dest: prior_ticket_preset}
                 if briefing:
                     row['briefingModePreset'] = dest
                     row['renumberedInSourceOrder'] = compact
