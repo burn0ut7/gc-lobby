@@ -49,7 +49,7 @@ class GC_EventControlAction : GC_ActionBase
 {
 	[Attribute("", UIWidgets.Auto, "Name of the mission event or random event group to control. All event operations use this same name. A child event must still be selected by its group; Check now cannot run a child directly.")]
 	GC_MissionEventName m_sEventName;
-	[Attribute("0", UIWidgets.ComboBox, "Enable: allow future checks. Disable: stop future checks and cancel its pending delay. Reset: forget that it ran and cancel its delay; this does not enable it or run it. Check now: try to run using its normal conditions, chance and delay. Resetting a group does not reset its children. These operations do not change flags or random-condition results.", enums: {ParamEnum("Enable", "0"), ParamEnum("Disable", "1"), ParamEnum("Reset", "2"), ParamEnum("Check now", "3")})]
+	[Attribute("0", UIWidgets.ComboBox, "Enable permits future checks. Disable and Reset cancel a pending event delay. Check now uses normal conditions. Rearm enables a regular event and checks its conditions. Run directly skips conditions and chance. Run again also permits a previous run or disable. The latter three operations apply in Match to top-level regular events with individual action delays.", enums: {ParamEnum("Enable", "0"), ParamEnum("Disable", "1"), ParamEnum("Reset", "2"), ParamEnum("Check now", "3"), ParamEnum("Rearm and check", "4"), ParamEnum("Run directly", "5"), ParamEnum("Run again", "6")})]
 	int m_iOperation;
 
 	//------------------------------------------------------------------------------------------------

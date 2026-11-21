@@ -46,6 +46,13 @@ class GC_MissionRuleState
 	float m_fNextCheck;
 }
 
+class GC_ScheduledRuleAction
+{
+	ref GC_RuleAction m_Action;
+	float m_fDue;
+	string m_sEventName;
+}
+
 //! Server-local rule interpreter. The owning component enforces mode and authority.
 class GC_MissionRuleEngine
 {
@@ -58,6 +65,7 @@ class GC_MissionRuleEngine
 	protected ref array<string> m_aPulseEvents = {};
 	protected ref array<GC_MissionRuleState> m_aReactiveRuns = {};
 	protected ref array<ref GC_MissionRuleEvent> m_aEvents = {};
+	protected ref array<ref GC_ScheduledRuleAction> m_aScheduledActions = {};
 	protected SCR_EGameModeState m_eGameModeState = -1;
 	protected GC_LobbyManager m_ActionManager;
 	protected bool m_bRunning;
@@ -295,6 +303,8 @@ class GC_MissionRuleEngine
 			m_fNow = elapsedSeconds;
 		bool initialObservation = !GC_LobbyPhase.IsValid(m_eGameModeState);
 		m_eGameModeState = state;
+		if (state != SCR_EGameModeState.GAME)
+			m_aScheduledActions.Clear();
 		ResetRandomConditions();
 		SampleAreas(true);
 		SampleScripts();
@@ -365,6 +375,7 @@ class GC_MissionRuleEngine
 		m_DamageWorld = null;
 		m_Areas = null;
 		m_aEvents.Clear();
+		m_aScheduledActions.Clear();
 		ResetPulses();
 		foreach (GC_MissionRuleState state : m_aStates)
 			state.m_bPending = false;
@@ -582,6 +593,10 @@ class GC_MissionRuleEngine
 		// Preserve elapsed time, but do not consume delayed rules or sample
 		// conditions against a partially completed respawn wave.
 		if (m_bWaitingForRespawnWave)
+			return;
+		if (m_eGameModeState == SCR_EGameModeState.GAME)
+			AdvanceScheduledActions();
+		if (!m_bRunning || m_bWaitingForRespawnWave)
 			return;
 		// Queue events until this pass completes, preventing reentrant timer execution.
 		m_bDispatching = true;
@@ -1083,37 +1098,89 @@ class GC_MissionRuleEngine
 				continue;
 			if (!m_bRunning)
 				break;
-			if (action.m_eDo >= GC_ERuleAction.FLAG_CONTROL)
-			{
-				QueueFrameworkAction(action);
-				continue;
-			}
-			switch (action.m_eDo)
-			{
-				case GC_ERuleAction.WRITE_LOG:
-					PrintFormat("GC | Mission Framework | %1: %2", state.m_Rule.m_sName, action.m_sTextOrName);
-					break;
-				case GC_ERuleAction.RESET_FLAG:
-					ResetFlag(action.m_sTextOrName);
-					break;
-				case GC_ERuleAction.CALL_FLAG:
-					CallFlag(action.m_sTextOrName);
-					break;
-				case GC_ERuleAction.SET_FLAG:
-					SetFlag(action.m_sTextOrName, action.m_bFlagAnswer);
-					break;
-				case GC_ERuleAction.SEND_TEST_EVENT:
-					SendTestEvent(action.m_sTextOrName);
-					break;
-				case GC_ERuleAction.RANDOM_FLAG:
-					SetFlag(action.m_sTextOrName, PassChance(action.m_fChancePercent));
-					break;
-				case GC_ERuleAction.SELECT_FLAGS:
-					SelectFlags(action);
-					break;
-			}
+			if (action.m_fActionDelay >= 0)
+				ScheduleAction(action, state.m_Rule.m_sName);
+			else
+				ExecuteAction(action, state.m_Rule.m_sName);
 		}
 		PublishEventResult(state);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void ScheduleAction(GC_RuleAction action, string eventName)
+	{
+		if (m_eGameModeState != SCR_EGameModeState.GAME)
+			return;
+		if (m_aScheduledActions.Count() >= 4096)
+		{
+			Stop();
+			Print("GC | Mission Framework | Stopped: too many pending mission actions.", LogLevel.ERROR);
+			return;
+		}
+		GC_ScheduledRuleAction pending = new GC_ScheduledRuleAction();
+		pending.m_Action = action;
+		pending.m_fDue = m_fNow + action.m_fActionDelay;
+		pending.m_sEventName = eventName;
+		int index = m_aScheduledActions.Count();
+		while (index > 0 && m_aScheduledActions[index - 1].m_fDue > pending.m_fDue)
+			index--;
+		m_aScheduledActions.InsertAt(pending, index);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void AdvanceScheduledActions()
+	{
+		if (m_aScheduledActions.IsEmpty() || m_aScheduledActions[0].m_fDue > m_fNow)
+			return;
+		// A zero-second action scheduled during a delivery waits for the next update.
+		array<ref GC_ScheduledRuleAction> ready = {};
+		foreach (GC_ScheduledRuleAction pending : m_aScheduledActions)
+		{
+			if (pending.m_fDue > m_fNow)
+				break;
+			ready.Insert(pending);
+		}
+		foreach (GC_ScheduledRuleAction pending : ready)
+		{
+			if (!m_bRunning || m_bWaitingForRespawnWave || m_eGameModeState != SCR_EGameModeState.GAME)
+				break;
+			m_aScheduledActions.RemoveItemOrdered(pending);
+			ExecuteAction(pending.m_Action, pending.m_sEventName);
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void ExecuteAction(GC_RuleAction action, string eventName)
+	{
+		if (action.m_eDo >= GC_ERuleAction.FLAG_CONTROL)
+		{
+			QueueFrameworkAction(action);
+			return;
+		}
+		switch (action.m_eDo)
+		{
+			case GC_ERuleAction.WRITE_LOG:
+				PrintFormat("GC | Mission Framework | %1: %2", eventName, action.m_sTextOrName);
+				break;
+			case GC_ERuleAction.RESET_FLAG:
+				ResetFlag(action.m_sTextOrName);
+				break;
+			case GC_ERuleAction.CALL_FLAG:
+				CallFlag(action.m_sTextOrName);
+				break;
+			case GC_ERuleAction.SET_FLAG:
+				SetFlag(action.m_sTextOrName, action.m_bFlagAnswer);
+				break;
+			case GC_ERuleAction.SEND_TEST_EVENT:
+				SendTestEvent(action.m_sTextOrName);
+				break;
+			case GC_ERuleAction.RANDOM_FLAG:
+				SetFlag(action.m_sTextOrName, PassChance(action.m_fChancePercent));
+				break;
+			case GC_ERuleAction.SELECT_FLAGS:
+				SelectFlags(action);
+				break;
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1412,6 +1479,8 @@ class GC_MissionRuleEngine
 		{
 			if (!state.m_bValid || state.m_Rule.m_sName != action.m_sTextOrName)
 				continue;
+			if (action.m_iOperation >= 4)
+				return ApplyDirectEventControl(state, action.m_iOperation);
 			if (action.m_iOperation == 0)
 				state.m_bDisabled = false;
 			else if (action.m_iOperation == 1)
@@ -1444,6 +1513,34 @@ class GC_MissionRuleEngine
 			return true;
 		}
 		return false;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected bool ApplyDirectEventControl(GC_MissionRuleState state, int operation)
+	{
+		if (m_eGameModeState != SCR_EGameModeState.GAME || state.m_Parent || state.m_aChoices
+			|| state.m_Rule.m_fWaitSeconds != 0 || state.m_Rule.m_Random)
+			return false;
+		foreach (GC_RuleAction action : state.m_Rule.m_aThen)
+		{
+			if (action.m_fActionDelay < 0)
+				return false;
+		}
+		if (operation == 4)
+		{
+			state.m_bDisabled = false;
+			state.m_iRuns = 0;
+			if (GetEventResult(state.m_Rule.m_sName))
+			{
+				m_mEventResults.Set(state.m_Rule.m_sName, false);
+				m_aPulseEvents.RemoveItem(state.m_Rule.m_sName);
+				QueueEvent(GC_ERuleEvent.EVENT_RAN, state.m_Rule.m_sName);
+			}
+			TryRun(state);
+		}
+		else if (operation == 6 || (!state.m_bDisabled && state.m_iRuns == 0))
+			Execute(state);
+		return true;
 	}
 
 	//------------------------------------------------------------------------------------------------

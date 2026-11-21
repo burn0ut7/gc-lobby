@@ -9,6 +9,7 @@ from vehicle_crew import SEAT_TYPES, SERIALIZED_ID, crew_roles, render_crew_conf
 
 INSTRUCTION = re.compile(r'^    (TILW_\w+Instruction) "\{([\da-fA-F]{16})\}" \{$')
 NUMBER = r'\d+(?:\.\d+)?'
+FLAG_NAME = r'"[\w.-]+(?: +[\w.-]+)*"'
 CLOCK_FIELDS = ('m_iHours', 'm_iMinutes', 'm_iSeconds')
 FACTION_VISIBILITY = re.compile(r'TILW_FactionVisibility "\{[\da-fA-F]{16}\}" \{([^{}]*)\}')
 SPAWN = re.compile(r'    TILW_SpawnPrefabInstruction "\{([\da-fA-F]{16})\}" \{')
@@ -118,7 +119,7 @@ def edit_map_items(data, key):
 
 def change_flag(data, _key, *, clear=False):
     flag = data.get('m_flagName', '')
-    if not re.fullmatch(r'"[\w.-]+"', flag):
+    if not re.fullmatch(FLAG_NAME, flag):
         raise ValueError('invalid mission flag name')
     fields = ['       m_sFlagName ' + flag]
     fields.extend(['       m_iOperation 4'] if clear else ['       m_iOperation 1', '       m_iAmount 1'])

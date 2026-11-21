@@ -11,7 +11,7 @@ from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURR
 from boundaries import ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE, convert_boundaries, spline_map_component
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import REF, SOURCE_TEXT
-from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, render_crew_config, render_spawn, spawn_details
+from event_actions import FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, render_crew_config, render_spawn, spawn_details
 from vehicle_crew import VERIFIED_DEFAULT_CREW, crew_config_contents
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
@@ -1478,8 +1478,8 @@ def placed_spawner_flag_reads(source, layers):
                 continue
             for _, fields in members:
                 for line in fields:
-                    if flag := re.fullmatch(r' m_conditionFlag "([\w.-]+)"', line):
-                        flags[flag[1]] += 1
+                    if flag := re.fullmatch(r' m_conditionFlag (' + FLAG_NAME + ')', line):
+                        flags[flag[1][1:-1]] += 1
     return flags
 
 
@@ -2080,7 +2080,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                 term = {'trigger': 'area capture', 'flag': flag[1:-1]}
                 if flag[1:-1] not in used_flags and any('m_Messages ' in line for line in check):
                     raise ValueError('capture-gated spawner needs a shared status-message owner')
-            elif flag[1:-1] in flags and re.fullmatch(r'"[\w.-]+"', flag):
+            elif flag[1:-1] in flags and re.fullmatch(FLAG_NAME, flag):
                 term = {'trigger': 'interaction flag', 'flag': flag[1:-1]}
             else:
                 raise ValueError('spawner flag lacks a verified producer: ' + flag)
@@ -3485,6 +3485,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare timing of simultaneous flag changes and their dependent event chains.')
     if any(action.get('deactivatesEvents') for event in rules.values() for action in event.get('convertedActions', ())):
         remaining.append('Compare event deactivation before a trigger and after it queues delayed actions.')
+    if any(action.get('reactivatesEvents') or action.get('runsEvents')
+           for event in rules.values() for action in event.get('convertedActions', ())):
+        remaining.append('Compare event rearming, direct runs and overlapping timed actions in Match.')
     if any(event.get('waypointAssignments') and event.get('trigger') not in ('Match start', 'dormant')
            for event in rules.values()):
         remaining.append('Compare waypoint assignment timing and order after the event condition becomes true.')

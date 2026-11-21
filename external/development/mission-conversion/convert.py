@@ -493,6 +493,8 @@ def main():
                 delayed = None
         has_event_actions = args.batch and any(row['serializedTypes'].get(kind) for kind in
                                               ('TILW_AssignWaypointsInstruction', 'TILW_SendMessageInstruction',
+                                               'TILW_ReactivateEventsInstruction', 'TILW_DeactivateEventsInstruction',
+                                               'TILW_RunEventsInstruction',
                                                'TILW_SpawnPrefabInstruction', 'TILW_SpawnVehicleInstruction', *ACTIONS))
         has_spawner_sampling = (args.batch and row['serializedTypes'].get('TILW_FlagSampling')
                                 and row['serializedTypes'].get('TILW_PrefabSpawnerEntity'))

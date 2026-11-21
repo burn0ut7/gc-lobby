@@ -8,14 +8,16 @@ import re
 
 from briefings import block_end, guid, properties
 from catalog import SOURCE_TEXT
-from event_actions import GROUP_SPAWN, SPAWN, VEHICLE_SPAWN, compile_action, prefab_spawn, recognized, render_spawn, vehicle_spawn
+from event_actions import (FLAG_NAME, GROUP_SPAWN, SPAWN, VEHICLE_SPAWN, compile_action, prefab_spawn, recognized,
+                           render_spawn, vehicle_spawn)
 from events import EVENT, LITERAL, MESSAGE, message, peak_flags
 
 FRAMEWORK = re.compile(r'^TILW_MissionFrameworkEntity(?: [\w.-]+)? : "\{8F846D0FD5D6EA51\}[^"]+" \{$')
 ENDING = re.compile(r'^    TILW_EndGameInstruction "\{([\da-fA-F]{16})\}" \{$')
 WAYPOINTS = re.compile(r'^    TILW_AssignWaypointsInstruction "\{([\da-fA-F]{16})\}" \{$')
-DEACTIVATE = re.compile(r'^    TILW_DeactivateEventsInstruction "\{([\da-fA-F]{16})\}" \{$')
 EVENT_CONTROL = re.compile(r'\bTILW_(RunEvents|ReactivateEvents|DeactivateEvents)Instruction\b')
+CONTROL_INSTRUCTION = re.compile(r'^    ' + EVENT_CONTROL.pattern + r' "\{([\da-fA-F]{16})\}" \{$')
+NATIVE_ACTION = re.compile(r'      GC_\w+ "\{[\da-fA-F]{16}\}" \{')
 KEY = r'"[\w.-]+"'
 EVENT_LABEL = r'"[^"\\\x00-\x1f]+"'
 RESULT = {'EDITOR_FACTION_VICTORY': 1, 'EDITOR_FACTION_DEFEAT': 2, 'EDITOR_FACTION_DRAW': 3}
@@ -28,7 +30,7 @@ TERM = re.compile(
 COUNT_FIELDS = {'Minjunction': 'm_minTrue', 'Maxjunction': 'm_maxTrue', 'Matchjunction': 'm_matchTrue'}
 AI_FLAG = re.compile(r'^  TILW_FactionAIKilledFlag "\{[\da-fA-F]{16}\}" \{$')
 FLAG_ACTION = re.compile(r'^    TILW_(Set|Clear)FlagInstruction "\{[\da-fA-F]{16}\}" \{$')
-FLAG_FIELD = re.compile(r'^\s+m_flagName (' + KEY + r')\s*$')
+FLAG_FIELD = re.compile(r'^\s+m_flagName (' + FLAG_NAME + r')\s*$')
 META_FLAG = re.compile(r'^  TILW_MetaFlag "\{[\da-fA-F]{16}\}" \{$')
 META_FLAG_FIELD = re.compile(r'^\s+m_flagName (' + EVENT_LABEL + r')\s*$')
 SCRIPT_FLAG_APIS = ('AdjustMissionFlag', 'IsMissionFlag', 'GetFlagSetCopy', 'm_flagSet')
@@ -74,6 +76,12 @@ def instruction_flags(source, world, framework_path, lines, scripts, flag_reads)
     flags = set()
     known_uses = defaultdict(int)
     for start, line in enumerate(lines):
+        if CONTROL_INSTRUCTION.fullmatch(line):
+            end = block_end(lines, start)
+            names = next((index for index in range(start + 1, end) if lines[index] == '     m_eventNames {'), None)
+            if names is not None:
+                for name in re.findall(EVENT_LABEL, ' '.join(lines[names + 1:block_end(lines, names)])):
+                    known_uses[name] += 1
         action = FLAG_ACTION.fullmatch(line)
         is_literal = line.startswith('   ') and TERM.fullmatch(line)
         if not action and (not is_literal or is_literal[1] != 'Literal'):
@@ -213,16 +221,30 @@ def waypoint_trigger(term):
     return term['trigger'] in ('Match start', 'dormant', 'area capture', 'interaction flag', 'event flag')
 
 
-def deactivate_events(lines, key, named_events):
-    data = properties(lines, {'m_eventNames', 'm_executionDelay'})
+def event_control(kind, lines, key, named_events, *, direct):
+    allowed = {'m_eventNames', 'm_executionDelay'}
+    if kind == 'RunEvents':
+        allowed.add('m_allowRerun')
+    data = properties(lines, allowed)
     names = data.get('m_eventNames', '')
     delay = data.get('m_executionDelay', '5')
     if (not re.fullmatch(rf'{EVENT_LABEL}(?:\s+{EVENT_LABEL})*', names)
             or not re.fullmatch(r'\d+(?:\.\d+)?', delay) or Decimal(delay) > 86400):
-        raise ValueError('unsupported event deactivation targets or delay')
+        raise ValueError('unsupported event control targets or delay')
     targets = list(dict.fromkeys(re.findall(EVENT_LABEL, names)))
     if any(name[1:-1] != name[1:-1].strip() for name in targets) or len(targets) > 128:
-        raise ValueError('unsupported event deactivation target names')
+        raise ValueError('unsupported event control target names')
+    rerun = data.get('m_allowRerun', '0')
+    if rerun not in ('0', '1'):
+        raise ValueError('invalid event rerun setting')
+    operation, audit_field = {
+        'DeactivateEvents': (1, 'deactivatesEvents'),
+        'ReactivateEvents': (4, 'reactivatesEvents'),
+        'RunEvents': (5 + int(rerun), 'runsEvents'),
+    }[kind]
+    if direct:
+        order = {name: index for index, name in enumerate(named_events)}
+        targets.sort(key=lambda name: order.get(name[1:-1], len(order)))
     actions, active, case_mismatches = [], [], []
     folded = Counter(name.casefold() for name in named_events)
     for index, target in enumerate(targets):
@@ -234,9 +256,9 @@ def deactivate_events(lines, key, named_events):
             continue
         active.append(name)
         actions.extend([f'      GC_EventControlAction "{{{guid(f"{key}/{index}")}}}" {{',
-                        f'       m_sEventName {target}', '       m_iOperation 1', '      }'])
-    return Decimal(delay), actions, {'instruction': 'TILW_DeactivateEventsInstruction',
-                                    'deactivatesEvents': active, 'delaySeconds': delay,
+                        f'       m_sEventName {target}', f'       m_iOperation {operation}', '      }'])
+    return Decimal(delay), actions, {'instruction': f'TILW_{kind}Instruction',
+                                    audit_field: active, 'delaySeconds': delay,
                                     **({'caseMismatchedTargets': case_mismatches} if case_mismatches else {})}
 
 
@@ -333,7 +355,8 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
 
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
                resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None,
-               log_only=False, named_events=(), inactive=(), binary_startup=None, missing_term=False):
+               log_only=False, named_events=(), inactive=(), binary_startup=None, missing_term=False,
+               direct_control=False):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -376,7 +399,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 notify_match = MESSAGE.fullmatch(fields[j])
                 end_match = ENDING.fullmatch(fields[j])
                 waypoint_match = WAYPOINTS.fullmatch(fields[j]) if compound else None
-                deactivate_match = DEACTIVATE.fullmatch(fields[j]) if compound else None
+                control_match = CONTROL_INSTRUCTION.fullmatch(fields[j]) if compound else None
                 action_match = recognized(fields[j]) if compound else None
                 spawn_match = SPAWN.fullmatch(fields[j]) if extraction_spawns or resolve_spawn else None
                 group_match = GROUP_SPAWN.fullmatch(fields[j]) if resolve_spawn else None
@@ -396,9 +419,10 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                         continue
                     delay, body, assignment = waypoint_action(fields[j + 1:last], key + '/' + waypoint_match[1])
                     assignments.append(assignment)
-                elif deactivate_match:
-                    delay, body, details = deactivate_events(fields[j + 1:last], key + '/' + deactivate_match[1],
-                                                             named_events)
+                elif control_match:
+                    kind, identity = control_match.groups()
+                    delay, body, details = event_control(kind, fields[j + 1:last], key + '/' + identity,
+                                                         named_events, direct=direct_control)
                     converted_actions.append(details)
                 elif action_match:
                     delay, body, details = compile_action(action_match, fields[j + 1:last], key, hidden_briefings)
@@ -447,6 +471,9 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         raise ValueError('unsupported pregame action')
     if assignments and not waypoint_trigger(term):
         raise ValueError('waypoint assignments need positive capture or verified mission flags, or Match start')
+    if direct_control and not pregame and sum(
+            bool(NATIVE_ACTION.fullmatch(line)) for body in actions.values() for line in body) > 256:
+        raise ValueError('controlled event exceeds the native action limit')
     audit = {'announcements': notices, 'instructionDelaysSeconds': [f'{delay:f}' for delay in actions]}
     if log_only:
         audit['logOnly'] = True
@@ -580,6 +607,29 @@ def render(key, name, term, actions, captures, capture_messages, tracked_areas, 
             result.append('     }')
         result.extend(['     m_aActions {', *body, '     }', '    }'])
     return result
+
+
+def render_controlled_event(key, name, term, actions, captures, capture_messages, tracked_areas, display_name):
+    # A run commits the event once and schedules that run's independent actions.
+    # Later controls can rearm the event without cancelling any scheduled delivery.
+    result = [f'    GC_Event "{{{guid(key + "/trigger")}}}" {{', f'     m_sName "{name}"',
+              '     m_aConditions {', f'      GC_GameModeStateCondition "{{{guid(key + "/match phase")}}}" {{',
+              '       m_eGameModeState GAME', '      }']
+    if term['trigger'] == 'dormant':
+        result.extend(render_check({'trigger': 'inactive flag'}, key, captures, capture_messages, tracked_areas))
+    elif term['trigger'] != 'Match start':
+        result.extend(render_check(term, key, captures, capture_messages, tracked_areas))
+    result.extend(['     }', '     m_aActions {'])
+    for delay, body in actions.items():
+        for line in body:
+            result.append(line)
+            if NATIVE_ACTION.fullmatch(line):
+                result.extend(['       m_bScheduleAction 1', f'       m_fActionDelay {delay:f}'])
+    if not actions:
+        result.extend([f'      GC_MessageAction "{{{guid(key + "/log")}}}" {{',
+                       '       m_bScheduleAction 1', '       m_fActionDelay 0', f'       m_sMessage "{display_name}"',
+                       '       m_iDelivery 2', '      }'])
+    return [*result, '     }', '    }']
 
 
 def render_capture_trackers(world, tracked_areas, captures, capture_messages):
@@ -801,9 +851,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     path, text = owners[0]
     local = [p for p in source.closure(world) if p.lower().endswith(('.et', '.layer'))]
     controls = {p: matches for p in local if (matches := EVENT_CONTROL.findall(source.read(p)))}
-    if controls and (not compound or set(controls) != {path}
-                     or set(controls[path]) != {'DeactivateEvents'}):
+    if controls and (not compound or set(controls) != {path}):
         return [], {}, 'has legacy event control instructions'
+    direct_control = bool(controls and set(controls[path]) - {'DeactivateEvents'})
     lines = text.splitlines()
     roots = [i for i, line in enumerate(lines) if FRAMEWORK.fullmatch(line)]
     if len(roots) != 1:
@@ -867,7 +917,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                     and any(TERM.fullmatch(item) for item in fields))
         if not spawns and not log_only and not any(
                 ENDING.fullmatch(item) or (compound and (
-                    WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item) or recognized(item) or DEACTIVATE.fullmatch(item)
+                    WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item) or recognized(item) or CONTROL_INSTRUCTION.fullmatch(item)
                     or (resolve_spawn and (SPAWN.fullmatch(item) or GROUP_SPAWN.fullmatch(item)))
                     or (resolve_crew and VEHICLE_SPAWN.fullmatch(item))))
                 for item in fields):
@@ -882,6 +932,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 resolve_spawn, resolve_crew, startup, hidden_briefings,
                 DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived,
                 log_only=log_only, named_events=source_names, inactive=inactive, binary_startup=binary_startup,
+                direct_control=direct_control,
                 missing_term=(compound and not controls and scripts is not None and 'EvalExpression' not in scripts
                               and REVIEWED_MISSING_TERMS.get(path) == (source.files[path], event[1])))
             if any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
@@ -891,6 +942,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 suffixes.add(' (0s)')
             if term['trigger'] not in ('Match start', 'startup choice', 'dormant'):
                 suffixes.add('')
+            if direct_control and term['trigger'] != 'startup choice':
+                suffixes = {''}
             native_name = name
             emitted_names = {name + suffix for suffix in suffixes}
             if compound and emitted_names & names:
@@ -912,22 +965,25 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     if controls:
         # Disable the condition latch only. The legacy instruction leaves any
         # already scheduled deliveries in the call queue.
+        excluded = ('startup choice',) if direct_control else ('Match start', 'startup choice', 'dormant')
         trigger_names = {name for _, name, original, term, _ in parsed
-                         if name == original and term['trigger'] not in ('Match start', 'startup choice', 'dormant')}
+                         if name == original and term['trigger'] not in excluded}
+        control_fields = ('deactivatesEvents', 'reactivatesEvents', 'runsEvents')
         mapped = 0
         bad_targets = False
         for event in audit.values():
-            deactivations = [action for action in event.get('convertedActions', ())
-                             if 'deactivatesEvents' in action]
-            mapped += len(deactivations)
-            targets = {target for action in deactivations for target in action['deactivatesEvents']}
+            operations = [action for action in event.get('convertedActions', ())
+                          if any(field in action for field in control_fields)]
+            mapped += len(operations)
+            targets = {target for action in operations for field in control_fields for target in action.get(field, ())}
             missing = sorted(target for target in targets
                              if source_names[target] != 1 or target not in trigger_names)
             if missing:
                 bad_targets = True
-                event['gap'] = 'event deactivation targets require unique converted triggers: ' + ', '.join(missing)
+                event['gap'] = 'event control targets require unique converted triggers: ' + ', '.join(missing)
         if mapped != len(controls[path]) or bad_targets:
-            return [], audit, 'event deactivation target mapping is incomplete'
+            operation = 'control' if direct_control else 'deactivation'
+            return [], audit, f'event {operation} target mapping is incomplete'
     used_choices = [f'"{term["flag"]}"' for _, _, _, term, _ in parsed if term['trigger'] == 'startup choice']
     if used_choices and (len(used_choices) != len(startup) or set(used_choices) != set(startup)):
         return [], audit, 'startup draw does not have one converted event per option'
@@ -961,6 +1017,10 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         compiled.extend(render_startup_samples(world, samples))
     compiled.extend(render_capture_trackers(world, tracked_areas, captures, capture_messages))
     for identity, name, display_name, term, actions in parsed:
-        compiled.extend(render(world + '/' + identity, name, term, actions, captures, capture_messages,
-                               tracked_areas, display_name))
+        if direct_control and term['trigger'] != 'startup choice':
+            compiled.extend(render_controlled_event(world + '/' + identity, name, term, actions, captures,
+                                                    capture_messages, tracked_areas, display_name))
+        else:
+            compiled.extend(render(world + '/' + identity, name, term, actions, captures, capture_messages,
+                                   tracked_areas, display_name))
     return compiled, audit, derived_gap

@@ -86,7 +86,15 @@ class GC_Event : GC_EventDefinition
 			if (!definition)
 				return null;
 			GC_RuleAction action = definition.BuildAction();
-			if (!action || !action.IsValid())
+			if (!action)
+				return null;
+			if (definition.m_bScheduleAction)
+			{
+				if (!(definition.m_fActionDelay >= 0 && definition.m_fActionDelay <= 86400))
+					return null;
+				action.m_fActionDelay = definition.m_fActionDelay;
+			}
+			if (!action.IsValid())
 				return null;
 			rule.m_aThen.Insert(action);
 		}

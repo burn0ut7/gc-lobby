@@ -47,6 +47,7 @@ enum GC_ERuleAction
 [BaseContainerProps(), BaseContainerCustomTitleField("m_sName")]
 class GC_RuleAction
 {
+	float m_fActionDelay = -1;
 	[Attribute("Test action", UIWidgets.EditBox, "A short name to help you find this action.")]
 	string m_sName;
 	[Attribute("0", UIWidgets.ComboBox, "Choose a small test action. These do not spawn units, end the game, or change player settings.", enums: {ParamEnum("Write a test message to the log", "0"), ParamEnum("Set a flag to true or false", "1"), ParamEnum("Send a named test event", "2")})]
@@ -101,6 +102,8 @@ class GC_RuleAction
 	//------------------------------------------------------------------------------------------------
 	bool IsValid()
 	{
+		if (!(m_fActionDelay == -1 || (m_fActionDelay >= 0 && m_fActionDelay <= 86400)))
+			return false;
 		switch (m_eDo)
 		{
 			case GC_ERuleAction.CUSTOM_SCRIPT:
@@ -149,7 +152,7 @@ class GC_RuleAction
 			case GC_ERuleAction.FLAG_CONTROL:
 				return !m_sTextOrName.IsEmpty() && m_iOperation >= 0 && m_iOperation <= 5 && m_iAmount >= 0 && m_iAmount <= 1000000;
 			case GC_ERuleAction.EVENT_CONTROL:
-				return !m_sTextOrName.IsEmpty() && m_iOperation >= 0 && m_iOperation <= 3;
+				return !m_sTextOrName.IsEmpty() && m_iOperation >= 0 && m_iOperation <= 6;
 			case GC_ERuleAction.RESET_RANDOM:
 				return !m_sTextOrName.IsEmpty();
 			case GC_ERuleAction.END_MISSION:
