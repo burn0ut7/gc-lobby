@@ -41,10 +41,14 @@ DORMANT_NOTICES = {
      '65DAD44B20B959A8'): '"USMC_KIA"',
 }
 REVIEWED_MISSING_TERMS = {
+    'worlds/Blue/Ruckusberg/RuckusBerg_Layers/default.layer':
+        ('35dd08d6c80cb26a71e53f4dc2d239367d025e4b', {'694F5D48174A461F', '694F5D481A4CCE4F'}),
+    'worlds/Perfk/NagalamTrafficJam/NagalamTrafficJam_Layers/default.layer':
+        ('e0048e9e3cf31e8776a48dd15235d34b3673246f', {'6598AE7DACE18BBE'}),
     'worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_Layers/Logic.layer':
-        ('5b0005e4ca2a8ca6a11207abff3c72192d0efaa9', '66FB09BDE3CF819F'),
+        ('5b0005e4ca2a8ca6a11207abff3c72192d0efaa9', {'66FB09BDE3CF819F'}),
     'worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/MisssionTriggers.layer':
-        ('516573a5947dd2aabfafcb80d7b364850f933e64', '6A9F56058342FF13'),
+        ('516573a5947dd2aabfafcb80d7b364850f933e64', {'6A9F56058342FF13'}),
 }
 REVIEWED_INACTIVE_FLAGS = {
     'worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/default.layer':
@@ -906,6 +910,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     names = set()
     source_names = Counter(match[1][1:-1] for item in body
                            if (match := re.fullmatch(r'   m_name (' + EVENT_LABEL + ')', item)))
+    missing_term_blob, reviewed_missing_terms = REVIEWED_MISSING_TERMS.get(path, (None, ()))
+    if not compound or source.files[path] != missing_term_blob or scripts is None or 'EvalExpression' in scripts:
+        reviewed_missing_terms = ()
     capture_messages = set() if compound else None
     for i, line in enumerate(body):
         event = EVENT.fullmatch(line)
@@ -941,8 +948,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived,
                 log_only=log_only, named_events=source_names, inactive=inactive, binary_startup=binary_startup,
                 direct_control=direct_control,
-                missing_term=(compound and not controls and scripts is not None and 'EvalExpression' not in scripts
-                              and REVIEWED_MISSING_TERMS.get(path) == (source.files[path], event[1])))
+                missing_term=(event[1] in reviewed_missing_terms and
+                              (not controls or text.count(label) == 1 and name not in scripts)))
             if any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
                 term['requiresMatch'] = True
             suffixes = {f' ({delay:f}s)' for delay in actions}

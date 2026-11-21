@@ -259,6 +259,7 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         'runtimeChecks': runtime_checks(runtime_candidates),
         'authoredFileNotesByLauncher': file_notes,
         'unresolvedResources': review.get('unresolvedResources', []),
+        'sourceDependencyLeads': review.get('sourceDependencyLeads', []),
         'resourceRecoveryQueue': resource_recovery_queue(review.get('unresolvedResources', []), held),
         'dependencyRecoveryQueue': dependency_recovery_queue(review.get('unresolvedResources', []), held),
         'unavailableDependencyIds': review.get('unavailableDependencyIds', []),
@@ -367,6 +368,16 @@ def markdown(plan):
     if plan['unavailableDependencyIds']:
         lines.extend(['', '## Dev dependencies without a local provider', '',
                       *(f'- `{guid}`' for guid in plan['unavailableDependencyIds'])])
+    if leads := plan.get('sourceDependencyLeads'):
+        lines.extend(['', '## Dependency leads for worlds still in conversion', '',
+                      'These references come from legacy files. A conversion rule may rewrite or remove them. '
+                      'Check the registered provider and body before using a lead. The complete list and source '
+                      'locations are in `plan.json`.', '',
+                      '| Legacy resource | Launchers | Installed same-ID registrations |',
+                      '| --- | ---: | ---: |'])
+        for entry in leads[:15]:
+            lines.append(f"| `{{{entry['guid']}}}{entry['path']}` | {len(entry['launchers'])} | "
+                         f"{len(entry['registrations'])} |")
     lines.extend(['', '## Highest-priority specific blockers', '',
                   '| Blocker | Only reported blocker | Worlds affected |',
                   '| --- | ---: | ---: |'])

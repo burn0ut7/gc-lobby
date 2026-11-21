@@ -18,6 +18,10 @@ from scenery import StockPrefabs
 from terrain_parents import LONGMOOR_PARENT, LONGMOOR_PROVIDER, has_reviewed_longmoor, is_longmoor_subscene
 
 LEGACY = re.compile(r'^(?:TILW|PS)_')
+LEGACY_PRESENTATION_RESOURCES = {
+    ('3136BE42592F3B1B', 'PrefabsEditable/MissionDescription/EditableMissionDescription.et'),
+    ('CD85ADE9E0F54679', 'PrefabsEditable/Markers/EditableMarker.et'),
+}
 AREAS = {
     'mode': re.compile(r'^(?:\$grp )?(?:\w*GameMode\w*|\w*FactionManager\w*)\b|\bm_i\w*Freeze\w*\b'),
     'briefing': re.compile(r'\b(?:PS_MissionDescription|GC_Briefing)\b|\bm_[a-z]VisibleForFactions\b'),
@@ -204,11 +208,11 @@ def draft_diff(source, draft, paths):
     return ''.join(result).encode()
 
 
-def external_resource_review(missions, databases, providers):
+def external_resource_review(missions, databases, providers, *, reference_field='unresolvedExternalReferences'):
     """Group unresolved references and show alternate installed registrations."""
     references = defaultdict(dict)
     for launcher_path, mission in missions.items():
-        for entry in mission.get('unresolvedExternalReferences', []):
+        for entry in mission.get(reference_field, []):
             references[entry['guid'], entry['path']][launcher_path] = entry['referencedBy']
     if not references:
         return []
@@ -231,6 +235,35 @@ def external_resource_review(missions, databases, providers):
     return [{'guid': guid, 'path': path, 'launchers': owners, 'registrations': registrations[guid],
              'samePathRegistrations': [entry for entry in same_path[path] if entry['guid'] != guid]}
             for (guid, path), owners in sorted(references.items(), key=lambda entry: (-len(entry[1]), *entry[0]))]
+
+
+def source_dependency_leads(source, missions, notes, dependencies, databases, providers):
+    """Report unregistered legacy inputs while their worlds still have conversion blockers."""
+    by_launcher = {}
+    refs = set()
+    for header, mission in missions.items():
+        world = mission.get('world')
+        if notes.get(world, {}).get('batchDraft', {}).get('status') != 'blocked by conversion rules':
+            continue
+        missing = defaultdict(set)
+        for owner in closure(source, world, header):
+            for guid, path in facts(source, owner)[2]:
+                guid = guid.upper()
+                if (guid in source.resources or path in dependencies.get(guid, ())
+                        or (guid, path) in LEGACY_PRESENTATION_RESOURCES):
+                    continue
+                if re.search(r'(?:^|/)(?:PS_|TILW_)[^/]+$', path, re.I):
+                    continue
+                missing[guid, path].add(owner)
+        if missing:
+            by_launcher[header] = missing
+            refs.update(missing)
+    unresolved = unregistered_references(refs, providers)
+    rows = {header: {'legacyInputs': [
+        {'guid': guid, 'path': path, 'referencedBy': sorted(owners)}
+        for (guid, path), owners in sorted(missing.items()) if (guid, path) in unresolved]}
+        for header, missing in by_launcher.items()}
+    return external_resource_review(rows, databases, providers, reference_field='legacyInputs')
 
 
 def main():
@@ -308,6 +341,9 @@ def main():
     if args.workshop_addons:
         report['unavailableDependencyIds'] = unavailable
         report['unresolvedResources'] = external_resource_review(missions, databases, providers)
+        if notes:
+            report['sourceDependencyLeads'] = source_dependency_leads(
+                source, missions, notes, dependencies, databases, providers)
     args.report.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     if args.summary:
         args.summary.write_text(markdown(source, target, missions), encoding='utf-8')
