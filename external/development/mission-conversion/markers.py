@@ -64,13 +64,17 @@ def instance(lines, name, inherited=None, *, draw_order=False):
     any_side = values.get('m_bShowForAnyFaction', '0')
     unassigned = values.get('m_bVisibleForEmptyFaction', '0')
     factions = values.get('m_aVisibleForFactions', '')
-    keys = re.findall(r'"([^"]+)"', factions)
+    keys = [key for key in re.findall(r'"([^"]*)"', factions) if key]
     phase = phase_fields(values.get('m_aHideOnGameModeStates', ''))
     if any_side not in ('0', '1') or unassigned not in ('0', '1'):
         raise ValueError('invalid marker audience')
-    if factions and (not re.fullmatch(r'(?:\s*"[^"]+"\s*)+', factions)
+    if factions and (not re.fullmatch(r'(?:\s*"[^"]*"\s*)+', factions)
                      or len(set(keys)) != len(keys) or len(keys) > 16):
         raise ValueError('unsupported faction list')
+    if '""' in factions:
+        # Legacy unassigned visibility comes from its dedicated field. Blank
+        # entries in the faction list do not name a registered faction.
+        factions = ' '.join(f'"{key}"' for key in keys)
     merged = {**DEFAULTS, **values}
     if 'angles' in values:
         if any(k in values for k in ('angleX', 'angleY', 'angleZ')):

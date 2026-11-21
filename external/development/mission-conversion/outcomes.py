@@ -19,6 +19,9 @@ EVENT_CONTROL = re.compile(r'\bTILW_(RunEvents|ReactivateEvents|DeactivateEvents
 KEY = r'"[\w.-]+"'
 EVENT_LABEL = r'"[^"\\\x00-\x1f]+"'
 RESULT = {'EDITOR_FACTION_VICTORY': 1, 'EDITOR_FACTION_DEFEAT': 2, 'EDITOR_FACTION_DRAW': 3}
+# The legacy suppressed ending uses only the title, which is the same for
+# the timed and editor variants in BaseGameOverScreensConfig.
+ANNOUNCEMENT_RESULTS = {'FACTION_DEFEAT_TIME': 2}
 TERM = re.compile(
     r'\s*(?:m_(?:condition|definition) )?TILW_(Literal|Conjunction|Disjunction|Minjunction|Maxjunction|Matchjunction)'
     r'Term "\{[\da-fA-F]{16}\}" \{')
@@ -123,22 +126,25 @@ def derived_flags(source, world, framework_path, body, scripts):
     return definitions
 
 
-def end_action(lines, key, allow_neutral=False):
+def end_action(lines, key, *, extended_announcements=False):
     data = properties(lines, {'m_factionKey', 'm_gameOverType', 'm_executionDelay'})
     faction = data.get('m_factionKey', '')
     kind = data.get('m_gameOverType', 'EDITOR_FACTION_VICTORY')
     delay = data.get('m_executionDelay', '5')
     if not re.fullmatch(r'\d+(?:\.\d+)?', delay) or Decimal(delay) > 86400:
         raise ValueError('unsupported faction outcome or delay')
-    if allow_neutral and kind == 'EDITOR_FACTION_NEUTRAL' and faction in ('', '""'):
+    if extended_announcements and kind == 'EDITOR_FACTION_NEUTRAL' and faction in ('', '""'):
         return Decimal(delay), [
             f'      GC_MessageAction "{{{guid(key)}}}" {{',
             '       m_iDelivery 2', '       m_sMessage "Neutral result reached."', '      }',
         ], {'faction': '', 'result': kind, 'delaySeconds': delay, 'delivery': 'server log'}
-    if not re.fullmatch(KEY, faction) or kind not in RESULT:
+    result = RESULT.get(kind)
+    if result is None and extended_announcements:
+        result = ANNOUNCEMENT_RESULTS.get(kind)
+    if not re.fullmatch(KEY, faction) or result is None:
         raise ValueError('unsupported faction outcome or delay')
     return Decimal(delay), [
-        f'      GC_EndMissionAction "{{{guid(key)}}}" {{', f'       m_iResult {RESULT[kind]}',
+        f'      GC_EndMissionAction "{{{guid(key)}}}" {{', f'       m_iResult {result}',
         '       m_bAnnounceOnly 1', '       m_aWinningFactions {', f'        {faction}', '       }', '      }',
     ], {'faction': faction[1:-1], 'result': kind, 'delaySeconds': delay}
 
@@ -322,7 +328,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                     delay, body = message(fields[j + 1:last], key + '/' + notify_match[1], multiline=True)
                     messages += 1
                 elif end_match:
-                    delay, body, notice = end_action(fields[j + 1:last], key + '/' + end_match[1], compound)
+                    delay, body, notice = end_action(fields[j + 1:last], key + '/' + end_match[1],
+                                                     extended_announcements=compound)
                     notices.append(notice)
                 elif waypoint_match:
                     if last == j + 1:
