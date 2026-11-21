@@ -340,15 +340,25 @@ def inherited_playable_roster(old, new, stock, owned_resources):
 
 
 def convert_instance(lines, guid, old, new, source_units, dev_units, stock, locally_owned,
-                         reviewed_callsigns=frozenset(), reviewed_members=None, external_ai=None):
+                     reviewed_callsigns=frozenset(), reviewed_members=None, external_ai=None, restored_members=None):
     reviewed_members = reviewed_members or {}
+    restored_members = restored_members or {}
     explicit_force = any(l.strip() == 'm_bSetPlayable 1' for l in lines)
     native_override = next((l.strip()[-1] for l in lines if l.strip() in ('m_bPlayable 0', 'm_bPlayable 1')), None)
     native_playable = (native_override == '1' if native_override is not None
                        else scalar(inheritance(dev_units, guid), 'm_bPlayable') == 1)
-    if not native_playable and not explicit_force:
+    slots_start = next((i for i, line in enumerate(lines) if line.strip() == 'm_aUnitPrefabSlots {'), None)
+    replace_slots = slots_start is not None
+    restored_playable = False
+    if not native_playable and not explicit_force and replace_slots and restored_members:
+        end = block_end(lines, slots_start)
+        slots = [(resource.upper(), path) for resource, path in REF.findall('\n'.join(lines[slots_start + 1:end]))]
+        if any(slot in restored_members for slot in slots):
+            if not all(slot in restored_members or legacy_member(source_units, slot[0], False) for slot in slots):
+                raise ValueError('mixed playability alongside restored legacy roles')
+            restored_playable = True
+    if not native_playable and not explicit_force and not restored_playable:
         return convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai or {})
-    replace_slots = any(l.strip() == 'm_aUnitPrefabSlots {' for l in lines)
     roster = []
     converted_wrappers = set()
     if not replace_slots:
@@ -409,6 +419,10 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             end = block_end(lines, i)
             def slot(match):
                 guid, path = match.groups()
+                restored = restored_members.get((guid.upper(), path))
+                if restored:
+                    converted_wrappers.add(guid.upper())
+                    return f'"{{{restored[0]}}}{restored[1]}"'
                 if guid.upper() in reviewed_members:
                     path = reviewed_members[guid.upper()]
                 elif guid.upper() in locally_owned:
@@ -443,8 +457,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             metadata.append(line.replace('m_sCustomNameSet ', 'm_sGC_Description ', 1))
         elif token in ('m_bSetPlayable 0', 'm_bSetPlayable 1'):
             pass
-        elif token == 'm_bPlayable 0' and explicit_force:
-            # The legacy group callback marks its member characters playable after initialization.
+        elif token == 'm_bPlayable 0' and (explicit_force or restored_playable):
+            # Legacy character playability was independent of this native group setting.
             pass
         elif token.startswith(('coords ', 'angles ', 'angleX ', 'angleY ', 'angleZ ', 'scale ', 'm_bSnapToTerrain ')) or token == 'm_bPlayable 1':
             out.append(line)
@@ -503,7 +517,7 @@ def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_
 
 
 def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset(),
-                reviewed_members=None, external_ai=None, allow_stock_ai=False):
+                reviewed_members=None, external_ai=None, allow_stock_ai=False, restored_members=None):
     if not re.search(r'^(?:\$grp )?SCR_AIGroup\b', text, re.M):
         return None
     lines = text.splitlines()
@@ -543,7 +557,7 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
             convert = partial(convert_instance, guid=guid, old=old, new=new, source_units=source_units,
                               dev_units=dev_units, stock=stock, locally_owned=locally_owned,
                               reviewed_callsigns=reviewed_callsigns, reviewed_members=reviewed_members,
-                              external_ai=external_ai)
+                              external_ai=external_ai, restored_members=restored_members)
         result.append(REF.sub(lambda _: '"{' + resource + '}' + dest + '"', lines[i], count=1))
         end = block_end(lines, i)
         if match['group']:

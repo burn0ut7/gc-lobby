@@ -724,11 +724,13 @@ def main():
             external_vehicles = vehicle_crew.workshop_vehicles(args.workshop_addons)
         except (OSError, ValueError, CalledProcessError) as exc:
             parser.error(str(exc))
-        reviewed_members.update({guid: path for guid, path in restored.items() if guid not in locally_owned})
+        restored = {old: new for old, new in restored.items()
+                    if old[0] not in locally_owned and new[0] not in locally_owned}
 
         def convert_group_block(body):
             return group_layer(body, source_units, dev_units, stock, locally_owned,
-                               reviewed_members=reviewed_members, external_ai=external_ai, allow_stock_ai=True)
+                               reviewed_members=reviewed_members, external_ai=external_ai,
+                               allow_stock_ai=True, restored_members=restored)
 
         def convert_crew(block):
             return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned,

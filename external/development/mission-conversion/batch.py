@@ -63,6 +63,14 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/Green Hill Military Assault/GreenHillAssault.conf': (
+        'a24e2eafb399d77eccd92a73a8e9e71c5ec6821e',
+        (('worlds/HitTheMan/Green Hill Assault/GreenHillAssault_Layers/BLUFOR_Players/BLUFOR_Players.layer',
+          '77d19e368560b03bd49a37add2f84ed06cb8d9d7'),
+         ('worlds/HitTheMan/Green Hill Assault/GreenHillAssault_Layers/OPFOR_Players/OPFOR_Players.layer',
+          '5bbd674fd88eb274ae97901b47a798f320b9571d')),
+        75, 63,
+    ),
     'Missions/Woody/COXX_Landay_Haul.conf': (
         '90d1f355e72fc950632ced756ec41f62c746bc66',
         (('worlds/Woody/COXX_Landay_Haul/COXX_Landay_Haul_Layers/playergroups.layer',

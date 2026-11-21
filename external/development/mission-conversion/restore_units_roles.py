@@ -17,6 +17,12 @@ DIRECTORY = 'Prefabs/Characters/Factions/OPFOR/USSR_Army/MotorRifle_MSV80/Legacy
 DEPUTY = '07299990D00B0823'
 MEDIC = 'D1BA3D1164545A8D'
 OLD_LEADER = 'DF8E65CA90B55E3B'
+AUTHORED_DIRECTORY = 'Prefabs/Characters/Factions/OPFOR/USSR_Army/MotorRifle_1980/'
+AUTHORED_PATHS = {
+    OLD_LEADER: AUTHORED_DIRECTORY + 'Character_USSR_MSV80_PL_P.et',
+    DEPUTY: AUTHORED_DIRECTORY + 'Character_USSR_MSV80_DPL_P.et',
+    MEDIC: AUTHORED_DIRECTORY + 'Character_USSR_MSV80_Medic_P.et',
+}
 RESTORED = {
     OLD_LEADER: (guid('Units/legacy/' + OLD_LEADER), DIRECTORY + 'Character_USSR_Legacy_MSV80_PL.et'),
     DEPUTY: (DEPUTY, DIRECTORY + 'Character_USSR_Legacy_MSV80_DPL.et'),
@@ -55,7 +61,7 @@ def verified_roles(units, stock):
     for path, body in historical_prefabs(units.repo, stock).items():
         if path not in units.files or units.read(path) != body:
             raise ValueError('archived loadout differs from the reviewed recovery: ' + path)
-    return {resource: expected[resource] for resource in (DEPUTY, MEDIC)}
+    return {(original, path): RESTORED[original] for original, path in AUTHORED_PATHS.items()}
 
 
 def main():
