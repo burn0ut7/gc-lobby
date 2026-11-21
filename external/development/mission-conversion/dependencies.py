@@ -58,13 +58,13 @@ def dependency_catalogue(checkouts, databases):
     return local, installed
 
 
-def dependency_resources(target, checkouts, databases):
-    """Use each supplied checkout in preference to the installed copy of the same addon."""
+def dependency_selection(target, checkouts, databases):
+    """Return reachable checkout and installed providers in dependency order."""
     root, requires = checkout_project(target)
     local, installed = dependency_catalogue(checkouts, databases)
 
     selected = [databases[0]]
-    resources = defaultdict(list)
+    selected_checkouts = []
     unavailable = set()
     seen = {root, BASE_GAME}
     base_requires = ()
@@ -79,8 +79,7 @@ def dependency_resources(target, checkouts, databases):
         seen.add(guid)
         if guid in local:
             snapshot, children = local[guid]
-            for resource, paths in snapshot.resources.items():
-                resources[resource].extend(path for path in paths if path not in resources[resource])
+            selected_checkouts.append((guid, snapshot))
         elif guid in installed:
             database, children = installed[guid]
             selected.append(database)
@@ -88,4 +87,14 @@ def dependency_resources(target, checkouts, databases):
             unavailable.add(guid)
             continue
         pending.extend(reversed(children))
-    return resources, selected, sorted(unavailable)
+    return selected_checkouts, selected, sorted(unavailable)
+
+
+def dependency_resources(target, checkouts, databases):
+    """Use each supplied checkout in preference to the installed copy of the same addon."""
+    selected_checkouts, selected, unavailable = dependency_selection(target, checkouts, databases)
+    resources = defaultdict(list)
+    for _, snapshot in selected_checkouts:
+        for resource, paths in snapshot.resources.items():
+            resources[resource].extend(path for path in paths if path not in resources[resource])
+    return resources, selected, unavailable

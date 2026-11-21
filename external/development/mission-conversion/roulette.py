@@ -1,5 +1,6 @@
 """Prepare Roulette's shared authored data and native static briefings."""
 import argparse
+from collections import defaultdict
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -8,10 +9,11 @@ import re
 from briefings import ALLOWED, STANDARD_DESCRIPTION, block_end, guid, page, properties, render
 from boundaries import DEST as AO_PREFAB
 from catalog import REF, SOURCE_TEXT, Snapshot
-from dependencies import dependency_resources
+from dependencies import BASE_GAME, checkout_project, database_project, dependency_resources, dependency_selection
 from groups import inheritance, scalar
 from install_batch import resource_databases, unregistered_references
 from launchers import META_NAME, launcher, registered_identity
+from scenery import StockPrefabs
 
 
 PREFIX = 'worlds/Burn0ut7/Roulette/'
@@ -383,6 +385,7 @@ def assemble_worlds(report, files, source, dev, checkouts, databases):
     if unavailable or missing:
         raise ValueError(f'unavailable Dev dependencies {unavailable}, unresolved Roulette assets {sorted(missing)}')
     report['assembly'] = {'worlds': len(report['missions']), 'validatedReferences': len(refs)}
+    add_launch_dependencies(report, files, dev, checkouts, databases, owned)
     report['target'] = dev.commit
     report['headers'] = {mission['header']: {'destinationWorld': mission['world']} for mission in report['missions']}
     common = {path for path in files if path.startswith(PREFABS) or path in (CATALOGUE, CATALOGUE + '.meta')}
@@ -400,6 +403,57 @@ def assemble_worlds(report, files, source, dev, checkouts, databases):
         'worlds': worlds,
         'sha256': {path: sha256(contents).hexdigest() for path, contents in sorted(files.items())},
     }
+
+
+def add_launch_dependencies(report, files, dev, checkouts, databases, owned):
+    """List addon providers for every generated choice, including choices absent from a saved scene."""
+    owner, _ = checkout_project(dev)
+    selected_checkouts, installed, unavailable = dependency_selection(dev, checkouts, databases)
+    if unavailable:
+        raise ValueError(f'unavailable launch dependency providers: {unavailable}')
+    common_paths = [path for path in files if path == CATALOGUE or path.startswith(PREFABS) and path.endswith('.et')]
+    common_refs = {ref for path in common_paths for ref in REF.findall(files[path].decode('utf-8-sig'))}
+    references_by_header = {}
+    for mission in report['missions']:
+        world = mission['world'][18:]
+        stem = world.removesuffix('.ent')
+        local = [path for path in files if path == world or path.startswith(stem + '_')
+                 and Path(path).suffix.lower() in SOURCE_TEXT]
+        references_by_header[mission['header']] = common_refs | {
+            ref for path in local for ref in REF.findall(files[path].decode('utf-8-sig'))}
+
+    refs = set().union(*references_by_header.values())
+    providers = defaultdict(set)
+    for resource, path in refs & owned:
+        providers[resource, path].add(owner)
+    for addon, snapshot in selected_checkouts:
+        for resource, path in refs - owned:
+            if path in snapshot.resources.get(resource, ()):
+                providers[resource, path].add(addon)
+    for path in installed:
+        db = StockPrefabs(path)
+        project = database_project(path)
+        addon = project[0] if project else BASE_GAME
+        for ref in refs - owned:
+            if db.contains(*ref):
+                providers[ref].add(addon)
+    if unknown := refs - providers.keys():
+        raise ValueError(f'no launch provider for {sorted(unknown)}')
+
+    report['assetAddonProviders'] = {
+        f'{{{resource}}}{path}': sorted(providers[resource, path]) for resource, path in sorted(refs)}
+    for mission in report['missions']:
+        header = mission['header']
+        required = sorted(set().union(*(providers[ref] for ref in references_by_header[header])) - {owner, BASE_GAME})
+        mission['requiredAddonIds'] = required
+        body = files[header].decode().rstrip()
+        if re.search(r'^ m_GC_Catalog\b', body, re.M) or not body.endswith('\n}'):
+            raise ValueError(f'existing or unsupported catalogue metadata in {header}')
+        metadata_id = guid('roulette/launch/' + header)
+        rows = [f' m_GC_Catalog GC_CatalogMissionMetadata "{{{metadata_id}}}" {{',
+                '  m_iSchemaVersion 1', '  m_aRequiredAddonIds {']
+        rows.extend(f'   "{addon}"' for addon in required)
+        files[header] = ('\n'.join([body[:-2], *rows, '  }', ' }', '}', ''])).encode()
 
 
 def main():
