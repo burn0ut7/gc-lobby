@@ -138,6 +138,13 @@ def end_action(lines, key, *, extended_announcements=False):
             f'      GC_MessageAction "{{{guid(key)}}}" {{',
             '       m_iDelivery 2', '       m_sMessage "Neutral result reached."', '      }',
         ], {'faction': '', 'result': kind, 'delaySeconds': delay, 'delivery': 'server log'}
+    if extended_announcements and faction in ('', '""') and kind in (
+            'EDITOR_FACTION_VICTORY', 'EDITOR_FACTION_DRAW', 'ENDREASON_TIMELIMIT'):
+        # The suppressed legacy instruction resolves the faction name before
+        # displaying a hint. These instructions supply no faction key.
+        return Decimal(delay), [], {
+            'faction': '', 'result': kind, 'delaySeconds': delay, 'delivery': 'missing faction',
+        }
     result = RESULT.get(kind)
     if result is None and extended_announcements:
         result = ANNOUNCEMENT_RESULTS.get(kind)
