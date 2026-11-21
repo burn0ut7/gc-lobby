@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 
 from briefings import ALLOWED, STANDARD_DESCRIPTION, block_end, guid, page, properties, render
+from boundaries import DEST as AO_PREFAB
 from catalog import REF, Snapshot
 from dependencies import dependency_resources
 from groups import inheritance, scalar
@@ -272,6 +273,10 @@ def attach_startup_components(report, files):
         path = world.removesuffix('.ent') + '_GC_Settings.et'
         if not files[path].endswith(suffix):
             raise ValueError('unexpected Roulette settings layout: ' + path)
+        command_order = b'     m_iOrder 0\n'
+        if files[path].count(command_order) != 1:
+            raise ValueError('expected one authored command page: ' + path)
+        settings = files[path].replace(command_order, b'     m_iOrder 31\n')
         component_id = guid(world + '/roulette/setup')
         observer_id = guid(world + '/roulette/casualties')
         component = (f'  GC_RouletteSetupComponent "{{{component_id}}}" {{\n'
@@ -279,7 +284,31 @@ def attach_startup_components(report, files):
                      '  }\n'
                      f'  GC_PeakFactionPopulationComponent "{{{observer_id}}}" {{\n'
                      '  }\n').encode()
-        files[path] = files[path][:-len(suffix)] + component + suffix
+        boundary = [
+            f'GC_AOLimitEntity GC_RouletteBoundary : "{AO_PREFAB}" {{',
+            ' components {',
+            '  GC_BoundaryWallComponent "{6A4D831C2E5079C1}" {',
+            '   m_bEnabled 0',
+            '  }',
+            '  GC_MapShapeComponent "{8F470B543A20D964}" {',
+            '   m_bEnabled 0',
+            '   m_bFillEnabled 1',
+            '   m_LineColor 0 0 0 1',
+            '   m_fLineWidth 3',
+            '   m_FillColor 0 0 0 0.75',
+            '   m_bInvertFill 1',
+            '  }',
+            ' }',
+            ' m_bEnabled 0',
+            ' Points {',
+        ]
+        for index, position in enumerate(('0 0 0', '0 0 10', '10 0 10', '10 0 0')):
+            point_id = guid(f'{world}/roulette/ao/{index}')
+            boundary.extend([f'  ShapePoint "{{{point_id}}}" {{', f'   Position {position}', '  }'])
+        boundary.extend([' }', '}', ''])
+        boundary_path = world.removesuffix('.ent') + '_Layers/GC_RouletteBoundary.layer'
+        files[boundary_path] = '\n'.join(boundary).encode()
+        files[path] = settings[:-len(suffix)] + component + suffix
 
 
 def main():
