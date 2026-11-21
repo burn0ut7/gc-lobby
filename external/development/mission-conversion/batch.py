@@ -15,7 +15,7 @@ from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import OBSOLETE_NAVMESH, REF, SOURCE_TEXT
 from event_actions import (FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, VEHICLE_SPAWN,
                            render_crew_config, render_spawn, spawn_details)
-from vehicle_crew import CREW_CONFIG_FIELD, VERIFIED_DEFAULT_CREW, crew_config_contents, split_crew_block
+from vehicle_crew import CREW_CONFIG_FIELD, VERIFIED_DEFAULT_CREW, ZAGORIA_BMP2, crew_config_contents, split_crew_block
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
 from groups import (COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, SLOTS, inheritance, reviewed_native_ancestry,
@@ -85,6 +85,14 @@ SPLINE_RECORD = re.compile(
     rf'LineColor {COORDINATE} {COORDINATE} {COORDINATE} {COORDINATE}|'
     rf'(?:IsClosedSpline|m_bAvoidObjects) [01]|(?:m_iSeed|RandomSeed) \d+|Width {NUMBER}')
 NAVMESH_COMPONENT = re.compile(rf' +TILW_NavmeshRegenComponent {SERIALIZED_ID} \{{')
+BLOODY_GARRISON = '3FB7CCCE82C20BD6'
+BLOODY_GARRISON_DIR = 'worlds/Jub/OperationArrowheadTwoBloodyMiles/OperationArrowheadTwoBloodyMiles_Layers/'
+BLOODY_GARRISON_PREFAB = BLOODY_GARRISON_DIR + 'Building_01.et'
+BLOODY_GARRISON_BLOBS = {
+    BLOODY_GARRISON_PREFAB: '329fa8d70d0bccfb6990a272f1d34207caec4715',
+    BLOODY_GARRISON_PREFAB + '.meta': '6cee2ac3d425c1bb7410dbfb7d6d506f1f130f11',
+    BLOODY_GARRISON_DIR + 'AI/GreenAI.layer': '8db56904dc732aef35e77795b786e0cb5b38bad0',
+}
 DAMAGE_COMPONENT = re.compile(rf'  TILW_Flag_EntityDamage {SERIALIZED_ID} \{{')
 DAMAGE_TARGETS = {
     '82CCE96E35DC6A6E': 'Prefabs/Structures/Military/Antennas/Antenna_BARS_01/Antenna_BARS_01_transmitter.et',
@@ -1049,6 +1057,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/HitTheMan/2nd Break The Line/HTM_EffectModule_Zoned_Smoke_MortarBarrage_Creeping.et.et':
+        '7b56f96c988c3e00ffa59c446488ab8ac9f50809a7772670a501339953d36a56',
     'worlds/HitTheMan/Prefabs/Vehicles/Heavy Weapon/Cannon_2A466_T72A_HE_HTM.et':
         'ed928b9073da5bc06a95ee0230feca72b2cb404502475cbd88093dfa581fdabd',
     'worlds/HitTheMan/Prefabs/Vehicles/Heavy Weapon/Cannon_2A46_T72A_HTM.et':
@@ -1481,6 +1491,44 @@ def native_placement(block, *, reviewed_character=False):
                 stack.pop()
     text = '\n'.join(lines) + '\n'
     return None if LEGACY.search(text) else text
+
+
+def garrison_anchors(block, expected):
+    # The inherited trigger only writes an unused flag. Keep its ID and local
+    # transform so the three authored instance overrides still bind to it.
+    lines = block.copy()
+    starts = [index for index, line in enumerate(lines)
+              if line.strip().startswith('TILW_FactionTriggerEntity ')]
+    if len(starts) != expected:
+        raise ValueError('reviewed garrison trigger shape changed')
+    for start in reversed(starts):
+        stop = block_end(lines, start)
+        indent = ' ' * (len(lines[start]) - len(lines[start].lstrip()))
+        fields = [line for line in lines[start + 1:stop]
+                  if line == indent + ' ID "6A69010935EEE9B1"'
+                  or (line.startswith(indent + ' ') and FIELD.fullmatch(line[len(indent) + 1:]))]
+        if indent + ' ID "6A69010935EEE9B1"' not in fields:
+            raise ValueError('reviewed garrison trigger identity changed')
+        name = ' Building_1_Trigger' if ' Building_1_Trigger : ' in lines[start] else ''
+        lines[start:stop + 1] = [indent + f'GenericEntity{name} {{', *fields, indent + '}']
+    result = native_placement(lines)
+    if not result:
+        raise ValueError('garrison has another legacy declaration')
+    return result
+
+
+def garrison_placement(source, world, layer, block):
+    if (layer != BLOODY_GARRISON_DIR + 'AI/GreenAI.layer'
+            or any(source.files.get(path) != blob for path, blob in BLOODY_GARRISON_BLOBS.items())
+            or source.resources.get(BLOODY_GARRISON) != [BLOODY_GARRISON_PREFAB]):
+        raise ValueError('garrison resource or placement changed')
+    flag = 'Building_1_Trigger'
+    scripts = script_text(source)
+    if (any(token in scripts for token in (flag, 'GetFlagSetCopy', 'm_flagSet'))
+            or any(flag in source.read(path) for path in source.closure(world) - {BLOODY_GARRISON_PREFAB}
+                   if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)):
+        raise ValueError('garrison trigger has an authored consumer')
+    return garrison_anchors(block, 3)
 
 
 def interaction_rules(source, world, stock, local_resources):
@@ -2010,6 +2058,10 @@ def passive_asset(source, path):
             return body
     if suffix == '.et':
         body = source.read(path)
+        if path == BLOODY_GARRISON_PREFAB:
+            if any(source.files.get(file) != blob for file, blob in BLOODY_GARRISON_BLOBS.items()):
+                raise ValueError('garrison resource or placement changed')
+            return garrison_anchors(body.splitlines(), 1)
         if path in REVIEWED_PLAYABLE_GROUPS:
             return playable_group_prefab(body, path)
         if path == BLACKBOX[1]:
@@ -2551,6 +2603,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         if self_waypoint:
             waypoints = []
         if config is not None and (not ref or (not ref[2].startswith('Prefabs/Vehicles/') and
+                                               (ref[1].upper(), ref[2]) != ZAGORIA_BMP2 and
                                                not reviewed_spawn_type(source, ref[1].upper(), ref[2],
                                                                        ('Vehicle : ', 'Tank : ', 'RHS_Tank : ')))):
             vehicle = ref[0] if ref else data.get('m_prefab', '')
@@ -3820,9 +3873,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                             result.append(converted)
                 elif NATIVE.match(head):
                     try:
-                        vehicle, groups, slots = convert_vehicle_groups(convert_crew(block), convert_group_block)
-                        vehicle = restore_rhib_mounts(vehicle, asset_aliases, source.files[layer])
-                        converted = native_placement(update_cobra_armament(vehicle, asset_aliases))
+                        if f'{{{BLOODY_GARRISON}}}' in head:
+                            converted, groups, slots = garrison_placement(source, world, layer, block), 0, 0
+                        else:
+                            vehicle, groups, slots = convert_vehicle_groups(convert_crew(block), convert_group_block)
+                            vehicle = restore_rhib_mounts(vehicle, asset_aliases, source.files[layer])
+                            converted = native_placement(update_cobra_armament(vehicle, asset_aliases))
                     except ValueError as exc:
                         blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
                     else:
@@ -4295,6 +4351,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare capture and loss notices for areas with no outcome rule.')
     if any('GC_NavmeshRebuildComponent' in body for bodies in boundaries.values() for body in bodies):
         remaining.append('Compare navmesh rebuilds for map shape placements.')
+    if BLOODY_GARRISON_PREFAB in draft:
+        remaining.append('Compare inherited garrison waypoints, slot transforms and navmesh rebuilds.')
     if mode and any(line.startswith((' m_iReconnectTime ', ' m_iReconnectTimeAfterBriefing ')) for line in mode):
         remaining.append('Compare reconnect reservations before and after entering Match.')
     if mode and ' m_bDisableBuildingModeAfterFreezeTime 1' in mode:

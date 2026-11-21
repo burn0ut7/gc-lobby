@@ -11,9 +11,11 @@ from local_loadouts import unchanged_units_parent
 from polygon_capture import members
 from scenery import StockPrefabs
 
+ZAGORIA_BMP2 = ('1EF865DC4E3F7E0B', 'IFV/BMP2/BMP2_Olive_test.et')
 VEHICLE = re.compile(
     r'(?P<group>\$grp )?(?:Vehicle|Tank|Turret)(?: (?P<name>[\w.-]+))? : '
-    r'"\{(?P<guid>[\da-fA-F]{16})\}(?P<path>Prefabs/(?:Vehicles|Weapons/Tripods)/[^"]+\.et)" \{')
+    r'"\{(?P<guid>[\da-fA-F]{16})\}(?P<path>Prefabs/(?:Vehicles|Weapons/Tripods)/[^"]+\.et|'
+    + re.escape(ZAGORIA_BMP2[1]) + r')" \{')
 COMPOSITION = re.compile(r'(?P<group>\$grp )?(?P<kind>GenericEntity|StaticModelEntity)(?: (?P<name>[\w.-]+))? : "[^"]+" \{')
 PLACED_CHILD = re.compile(r'(GenericEntity|GameEntity|Turret)(?: [\w.-]+)?'
                           r'(?: : ' + REF.pattern + r')? \{')
@@ -23,6 +25,7 @@ CREW_CONFIG_FIELD = 'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID
 CREW_CONFIG_REFERENCE = re.compile(CREW_CONFIG_FIELD + r' : ' + REF.pattern + r' \{')
 SEAT_TYPES = ('Pilot', 'Turret', 'Cargo')
 WORKSHOP_VEHICLES = {
+    ZAGORIA_BMP2[0]: ('Zagoria89BMP2_6730D59067916E3D', ZAGORIA_BMP2[1]),
     '0A17C0D659FA2473': ('TacticalFlava-Turrets_DEADC0DE00000007',
                          'Prefabs/Weapons/Tripods/6G10/Tripod_6G10_AGS17.et'),
     '19A9036206E23B23': ('TacticalFlava-TIGR_DEADC0DE00000003',
