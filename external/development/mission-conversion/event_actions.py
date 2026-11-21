@@ -189,13 +189,19 @@ def render_crew_config(config, key, resolve_character):
         end = block_end(groups, index)
         group = contents(groups[index:end + 1], 'TILW_CrewGroup ' + SERIALIZED_ID)
         stations, fields = split_crew_block(group, 'm_crewStations')
-        options = properties(fields, {'m_waypointNames', 'm_waypointDelay'})
+        options = properties(fields, {'m_waypointNames', 'm_waypointDelay', 'm_entityName'})
         route = target_names(options['m_waypointNames']) if options.get('m_waypointNames') else []
+        name = options.get('m_entityName', '""')
+        if not re.fullmatch(r'"[\w.-]{0,128}"', name):
+            raise ValueError('unsupported crew group name')
         delay = options.get('m_waypointDelay', '0')
         if not re.fullmatch(NUMBER, delay) or Decimal(delay) > 86400:
             raise ValueError('invalid crew waypoint delay')
         group_key = f'{key}/crew/{count}'
-        output.extend([f'         GC_SpawnCrewGroup "{{{guid(group_key)}}}" {{', '          m_aStations {'])
+        output.append(f'         GC_SpawnCrewGroup "{{{guid(group_key)}}}" {{')
+        if name != '""':
+            output.append(f'          m_sGroupName {name}')
+        output.append('          m_aStations {')
         start = 0
         characters = []
         while start < len(stations):
@@ -221,6 +227,8 @@ def render_crew_config(config, key, resolve_character):
                            *('           ' + point for point in route), '          }'])
         crew.append({'stations': characters, 'waypoints': [point[1:-1] for point in route],
                      'waypointDelaySeconds': delay if route else '0'})
+        if name != '""':
+            crew[-1]['groupName'] = name[1:-1]
         output.append('         }')
         index = end + 1
         count += 1

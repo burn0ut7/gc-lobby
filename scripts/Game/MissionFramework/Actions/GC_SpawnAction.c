@@ -85,6 +85,7 @@ class GC_PrefabSpawn
 		}
 		if (!m_sEntityName.IsEmpty())
 			entity.SetName(m_sEntityName);
+		attempt.Commit();
 		return true;
 	}
 }
@@ -135,7 +136,7 @@ class GC_CrewedVehicleSpawn : GC_PrefabSpawn
 			return false;
 		foreach (GC_SpawnCrewGroup crew : m_aCrewGroups)
 		{
-			if (!crew || !crew.IsValid())
+			if (!crew || !crew.IsValid() || (!m_sEntityName.IsEmpty() && crew.m_sGroupName == m_sEntityName))
 				return false;
 		}
 		return true;
@@ -217,7 +218,7 @@ class GC_SpawnCrewStation
 
 	//------------------------------------------------------------------------------------------------
 	bool FillStation(array<BaseCompartmentSlot> slots, GC_SpawnAttempt attempt, inout AIGroup group,
-		bool seated, bool idleGunners, bool shareIdleGroup, inout AIGroup idleGroup)
+		bool seated, bool idleGunners, bool shareIdleGroup, inout AIGroup idleGroup, AIGroup existingGroup)
 	{
 		int characterIndex;
 		bool custom = m_aCharacters && !m_aCharacters.IsEmpty();
@@ -246,12 +247,19 @@ class GC_SpawnCrewStation
 			bool idle = idleGunners && type == ECompartmentType.TURRET;
 			AIGroup seatGroup;
 			if (!idle)
+			{
 				seatGroup = group;
+				if (!seatGroup)
+					seatGroup = existingGroup;
+			}
 			else if (shareIdleGroup)
 				seatGroup = idleGroup;
+			AIGroup previousGroup = seatGroup;
 			IEntity occupant = slot.SpawnCharacterInCompartment(character, seatGroup);
-			attempt.Track(occupant, seatGroup);
+			attempt.Track(occupant, seatGroup, previousGroup);
 			if (!occupant || !seatGroup)
+				return false;
+			if (!idle && existingGroup && seatGroup != existingGroup)
 				return false;
 			if (!idle)
 				group = seatGroup;
@@ -271,6 +279,8 @@ class GC_SpawnCrewStation
 [BaseContainerProps(), BaseContainerCustomStringTitleField("Crew Group")]
 class GC_SpawnCrewGroup : GC_SpawnCrewStation
 {
+	[Attribute("", UIWidgets.EditBox, "Optional world name for this AI group. Subsequent crews with the same name join the existing non-playable group.")]
+	string m_sGroupName;
 	[Attribute("", UIWidgets.Object, "Optional ordered seat selections using the same AI group. Leave empty to use this group's seat settings.")]
 	ref array<ref GC_SpawnCrewStation> m_aStations;
 	[Attribute("", UIWidgets.EditComboBox, "Existing AI waypoint names in order. Empty means no added orders.", enums: {ParamEnum("", "", "gc-choices:2:GC_WaypointChoices")})]
@@ -286,7 +296,8 @@ class GC_SpawnCrewGroup : GC_SpawnCrewStation
 
 	override bool IsValid()
 	{
-		if (!GC_RuleAction.ValidTargetNames(m_aWaypoints) || m_fWaypointDelay < 0 || m_fWaypointDelay > 86400)
+		if (m_sGroupName.Length() > 128 || !GC_RuleAction.ValidTargetNames(m_aWaypoints)
+			|| m_fWaypointDelay < 0 || m_fWaypointDelay > 86400)
 			return false;
 		if (!m_aStations || m_aStations.IsEmpty())
 			return super.IsValid();
@@ -318,19 +329,47 @@ class GC_SpawnCrewGroup : GC_SpawnCrewStation
 	{
 		AIGroup group;
 		AIGroup idleGroup;
+		SCR_AIGroup existingGroup;
+		if (!m_sGroupName.IsEmpty())
+		{
+			IEntity existing = GetGame().GetWorld().FindEntityByName(m_sGroupName);
+			if (existing)
+			{
+				existingGroup = SCR_AIGroup.Cast(existing);
+				if (!existingGroup || existingGroup.IsPlayable())
+					return false;
+			}
+		}
 		bool idle = m_bShareIdleGunnerGroup || (m_bSeparateOrderedGunners && m_aWaypoints && !m_aWaypoints.IsEmpty());
 		if (m_aStations && !m_aStations.IsEmpty())
 		{
 			foreach (GC_SpawnCrewStation station : m_aStations)
 			{
-				if (!station.FillStation(slots, attempt, group, m_bKeepGunnersSeated, idle, m_bShareIdleGunnerGroup, idleGroup))
+				if (!station.FillStation(slots, attempt, group, m_bKeepGunnersSeated, idle, m_bShareIdleGunnerGroup, idleGroup, existingGroup))
 					return false;
 			}
 		}
-		else if (!FillStation(slots, attempt, group, m_bKeepGunnersSeated, idle, m_bShareIdleGunnerGroup, idleGroup))
+		else if (!FillStation(slots, attempt, group, m_bKeepGunnersSeated, idle, m_bShareIdleGunnerGroup, idleGroup, existingGroup))
 			return false;
+		if (group && !m_sGroupName.IsEmpty())
+		{
+			SCR_AIGroup namedGroup = SCR_AIGroup.Cast(group);
+			if (!namedGroup || namedGroup.IsPlayable())
+				return false;
+			if (!existingGroup)
+				namedGroup.SetName(m_sGroupName);
+			attempt.QueueInitialOrders(group, m_aWaypoints, m_fWaypointDelay);
+			return true;
+		}
 		return !group || attempt.AssignOrders(group, m_aWaypoints, m_fWaypointDelay);
 	}
+}
+
+class GC_InitialCrewOrders
+{
+	AIGroup m_Group;
+	ref array<string> m_aWaypoints;
+	float m_fDelay;
 }
 
 //! Local attempt bookkeeping only; native groups own members after success.
@@ -339,13 +378,14 @@ class GC_SpawnAttempt
 	GC_MissionRuleEngine m_RuleSource;
 	protected ref array<IEntity> m_aCrew = {};
 	protected ref array<AIGroup> m_aGroups = {};
+	protected ref array<ref GC_InitialCrewOrders> m_aInitialOrders = {};
 
 	//------------------------------------------------------------------------------------------------
-	void Track(IEntity crew, AIGroup group)
+	void Track(IEntity crew, AIGroup group, AIGroup previousGroup)
 	{
 		if (crew)
 			m_aCrew.Insert(crew);
-		if (group && !m_aGroups.Contains(group))
+		if (group && group != previousGroup && !m_aGroups.Contains(group))
 			m_aGroups.Insert(group);
 	}
 
@@ -367,16 +407,49 @@ class GC_SpawnAttempt
 			return false;
 
 		GetGame().GetCallqueue().CallLater(ApplyDelayedOrders, Math.Round(delay * 1000), false,
-			manager, m_RuleSource, group, waypoints);
+			manager, m_RuleSource, group, waypoints, false);
 		return true;
 	}
 
-	protected static void ApplyDelayedOrders(GC_LobbyManager manager, GC_MissionRuleEngine source, AIGroup group, array<string> waypoints)
+	void QueueInitialOrders(AIGroup group, array<string> waypoints, float delay)
 	{
-		// A failed spawn rolls back its new group before any delayed orders run.
-		if (group && manager && manager == GC_LobbyManager.GetManager() && manager.GC_HasFrameworkSource(source)
-			&& manager.GetLobbyPhase() == SCR_EGameModeState.GAME)
-			GC_WaypointOrders.Apply(group, waypoints);
+		if (!waypoints || waypoints.IsEmpty())
+			return;
+		GC_InitialCrewOrders orders = new GC_InitialCrewOrders();
+		orders.m_Group = group;
+		orders.m_aWaypoints = waypoints;
+		orders.m_fDelay = delay;
+		m_aInitialOrders.Insert(orders);
+	}
+
+	void Commit()
+	{
+		if (m_aInitialOrders.IsEmpty())
+			return;
+		GC_LobbyManager manager = GC_LobbyManager.GetManager();
+		if (!manager || !manager.GC_HasFrameworkSource(m_RuleSource))
+			return;
+		foreach (GC_InitialCrewOrders orders : m_aInitialOrders)
+		{
+			GetGame().GetCallqueue().CallLater(ApplyDelayedOrders, Math.Round(orders.m_fDelay * 1000), false,
+				manager, m_RuleSource, orders.m_Group, orders.m_aWaypoints, true);
+		}
+	}
+
+	protected static void ApplyDelayedOrders(GC_LobbyManager manager, GC_MissionRuleEngine source, AIGroup group,
+		array<string> waypoints, bool initialOnly)
+	{
+		if (!group || !manager || manager != GC_LobbyManager.GetManager() || !manager.GC_HasFrameworkSource(source)
+			|| manager.GetLobbyPhase() != SCR_EGameModeState.GAME)
+			return;
+		if (initialOnly)
+		{
+			array<AIWaypoint> existing = {};
+			group.GetWaypoints(existing);
+			if (!existing.IsEmpty())
+				return;
+		}
+		GC_WaypointOrders.Apply(group, waypoints);
 	}
 
 	//------------------------------------------------------------------------------------------------

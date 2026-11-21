@@ -424,6 +424,8 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_randomized.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('2B9DB09AC8BEA673', 'Prefabs/Vehicles/Tracked/T-72A/T72A_FIA.et'): (
+        'WCS_T-72_5E0AB16BEB16D6A4', '2B9DB09AC8BEA673', 'Prefabs/Vehicles/Tracked/T72A/T72A_FIA.et'),
     ('8A7ECB6BDF6ADC0F', 'Assets/Weapons/Launchers/9K38_IGLA/IGLA.xob'): (
         'WCS_Armaments_629B2BA37EFFD577', '8A7ECB6BDF6ADC0F',
         'Assets/Weapons/Launchers/9K38_IGLA/9K38_IGLA.xob'),
@@ -1522,6 +1524,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                       'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in group_waypoints], **term})
         if config is not None:
             audit[-1]['crewWaypoints'] = [point for group in crew_groups for point in group['waypoints']]
+            audit[-1]['crewGroups'] = crew_groups
             if waypoints:
                 # The legacy spawner applies this field only to spawned AI group entities.
                 audit[-1]['ignoredVehicleGroupWaypoints'] = [point[1:-1] for point in waypoints]
@@ -2519,6 +2522,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     prefab_spawns = [{**item, 'startupChoice': event['flag'] if event['trigger'] == 'startup choice' else None}
                      for event in rules.values() for item in event.get('convertedActions', []) if 'spawnAnchor' in item]
     prefab_spawns.extend(spawner_audit)
+    named_crew = {group['groupName'] for spawn in prefab_spawns for group in spawn.get('crewGroups', ())
+                  if 'groupName' in group}
     spawn_guids = {REF.fullmatch(item['prefab'])[1].upper() for item in prefab_spawns}
     for resource, asset in sorted(spawned_assets.items()):
         if resource not in roster_assets and asset['flag'] in used_flags and resource not in spawn_guids:
@@ -2575,6 +2580,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         for item in prefab_spawns:
             if item['spawnName']:
                 spawned_names[item['spawnName']].append(item['startupChoice'])
+        for name in sorted(named_crew & (named.keys() | spawned_names.keys())):
+            blockers.append({'rule': 'named crew group', 'file': world,
+                             'detail': 'crew group name conflicts with another entity: ' + name})
         for spawn in prefab_spawns:
             anchor, name = spawn['spawnAnchor'], spawn['spawnName']
             choices = spawned_names[name]
@@ -2703,6 +2711,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(event.get('waypointAssignments') and event.get('trigger') not in ('Match start', 'dormant')
            for event in rules.values()):
         remaining.append('Compare waypoint assignment timing and order after the event condition becomes true.')
+    if named_crew:
+        remaining.append('Compare named crew groups across vehicle spawns, initial routes and rollback.')
     if damage_flags:
         remaining.append('Compare damage notification timing in Match and confirm no objective damage during staging.')
     if any(asset.get('playable') for asset in roster_assets.values()):

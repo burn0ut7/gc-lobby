@@ -208,6 +208,8 @@ def main():
             except ValueError:
                 return None
             return path
+        if resource not in locally_owned and (alias := asset_aliases.get((resource, path))) and alias[0] == resource:
+            path = alias[1]
         return batch.spawn_resource(source, dev, source_units, dev_units, stock, resource, path, objectives,
                                     workshop_spawn_resources)
 
