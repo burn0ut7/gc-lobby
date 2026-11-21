@@ -14,7 +14,7 @@ from briefings import block_end
 from catalog import GC_HEADER, REF, SOURCE_TEXT, Snapshot, TYPES
 from dependencies import dependency_resources
 from install_batch import resource_databases, unregistered_references
-from launchers import GENERATED, META_NAME, WORLD_REF, launcher
+from launchers import GENERATED, META_NAME, WORLD_REF, launcher, registered_identity
 from scenery import StockPrefabs
 from terrain_parents import LONGMOOR_PARENT, LONGMOOR_PROVIDER, has_reviewed_longmoor, is_longmoor_subscene
 
@@ -95,10 +95,11 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
         ref = WORLD_REF.search(target.read(header))
         if not ref or ref[2].upper() != resource or ref[3] != world:
             issues.append('Dev launcher points to a different world identity or path')
+    world_registered = registered_identity(target, resource, world)
     if world not in target.files:
         issues.append('Dev world missing')
-    elif target.resources.get(resource) != [world]:
-        issues.append('Dev world metadata does not uniquely register the launcher identity')
+    elif not world_registered:
+        issues.append('Dev world metadata does not uniquely register the launcher identity and path')
     before, _, _ = inspect(source, incoming)
     after, kinds, refs = inspect(target, outgoing)
     legacy = sorted(kind for kind in kinds if LEGACY.match(kind))
@@ -141,9 +142,8 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
         body = target.read(header)
         identity = META_NAME.search(target.read(header + '.meta')) if header + '.meta' in target.files else None
         metadata = {
-            'registeredLauncher': bool(identity and identity[3] == header
-                                       and target.resources.get(identity[2].upper()) == [header]),
-            'registeredWorld': target.resources.get(resource) == [world],
+            'registeredLauncher': bool(identity and registered_identity(target, identity[2], header)),
+            'registeredWorld': world_registered,
             'gcMissionHeader': bool(GC_HEADER.match(body)),
             'generatedSnapshot': bool(re.search(
                 r'^\s*m_GC_GeneratedMetadata\s+GC_GeneratedMissionMetadata(?:\s+"[^"]+")?\s*\{', body, re.M)),

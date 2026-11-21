@@ -37,6 +37,13 @@ def replace_reference(text, pattern, guid, path):
     return text[:match.start(2)] + guid + '}' + path + text[match.end(3):]
 
 
+def registered_identity(snapshot, guid, path):
+    if snapshot.resources.get(guid.upper()) != [path] or path + '.meta' not in snapshot.files:
+        return False
+    identity = META_NAME.search(snapshot.read(path + '.meta'))
+    return bool(identity and identity[2].upper() == guid.upper() and identity[3] == path)
+
+
 def native_header(body):
     match = LEGACY_HEADER_TYPE.match(body)
     if not match:
@@ -159,8 +166,8 @@ def prepare_metadata_headers(dev, plan, headers, capture=None):
         body = dev.read_raw(header)
         world = WORLD_REF.search(dev.read(header))
         identity = META_NAME.search(dev.read(header + '.meta')) if header + '.meta' in dev.files else None
-        if (not identity or identity[3] != header or dev.resources.get(identity[2].upper()) != [header]
-                or not world or dev.resources.get(world[2].upper()) != [world[3]]):
+        if (not identity or not registered_identity(dev, identity[2], header)
+                or not world or not registered_identity(dev, world[2], world[3])):
             raise ValueError(f'{header} has a missing or ambiguous launcher or world registration')
         if GC_HEADER_TYPE.match(body):
             if capture:

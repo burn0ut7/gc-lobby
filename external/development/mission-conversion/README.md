@@ -71,6 +71,14 @@ The stage removes the excluded addon and any root dependency that requires it. I
 
 Merge a native metadata capture from an isolated copy of the same Dev files with the same command and `--native-exports $capture`. Supply header paths to select a subset. The merger verifies the captured world, local layers, referenced resources and registration files against Dev. It copies only the generated snapshot so a Workbench re-save cannot remove legacy catalogue fields from the Dev header. After committing the merged header and rerunning the audit, export the file-cleared headers that have snapshots through the standard launcher.
 
+Use the batch installer to merge and apply captures without copying individual headers. The command previews changes by default. Add `--apply` to write the audited batch to a clean Missions checkout, then commit it and rerun the audit.
+
+    python "$tools/install_metadata.py" --missions $repo --audit "$output/plan.json" --capture $capture $headers
+
+The installer applied the 18 snapshots in Missions Dev commit `e9f3e1f3`. The dry run left the checkout clean. A modified captured layer failed verification, and a simulated later write failure restored the earlier writes.
+
+Race Day Kunar's first launcher export found its original world path in the renamed world's registration file. Missions Dev commit `7147e3a7` corrected the registered path and kept the world GUID. The audit and capture installer now check both the path and the unique GUID registration.
+
     & "$tools/export_metadata.ps1" -Missions $repo -Plan "$output/plan.json" -Output $portableStage
 
 For authored catalogue captures, pass the catalogue staging report as `-CatalogueReport`. The exporter compares the authored source blobs against the committed mission and verifies that each non-stock provider appears in the portable addon's required list before publishing the file.
@@ -110,6 +118,8 @@ The batch converter retains rotated and uniformly scaled map shapes and validate
 The mode rule preserves verified legacy faction, radio, chat, preview and editor child settings using the corresponding native Lobby entities. The published legacy Lobby placement and base-game preview prefab provide the reference defaults. Framework transforms can be omitted when every event was converted because the legacy framework does not use its own transform. `m_safeStartTime` was inactive in the published GC Core character controller. Its only call to `HandleSafestart` is commented out, and the legacy mission scripts contain no callers. The mode keeps the independent staging countdown. Hall Boss and Hall Boss Mines retain 75 advertised players and all 47 authored slots each. Capacity approvals check the original header and both roster layer hashes.
 
 The ten Roulette worlds share the authored `GC_R_Manager` and map-specific scenario choices. Their briefing and mode blockers cover a shared runtime migration. The legacy manager rerolls seeded scenarios, regenerates groups, spawns descriptions and map overlays, and builds capture, casualty and time-limit outcomes through the old framework. Keep its map-specific configuration and authored command descriptions with the runtime port. Verify that the shared generator publishes the roster before role selection, replaces only its own state on reroll, and resolves outcomes in Match. The old sphere queries and global player controller hook require supported replacements.
+
+The mission-owned APC crew characters in Heaven and Hell and Hot Boxes, plus the gunner in Abad Day in Kunar US TVT, share the unresolved DCU rifleman parent `EA6EF9C87D023B9B`. The installed Units archive registers the similarly named playable wrapper as `62DF528A4FF16F25`. Units commit `ffb3a751` confirms that wrapper already inherited the missing parent. Redirecting the reference to the wrapper would leave the underlying appearance and equipment unresolved. The exact parent or a verified equivalent remains necessary to clear these roles.
 
 Five HotMic missions define numbered framework callbacks directly in their legacy `default.layer`. The published TilW framework dispatches these callbacks through `RequestRunScript` and applies its per-number rerun setting. Their authored effects require native replacements before the event converter can clear them.
 
