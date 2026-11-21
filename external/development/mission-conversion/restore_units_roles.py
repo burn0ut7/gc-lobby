@@ -21,23 +21,36 @@ DIRECTORY = 'Prefabs/Characters/Factions/OPFOR/USSR_Army/MotorRifle_MSV80/Legacy
 DEPUTY = '07299990D00B0823'
 MEDIC = 'D1BA3D1164545A8D'
 OLD_LEADER = 'DF8E65CA90B55E3B'
+MORTAR_FDC = '74D7F430C3E7D1E5'
+MORTAR_CREW = '917178E57AB126D9'
+MORTAR_ROLES = {
+    MORTAR_FDC: 'MortarSL',
+    MORTAR_CREW: 'MortarCrew',
+    '5888F75B9942CE7D': 'RTO',
+    'A491F9108F01E180': 'Rifleman',
+}
 AUTHORED_DIRECTORY = 'Prefabs/Characters/Factions/OPFOR/USSR_Army/MotorRifle_1980/'
 AUTHORED_PATHS = {
     OLD_LEADER: AUTHORED_DIRECTORY + 'Character_USSR_MSV80_PL_P.et',
     DEPUTY: AUTHORED_DIRECTORY + 'Character_USSR_MSV80_DPL_P.et',
     MEDIC: AUTHORED_DIRECTORY + 'Character_USSR_MSV80_Medic_P.et',
+    **{role: AUTHORED_DIRECTORY + f'Character_USSR_MSV80_{MORTAR_ROLES[role]}_P.et'
+       for role in (MORTAR_FDC, MORTAR_CREW)},
 }
 RESTORED = {
     OLD_LEADER: (guid('Units/legacy/' + OLD_LEADER), DIRECTORY + 'Character_USSR_Legacy_MSV80_PL.et'),
     DEPUTY: (DEPUTY, DIRECTORY + 'Character_USSR_Legacy_MSV80_DPL.et'),
     MEDIC: (MEDIC, DIRECTORY + 'Character_USSR_Legacy_MSV80_Medic.et'),
+    **{role: (guid('Units/legacy/' + role), DIRECTORY + f'Character_USSR_Legacy_MSV80_{name}.et')
+       for role, name in MORTAR_ROLES.items()},
 }
 
 
-def historical_prefabs(repo, stock):
+def historical_prefabs(repo, stock, roles=RESTORED):
     archive = Snapshot(repo, ARCHIVE)
     files = {}
-    for original, (resource, destination) in RESTORED.items():
+    for original in roles:
+        resource, destination = RESTORED[original]
         path = only_path(archive, original)
         body = archive.read(path)
         header = body.partition('\n')[0]
@@ -46,6 +59,9 @@ def historical_prefabs(repo, stock):
         parent = REF.search(header)
         if original == DEPUTY and parent[1].upper() == OLD_LEADER:
             native = RESTORED[OLD_LEADER]
+        elif (original in MORTAR_ROLES and parent[1].upper() in MORTAR_ROLES
+              and parent[2] == AUTHORED_DIRECTORY + f'Character_USSR_MSV80_{MORTAR_ROLES[parent[1].upper()]}_P.et'):
+            native = RESTORED[parent[1].upper()]
         else:
             native = stock_character(parent[1], parent[2], stock)
         if not native:
@@ -59,13 +75,18 @@ def historical_prefabs(repo, stock):
 
 
 def verified_roles(units, stock):
-    expected = {resource: path for resource, path in RESTORED.values()}
-    if not stock or any(units.resources.get(guid) != [path] for guid, path in expected.items()):
+    if not stock:
         return {}
-    for path, body in historical_prefabs(units.repo, stock).items():
-        if path not in units.files or units.read(path) != body:
-            raise ValueError('archived loadout differs from the reviewed recovery: ' + path)
-    return {(original, path): RESTORED[original] for original, path in AUTHORED_PATHS.items()}
+    verified = {}
+    for roles in ((OLD_LEADER, DEPUTY, MEDIC), MORTAR_ROLES):
+        if any(units.resources.get(resource) != [path] for resource, path in (RESTORED[role] for role in roles)):
+            continue
+        for path, body in historical_prefabs(units.repo, stock, roles).items():
+            if path not in units.files or units.read(path) != body:
+                raise ValueError('archived loadout differs from the reviewed recovery: ' + path)
+        verified.update({(original, path): RESTORED[original] for original, path in AUTHORED_PATHS.items()
+                         if original in roles})
+    return verified
 
 
 def verified_aircrew_roles(source, units, stock, mission_owned):

@@ -209,6 +209,14 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/VDV Blockade/VDVBlockadeEvent.conf': (
+        'f5c78882ccc913c7ddc1579744ebb99da98d1fb7',
+        (('worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/Players_Soviets/OPFOR_Players.layer',
+          '73d37e3d9a18d950124edbc54bfec66c6d83241c'),
+         ('worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/Players_UK/UK_Players.layer',
+          '1a268e9159d50cdd4c20d950767c807503336ebb')),
+        94, 128,
+    ),
     'Missions/Delfer/Topdown/Topdown.conf': (
         '8e0fde58ddfacdeba1baaca5f7e71af31efb62aa',
         (('worlds/Delfer/Topdown/Topdown_Layers/blufor_players.layer',
@@ -902,6 +910,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/HitTheMan/VDV Blockade/t_picea_abies_3f_high_HTM.et':
+        'cb1cdb2ae1479ec1b3eb4a0c67131fc126ed64a84fee0dd7aebc276f34d5ff12',
     'worlds/FSM/Prefabs/Weapons/Explosives/DemoBlock_M112/FSM_DemoBlock_M112.et':
         'b0f3de095593e9567db7ee6d08c54f12a0cc01d59b13f1af973f45ca64b713fb',
     'worlds/TheLocalPub/RailroadReactions/Prefabs/AI/Groups/MSV_Flora_RifleSquad.et':
@@ -2888,11 +2898,13 @@ MODE_SINGLETONS = {
     'SCR_EditorSettingsEntity': ('61B4E967E6C20362', '61B4E967E6C20362', '', ['   m_bIsUnlimitedEditorLegal 1']),
 }
 NO_PHOTO_EDITOR = '{1197E0F8B1D64714}Prefabs/Editor/GC_EditorManagerNoPhoto.et'
+STAGED_ACCESS_EDITOR = '{23C09F78414E6B35}Prefabs/Editor/GC_EditorManagerStagedAccess.et'
 
 
-def mode_children(lines, disable_photo=False):
+def mode_children(lines, disable_photo=False, lock_editor=False):
     output = [' {']
     seen = set()
+    editor_prefab = NO_PHOTO_EDITOR if disable_photo else STAGED_ACCESS_EDITOR if lock_editor else None
     index = 1
     while index < len(lines) - 1:
         match = re.fullmatch(r'  (\w+)(?: "[\da-fA-F]{16}")? \{', lines[index])
@@ -2923,16 +2935,20 @@ def mode_children(lines, disable_photo=False):
                            for field in fields[1:])):
                 raise ValueError('custom legacy ' + kind + ' settings')
             output.extend([f'  {kind}{prefab} {{', f'   ID "{current}"', *fields[1:], *defaults])
-            if kind == 'SCR_EditorSettingsEntity' and disable_photo:
-                output.append(f'   m_EditorManagerPrefab "{NO_PHOTO_EDITOR}"')
+            if kind == 'SCR_EditorSettingsEntity' and editor_prefab:
+                output.append(f'   m_EditorManagerPrefab "{editor_prefab}"')
             output.append('  }')
         else:
             raise ValueError('custom legacy mode child: ' + kind)
         index = end + 1
-    if not seen:
-        raise ValueError('empty legacy mode children')
     if disable_photo and 'SCR_EditorSettingsEntity' not in seen:
         raise ValueError('disabled ArmaVision needs a verified editor settings placement')
+    if lock_editor and 'SCR_EditorSettingsEntity' not in seen:
+        _, identity, _, defaults = MODE_SINGLETONS['SCR_EditorSettingsEntity']
+        output.extend(['  SCR_EditorSettingsEntity {', f'   ID "{identity}"', *defaults,
+                       f'   m_EditorManagerPrefab "{editor_prefab}"', '  }'])
+    elif not seen:
+        raise ValueError('empty legacy mode children')
     return '\n'.join([*output, ' }', ''])
 
 
@@ -2943,6 +2959,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     weather, environment, freeze = '', '', 0
     child_placements = []
     disable_photo = None
+    lock_editor = None
     transform = {}
     immediate_release = False
     construction = {}
@@ -3017,6 +3034,8 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             safe_start_seen = True
         elif re.fullmatch(r' m_bDisableArmaVision [01]', line) and disable_photo is None:
             disable_photo = line.endswith(' 1')
+        elif re.fullmatch(r' m_bDisableBuildingModeAfterFreezeTime [01]', line) and lock_editor is None:
+            lock_editor = line.endswith(' 1')
         elif line == ' m_aDisabledResourceTypes {' and not disabled_resources:
             end = block_end(root, index)
             values = ' '.join(field.strip() for field in root[index + 1:end]).split()
@@ -3038,7 +3057,12 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         index += 1
     if disable_photo and not child_placements:
         raise ValueError('disabled ArmaVision needs a verified editor settings placement')
-    children = mode_children(child_placements, disable_photo) if child_placements else ''
+    if lock_editor and (freeze > 3600 or not (freeze or immediate_release)
+                        and '{9C2001FE7A2F2281}Prefabs/MP/Modes/PS_GameMode_Lobby.et' not in root[0]):
+        raise ValueError('limited editor lock requires a verified staging duration')
+    children = ''
+    if child_placements or lock_editor:
+        children = mode_children(child_placements or [' {', ' }'], disable_photo, lock_editor)
     jip_fields = ''
     if jip:
         mode = LEGACY_JIP_MODES.get(jip.get('m_eJIPState', 'Manual'))
@@ -3089,12 +3113,14 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         settings += f'''  SCR_PlayersRestrictionZoneManagerComponent "{{{guid(key + '/manager')}}}" {{
   }}
 '''
-    if freeze:
-        authored = ('m_fAuthoredCountdownSeconds' if isinstance(freeze, Decimal) else 'm_iAuthoredCountdownSeconds')
-        settings += f'''  GC_LobbyFreezeComponent "{{E81E75BC287148D0}}" {{
-   {authored} {freeze:f}
-  }}
-'''
+    if freeze or lock_editor:
+        settings += '  GC_LobbyFreezeComponent "{E81E75BC287148D0}" {\n'
+        if freeze:
+            authored = ('m_fAuthoredCountdownSeconds' if isinstance(freeze, Decimal) else 'm_iAuthoredCountdownSeconds')
+            settings += f'   {authored} {freeze:f}\n'
+        if lock_editor:
+            settings += '   m_bLockLimitedEditorAfterStaging 1\n'
+        settings += '  }\n'
     if zones:
         names = '\n'.join(f'        "{name}"' for name in zones)
         timer = f'''     m_aConditions {{
@@ -3824,6 +3850,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare navmesh rebuilds for map shape placements.')
     if mode and any(line.startswith((' m_iReconnectTime ', ' m_iReconnectTimeAfterBriefing ')) for line in mode):
         remaining.append('Compare reconnect reservations before and after entering Match.')
+    if mode and ' m_bDisableBuildingModeAfterFreezeTime 1' in mode:
+        remaining.append('Compare limited editor access before and after authored staging, including late joins and Game Master access.')
     if mode and any(line.strip() in ('m_bOverrideGeocoords 1', 'm_bOverrideTimeZoneInfo 1') for line in mode):
         remaining.append('Compare geographic coordinates, local time and sunlight at mission start.')
     if any(path.endswith('.layer') and isinstance(body, str) and 'GC_AOLimitEntity' in body

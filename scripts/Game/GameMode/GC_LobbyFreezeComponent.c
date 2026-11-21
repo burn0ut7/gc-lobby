@@ -13,6 +13,8 @@ class GC_LobbyFreezeComponent : ScriptComponent
 	protected int m_iAuthoredCountdownSeconds;
 	[Attribute("0", UIWidgets.SpinBox, "Optional authored countdown with fractional seconds. Positive values take precedence over the whole-second countdown.", "0 3600 0.001")]
 	protected float m_fAuthoredCountdownSeconds;
+	[Attribute("0", UIWidgets.CheckBox, "Close and lock the limited editor when authored staging ends.")]
+	protected bool m_bLockLimitedEditorAfterStaging;
 	[RplProp(onRplName: "OnStateChanged")]
 	protected int m_iConfiguredSeconds;
 	[RplProp(onRplName: "OnStateChanged")]
@@ -29,6 +31,7 @@ class GC_LobbyFreezeComponent : ScriptComponent
 	protected float m_fSecondElapsed;
 	protected float m_fBoundaryElapsed;
 	protected bool m_bShutdown;
+	protected bool m_bClosedStagingEditors;
 	protected ref map<IEntity, vector> m_mSafePositions = new map<IEntity, vector>();
 	protected Widget m_wCountdown;
 	protected TextWidget m_wCountdownTime;
@@ -208,6 +211,7 @@ class GC_LobbyFreezeComponent : ScriptComponent
 		m_mSafePositions.Clear();
 		m_fSecondElapsed = 0;
 		m_iRemainingSeconds = 0;
+		m_bClosedStagingEditors = false;
 		if (GC_LobbyGameMode.GetGameMode().GetState() == SCR_EGameModeState.GAME && HasStagingAreas())
 			m_iRemainingSeconds = m_iConfiguredSeconds;
 		m_iRevision++;
@@ -341,10 +345,42 @@ class GC_LobbyFreezeComponent : ScriptComponent
 		float elapsed = manager.GetPhaseElapsedTime();
 		if (elapsed < 0)
 			return 0;
-		float duration = m_fAuthoredCountdownSeconds;
-		if (duration <= 0)
-			duration = m_iAuthoredCountdownSeconds;
-		return Math.Max(0, Math.Ceil(Math.Min(3600, duration) - elapsed));
+		return Math.Max(0, Math.Ceil(GetAuthoredDuration() - elapsed));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected float GetAuthoredDuration()
+	{
+		if (m_fAuthoredCountdownSeconds > 0)
+			return Math.Min(3600, m_fAuthoredCountdownSeconds);
+		return Math.Min(3600, m_iAuthoredCountdownSeconds);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	bool IsLimitedEditorLocked()
+	{
+		if (!m_bLockLimitedEditorAfterStaging || GetInstance() != this)
+			return false;
+		GC_LobbyManager manager = GC_LobbyManager.GetManager();
+		return manager && manager.GetLobbyPhase() == SCR_EGameModeState.GAME
+			&& manager.GetPhaseElapsedTime() >= Math.Max(0, GetAuthoredDuration());
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void CloseStagingEditors()
+	{
+		SCR_EditorManagerCore core = SCR_EditorManagerCore.Cast(SCR_EditorManagerCore.GetInstance(SCR_EditorManagerCore));
+		if (!core)
+			return;
+		m_bClosedStagingEditors = true;
+		array<int> players = {};
+		GetGame().GetPlayerManager().GetPlayers(players);
+		foreach (int playerId : players)
+		{
+			GC_EditorManagerStagedAccess editor = GC_EditorManagerStagedAccess.Cast(core.GetEditorManager(playerId));
+			if (editor)
+				editor.CloseAtStagingEnd();
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -361,6 +397,8 @@ class GC_LobbyFreezeComponent : ScriptComponent
 	override protected void EOnFrame(IEntity owner, float timeSlice)
 	{
 		UpdateCountdownPresentation();
+		if (Replication.IsServer() && !m_bClosedStagingEditors && IsLimitedEditorLocked())
+			CloseStagingEditors();
 		if (GetInstance() != this || !IsFreezeActive())
 			return;
 		if (!Replication.IsServer())
