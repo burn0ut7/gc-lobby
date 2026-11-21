@@ -153,7 +153,11 @@ def main():
             parser.error(str(exc))
         if rhs_database:
             report['rhsResourceDatabaseSHA256'] = sha256(rhs_database.data).hexdigest()
-    stock_ai = {'22E43956740A6794': 'Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized.et'}
+    stock_ai = {
+        '22E43956740A6794': 'Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized.et',
+        '8A97F7055F1A003A': 'Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_CottonShirt_6.et',
+        '2CDFBF355F3410DD': 'Prefabs/Characters/Factions/CIV/Dockworker/Character_CIV_Dockworker_2.et',
+    }
     stock_ai.update({
         guid: f'Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_{role}.et'
         for guid, role in {

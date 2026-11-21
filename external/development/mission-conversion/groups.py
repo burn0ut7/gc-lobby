@@ -143,18 +143,25 @@ def rhs_ai_characters(workshop):
     return {guid: path for guid, path in characters.items() if registry.contains(guid, path)}, registry
 
 
-def verified_stock_ai_group(guid, path, stock, owned_resources, rhs=None):
+def verified_stock_ai_group(guid, path, stock, owned_resources, rhs=None, *, inherited_slots=True):
     rhs_spec = RHS_AI_GROUPS.get(guid)
     spec = rhs_spec or STOCK_AI_GROUPS.get(guid)
     provider = rhs if rhs_spec else stock
     if not spec or not provider or path != spec['path'] or not provider.contains(guid, path):
         return None
-    references = [(guid, path), *spec['inheritedGroups'], *spec['slots']]
-    if all((provider.contains(resource, registered_path) or (stock and stock.contains(resource, registered_path)))
-           and not any(resource in owned for owned in owned_resources)
-           for resource, registered_path in references):
+    def registered(reference):
+        resource, registered_path = reference
+        return ((provider.contains(resource, registered_path) or (stock and stock.contains(resource, registered_path)))
+                and not any(resource in owned for owned in owned_resources))
+
+    if not all(registered(ref) for ref in [(guid, path), *spec['inheritedGroups']]):
+        return None
+    unverified_slots = {slot[0] for slot in spec['slots'] if not registered(slot)}
+    if not unverified_slots:
         return spec
-    return None
+    if inherited_slots:
+        return None
+    return {**spec, 'unverifiedSlots': unverified_slots}
 
 
 def only_path(snapshot, guid):
@@ -364,7 +371,7 @@ def native_group_component(lines, start, end):
     if block_end(lines, start + 1) != end - 1:
         return False
     index = start + 2
-    found_labels = found_symbol = False
+    found_labels = found_auto_labels = found_symbol = False
     while index < end - 1:
         token = lines[index].strip()
         if token == 'm_aAuthoredLabels {' and not found_labels:
@@ -375,6 +382,10 @@ def native_group_component(lines, start, end):
                 return False
             found_labels = True
             index = stop + 1
+        elif (token == 'm_aAutoLabels {' and not found_auto_labels
+              and lines[index + 1].strip() == '}'):
+            found_auto_labels = True
+            index += 2
         elif EDITABLE_UI_FIELD.fullmatch(token):
             index += 1
         elif MILITARY_SYMBOL.fullmatch(token) and not found_symbol:
@@ -749,10 +760,18 @@ def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_
 def convert_registered_group(lines, guid, source_units, dev_units, stock, locally_owned, external_ai,
                              stock_group, reviewed_ai_members, forced_external):
     rosters = [index for index, line in enumerate(lines) if line.strip() == 'm_aUnitPrefabSlots {']
+    entries = ''
     authored_slots = []
     if len(rosters) == 1:
         start, = rosters
-        authored_slots = REF.findall('\n'.join(lines[start + 1:block_end(lines, start)]))
+        entries = '\n'.join(lines[start + 1:block_end(lines, start)])
+        authored_slots = REF.findall(entries)
+    unverified_slots = stock_group.get('unverifiedSlots')
+    if unverified_slots and (
+            not authored_slots or REF.sub('', entries).strip()
+            or any(line.strip().startswith('m_aUnitPrefabSlots +') for line in lines)
+            or any(resource.upper() in unverified_slots for resource, _ in authored_slots)):
+        raise ValueError('unverified native AI group requires a complete replacement roster ' + guid)
     all_playable = bool(authored_slots) and all(
         resource.upper() in source_units.resources and legacy_member(source_units, resource.upper(), False)
         for resource, _ in authored_slots)
@@ -811,8 +830,9 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
         native_group = allow_stock_ai and (guid in STOCK_AI_GROUPS or guid in RHS_AI_GROUPS)
         stock_group = None
         if native_group and guid not in source_units.resources and guid not in dev_units.resources:
-            stock_group = verified_stock_ai_group(guid, REF.search(lines[i])[2], stock,
-                                                  (locally_owned, source_units.resources, dev_units.resources), rhs)
+            path = REF.search(lines[i])[2]
+            owned = (locally_owned, source_units.resources, dev_units.resources)
+            stock_group = verified_stock_ai_group(guid, path, stock, owned, rhs, inherited_slots=False)
             if not stock_group:
                 raise ValueError('unverified native AI group ancestry ' + guid)
         if spec:
