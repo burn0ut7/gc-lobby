@@ -30,6 +30,7 @@ WORKSHOP_VEHICLES = {
     '2B9DB09AC8BEA673': ('WCS_T-72_5E0AB16BEB16D6A4', 'Prefabs/Vehicles/Tracked/T72A/T72A_FIA.et'),
     '31F0866273C46D76': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/K17/APC_K17_Berezok.et'),
     '3312ADBF53A16DD8': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/LAV25/LAV25_RHS.et'),
+    '3868E03D9A4AF186': ('WCS_BMP-1_5E524E4FEECCA92B', 'Prefabs/Vehicles/Tracked/BMP1/BMP1P_Base.et'),
     '447CFE8D73F95C3E': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_AFRF.et'),
     '5CFD8CB5C3E55A4E': ('WCS_M2A2_63120AE07E6C0966', 'Prefabs/Vehicles/Tracked/M2A2/M2A2_MERDC.et'),
     '6B7CD408BDFB94F5': ('TacticalFlava-TIGR_DEADC0DE00000003',
@@ -133,6 +134,12 @@ USSR_BTR70_LEAF = '6ff98c749e6e58fb337ad80c11bdb2cabcf5beebe84afdf0fc8a1e6e917bd
 CDF_BTR70_LEAF = 'da0a998e4f08c0ec1940ba0ee8aee889a9a8c5cbf727df7f7cb9df90c98a1389'
 BTR_DUGOUT = '7CF4F44DAD409258'
 BTR_DUGOUT_LEAF = '6d19ae2e9bcfc0d707ed9d86d8724b8b49f4c132c33dd6cdaab50730e48e7155'
+STOCK_VEHICLE_HOSTS = {
+    ('39F7EE885940DC8F', 'Prefabs/Structures/Military/Fortifications/DirtCover_01/DirtCover_01_long_v1.et'),
+}
+VERIFIED_DEFAULT_CREW = {
+    ('B47110AA1A806556', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_FIA.et'),
+}
 NVA_BTR70_LEAF = 'ac360b5e120fa0f5ba97deee2e1ee68ef6d415fd9e856710c5104efdd8ea551f'
 NVA_T72A_LEAF = '30fdb038e061492f404c19340d7b0e1da08746c49abd8f57faf46fb7264d38a2'
 NVA_BRDM2_LEAF = 'bbe74f54370ac1a41343d200b834335650508e87632449c8781d5bae490371e4'
@@ -219,7 +226,10 @@ def character_reference(guid, path, source_units, dev_units, stock, owned, exter
             raise ValueError('crew character ancestry needs review ' + guid)
         canonical, = dev_units.resources[guid]
         if PurePosixPath(path).name != PurePosixPath(canonical).name:
-            raise ValueError('crew character path needs review ' + guid)
+            titles = NVA_CREW_ROLE_PATHS.get(guid, ())
+            prefix = 'Prefabs/Characters/Factions/OPFOR/GC_NVA/Character_GC_NVA_'
+            if (path, canonical) != tuple(prefix + title + '.et' for title in titles):
+                raise ValueError('crew character path needs review ' + guid)
         return f'"{{{guid}}}{canonical}"'
     if not stock.contains(guid, path) and (not external_ai or external_ai.get(guid) != path):
         raise ValueError('unregistered crew character ' + guid)
@@ -241,11 +251,13 @@ def crew_roles(authored, flags, resolve_character, allow_empty=False, allow_all_
     return [resolve_character(role[1].upper(), role[2]) if role[1] else '""' for role in roles]
 
 
-def crew_station(lines, resolve_character, allow_empty=False, placed=False):
+def crew_station(lines, resolve_character, allow_empty=False, placed=False, allow_default_crew=False):
     station = contents(lines, 'TILW_CrewStation ' + SERIALIZED_ID)
     values = properties(station, {'m_characters', *('m_allow' + seat for seat in SEAT_TYPES)})
     flags = {seat: values.get('m_allow' + seat, '1') for seat in SEAT_TYPES}
     authored = values.get('m_characters', '')
+    if not authored and allow_default_crew and '1' in flags.values() and set(flags.values()) <= {'0', '1'}:
+        return flags, []
     if authored.startswith('""') and not placed:
         raise ValueError('legacy station suppresses crew when the first seat is blank')
     return flags, crew_roles(authored, flags, resolve_character, allow_empty, allow_all_blank=placed)
@@ -315,7 +327,7 @@ def split_crew_block(lines, field):
     return lines[start + 1:end], lines[:start] + lines[end + 1:]
 
 
-def render_crew_config(config, key, resolve_character, *, shadowed_names=(), placed=False):
+def render_crew_config(config, key, resolve_character, *, shadowed_names=(), placed=False, allow_default_crew=False):
     groups, fields = split_crew_block(config, 'm_crewGroups')
     settings = properties(fields, {'m_noTurretDismount', 'm_useIdleGroups'})
     seated = settings.get('m_noTurretDismount', '0')
@@ -355,7 +367,8 @@ def render_crew_config(config, key, resolve_character, *, shadowed_names=(), pla
         characters = []
         while start < len(stations):
             stop = block_end(stations, start)
-            flags, roles = crew_station(stations[start:stop + 1], resolve_character, allow_empty=True, placed=placed)
+            flags, roles = crew_station(stations[start:stop + 1], resolve_character, allow_empty=True, placed=placed,
+                                        allow_default_crew=allow_default_crew)
             station_id = guid(f'{group_key}/station/{len(characters)}')
             output.extend([f'           GC_SpawnCrewStation "{{{station_id}}}" {{',
                            *(f'            m_b{native} 0' for legacy, native in
@@ -521,7 +534,8 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
         raise ValueError('crew needs a registered vehicle or composition')
     guid, path = ref[1].upper(), ref[2]
     inherited_turrets = COMPOSITION_TURRETS.get((guid, path), {}) if composition else {}
-    vehicle_host = composition and composition['kind'] == 'StaticModelEntity' and guid == BTR_DUGOUT
+    vehicle_host = (composition and composition['kind'] == 'StaticModelEntity'
+                    and (guid == BTR_DUGOUT or (guid, path) in STOCK_VEHICLE_HOSTS))
     if composition and not (vehicle_host or (composition['kind'] == 'GenericEntity'
                                               and (inherited_turrets or (guid, path) in INLINE_TURRET_HOSTS))):
         raise ValueError('crew needs a reviewed composition turret identity')

@@ -12,7 +12,7 @@ from boundaries import ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_S
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import REF, SOURCE_TEXT
 from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, render_crew_config, render_spawn, spawn_details
-from vehicle_crew import crew_config_contents
+from vehicle_crew import VERIFIED_DEFAULT_CREW, crew_config_contents
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
 from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, inheritance, reviewed_native_ancestry
@@ -132,10 +132,16 @@ WORKSHOP_SPAWN_PREFABS = {
         None, (('775DFB7F4529A122', 'Prefabs/Weapons/Rifles/L42A1/Rifle_L42A1.et'),),
     ),
     'RHS-StatusQuo_595F2BF2F44836FB': (
-        None, (('1A486F1C4D22A32A', 'Prefabs/Vehicles/Tracked/T14/VehParts/Seats/T14_seat.et'),),
+        None,
+        (('1A486F1C4D22A32A', 'Prefabs/Vehicles/Tracked/T14/VehParts/Seats/T14_seat.et'),
+         ('EDD3E14E481BDA62', 'Prefabs/Vehicles/Airplanes/FA18A/FA18A_GBU_CAS.et'),
+         ('EAD777F4CDA11F16', 'Prefabs/Vehicles/Airplanes/F22/F22_Flyby.et'),
+         ('FDD01BF3CEAB37E3', 'Prefabs/Vehicles/Airplanes/SU57/SU57_Flyby.et')),
     ),
     GMFX_PROVIDER: (
-        GMFX_DIGEST, (('DDDDBEC77B49A995', 'Prefabs/Systems/Explosions/Wrapper_Bomb_Huge.et'),),
+        GMFX_DIGEST,
+        (('DDDDBEC77B49A995', 'Prefabs/Systems/Explosions/Wrapper_Bomb_Huge.et'),
+         ('30263B4F1FB2A0F2', 'Prefabs/Systems/Artillery/ArtilleryWrapper_WTF.et')),
     ),
 }
 RHS_DAMAGE_PATHS = {
@@ -467,9 +473,19 @@ REVIEWED_CAPACITY = {
     ),
 }
 REVIEWED_MISSING_SPAWN_ANCHORS = {
+    'worlds/Til/TyroneThrust/TyroneThrust.ent': (
+        'worlds/Til/TyroneThrust/TyroneThrust_Layers/default.layer',
+        'ecde2a6f7b09a65b77a6bbf372c3ed282762daed', '6219244BFF9757BC', 'QRFSpawn',
+    ),
     'worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty.ent': (
         'worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/default.layer',
         '475f775d2eac67dd94f1161e277b32a2a8094a55', '650557F5B24BB14C', 'motar_target_8',
+    ),
+}
+REVIEWED_MISSING_ORDER_GROUPS = {
+    'worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay.ent': (
+        'worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay_Layers/default.layer',
+        '6794efd40331f9e3f20c6c14b3955b4468279d08', {'NVA_AI_7', 'NVA_AI_10', 'T72_NVA2'},
     ),
 }
 REVIEWED_MISSING_WAYPOINTS = {
@@ -760,6 +776,9 @@ WIRECUTTER_PREFAB = ('42232FFE6E7AC415', 'Prefabs/Items/Core/Wirecutters/wirecut
 LEGACY_WIRECUTTER = re.compile(
     r'\$grp GenericEntity : "\{8554ED3F088BADA6\}Prefabs/Items/Core/Wirecutters/wirecutters(?:old)?\.et" \{')
 UNITS_PREFAB_ALIASES = {
+    ('84EEEF18361F752D', 'Prefabs/Groups/OPFOR/GC_NVA/Group_GC_NVA_RifleSquad.et'): (
+        '84EEEF18361F752D', 'Prefabs/Groups/OPFOR/GC_NVA/Group_NVA_RifleSquad.et',
+        'f046a4d8717e2e9b23d830f420a53d84e454eea1acad22ab3356d896619ad845'),
     ('7A0813F1B65EA589', 'Prefabs/Groups/BLUFOR/US/Army_1985_Rifles/Group_US_Army_1985_RifleSquad.et.et'): (
         '7A0813F1B65EA589', 'Prefabs/Groups/BLUFOR/US/Deprecated/Army_1985_Rifles/Group_US_Army_1985_RifleSquad.et',
         '8f08612231343578e903ece165c370d0a48311eee482b803df90ab29dede97a7'),
@@ -1965,7 +1984,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             kind = 'GC_AIGroupSpawn' if group else 'GC_PrefabSpawn'
             if config is not None:
                 fields, crew_groups = render_crew_config(config, spawn_key, resolve_crew,
-                                                         shadowed_names=shadowed_names)
+                                                         shadowed_names=shadowed_names,
+                                                         allow_default_crew=(ref[1].upper(), ref[2]) in VERIFIED_DEFAULT_CREW)
                 kind = 'GC_CrewedVehicleSpawn'
             seconds, action = render_spawn({**details, 'delay': delay}, spawn_key, kind, fields)
             actions[seconds].extend(action)
@@ -3132,6 +3152,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     missing_waypoints = []
     missing_spawn_anchors = set()
     self_waypoints = []
+    missing_order_groups = set()
     missing_static_vehicles = []
     placed_crew_fields = []
     for path, body in draft.items():
@@ -3206,6 +3227,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     rule = 'AI group spawn' if 'groupWaypoints' in spawn else 'crewed vehicle spawn'
                     blockers.append({'rule': rule, 'file': world,
                                      'detail': 'expected one placed AI waypoint named ' + waypoint})
+        layer, blob, absent_groups = REVIEWED_MISSING_ORDER_GROUPS.get(world, (None, None, ()))
+        absent_groups = {group for group in absent_groups
+                         if source.files.get(layer) == blob and group not in named and group not in spawned_names
+                         and group not in crew_name_counts and group not in script_text(source)}
         for event in rules.values():
             if not event.get('waypointAssignments'):
                 continue
@@ -3214,8 +3239,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                              for group in spawn.get('crewGroups', ())
                              if group.get('groupName') and crew_name_counts[group['groupName']] == 1
                              and not group.get('shadowedByAnchor')}
-            gaps, no_ops = waypoint_gaps(named, event['waypointAssignments'], spawned_names,
-                                         script_text(source), earlier_crews)
+            orders = event['waypointAssignments']
+            missing_order_groups.update(action['group'] for action in orders if action['group'] in absent_groups)
+            active_orders = [action for action in orders if action['group'] not in absent_groups]
+            gaps, no_ops = waypoint_gaps(named, active_orders, spawned_names, script_text(source), earlier_crews)
             self_waypoints.extend(no_ops)
             for gap in gaps:
                 blockers.append({'rule': 'waypoint assignments', 'file': world, 'detail': gap})
@@ -3307,6 +3334,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append(f'The original static waypoint link to {target} has no authored target.')
     for target in sorted(set(self_waypoints)):
         remaining.append(f'The original assignment refers to the waypoint {target} as its group and leaves orders unchanged.')
+    for target in sorted(missing_order_groups):
+        remaining.append(f'The original waypoint assignment for {target} has no authored group and does not run.')
     for target in sorted(set(missing_static_vehicles)):
         remaining.append(f'The original static vehicle link to {target} has no mission-layer target.')
     if any(record.get('statusMessages') for trigger in row.get('captureCandidate', {}).values()

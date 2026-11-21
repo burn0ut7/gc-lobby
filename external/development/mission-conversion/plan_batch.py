@@ -100,6 +100,7 @@ def authored_file_note(note):
     return re.fullmatch(
         r'The original (?:reinforcement waypoint .+ has no authored target'
         r'|static waypoint link to .+ has no authored target'
+        r'|waypoint assignment for .+ has no authored group and does not run'
         r'|static vehicle link to .+ has no mission-layer target'
         r'|spawn at .+ has no authored anchor and does not run'
         r'|event .+ has no authored condition and does not run)\.', note
