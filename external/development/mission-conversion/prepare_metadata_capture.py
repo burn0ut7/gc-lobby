@@ -6,11 +6,12 @@ from pathlib import Path, PurePosixPath
 import re
 
 from catalog import SOURCE_TEXT, Snapshot
-from dependencies import BASE_GAME, DEPENDENCIES, checkout_project, dependency_catalogue
+from dependencies import BASE_GAME, DEPENDENCIES, checkout_project, database_project, dependency_catalogue
 from install_batch import resource_databases, unregistered_references
 from launchers import WORLD_REF
 from review import closure, inspect
 from scenery import StockPrefabs
+from terrain_parents import LONGMOOR_PARENT, has_reviewed_longmoor, is_longmoor_subscene
 
 
 AUTHORED_CATALOGUE = re.compile(r'^[ \t]*m_aEntityCatalogs\b', re.M)
@@ -50,13 +51,16 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
         raise ValueError('expected the Missions Dev and Lobby Dev dependency manifests')
 
     local, installed = dependency_catalogue((lobby, *dependencies), databases)
-    if omit:
-        selected, scope, excluded_addons = capture_dependencies(dev_dependencies, local, installed, omit)
-        if not set(base_scope) <= scope:
-            raise ValueError('capture requires Base and Lobby Dev')
-    else:
-        selected, scope, excluded_addons = base_scope, set(base_scope), set()
-    providers = [databases[0], *(db for guid, (db, _) in installed.items() if guid in scope and guid not in local)]
+    base_project = database_project(databases[0])
+    if base_project and base_project[0] == BASE_GAME:
+        installed[BASE_GAME] = databases[0], base_project[1]
+    selected, scope, excluded_addons = capture_dependencies(
+        dev_dependencies if omit else base_scope, local, installed, omit
+    )
+    if not set(base_scope) <= scope:
+        raise ValueError('capture requires Base and Lobby Dev')
+    providers = [databases[0], *(db for guid, (db, _) in installed.items()
+                                  if guid in scope and guid not in local and guid != BASE_GAME)]
     available = set()
     for repo in (dev, *(repo for guid, (repo, _) in local.items() if guid in scope)):
         available.update((guid, paths[0]) for guid, paths in repo.resources.items() if len(paths) == 1)
@@ -86,13 +90,20 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
         if catalogue_paths:
             authored_catalogues[header] = catalogue_paths
             continue
-        candidates[header] = world, paths, set(inspect(dev, paths)[2])
+        candidates[header] = world, paths, inspect(dev, paths)[2]
     missing = unregistered_references({
         ref for _, _, refs in candidates.values() for ref in refs if ref not in available
     }, providers)
+    longmoor = LONGMOOR_PARENT in missing and has_reviewed_longmoor(providers)
     eligible = {}
     for header, (world, paths, refs) in candidates.items():
-        unresolved = sorted(ref for ref in refs if ref in missing or removed_provider(ref[0]))
+        unresolved = sorted(
+            ref for ref, owners in refs.items()
+            if removed_provider(ref[0]) or (ref in missing and not (
+                longmoor and ref == LONGMOOR_PARENT and owners == {world}
+                and is_longmoor_subscene(world, dev.read(world))
+            ))
+        )
         if unresolved:
             excluded[header] = unresolved
             continue

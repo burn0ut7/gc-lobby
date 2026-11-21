@@ -31,6 +31,14 @@ def checkout_project(snapshot):
     return read_project(snapshot.read_raw(projects[0]), snapshot.repo / projects[0])
 
 
+def database_project(database):
+    projects = sorted(database.parent.glob('*.gproj'))
+    if len(projects) == 1:
+        project, = projects
+        return read_project(project.read_bytes(), project)
+    return None
+
+
 def dependency_catalogue(checkouts, databases):
     local = {}
     for snapshot in checkouts:
@@ -40,11 +48,10 @@ def dependency_catalogue(checkouts, databases):
         local[guid] = snapshot, children
     installed = {}
     for database in databases[1:]:
-        projects = sorted(database.parent.glob('*.gproj'))
-        if len(projects) != 1:
+        project = database_project(database)
+        if not project:
             continue
-        project = projects[0]
-        guid, children = read_project(project.read_bytes(), project)
+        guid, children = project
         if guid in installed:
             raise ValueError(f'multiple installed copies of dependency {guid}')
         installed[guid] = database, children
@@ -61,12 +68,9 @@ def dependency_resources(target, checkouts, databases):
     unavailable = set()
     seen = {root, BASE_GAME}
     base_requires = ()
-    base_projects = sorted(databases[0].parent.glob('*.gproj'))
-    if len(base_projects) == 1:
-        project = base_projects[0]
-        guid, children = read_project(project.read_bytes(), project)
-        if guid == BASE_GAME:
-            base_requires = children
+    base_project = database_project(databases[0])
+    if base_project and base_project[0] == BASE_GAME:
+        base_requires = base_project[1]
     pending = list(reversed((*base_requires, *requires)))
     while pending:
         guid = pending.pop()
