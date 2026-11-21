@@ -36,6 +36,7 @@ MILITARY_SYMBOL = re.compile(r'm_MilitarySymbol SCR_MilitarySymbol "\{[\dA-Fa-f]
 MILITARY_IDENTITY = re.compile(r'm_Identity (BLUFOR|OPFOR|INDFOR|CIVILIAN)')
 WRAPPERS = json.loads(Path(__file__).with_name('stock_wrappers.json').read_text(encoding='utf-8'))
 STOCK_AI_GROUPS = json.loads(Path(__file__).with_name('stock_ai_groups.json').read_text(encoding='utf-8'))
+RHS_AI_GROUPS = json.loads(Path(__file__).with_name('rhs_ai_groups.json').read_text(encoding='utf-8'))
 BASE_CHARACTER = ('37578B1666981FCE', 'Prefabs/Characters/Core/Character_Base.et')
 UK_CHARACTER_BASE = ('542CBB6908CA71D8', 'Prefabs/Characters/Factions/BLUFOR/UK_Army/Character_UK_Base.et')
 UK_REGULAR_DIRECTORY = 'Prefabs/Characters/Factions/BLUFOR/UK_Army/1989/Regulars/'
@@ -103,12 +104,14 @@ def rhs_ai_characters(workshop):
     return {guid: path for guid, path in characters.items() if registry.contains(guid, path)}, registry
 
 
-def verified_stock_ai_group(guid, path, stock, owned_resources):
-    spec = STOCK_AI_GROUPS.get(guid)
-    if not spec or not stock or path != spec['path']:
+def verified_stock_ai_group(guid, path, stock, owned_resources, rhs=None):
+    rhs_spec = RHS_AI_GROUPS.get(guid)
+    spec = rhs_spec or STOCK_AI_GROUPS.get(guid)
+    provider = rhs if rhs_spec else stock
+    if not spec or not provider or path != spec['path'] or not provider.contains(guid, path):
         return None
     references = [(guid, path), *spec['inheritedGroups'], *spec['slots']]
-    if all(stock.contains(resource, registered_path)
+    if all((provider.contains(resource, registered_path) or (stock and stock.contains(resource, registered_path)))
            and not any(resource in owned for owned in owned_resources)
            for resource, registered_path in references):
         return spec
@@ -651,7 +654,7 @@ def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_
 
 def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset(),
                 reviewed_members=None, external_ai=None, allow_stock_ai=False, restored_members=None,
-                reviewed_ai_members=None, forced_external=None, *, depth=0):
+                reviewed_ai_members=None, forced_external=None, *, rhs=None, depth=0):
     if not re.search(r'^(?:\$grp )?SCR_AIGroup\b', text, re.M):
         return None
 
@@ -670,7 +673,7 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
         nested = '\n'.join(line[len(child_prefix):] for line in fields[start + 1:stop])
         children = group_layer(nested, source_units, dev_units, stock, locally_owned, reviewed_callsigns,
                                reviewed_members, external_ai, allow_stock_ai, restored_members,
-                               reviewed_ai_members, forced_external, depth=depth + 1)
+                               reviewed_ai_members, forced_external, rhs=rhs, depth=depth + 1)
         if children is None:
             raise ValueError('unsupported child entity on a group')
         body, members = convert(fields[:start])
@@ -692,8 +695,13 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
         if guid in locally_owned:
             raise ValueError('mission-owned group ' + guid)
         spec = WRAPPERS['groups'].get(guid) if guid not in source_units.resources and stock else None
-        stock_group = (STOCK_AI_GROUPS.get(guid) if stock and allow_stock_ai and guid not in source_units.resources
-                       and guid not in dev_units.resources else None)
+        native_group = allow_stock_ai and (guid in STOCK_AI_GROUPS or guid in RHS_AI_GROUPS)
+        stock_group = None
+        if native_group and guid not in source_units.resources and guid not in dev_units.resources:
+            stock_group = verified_stock_ai_group(guid, REF.search(lines[i])[2], stock,
+                                                  (locally_owned, source_units.resources, dev_units.resources), rhs)
+            if not stock_group:
+                raise ValueError('unverified native AI group ancestry ' + guid)
         if spec:
             if REF.search(lines[i])[2].casefold() != spec['path'].casefold() or not stock.contains(*spec['parent']):
                 raise ValueError('unverified stock wrapper group ' + guid)
@@ -702,9 +710,6 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
                               stock=stock, locally_owned=locally_owned, reviewed_members=reviewed_members)
         elif stock_group:
             resource, dest = guid, stock_group['path']
-            if not verified_stock_ai_group(guid, REF.search(lines[i])[2], stock,
-                                           (locally_owned, source_units.resources, dev_units.resources)):
-                raise ValueError('unverified native AI group ancestry ' + guid)
             convert = partial(convert_ai_instance, guid=guid, source_units=source_units, dev_units=dev_units,
                               locally_owned=locally_owned, external_ai=external_ai or {},
                               stock_group=stock_group, reviewed_ai_members=reviewed_ai_members)

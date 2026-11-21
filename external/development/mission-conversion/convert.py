@@ -178,7 +178,7 @@ def main():
     def resolve_spawn(objectives, resource, path, *, group=False):
         if group:
             owners = (locally_owned, source_units.resources, dev_units.resources)
-            if verified_stock_ai_group(resource, path, stock, owners):
+            if verified_stock_ai_group(resource, path, stock, owners, rhs_database):
                 return path
             if batch.verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path):
                 return path
@@ -843,7 +843,8 @@ def main():
             return group_layer(body, source_units, dev_units, stock, locally_owned,
                                reviewed_members=reviewed_members, external_ai=external_ai,
                                allow_stock_ai=True, restored_members=restored,
-                               reviewed_ai_members=reviewed_ai_members, forced_external=forced_external)
+                               reviewed_ai_members=reviewed_ai_members, forced_external=forced_external,
+                               rhs=rhs_database)
 
         def convert_crew(block):
             return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned,

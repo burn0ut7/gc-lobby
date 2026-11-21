@@ -422,6 +422,10 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/Til/OwlsPrey/data/OwlsPrey_Mi8_1.et':
+        '98926fa48bdd73e42a0eeb98fe0b2de32e140c52387ba6c934ab0a1fd9aaaf4f',
+    'worlds/Til/OwlsPrey/data/OwlsPrey_Mi8_2.et':
+        'f178993b1d9754a987054609c3ab43b3efa95beacfc7fe3912307491f10e209b',
     'worlds/arc/SunnyWAC/Prefabs/Group_CIV.et':
         '43e9ca2c554b85e7b044960f7eb9ccfeb83b809527c02fe839f48825a70412cb',
     'worlds/HitTheMan/Prefabs/Vehicles/M113A2_APC_CDF_HTM.et':
