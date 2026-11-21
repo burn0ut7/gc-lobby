@@ -14,6 +14,7 @@ VEHICLE = re.compile(
 COMPONENT = re.compile(r'  TILW_VehicleCrewComponent (?P<id>"\{[\da-fA-F]{16}\}") \{')
 SERIALIZED_ID = r'"\{[\da-fA-F]{16}\}"'
 SEAT_TYPES = ('Pilot', 'Turret', 'Cargo')
+RHS_VEHICLES = {'9AEDF323A812F9ED': 'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2_AFRF.et'}
 
 
 def contents(lines, field):
@@ -23,7 +24,7 @@ def contents(lines, field):
     return lines[1:-1]
 
 
-def character_reference(guid, path, source_units, dev_units, stock, owned):
+def character_reference(guid, path, source_units, dev_units, stock, owned, external_ai=None):
     if guid in owned or not path.startswith('Prefabs/Characters/'):
         raise ValueError('unverified crew character ' + guid)
     if guid in source_units.resources or guid in dev_units.resources:
@@ -34,7 +35,7 @@ def character_reference(guid, path, source_units, dev_units, stock, owned):
         if PurePosixPath(path).name != PurePosixPath(canonical).name:
             raise ValueError('crew character path needs review ' + guid)
         return f'"{{{guid}}}{canonical}"'
-    if not stock.contains(guid, path):
+    if not stock.contains(guid, path) and (not external_ai or external_ai.get(guid) != path):
         raise ValueError('unregistered crew character ' + guid)
     return f'"{{{guid}}}{path}"'
 
@@ -65,25 +66,36 @@ def crew_station(lines, resolve_character, allow_empty=False):
 
 
 def render_component(component, lines, resolve_character):
-    station = lines
-    for field in (r'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID, 'm_crewGroups',
-                  'TILW_CrewGroup ' + SERIALIZED_ID, 'm_crewStations'):
+    config = contents(lines, r'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID)
+    groups = [i for i, line in enumerate(config) if line.strip() == 'm_crewGroups {']
+    if len(groups) != 1:
+        raise ValueError('crew authoring needs one m_crewGroups')
+    start = groups[0]
+    end = block_end(config, start)
+    options = properties(config[:start] + config[end + 1:], {'m_noTurretDismount', 'm_useIdleGroups'})
+    seated = options.get('m_noTurretDismount', '0')
+    if seated not in ('0', '1') or options.get('m_useIdleGroups', '1') not in ('0', '1'):
+        raise ValueError('invalid placed crew options')
+    station = config[start + 1:end]
+    for field in ('TILW_CrewGroup ' + SERIALIZED_ID, 'm_crewStations'):
         station = contents(station, field)
     flags, roles = crew_station(station, resolve_character)
     return [f'  GC_VehicleCrewComponent {component["id"]} {{',
             *(f'   m_bAllow{seat} 0' for seat in SEAT_TYPES if flags[seat] == '0'),
+            *(['   m_bKeepGunnersSeated 1'] if seated == '1' else []),
             '   m_aCharacters {', *('    ' + role for role in roles), '   }', '  }']
 
 
-def convert(block, source_units, dev_units, stock, owned):
+def convert(block, source_units, dev_units, stock, owned, rhs=None, external_ai=None):
     if not any('TILW_VehicleCrewComponent' in line for line in block):
         return block
     root = VEHICLE.fullmatch(block[0])
     if not root:
         raise ValueError('crew needs a registered stock vehicle')
     guid, path = root['guid'].upper(), root['path']
+    external_vehicle = rhs and RHS_VEHICLES.get(guid) == path and rhs.contains(guid, path)
     if (guid in owned or guid in source_units.resources or guid in dev_units.resources
-            or not stock.contains(guid, path)):
+            or not (stock.contains(guid, path) or external_vehicle)):
         raise ValueError('unverified crew vehicle ' + guid)
 
     def instance(lines):
@@ -101,7 +113,7 @@ def convert(block, source_units, dev_units, stock, owned):
         end = block_end(lines, index)
         replacement = render_component(
             component, lines[index + 1:end],
-            lambda guid, path: character_reference(guid, path, source_units, dev_units, stock, owned))
+            lambda guid, path: character_reference(guid, path, source_units, dev_units, stock, owned, external_ai))
         return [*lines[:index], *replacement, *lines[end + 1:]]
 
     if not root['group']:

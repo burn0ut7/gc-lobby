@@ -64,6 +64,10 @@ The batch rule now applies waypoint replacements after a positive one-shot captu
 
 Missions Dev commit `d26e0433` ports Le Moule Approach Redux with 62 slots. The file review verified both capture spheres and the three five-second waypoint replacements to the sawmill. The 2,825-second timeout notice remains active. The unused casualty notice stays dormant because its source condition has no flag. Live capture timing and waypoint execution remain unverified.
 
+The placed crew rule accepts verified RHS vehicle and crew identities and carries the legacy turret dismount setting into the existing GC gunner policy. It keeps compartment iteration and explicit crew order. It still holds custom crew groups, waypoint orders and unverified vehicle variants. The published TilW crew configuration supplied the original compartment checks and seating behavior. Workbench MCP compiled the change with zero errors in session `logs_2026-11-20_19-49-01`.
+
+Missions Dev commit `7b650e52` ports JEFRMCWAC with 28 slots. File review verified the two original BRDM-2 placements, six crew entries, the stay-seated settings and the unchanged native fog entity. Live crew behavior and AI casualty timing remain unverified.
+
 Desert Heat is the first installed batch draft in Missions Dev commit a07bcbdb. The installer verified every referenced GUID and path against the draft files, current addon checkouts and installed resource databases. Its existing boundary was reused and only the missing boundary was added. Two runs with different Python hash seeds reproduced the draft and inventory byte-for-byte. File review covers the full 277-launcher catalog.
 
 ## Coverage

@@ -108,6 +108,7 @@ def main():
     if stock:
         report['baseResourceDatabaseSHA256'] = sha256(stock.data).hexdigest()
     external_ai = {}
+    rhs_database = None
     if args.batch and args.workshop_addons:
         try:
             external_ai, rhs_database = rhs_ai_characters(args.workshop_addons)
@@ -708,7 +709,8 @@ def main():
                                reviewed_members=reviewed_members, external_ai=external_ai, allow_stock_ai=True)
 
         def convert_crew(block):
-            return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned)
+            return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned,
+                                        rhs_database, external_ai)
 
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
                          asset_aliases, loadouts, spawned_assets, convert_crew, delayed_extractions)

@@ -14,6 +14,9 @@ class GC_VehicleCrewComponent : ScriptComponent
 	[Attribute("1", UIWidgets.CheckBox, "Include cargo compartments.")]
 	protected bool m_bAllowCargo;
 
+	[Attribute("0", UIWidgets.CheckBox, "Keep AI gunners in their turret compartments.")]
+	protected bool m_bKeepGunnersSeated;
+
 	[Attribute("", UIWidgets.ResourceAssignArray, "Character prefabs in native compartment order.", params: "et")]
 	protected ref array<ResourceName> m_aCharacters;
 
@@ -67,7 +70,13 @@ class GC_VehicleCrewComponent : ScriptComponent
 			if (!seat || seat.IsOccupied() || !seat.IsCompartmentAccessible() || !AllowsSeat(seat.GetType()))
 				continue;
 
-			seat.SpawnCharacterInCompartment(m_aCharacters[characterIndex], group);
+			IEntity occupant = seat.SpawnCharacterInCompartment(m_aCharacters[characterIndex], group);
+			if (occupant && m_bKeepGunnersSeated && seat.GetType() == ECompartmentType.TURRET)
+			{
+				SCR_AICombatComponent combat = SCR_AICombatComponent.Cast(occupant.FindComponent(SCR_AICombatComponent));
+				if (combat)
+					combat.GC_KeepSpawnedGunnerSeated();
+			}
 			characterIndex++;
 		}
 	}
