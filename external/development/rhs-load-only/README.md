@@ -124,3 +124,39 @@ the successful pair used `ArmaReforgerServer.exe` and `ArmaReforgerSteam.exe`.
 Script-checksum validation was not disabled to obtain the release result. The
 dedicated tool retained its existing `-rpl-timeout-disable` and `-rpl-reconnect`
 client settings; the observations do not test normal network-timeout handling.
+
+## Direct PowerShell launch
+
+On 2026-11-21 Windows PowerShell 5.1 launched two missions in succession using
+one profile, the release dedicated server 1.9.0.37, and the same baseline JSON
+containing GC Core Dev. The RHS fixture acknowledged 32 non-vanilla addons
+(launch `85360472-ee1a-4753-910c-d800f610f9ba`). Arland Lobby acknowledged 27
+(launch `2369c72b-06de-4416-80c5-9bc4d5cd1f0c`). Both passed scenario, world,
+owner and exact addon-set verification. The second mission used schema 1.
+Both local processes were stopped after their receipts. No clients joined.
+
+An initial run loaded the fixture world from the Lobby checkout's nested
+`external` directory. The launcher rejected the wrong world owner despite a
+matching GUID set. For the passing runs we staged Lobby without `external` and
+rebuilt the two standalone fixture resource databases using the stock
+`-rebuild-database-only` tool.
+
+A separate loopback-bound, password-protected Workshop experiment supplied only
+Scenario Reload Menu 1.0.17 in `game.mods`. The release server downloaded it and
+its native dependency Server Admin Tools 1.7.1 into the selected
+`-addonDownloadDir` cache, mounted both and entered the online game state on a
+stock scenario. A separate process given both `-config` and `-addons` exited
+with the fatal diagnostic `-config cannot be used together with addons!`.
+A published GC mission completing the receipt over Workshop and a remote join
+remain unverified.
+
+Run `powershell.exe -NoProfile -File Test-DirectLaunch.ps1` here for the
+repeatable config-merge regression test. It uses the two real mission headers
+and a stub executable to exercise Workshop arguments, receipt checking, version
+pins, optional/required overlap, transitive dependencies and reuse of the same
+generated config. It verifies the shared server JSON stays byte-identical.
+It also copies the single batch file beside a test server executable and an
+arbitrarily named server config, calls it from a different working directory
+with the header as the first argument, and checks ambiguous config rejection
+and explicit selection. The bundled entry point separately launched the real
+RHS fixture on the release server with 32 verified addons.
