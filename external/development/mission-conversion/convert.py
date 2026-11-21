@@ -13,7 +13,8 @@ import breach
 import arc_capture
 import batch
 import local_loadouts
-from restore_units_roles import verified_aircrew_roles, verified_msv85_wrappers, verified_roles
+from restore_units_roles import (verified_aircrew_roles, verified_msv85_wrappers, verified_roles,
+                                 verified_soviet_aircrew_roles)
 import vehicle_crew
 import bugout
 from briefings import BriefingAudience, STANDARD_LAYOUTS, guid, indexed_pages, read_pages, render
@@ -877,7 +878,8 @@ def main():
         native_ai_members = {guid: asset[0] for guid, asset in ai_loadouts.items()}
         try:
             restored = (verified_roles(dev_units, stock) | verified_msv85_wrappers(source_units, dev_units)
-                        | verified_aircrew_roles(source_units, dev_units, stock, locally_owned))
+                        | verified_aircrew_roles(source_units, dev_units, stock, locally_owned)
+                        | verified_soviet_aircrew_roles(source_units, dev_units, stock, locally_owned))
         except (OSError, ValueError, CalledProcessError) as exc:
             parser.error(str(exc))
         restored = {old: new for old, new in restored.items()

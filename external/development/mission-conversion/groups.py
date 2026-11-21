@@ -560,11 +560,19 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             return convert_ai_instance([*lines, indent + 'm_bPlayable 0'], guid, source_units, dev_units,
                                        locally_owned, known, replaces_playable_roster=True)
     restored_playable = False
+
+    def playable_member(resource, path):
+        if legacy_member(source_units, resource, False):
+            return True
+        if all(resource not in owned for owned in (locally_owned, source_units.resources, dev_units.resources)):
+            return stock_character(resource, path, stock) is not None
+        return stock_wrapper_ancestry_matches(source_units, dev_units, resource, stock, locally_owned)
+
     if not native_playable and not explicit_force and replace_slots and restored_members:
         end = block_end(lines, slots_start)
         slots = [(resource.upper(), path) for resource, path in REF.findall('\n'.join(lines[slots_start + 1:end]))]
         if any(slot in restored_members for slot in slots):
-            if not all(slot in restored_members or legacy_member(source_units, slot[0], False) for slot in slots):
+            if not all(slot in restored_members or playable_member(*slot) for slot in slots):
                 raise ValueError('mixed playability alongside restored legacy roles')
             restored_playable = True
     character_playable = False
@@ -576,9 +584,7 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             if authored:
                 start = authored[0]
                 members.extend(REF.findall('\n'.join(lines[start + 1:block_end(lines, start)])))
-            playable = [legacy_member(source_units, resource, False)
-                        or stock_wrapper_ancestry_matches(source_units, dev_units, resource, stock, locally_owned)
-                        for resource, _ in members]
+            playable = [playable_member(resource.upper(), path) for resource, path in members]
             if any(playable) and not all(playable):
                 raise ValueError('mixed character playability requires review')
             character_playable = bool(playable) and all(playable)

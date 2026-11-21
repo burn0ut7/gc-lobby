@@ -99,6 +99,36 @@ def verified_aircrew_roles(source, units, stock, mission_owned):
     }
 
 
+def verified_soviet_aircrew_roles(source, units, stock, mission_owned):
+    root = 'Prefabs/Characters/Factions/OPFOR/USSR_Army/'
+    pilot = 'FFE45AFCB29CD014'
+    pilot_path = root + 'Character_USSR_HeliPilot_P.et'
+    parent = ('A62FA97C4EC64F14', root + 'Character_USSR_HeliPilot.et')
+    radio = ('54C68E438DD34265', 'Prefabs/Items/Equipment/Radios/Radio_R107M.et')
+    radio_path = 'Prefabs/Items/Equipment/Radios/RU/Radio_R107M.et'
+    if (not stock or not stock.contains(*parent) or not stock.contains(*radio)
+            or {pilot, parent[0], radio[0]} & mission_owned):
+        return {}
+    for checkout in (source, units):
+        if (parent[0] in checkout.resources or checkout.resources.get(pilot) != [pilot_path]
+                or checkout.resources.get(radio[0]) != [radio_path]
+                or sha256(checkout.read(pilot_path).strip().encode()).hexdigest()
+                != '74054170b77c109e578d619395e4c0ff4ddbe7516be679c2e1085ace3586f990'
+                or sha256(checkout.read(radio_path).strip().encode()).hexdigest()
+                != '63859ab4eba2bad734bf42efb6adddf53504fb9bace7d62f2d7bc9128689f9e5'):
+            return {}
+    result = {(pilot, pilot_path): (pilot, pilot_path)}
+    gunner = 'CF063A058ADD156E'
+    gunner_path = root + 'Character_USSR_HeliGunner_P.et'
+    if gunner not in mission_owned and all(
+            checkout.resources.get(gunner) == [gunner_path]
+            and sha256(checkout.read(gunner_path).strip().encode()).hexdigest()
+            == '8977a2e7e7cb708165746dc8d22c337bf88ca948b1502151173035d570d8c95f'
+            for checkout in (source, units)):
+        result[(gunner, gunner_path)] = (gunner, gunner_path)
+    return result
+
+
 def verified_msv85_wrappers(source, units):
     archive = Snapshot(units.repo, MSV85_ARCHIVE)
     result = {}
