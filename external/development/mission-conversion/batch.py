@@ -22,7 +22,7 @@ from outcomes import FRAMEWORK, SCRIPT_FLAG_APIS, leaves, render as render_outco
 import polygon_capture
 from respawns import authored_respawn_fields, read_respawns
 import teleports
-from scenery import FIELD, StockPrefabs, WAYPOINT_CLASS
+from scenery import FIELD, NUMBER as COORDINATE, StockPrefabs, WAYPOINT_CLASS
 from weather import convert_weather
 
 LEGACY = re.compile(r'\b(?:(?:TILW|PS)_\w+|PK_Entity(?:Deleter|ProtectorComponent))\b')
@@ -52,6 +52,19 @@ LIGHT_COMPONENT = [
 LIGHT_FIELDS = {'ID', 'coords', 'Color', 'LV', 'ClipEV', 'Radius', 'NearPlane', 'SpotAngle',
                 'SpotAngleAttenuation', 'DistanceAttenuation', 'LensFlareType', 'LensFlareScale'}
 SERIALIZED_ID = '"\\{[0-9a-fA-F]{16}\\}"'
+SPLINE_RECORD = re.compile(
+    r'\{|\}|(?:Points|SplinePoints|RoadEntity|Data|m_PrefabNames|'
+    r'SplinePointData SplinePointData|PrefabGeneratorEntity) \{|'
+    rf'(?:ShapePoint|(?:Data )?SplinePointData|ForestGeneratorPointData|GeneratorType GeneratorType)'
+    rf' {SERIALIZED_ID} \{{|'
+    r'(?:\$grp )?(?:RoadGeneratorEntity|ForestGeneratorEntity|WallGeneratorEntity|'
+    r'PrefabGeneratorEntity|SCR_DestructibleEntity|StaticModelEntity|Tree)(?: [\w.-]+)?'
+    r' : "\{[\dA-Fa-f]{16}\}[^"\r\n]+\.et" \{|'
+    r'(?:Type|ID) "[^"\r\n]+"|(?:BeginningPiece|EndPiece) none|'
+    r'"\{[\dA-Fa-f]{16}\}[^"\r\n]+\.et"|Flags (?:0x[\dA-Fa-f]+ \d+|\d+)|'
+    rf'(?:Position|InTangent|OutTangent) {COORDINATE} {COORDINATE} {COORDINATE}|'
+    rf'LineColor {COORDINATE} {COORDINATE} {COORDINATE} {COORDINATE}|'
+    rf'(?:IsClosedSpline|m_bAvoidObjects) [01]|(?:m_iSeed|RandomSeed) \d+|Width {NUMBER}')
 NAVMESH_COMPONENT = re.compile(rf' +TILW_NavmeshRegenComponent {SERIALIZED_ID} \{{')
 DAMAGE_COMPONENT = re.compile(rf'  TILW_Flag_EntityDamage {SERIALIZED_ID} \{{')
 DAMAGE_TARGETS = {
@@ -605,24 +618,30 @@ def startup_cleanup(block):
 
 def static_particle_placement(block):
     """Preserve effect-only native placements and leave their resources to the file audit."""
-    if block[0] == '$grp ParticleEffectEntity {':
-        members = []
-        cursor = 1
-        while cursor < len(block) - 1:
-            if not re.fullmatch(r' (?:[\w.-]+ )?\{', block[cursor]):
-                return False
-            end = block_end(block, cursor)
-            members.append(block[cursor + 1:end])
-            cursor = end + 1
-    elif re.fullmatch(r'ParticleEffectEntity(?: [\w.-]+)? \{', block[0]):
-        members = [block[1:-1]]
-    else:
+    head = re.fullmatch(r'(?P<group>\$grp )?ParticleEffectEntity(?: (?P<name>[\w.-]+))?'
+                        r'(?P<prefab> : "\{[\dA-Fa-f]{16}\}[^"\r\n]+\.et")? \{', block[0])
+    if not head:
         return False
-    for fields in members:
+    members = polygon_capture.members(block, head['group'], head['name'])
+    for _, fields in members:
         effect = [line.strip() for line in fields if not FIELD.fullmatch(line.strip())]
+        if not effect and head['prefab']:
+            continue
         if len(effect) != 1 or not re.fullmatch(r'EffectPath "\{[\dA-Fa-f]{16}\}[^"\r\n]+\.ptc"', effect[0]):
             return False
     return bool(members)
+
+
+def static_spline_placement(block):
+    """Keep native world-editor geometry with its baked placements and point data."""
+    if not re.fullmatch(r'(?:\$grp )?SplineShapeEntity(?: [\w.-]+)? \{', block[0]):
+        return False
+    # Only accept the native generator serialization. Custom components and
+    # mixed map overlays need a conversion rule of their own.
+    return (not any(LEGACY.search(line) for line in block)
+            and any(line.strip() == 'Points {' for line in block)
+            and all(FIELD.fullmatch(line.strip()) or SPLINE_RECORD.fullmatch(line.strip())
+                    for line in block[1:-1]))
 
 
 def native_placement(block, *, reviewed_character=False):
@@ -2346,6 +2365,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     zones.extend(names)
                     result.append(converted)
                 elif kind == 'ParticleEffectEntity' and static_particle_placement(block):
+                    result.append(body)
+                elif kind == 'SplineShapeEntity' and static_spline_placement(block):
                     result.append(body)
                 elif NATIVE.match(head):
                     try:
