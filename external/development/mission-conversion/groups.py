@@ -101,6 +101,8 @@ def rhs_ai_characters(workshop):
     characters = {guid: root + f'RandomSoldiers/Character_RHS_RF_MSV_VKPO_DS_{role}_Random.et'
                   for guid, role in RHS_AI_ROLES.items()}
     characters['0848BAB1B94FCBBA'] = root + 'Character_RHS_RF_MSV_VKPO_DS_Crew.et'
+    characters['A0CAC00219D7EF55'] = ('Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Summer/'
+                                      'Character_RHS_RF_MSV_VKPO_S_Rifleman.et')
     return {guid: path for guid, path in characters.items() if registry.contains(guid, path)}, registry
 
 
