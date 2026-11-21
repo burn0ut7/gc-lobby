@@ -13,6 +13,7 @@ import breach
 import arc_capture
 import batch
 import local_loadouts
+from install_batch import resource_databases
 from restore_units_roles import (verified_aircrew_roles, verified_group_rosters, verified_msv85_wrappers, verified_roles,
                                  verified_soviet_aircrew_roles)
 import vehicle_crew
@@ -198,6 +199,7 @@ def main():
         external_ai.update({guid: path for guid, path in stock_ai.items() if stock.contains(guid, path)})
     forced_external = {}
     asset_aliases = {}
+    reviewed_audio = {}
     if args.units:
         source_units = Snapshot(args.units, args.units_source)
         dev_units = Snapshot(args.units, args.units_dev)
@@ -211,6 +213,10 @@ def main():
                         rhs_database, locally_owned, source_units, dev_units)
                 asset_aliases = batch.resource_aliases(args.workshop_addons, dev_units, stock)
                 asset_aliases.update(batch.reviewed_units_asset_paths(source_units, dev_units))
+                if args.workshop_addons:
+                    reviewed_audio = batch.reviewed_missing_bmp_audio(
+                        source, dev, source_units, dev_units,
+                        resource_databases(args.base_database, args.workshop_addons))
             except (OSError, ValueError) as exc:
                 parser.error(str(exc))
 
@@ -255,7 +261,7 @@ def main():
         if resource not in locally_owned and (alias := asset_aliases.get((resource, path))) and alias[0] == resource:
             path = alias[1]
         return batch.spawn_resource(source, dev, source_units, dev_units, stock, resource, path, objectives,
-                                    workshop_spawn_resources)
+                                    workshop_spawn_resources, reviewed_assets=reviewed_audio, aliases=asset_aliases)
 
     def resolve_crew(resource, path, *, allow_legacy_playable=True):
         return vehicle_crew.character_reference(resource, path, source_units, dev_units, stock, locally_owned,
@@ -945,7 +951,8 @@ def main():
             return vehicle_crew.verified_crew_config(source_units, resource, path, locally_owned)
 
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
-                         asset_aliases, {**loadouts, **ai_loadouts}, spawned_assets, convert_crew, resolve_spawn, resolve_crew,
+                         asset_aliases, {**loadouts, **ai_loadouts, **reviewed_audio}, spawned_assets,
+                         convert_crew, resolve_spawn, resolve_crew,
                          resolve_crew_config, delayed_extractions,
                          batch.reviewed_faction_assets(source, dev, source_units, dev_units))
     if args.stage:

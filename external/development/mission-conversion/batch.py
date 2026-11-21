@@ -2352,7 +2352,35 @@ def workshop_resources(workshop, packages):
     return approved
 
 
-def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, objectives, workshop_resources=()):
+def reviewed_missing_bmp_audio(source, dev, source_units, dev_units, databases):
+    """Preserve the published prefab's audible behavior when the obsolete bank cannot load."""
+    resource = '84A2CD45010EC22E'
+    path = 'worlds/HitTheMan/Prefabs/Vehicles/BMP1_base_HTM.et'
+    sound = 'F7D2EDE33E61A12A'
+    sound_path = 'Sounds/Vehicles/Wheeled/BTR70/Vehicles_BTR70_Dampers.acp'
+    if (not databases or source.resources.get(resource) != [path] or dev.resources.get(resource) not in (None, [path])
+            or any(sound in snapshot.resources or sound_path in snapshot.files
+                   for snapshot in (source, dev, source_units, dev_units))):
+        return {}
+    try:
+        body = passive_asset(source, path)
+    except ValueError:
+        return {}
+    token = f' "{{{sound}}}{sound_path}"'
+    if body.count(token) != 1:
+        return {}
+    for registry in databases:
+        try:
+            db = StockPrefabs(registry)
+        except ValueError:
+            return {}
+        if db.registered_paths(sound) or db.registered_ids(sound_path):
+            return {}
+    return {resource: (path, body.replace(token, '', 1))}
+
+
+def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, objectives, workshop_resources=(), *,
+                   reviewed_assets=None, aliases=None):
     if not path.lower().endswith('.et') or path.lower().startswith('prefabs/groups/'):
         return None
     owned = source.resources.get(guid)
@@ -2362,9 +2390,12 @@ def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, obje
         if guid in objectives and objectives[guid]['path'] == path:
             return path
         try:
-            body = passive_asset(source, path)
+            approved = (reviewed_assets or {}).get(guid)
+            body = approved[1] if approved and approved[0] == path else passive_asset(source, path)
         except ValueError:
             return None
+        if path in dev.files and isinstance(body, str) and aliases:
+            body = replace_registered_paths(body, source, dev, aliases)
         return path if path not in dev.files or body == dev.read(path) else None
     if guid in dev.resources:
         return None
