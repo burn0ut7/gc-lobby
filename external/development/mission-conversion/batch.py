@@ -135,6 +135,26 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/Gabe/TVT97PowerStruggle/TVT97PowerStruggle.conf': (
+        'ab58aad1aec16739e3327402f7f9f7eca62a165a',
+        (('worlds/Gabe/PowerStruggle/TVT97PowerStruggle_Layers/Players.layer',
+          '23f5f5f4c38796dfad894f9c6404be7c2fc55eb9'),),
+        97, 95,
+    ),
+    'Missions/Jub/Another Hill/Another Hill.conf': (
+        '75e4e21677f4e64358d3ffee3d523e567cf589d8',
+        (('worlds/Jub/Another Hill/Another Hill_Layers/Argies.layer',
+          'ba5ec00e2b2810c13de1394c0ae07f3565ae316e'),
+         ('worlds/Jub/Another Hill/Another Hill_Layers/UK.layer',
+          'f385fe7176b2f6e8e6ceca69d9c48f8c0387347a')),
+        124, 125,
+    ),
+    'Missions/arc/BunkerBustersXL.conf': (
+        '97e515f41ba225f60c1f7997fad5d782005e4090',
+        (('worlds/arc/BunkerBustersXL/BunkerBustersXL_Layers/players.layer',
+          '3d293bac14b7cf19e85f66f49bc00a9caeae22a8'),),
+        64, 56,
+    ),
     'Missions/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite.conf': (
         '22a47682027e05164c8343d14fb3d1be146d06aa',
         (('worlds/HitTheMan/Frontline CDF Construction Site/FrontlineCDFConstructionSite_Layers/CDF_Players/CDF_Players.layer',

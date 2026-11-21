@@ -544,8 +544,12 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             if authored:
                 start = authored[0]
                 members.extend(REF.findall('\n'.join(lines[start + 1:block_end(lines, start)])))
-            character_playable = bool(members) and all(
-                legacy_member(source_units, resource, False) for resource, _ in members)
+            playable = [legacy_member(source_units, resource, False)
+                        or stock_wrapper_ancestry_matches(source_units, dev_units, resource, stock, locally_owned)
+                        for resource, _ in members]
+            if any(playable) and not all(playable):
+                raise ValueError('mixed character playability requires review')
+            character_playable = bool(playable) and all(playable)
     if not (native_playable or explicit_force or restored_playable or character_playable):
         return convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai or {},
                                    reviewed_ai_members=reviewed_ai_members)
