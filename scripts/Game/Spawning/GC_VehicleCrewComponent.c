@@ -20,6 +20,9 @@ class GC_VehicleCrewComponent : ScriptComponent
 	[Attribute("0", UIWidgets.CheckBox, "Keep the gunners together in a separate group without waypoint orders.")]
 	protected bool m_bShareIdleGunnerGroup;
 
+	[Attribute("0", UIWidgets.CheckBox, "Keep each gunner in its own idle group when the main crew receives waypoint orders.")]
+	protected bool m_bSeparateOrderedGunners;
+
 	[Attribute("0", UIWidgets.CheckBox, "Use each eligible compartment's default character instead of the authored crew list.")]
 	protected bool m_bUseDefaultCrew;
 
@@ -31,6 +34,9 @@ class GC_VehicleCrewComponent : ScriptComponent
 
 	[Attribute("0", UIWidgets.SpinBox, "Seconds after boarding before assigning crew waypoints.", params: "0 86400")]
 	protected float m_fCrewWaypointDelay;
+
+	[Attribute("0", UIWidgets.CheckBox, "Assign this route only if the crew group has no existing waypoints.")]
+	protected bool m_bAssignInitialCrewOrders;
 
 	protected GC_LobbyManager m_Manager;
 
@@ -74,6 +80,8 @@ class GC_VehicleCrewComponent : ScriptComponent
 		compartments.GetCompartments(seats);
 		AIGroup group;
 		AIGroup idleGroup;
+		bool hasRoute = m_aCrewWaypoints && !m_aCrewWaypoints.IsEmpty();
+		bool separateOrderedGunners = m_bSeparateOrderedGunners && hasRoute;
 		int characterIndex;
 		foreach (BaseCompartmentSlot seat : seats)
 		{
@@ -91,8 +99,12 @@ class GC_VehicleCrewComponent : ScriptComponent
 				continue;
 			bool turret = seat.GetType() == ECompartmentType.TURRET;
 			IEntity occupant;
-			if (turret && m_bShareIdleGunnerGroup)
+			if (turret && (m_bShareIdleGunnerGroup || separateOrderedGunners))
+			{
+				if (separateOrderedGunners)
+					idleGroup = null;
 				occupant = seat.SpawnCharacterInCompartment(character, idleGroup);
+			}
 			else
 				occupant = seat.SpawnCharacterInCompartment(character, group);
 			if (occupant && m_bKeepGunnersSeated && turret)
@@ -102,7 +114,7 @@ class GC_VehicleCrewComponent : ScriptComponent
 					combat.GC_KeepSpawnedGunnerSeated();
 			}
 		}
-		if (group && m_aCrewWaypoints && !m_aCrewWaypoints.IsEmpty())
+		if (group && hasRoute)
 		{
 			GetGame().GetCallqueue().CallLater(AssignOrders, Math.Round(m_fCrewWaypointDelay * 1000), false, group);
 		}
@@ -116,8 +128,16 @@ class GC_VehicleCrewComponent : ScriptComponent
 
 	protected void AssignOrders(AIGroup group)
 	{
-		if (group && IsActiveMatch())
-			GC_WaypointOrders.Apply(group, m_aCrewWaypoints);
+		if (!group || !IsActiveMatch())
+			return;
+		if (m_bAssignInitialCrewOrders)
+		{
+			array<AIWaypoint> existing = {};
+			group.GetWaypoints(existing);
+			if (!existing.IsEmpty())
+				return;
+		}
+		GC_WaypointOrders.Apply(group, m_aCrewWaypoints);
 	}
 
 	protected bool AllowsSeat(ECompartmentType type)

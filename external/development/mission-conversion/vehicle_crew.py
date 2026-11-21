@@ -20,6 +20,7 @@ COMPONENT = re.compile(r'  TILW_VehicleCrewComponent (?P<id>"\{[\da-fA-F]{16}\}"
 SERIALIZED_ID = r'"\{[\da-fA-F]{16}\}"'
 SEAT_TYPES = ('Pilot', 'Turret', 'Cargo')
 WORKSHOP_VEHICLES = {
+    '1A407760EEAE4156': ('ZU-23_5C9AD9EF76F6B5EA', 'Prefabs/Vehicles/Static/BaconZU23/BaconZU23_Turret_Deployed.et'),
     '9AEDF323A812F9ED': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2_AFRF.et'),
     '18378FFFC82F30BF': ('M113APC_5E5C154FEE1094BB', 'Prefabs/Vehicles/Tracked/M113/M113_APC.et'),
     '31F0866273C46D76': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/K17/APC_K17_Berezok.et'),
@@ -115,6 +116,17 @@ def crew_station(lines, resolve_character, allow_empty=False):
     return flags, crew_roles(authored, flags, resolve_character, allow_empty)
 
 
+def crew_route_fields(data, default_delay):
+    waypoints = target_names(data['m_waypointNames']) if data.get('m_waypointNames') else []
+    if not waypoints:
+        return []
+    delay = data.get('m_waypointDelay', default_delay)
+    if not re.fullmatch(r'\d+(?:\.\d+)?', delay) or Decimal(delay) > 86400:
+        raise ValueError('unsupported placed crew waypoint delay')
+    return ['   m_fCrewWaypointDelay ' + delay, '   m_aCrewWaypoints {',
+            *('    ' + name for name in waypoints), '   }']
+
+
 def render_component(component, lines, resolve_character, single_turret):
     configs = [i for i, line in enumerate(lines) if line.strip().startswith('m_crewConfig ')]
     if not configs:
@@ -129,10 +141,8 @@ def render_component(component, lines, resolve_character, single_turret):
         # A standalone legacy component deserializes an omitted list as an allocated empty array.
         default_crew = not data.get('m_customCrew')
         roles = [] if default_crew else crew_roles(data['m_customCrew'], flags, resolve_character)
-        waypoints = target_names(data['m_waypointNames']) if data.get('m_waypointNames') else []
-        delay = data.get('m_waypointDelay', '5')
-        if (seated not in ('0', '1') or idle not in ('0', '1') or data.get('m_pregameSpawn', '0') != '0'
-                or (waypoints and (not re.fullmatch(r'\d+(?:\.\d+)?', delay) or Decimal(delay) > 86400))):
+        route = crew_route_fields(data, '5')
+        if seated not in ('0', '1') or idle not in ('0', '1') or data.get('m_pregameSpawn', '0') != '0':
             raise ValueError('unsupported placed crew timing or gunner settings')
         separate = idle == '1' and flags['Turret'] == '1'
         options = []
@@ -140,12 +150,9 @@ def render_component(component, lines, resolve_character, single_turret):
             if any(flag not in ('0', '1') for flag in flags.values()):
                 raise ValueError('unsupported default crew seat filter')
             options.append('   m_bUseDefaultCrew 1')
-        if separate and not (single_turret and len(roles) == 1 and not waypoints):
+        if separate and not (single_turret and len(roles) == 1 and not route):
             options.append('   m_bShareIdleGunnerGroup 1')
-        if waypoints:
-            options.extend(['   m_fCrewWaypointDelay ' + delay, '   m_aCrewWaypoints {',
-                            *('    ' + name for name in waypoints), '   }'])
-        return crew_fields(component, flags, seated, roles, options)
+        return crew_fields(component, flags, seated, roles, [*options, *route])
     if len(configs) != 1:
         raise ValueError('ambiguous placed crew configuration')
     index, = configs
@@ -162,13 +169,23 @@ def render_component(component, lines, resolve_character, single_turret):
     end = block_end(config, start)
     options = properties(config[:start] + config[end + 1:], {'m_noTurretDismount', 'm_useIdleGroups'})
     seated = options.get('m_noTurretDismount', '0')
-    if seated not in ('0', '1') or options.get('m_useIdleGroups', '1') not in ('0', '1'):
+    idle = options.get('m_useIdleGroups', '1')
+    if seated not in ('0', '1') or idle not in ('0', '1'):
         raise ValueError('invalid placed crew options')
-    station = config[start + 1:end]
-    for field in ('TILW_CrewGroup ' + SERIALIZED_ID, 'm_crewStations'):
-        station = contents(station, field)
-    flags, roles = crew_station(station, resolve_character)
-    return crew_fields(component, flags, seated, roles)
+    group = contents(config[start + 1:end], 'TILW_CrewGroup ' + SERIALIZED_ID)
+    stations = [i for i, line in enumerate(group) if line.strip() == 'm_crewStations {']
+    if len(stations) != 1:
+        raise ValueError('crew authoring needs one m_crewStations')
+    start, = stations
+    end = block_end(group, start)
+    group_options = properties(group[:start] + group[end + 1:], {'m_waypointNames', 'm_waypointDelay'})
+    route = crew_route_fields(group_options, '0')
+    flags, roles = crew_station(group[start + 1:end], resolve_character, allow_empty=True)
+    if route:
+        if idle == '1':
+            route.insert(0, '   m_bSeparateOrderedGunners 1')
+        route.insert(0, '   m_bAssignInitialCrewOrders 1')
+    return crew_fields(component, flags, seated, roles, route)
 
 
 def crew_fields(component, flags, seated, roles, options=()):

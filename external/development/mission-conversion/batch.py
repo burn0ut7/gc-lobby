@@ -361,6 +361,9 @@ WORKSHOP_RESOURCE_ALIASES = {
     ('72C04A6EABC12143', 'Prefabs/Vehicles/Helicopters/AH6M/AH6M_M134.et'): (
         'WCS_AH-6M_6273146ADFE8241D', '72C04A6EABC12143',
         'Prefabs/Vehicles/Helicopters/AH6M/AH6M_M134_X2.et'),
+    ('823CA4130CE90077', 'Prefabs/Vehicles/Helicopters/AH6M/AH6M_RKT.et'): (
+        'WCS_AH-6M_6273146ADFE8241D', '823CA4130CE90077',
+        'Prefabs/Vehicles/Helicopters/AH6M/AH6M_M134_M260_X2.et'),
     ('1DC01AAACFFA8B63', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_base.et'): (
         'WCS_BMP-1_5E524E4FEECCA92B', '1DC01AAACFFA8B63',
         'Prefabs/Vehicles/Tracked/BMP1/BMP1_Base.et'),
@@ -2297,6 +2300,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare placed crew arrival at Match start, compartment order and gunner dismount policy.')
     if crew_waypoints:
         remaining.append('Compare placed crew waypoint order, delay and separate idle turret grouping.')
+    if any(isinstance(body, str) and '{823CA4130CE90077}' in body for body in draft.values()):
+        remaining.append('Compare the AH-6 gun and rocket loadout against the legacy scenario.')
     if any('m_bShareIdleGunnerGroup 1' in body for body in draft.values() if isinstance(body, str)):
         remaining.append('Compare boarding, idle turret grouping and delayed waypoints for spawned vehicle crews.')
     if any(item['trigger'] == 'peak player loss' and item.get('inverted')
