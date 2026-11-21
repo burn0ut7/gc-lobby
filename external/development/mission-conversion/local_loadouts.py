@@ -1,4 +1,4 @@
-"""Migrate explicitly or ancestrally playable character prefabs owned by a mission."""
+"""Migrate character prefabs owned by a mission without changing their playability."""
 from functools import lru_cache
 from pathlib import PurePosixPath
 import re
@@ -18,6 +18,10 @@ MOVED_CHARACTER_PARENTS = {
     ('3245F15CEA803F94',
      'Prefabs/Characters/Factions/BLUFOR/US_Army/1986/Infantry (Woodland)/Character_US_1986_BDU_Mechanic_P.et'):
         'worlds/Til/CompanyTeamCounterAttack/Prefabs/Character_US_1986_BDU_Mechanic_P.et',
+}
+MOVED_AI_PARENTS = {
+    ('4C362B06571604F9', 'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/Character_GC_SEPARATIST_SL.et'):
+        'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/2020/Character_SEP_SL.et',
 }
 
 
@@ -137,4 +141,46 @@ def collect(source, dev, source_units, dev_units, stock):
 
     for guid in source.resources:
         evaluate(guid, frozenset())
+    return approved
+
+
+def collect_ai(source, dev, source_units, dev_units, stock):
+    """Retain native mission-owned AI loadouts whose parent chain is unchanged."""
+    approved = {}
+    for identity, paths in source.resources.items():
+        if len(paths) != 1 or identity in source_units.resources or identity in dev_units.resources:
+            continue
+        path, = paths
+        if (not path.lower().startswith(('worlds/', 'missions/')) or PurePosixPath(path).suffix.lower() != '.et'
+                or dev.resources.get(identity) not in (None, [path])):
+            continue
+        text = source.read(path)
+        first, separator, fields = text.partition('\n')
+        if not CHARACTER.fullmatch(first) or LEGACY.search(text):
+            continue
+        parent = REF.search(first)
+        resource, authored = parent[1].upper(), parent[2]
+        current = dev_units.resources.get(resource, [])
+        if len(current) != 1 or resource in source.resources or resource in dev.resources:
+            continue
+        canonical, = current
+        old = source_units.resources.get(resource)
+        if old != [canonical]:
+            continue
+        registered = REF.search(source_units.read(canonical + '.meta'))
+        if (authored not in (canonical, registered[2] if registered else None)
+                and MOVED_AI_PARENTS.get((resource, authored)) != canonical):
+            continue
+        if (not unchanged_units_parent(source_units, dev_units, resource)
+                or legacy_member(source_units, resource, True) or legacy_member(dev_units, resource, True)):
+            continue
+        inherited = inheritance(dev_units, resource)
+        base = REF.search(inherited[-1].partition('\n')[0])
+        if (not base or not stock or not stock.contains(*base.groups())
+                or any(base[1].upper() in snapshot.resources
+                       for snapshot in (source, dev, source_units, dev_units))):
+            continue
+        body = first.replace(parent[0], f'"{{{resource}}}{canonical}"', 1) + separator + fields
+        if path not in dev.files or body.strip() == dev.read(path).strip():
+            approved[identity] = (path, body)
     return approved

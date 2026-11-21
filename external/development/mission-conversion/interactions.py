@@ -5,26 +5,43 @@ from briefings import QUOTED, block_end, guid, properties
 from catalog import REF
 
 OBJECT = re.compile(r'GenericEntity(?: ([\w.-]+))?(?: : "[^"]+")? \{')
-MEMBER = re.compile(r' ([\w.-]+) \{')
-ACTION = re.compile(r'\s*TILW_BaseInteraction "\{[\da-fA-F]{16}\}" \{')
+MEMBER = re.compile(r' (?:([\w.-]+) )?\{')
+ACTION = re.compile(r'\s*TILW_BaseInteraction "\{([\da-fA-F]{16})\}" \{')
 KEY = r'"[\w.-]+"'
 NATIVE_FIELDS = {'ParentContextList', 'UIInfo', 'ActionTitle', 'VisibilityRange', 'Duration'}
 LEGACY_FIELDS = {'m_actionName', 'm_factionKeys', 'm_flagName', 'm_singleUse', 'm_conditionFlag', 'm_deleteParent'}
 REPLICATED_PREFABS = {
     ('EF070B8345288C8B', 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/Dst/CrateStack_01_Dst_2_base.et'),
+    ('E1AED4C5182AA514', 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/Dst/CrateStack_01_Dst_2_decal_01.et'),
+}
+LEGACY_PREFAB = ('584EB34600E9698D', 'Prefabs/Utils/Interactions/TILW_SetFlagInteraction.et')
+NATIVE_PREFAB = '{B48D431A323D4564}Prefabs/Logic/Mission/Interaction.et'
+LEGACY_ACTION = '61F4C18E863E752C'
+PREFAB_FIELDS = {
+    '61F4C18E835074FF': 'ADA66F0D5EA84AC2',
+    '61F4C18ECB0A8B85': '2E0FE192CFC14805',
+    '61F4C18F31FA02AA': '6A5E45532F2649F1',
+    LEGACY_ACTION: '4F65BF8AFE944D18',
+    '61F4C18EBF064AFE': '4D41DD504E094996',
+    '6242E7BB27068E93': 'E7A35F87849446C0',
 }
 
 
-def convert_object(lines, name, key, inherited_replication=False):
-    actions = [i for i, line in enumerate(lines) if ACTION.fullmatch(line)]
-    if not actions:
-        return lines, None
+def convert_object(lines, name, key, inherited_replication=False, *, standalone=False):
+    actions = {i: match[1] for i, line in enumerate(lines) if (match := ACTION.fullmatch(line))}
+    if not actions and not standalone:
+        return lines, []
     child_indent = len(lines[0]) - len(lines[0].lstrip()) + 1
     indent = ' ' * child_indent
-    if len(actions) != 1 or indent + 'components {' not in lines:
-        raise ValueError('requires one interaction on a replicated object')
+    if (not actions or len(set(actions.values())) != len(actions) or indent + 'components {' not in lines
+            or (standalone and LEGACY_ACTION not in actions.values())):
+        raise ValueError('requires distinct root interactions and an authored inherited action')
     components = lines.index(indent + 'components {')
     component_end = block_end(lines, components)
+    if any(line.startswith((indent + ' GC_MissionInteractionComponent ',
+                            indent + ' GC_TeleportInteractionComponent '))
+           for line in lines[components + 1:component_end]):
+        raise ValueError('existing native interaction component needs review')
     replication = [index for index in range(components + 1, component_end)
                    if lines[index].startswith(indent + ' RplComponent ')]
     if (len(replication) > 1
@@ -32,15 +49,54 @@ def convert_object(lines, name, key, inherited_replication=False):
                                     for line in lines[replication[0] + 1:block_end(lines, replication[0])]))
             or (not replication and not inherited_replication)):
         raise ValueError('interaction object needs a root replication component')
-    start = actions[0]
-    end = block_end(lines, start)
-    manager = next((i for i in range(components + 1, start)
-                    if lines[i].startswith(indent + ' ActionsManagerComponent ') and block_end(lines, i) > end), None)
-    if (manager is None or not lines[start].startswith(indent + '   TILW_BaseInteraction ')
-            or not any(lines[i] == indent + '  additionalActions {' and block_end(lines, i) > end
-                       for i in range(manager + 1, start))):
-        raise ValueError('interaction must belong to the root action manager')
-    action = lines[start:end + 1]
+    managers = [i for i in range(components + 1, component_end)
+                if lines[i].startswith(indent + ' ActionsManagerComponent ')]
+    if len(managers) != 1:
+        raise ValueError('requires one root interaction action manager')
+    manager, = managers
+    if standalone and not lines[manager].endswith('"{61F4C18E835074FF}" {'):
+        raise ValueError('custom standalone interaction action manager')
+    lists = [i for i in range(manager + 1, block_end(lines, manager))
+             if lines[i] == indent + '  additionalActions {']
+    if len(lists) != 1:
+        raise ValueError('requires one additional action list')
+    action_list, = lists
+    list_end = block_end(lines, action_list)
+    components_out, details, replacements = [], [], {}
+    for start, identity in actions.items():
+        end = block_end(lines, start)
+        if not (action_list < start < end < list_end
+                and lines[start].startswith(indent + '   TILW_BaseInteraction ')):
+            raise ValueError('interaction must belong to the root action manager')
+        inherited_action = standalone and identity == LEGACY_ACTION
+        match_key = identity if len(actions) > 1 else ''
+        component_id = ('DCEC291493734CD4' if inherited_action
+                        else guid(key + '/' + name + ('/' + match_key if match_key else '')))
+        native, fields, detail = convert_action(lines[start:end + 1], name, match_key)
+        replacements[start] = (end, native)
+        component = [f'GC_MissionInteractionComponent "{{{component_id}}}" {{', *fields, '}']
+        components_out.extend(indent + ' ' + line for line in component)
+        details.append(detail)
+    placement = [*lines[:components + 1], *components_out]
+    index = components + 1
+    while index < len(lines):
+        if index in replacements:
+            stop, replacement = replacements[index]
+            placement.extend(replacement)
+            index = stop + 1
+        else:
+            placement.append(lines[index])
+            index += 1
+    if standalone:
+        placement = [re.sub(r'\{([\dA-F]{16})\}', lambda match: '{' + PREFAB_FIELDS.get(match[1], match[1]) + '}', line)
+                     for line in placement]
+        placement = [line.replace('"Interact_A"', '"MissionInteraction"')
+                     if line.strip() in ('ContextName "Interact_A"', 'ActionTitle "Interact_A"', '"Interact_A"')
+                     else line for line in placement]
+    return placement, details
+
+
+def convert_action(action, name, match_key):
     native = [action[0].replace('TILW_BaseInteraction', 'GC_MissionInteractionAction', 1)]
     legacy = []
     i = 1
@@ -59,19 +115,23 @@ def convert_object(lines, name, key, inherited_replication=False):
     flag = data.get('m_flagName', '')
     factions = data.get('m_factionKeys', '').split()
     once = data.get('m_singleUse', '1')
+    required = data.get('m_conditionFlag', '""')
     if (not re.fullmatch(QUOTED, title) or title == '""' or not re.fullmatch(KEY, flag)
             or not all(re.fullmatch(KEY, faction) for faction in factions) or once not in ('0', '1')
-            or data.get('m_conditionFlag', '""') != '""' or data.get('m_deleteParent', '0') != '0'):
+            or (required != '""' and not re.fullmatch(KEY, required)) or data.get('m_deleteParent', '0') != '0'):
         raise ValueError('interaction availability or side effects need review')
     fields = [' m_sActionName ' + title, ' m_sCallFlag ' + flag]
     if once == '1':
         fields.append(' m_bSingleUse 1')
     if factions:
         fields.extend([' m_aFactions {', *('  ' + faction for faction in factions), ' }'])
-    component = [f'GC_MissionInteractionComponent "{{{guid(key + "/" + name)}}}" {{', *fields, '}']
-    placement = [*lines[:components + 1], *(indent + ' ' + line for line in component),
-                 *lines[components + 1:start], *native, action[-1], *lines[end + 1:]]
-    return placement, {'entity': name, 'flag': flag[1:-1], 'singleUse': once == '1'}
+    if required != '""':
+        fields.append(' m_sRequiredFlag ' + required)
+    if match_key:
+        fields.append(f' m_sInteractionKey "{match_key}"')
+        native.append(' ' * (len(action[0]) - len(action[0].lstrip()) + 1) + f'm_sInteractionKey "{match_key}"')
+    return [*native, action[-1]], fields, {'entity': name, 'flag': flag[1:-1], 'singleUse': once == '1',
+                                          **({'requiredFlag': required[1:-1]} if required != '""' else {})}
 
 
 def convert_block(lines, key, stock=None, local_resources=()):
@@ -79,23 +139,31 @@ def convert_block(lines, key, stock=None, local_resources=()):
     root = OBJECT.fullmatch(lines[0])
     if not root and not group:
         raise ValueError('interaction is not on a generic object')
+    prefab = REF.search(lines[0])
+    resource = (prefab[1].upper(), prefab[2]) if prefab else None
+    standalone = resource == LEGACY_PREFAB
+    if standalone and resource[0] in local_resources:
+        raise ValueError('mission overrides the legacy interaction prefab')
+    inherited = standalone or (stock is not None and resource in REPLICATED_PREFABS
+                               and resource[0] not in local_resources and stock.contains(*resource))
+    head = REF.sub(lambda _: f'"{NATIVE_PREFAB}"', lines[0], count=1) if standalone else lines[0]
     if root:
-        prefab = REF.search(lines[0])
-        resource = (prefab[1].upper(), prefab[2]) if prefab else None
-        inherited = (stock is not None and resource in REPLICATED_PREFABS
-                     and resource[0] not in local_resources and stock.contains(*resource))
-        placement, details = convert_object(lines, root[1] or key, key, inherited)
-        return '\n'.join(placement) + '\n', [details] if details else []
-    output, details = [lines[0]], []
+        placement, details = convert_object([head, *lines[1:]], root[1] or key, key, inherited, standalone=standalone)
+        return '\n'.join(placement) + '\n', details
+    output, details, names = [head], [], set()
     index = 1
     while index < len(lines) - 1:
         name = MEMBER.fullmatch(lines[index])
         if not name:
             raise ValueError('unnamed interaction group member')
         end = block_end(lines, index)
-        placement, item = convert_object(lines[index:end + 1], name[1], key)
+        placement, items = convert_object(lines[index:end + 1], name[1] or f'{key}/{index}', key, inherited,
+                                          standalone=standalone)
+        if items and name[1]:
+            if name[1] in names:
+                raise ValueError('duplicate interaction group member name')
+            names.add(name[1])
         output.extend(placement)
-        if item:
-            details.append(item)
+        details.extend(items)
         index = end + 1
     return '\n'.join([*output, lines[-1]]) + '\n', details

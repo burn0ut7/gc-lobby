@@ -469,9 +469,12 @@ def main():
                     derived_audit=derived_audit, startup_samples_audit=startup_samples_audit,
                     match_only_flags=damage_flags_before_match |
                     {asset['flag'] for asset in objectives.values() if asset.get('destroyed')},
-                    flag_reads=Counter(flag for placement in row.get('interactionCandidate', {}).values()
-                                       if isinstance(placement, dict)
-                                       for flag in placement.get('teleportRequiredFlags', [])))
+                    flag_reads=(Counter(flag for placement in row.get('interactionCandidate', {}).values()
+                                        if isinstance(placement, dict)
+                                        for field in ('teleportRequiredFlags', 'interactionRequiredFlags')
+                                        for flag in placement.get(field, []))
+                                + (batch.placed_spawner_flag_reads(source, source.layers[world.lower()])
+                                   if args.batch else Counter())))
                 outcome = {'events': outcome_audit}
                 if derived_audit:
                     outcome['derivedFlags'] = derived_audit
@@ -833,6 +836,8 @@ def main():
     if args.batch:
         loadouts = local_loadouts.collect(source, dev, source_units, dev_units, stock)
         reviewed_members = {guid: asset[0] for guid, asset in loadouts.items()}
+        ai_loadouts = local_loadouts.collect_ai(source, dev, source_units, dev_units, stock)
+        native_ai_members = {guid: asset[0] for guid, asset in ai_loadouts.items()}
         try:
             restored = (verified_roles(dev_units, stock) | verified_msv85_wrappers(source_units, dev_units)
                         | verified_aircrew_roles(source_units, dev_units, stock, locally_owned))
@@ -847,7 +852,8 @@ def main():
             return group_layer(body, source_units, dev_units, stock, locally_owned,
                                reviewed_members=reviewed_members, external_ai=external_ai,
                                allow_stock_ai=True, restored_members=restored,
-                               reviewed_ai_members=reviewed_ai_members, forced_external=forced_external,
+                               reviewed_ai_members={**native_ai_members, **(reviewed_ai_members or {})},
+                               forced_external=forced_external,
                                rhs=rhs_database)
 
         def convert_crew(block):
@@ -855,7 +861,7 @@ def main():
                                         external_vehicles, external_ai)
 
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
-                         asset_aliases, loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew,
+                         asset_aliases, {**loadouts, **ai_loadouts}, spawned_assets, convert_crew, resolve_spawn, resolve_crew,
                          delayed_extractions)
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()

@@ -643,14 +643,16 @@ def interaction_rules(source, world, stock, local_resources):
                 if not details or LEGACY.search(native):
                     raise ValueError('unconverted interaction component or side effect')
                 objectives = [record['flag'] for record in details]
-                entities = [record['entity'] for record in details]
+                entities = {record['entity'] for record in details}
                 if (len(set(objectives)) != len(objectives) or set(objectives) & flags
-                        or len(set(entities)) != len(entities) or set(entities) & names):
+                        or entities & names):
                     raise ValueError('duplicate interaction entity or flag')
                 flags.update(objectives)
                 names.update(entities)
                 placements[(path, line)] = native
                 audit[location] = {'objectives': details}
+                if flags_read := [record['requiredFlag'] for record in details if 'requiredFlag' in record]:
+                    audit[location]['interactionRequiredFlags'] = flags_read
             except ValueError as exc:
                 audit[location] = {'gap': str(exc)}
     return flags, placements, audit
@@ -1190,10 +1192,12 @@ def ai_objectives(source, dev, world, stock, local_resources, source_units, dev_
                     entity[setter].replace('TILW_SetNameComponent', 'GC_MissionEntityNameComponent'),
                     f'   m_sMissionName {name}', '  }']
                 del after[damage_index:damage_close + 1]
-                native, action = convert_object(after, name[1:-1], path, inherited_replication=True)
+                native, actions = convert_object(after, name[1:-1], path, inherited_replication=True)
                 body = '\n'.join(native) + '\n'
-                if not action or LEGACY.search(body) or (path in dev.files and dev.read(path).strip() != body.strip()):
+                if (len(actions) != 1 or 'requiredFlag' in actions[0] or LEGACY.search(body)
+                        or (path in dev.files and dev.read(path).strip() != body.strip())):
                     continue
+                action, = actions
                 flags = (death, '"' + action['flag'] + '"')
                 if len(set(flags)) != 2 or any(
                     condition_corpus.count(flag) != len(re.findall(r'(?m)^ +(?:m_condition )?TILW_LiteralTerm [^\n]+\n'
@@ -2050,11 +2054,14 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         for target in record.get('teleportDestinations', [])}
     event_flags = {action['setsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
                    if 'setsFlag' in action}
-    required_teleport_flags = {flag for record in row.get('interactionCandidate', {}).values()
-                               if isinstance(record, dict)
-                               for flag in record.get('teleportRequiredFlags', [])}
-    if missing_flags := required_teleport_flags - event_flags:
-        blockers.append({'rule': 'teleport', 'file': world,
+    supported_interactions = [record for record in row.get('interactionCandidate', {}).values()
+                              if isinstance(record, dict)]
+    required_teleport_flags = {flag for record in supported_interactions for flag in record.get('teleportRequiredFlags', [])}
+    required_interaction_flags = {flag for record in supported_interactions
+                                  for flag in record.get('interactionRequiredFlags', [])}
+    interaction_writers = {action['flag'] for record in supported_interactions for action in record.get('objectives', [])}
+    if missing_flags := (required_teleport_flags | required_interaction_flags) - (event_flags | interaction_writers):
+        blockers.append({'rule': 'mission interaction', 'file': world,
                          'detail': {'missingConvertedMatchFlagProducers': sorted(missing_flags)}})
     event_flags.update(flag for sample in outcome.get('startupSamples', []) for flag in sample['flags'])
     cleared_event_flags = {action['clearsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
@@ -2423,6 +2430,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare authored teleport choices, reach, faction visibility and destinations in Match.')
     if required_teleport_flags:
         remaining.append('Compare teleport availability as the required Match flag is set or cleared.')
+    if required_interaction_flags:
+        remaining.append('Compare flag-gated mission actions, including repeated use and action-specific hold times.')
     if any(path.endswith('.layer') and 'GC_VehicleCrewComponent' in body
            for path, body in draft.items() if isinstance(body, str)):
         remaining.append('Compare placed crew arrival at Match start, compartment order and gunner dismount policy.')
