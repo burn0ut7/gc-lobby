@@ -124,8 +124,8 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         else:
             ready.append(record)
 
-    priority = defaultdict(lambda: {'worldsAffected': 0, 'soleBlockerWorlds': 0, 'examples': []})
-    specific = defaultdict(lambda: {'worldsAffected': 0, 'soleBlockerWorlds': 0, 'examples': []})
+    priority = defaultdict(list)
+    specific = defaultdict(list)
     bundles = defaultdict(list)
     for world, row in sorted(migration['worlds'].items()):
         if row['status'] != 'blocked by conversion rules':
@@ -146,23 +146,21 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
             for gap in gaps or [blocker]:
                 by_detail.setdefault(specific_blocker(gap), gap)
         for rule, example in by_rule.items():
-            entry = priority[rule]
-            entry['worldsAffected'] += 1
-            entry['soleBlockerWorlds'] += int(len(by_rule) == 1)
-            if len(entry['examples']) < 3:
-                entry['examples'].append({'world': world, **example})
+            priority[rule].append((len(by_rule) == 1, {'world': world, **example}))
         for kind, example in by_detail.items():
-            entry = specific[kind]
-            entry['worldsAffected'] += 1
-            entry['soleBlockerWorlds'] += int(len(by_detail) == 1)
-            if len(entry['examples']) < 3:
-                entry['examples'].append({'world': world, **example})
+            specific[kind].append((len(by_detail) == 1, {'world': world, **example}))
         if by_detail:
             bundles[tuple(sorted(by_detail))].append(world)
-    rules = sorted(priority, key=lambda rule: (
-        -priority[rule]['soleBlockerWorlds'], -priority[rule]['worldsAffected'], rule))
-    details = sorted(specific, key=lambda kind: (
-        -specific[kind]['soleBlockerWorlds'], -specific[kind]['worldsAffected'], kind))
+
+    def ranked_blockers(blockers, label):
+        rows = []
+        for blocker, entries in blockers.items():
+            ranked = sorted(entries, key=lambda entry: not entry[0])
+            rows.append({label: blocker, 'worldsAffected': len(entries),
+                         'soleBlockerWorlds': sum(sole for sole, _ in entries),
+                         'examples': [example for _, example in ranked[:3]]})
+        return sorted(rows, key=lambda row: (-row['soleBlockerWorlds'], -row['worldsAffected'], row[label]))
+
     selected = ready[:limit]
     draft_checks = {header: entry['behaviorGaps'] for entry in ready for header in entry['launchers']}
     held_headers = {header for entry in held for header in entry['launchers']}
@@ -201,8 +199,8 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         'unresolvedResources': review.get('unresolvedResources', []),
         'resourceRecoveryQueue': resource_recovery_queue(review.get('unresolvedResources', []), held),
         'unavailableDependencyIds': review.get('unavailableDependencyIds', []),
-        'rules': [{'rule': rule, **priority[rule]} for rule in rules],
-        'specificBlockers': [{'blocker': kind, **specific[kind]} for kind in details],
+        'rules': ranked_blockers(priority, 'rule'),
+        'specificBlockers': ranked_blockers(specific, 'blocker'),
         'blockerBundles': [{'blockers': kinds, 'worlds': worlds} for kinds, worlds in
                            sorted(bundles.items(), key=lambda pair: (-len(pair[1]), len(pair[0]), pair[0]))],
     }
@@ -266,6 +264,7 @@ def markdown(plan):
     if resources:
         lines.extend(['', '## Unresolved resource registrations', '',
                       'Alternate paths show where an installed database registers the same resource ID. '
+                      'Exact paths under a different ID are leads for asset comparison. '
                       'Verify content and dependency coverage before approving a replacement.', ''])
         for entry in resources:
             lines.append(f"- `{{{entry['guid']}}}{entry['path']}` · {len(entry['launchers'])} launcher(s)")
@@ -274,6 +273,9 @@ def markdown(plan):
                          for registration in entry['registrations'])
             if not entry['registrations']:
                 lines.append('  - No installed registration found for this ID.')
+            lines.extend(f"  - {registration['provider']} · exact path under ID `{registration['guid']}`"
+                         + ('' if registration['declaredDependency'] else ' · outside the Dev dependency graph')
+                         for registration in entry.get('samePathRegistrations', []))
     if plan['unavailableDependencyIds']:
         lines.extend(['', '## Dev dependencies without a local provider', '',
                       *(f'- `{guid}`' for guid in plan['unavailableDependencyIds'])])

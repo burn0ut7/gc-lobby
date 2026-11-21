@@ -211,17 +211,23 @@ def external_resource_review(missions, databases, providers):
     if not references:
         return []
     guids = sorted({guid for guid, _ in references})
+    paths = sorted({path for _, path in references})
     registrations = defaultdict(list)
-    for index, path in enumerate(databases):
+    same_path = defaultdict(list)
+    for index, registry in enumerate(databases):
         try:
-            database = StockPrefabs(path)
+            database = StockPrefabs(registry)
         except ValueError:
             continue
-        provider = 'Base game' if index == 0 else path.parent.name
+        context = {'provider': 'Base game' if index == 0 else registry.parent.name,
+                   'declaredDependency': registry in providers}
         for guid in guids:
-            registrations[guid].extend({'provider': provider, 'path': alternate, 'declaredDependency': path in providers}
+            registrations[guid].extend({**context, 'path': alternate}
                                        for alternate in database.registered_paths(guid))
-    return [{'guid': guid, 'path': path, 'launchers': owners, 'registrations': registrations[guid]}
+        for path in paths:
+            same_path[path].extend({**context, 'guid': guid} for guid in database.registered_ids(path))
+    return [{'guid': guid, 'path': path, 'launchers': owners, 'registrations': registrations[guid],
+             'samePathRegistrations': [entry for entry in same_path[path] if entry['guid'] != guid]}
             for (guid, path), owners in sorted(references.items(), key=lambda entry: (-len(entry[1]), *entry[0]))]
 
 

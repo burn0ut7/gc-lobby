@@ -37,6 +37,18 @@ class StockPrefabs:
             end = self.data.find(end_marker, end + len(end_marker))
         return sorted(paths)
 
+    def registered_ids(self, path):
+        """Find resource IDs registered under an exact case-sensitive path."""
+        name = path.encode() + b'\0'
+        record = pack('<I', len(name)) + name + self.PATH_FLAGS
+        ids = set()
+        offset = self.data.find(record, 16)
+        while 0 <= offset <= len(self.data) - len(record) - 8:
+            guid, = unpack_from('<Q', self.data, offset + len(record))
+            ids.add(f'{guid:016X}')
+            offset = self.data.find(record, offset + len(record))
+        return sorted(ids)
+
 
 SCENERY_CLASS = r'(?:GenericEntity|StaticModelEntity|Tree|DecalEntity|SCR_DestructibleBuildingEntity|SCR_DestructibleEntity|SCR_IndestructibleEnvironmentalEntity)'
 NAME = r'[\w.\-]+'

@@ -801,6 +801,35 @@ def static_spline_placement(block):
                     for line in block[1:-1]))
 
 
+CORE_INITIAL_DAMAGE = re.compile(
+    r'components \{\nPK_EntityModifierComponent "\{[\da-fA-F]{16}\}" \{\n'
+    r'm_bDamageManagerEnabled 1\nm_aHitzonesData \{\n'
+    r'PK_HitzoneData "\{[\da-fA-F]{16}\}" \{\nm_fHealthPercentage 0\n\}\n\}\n\}\n\}'
+)
+
+
+def placed_core_character(block, resolve_character):
+    """Keep a verified Core character and its original default-zone startup modifier."""
+    head = re.fullmatch(
+        r'(?P<group>\$grp )?SCR_ChimeraCharacter(?: (?P<name>[\w.-]+))? : '
+        + REF.pattern + r' \{', block[0])
+    if not head:
+        return None
+    members = polygon_capture.members(block, head['group'], head['name'])
+    for _, fields in members:
+        transforms = [field for field in fields if FIELD.fullmatch(field[1:])]
+        if (not any(field.startswith(' coords ') for field in transforms)
+                or not CORE_INITIAL_DAMAGE.fullmatch(
+                    '\n'.join(field.strip() for field in fields if field not in transforms))):
+            return None
+    if not members:
+        return None
+    prefab = REF.search(block[0])
+    reference = resolve_character(prefab[1].upper(), prefab[2])
+    header = block[0].replace(prefab[0], reference, 1)
+    return native_placement([header, *block[1:]], reviewed_character=True)
+
+
 def native_placement(block, *, reviewed_character=False):
     if not NATIVE.match(block[0]) and not (
             reviewed_character and re.match(r'^(?:\$grp )?SCR_ChimeraCharacter(?: [\w.-]+)? : ', block[0])):
@@ -2749,6 +2778,17 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append(body)
                 elif kind == 'SplineShapeEntity' and static_spline_placement(block):
                     result.append(body)
+                elif kind == 'SCR_ChimeraCharacter' and 'PK_EntityModifierComponent' in body:
+                    try:
+                        converted = placed_core_character(block, resolve_crew)
+                    except ValueError as exc:
+                        blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
+                    else:
+                        if converted is None:
+                            blockers.append({'rule': kind, 'file': layer, 'line': line,
+                                             'detail': 'unverified Core startup modifier'})
+                        else:
+                            result.append(converted)
                 elif NATIVE.match(head):
                     try:
                         vehicle, groups, slots = convert_vehicle_groups(convert_crew(block), convert_group_block)
