@@ -180,6 +180,8 @@ def main():
             owners = (locally_owned, source_units.resources, dev_units.resources)
             if verified_stock_ai_group(resource, path, stock, owners):
                 return path
+            if batch.verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path):
+                return path
             if (resource in locally_owned or source_units.resources.get(resource) != [path]
                     or dev_units.resources.get(resource) != [path]):
                 return None

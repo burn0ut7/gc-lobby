@@ -422,6 +422,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/arc/SunnyWAC/Prefabs/Group_CIV.et':
+        '43e9ca2c554b85e7b044960f7eb9ccfeb83b809527c02fe839f48825a70412cb',
     'worlds/HitTheMan/Prefabs/Vehicles/M113A2_APC_CDF_HTM.et':
         'afb884dab973abe538fd9fc9d63092e2838da18ed50ddc77f774404eefbf71a8',
     'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Props/Military/Camps/AmmoboxBLUE.et':
@@ -895,6 +897,23 @@ def passive_asset(source, path):
                         and '{' not in line and '}' not in line for line in [lines[1], *lines[7:-1]])):
             return body
     raise ValueError('requires a resource conversion rule')
+
+
+def verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path):
+    if (not stock or path not in REVIEWED_NATIVE_ASSETS or source.resources.get(resource) != [path]
+            or dev.resources.get(resource) not in (None, [path])
+            or resource in source_units.resources or resource in dev_units.resources):
+        return False
+    body = source.read(path)
+    if (not body.startswith('SCR_AIGroup : ') or LEGACY.search(body)
+            or sha256(body.strip().encode()).hexdigest() != REVIEWED_NATIVE_ASSETS[path]
+            or (path in dev.files and body != dev.read(path))):
+        return False
+    refs = set(REF.findall(body))
+    refs.add(('000CD338713F2B5A', 'Prefabs/AI/Groups/Group_Base.et'))
+    return all(stock.contains(guid, asset)
+               and all(guid not in snapshot.resources for snapshot in (source, dev, source_units, dev_units))
+               for guid, asset in refs)
 
 
 def damage_state_flag_placement(block, *, allow_multiple_states=False):
