@@ -1533,6 +1533,37 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
         return true;
     }
 
+	//! An authority-owned mission may replace its unclaimed groups during setup.
+	bool CanRetireMissionGroup(SCR_AIGroup group)
+	{
+		if (GetManager() != this || m_bShutdown || !Replication.IsServer() || !group
+			|| !m_Roster.ContainsGroup(group) || group.GetPlayerCount() != 0)
+			return false;
+		SCR_EGameModeState phase = GetLobbyPhase();
+		if (phase != SCR_EGameModeState.PREGAME && phase != SCR_EGameModeState.SLOTTING)
+			return false;
+		foreach (GC_Slot slot : m_Roster.GetSlotsForGroup(group))
+		{
+			if (slot && (slot.HasClaim() || slot.GetEntity()))
+				return false;
+		}
+		return true;
+	}
+
+	//! Publish slot removals even to peers that have yet to resolve the group entity.
+	bool RetireMissionGroup(SCR_AIGroup group)
+	{
+		if (!CanRetireMissionGroup(group))
+			return false;
+
+		foreach (GC_Slot slot : m_Roster.GetSlotsForGroup(group))
+		{
+			if (slot)
+				Rpc(RpcDo_RemoveAdminSlot, slot.GetID());
+		}
+		return UnregisterGroup(group);
+	}
+
     protected void SubscribeToGroupEvents(SCR_AIGroup group)
     {
         if (!group)

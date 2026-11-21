@@ -7,6 +7,7 @@ import re
 from briefings import ALLOWED, STANDARD_DESCRIPTION, block_end, guid, page, properties, render
 from catalog import REF, Snapshot
 from dependencies import dependency_resources
+from groups import inheritance, scalar
 from install_batch import resource_databases, unregistered_references
 from launchers import registered_identity
 
@@ -206,23 +207,25 @@ def resolve_prefabs(report, source, target, legacy_units, units, checkouts, data
     return owned_files
 
 
-def native_configuration(report):
+def native_configuration(report, units):
     files = {}
 
-    def add_config(path, lines):
+    def add_resource(path, lines, kind='ResourceClass'):
         identity = guid('roulette/config/' + path)
         files[path] = '\n'.join([*lines, '']).encode()
         files[path + '.meta'] = (
             'MetaFileClass {\n'
             f' Name "{{{identity}}}{path}"\n'
-            ' Configurations { ResourceClass PC {} ResourceClass XBOX_ONE : PC {}'
-            ' ResourceClass XBOX_SERIES : PC {} ResourceClass PS4 : PC {}'
-            ' ResourceClass PS5 : PC {} ResourceClass HEADLESS : PC {} }\n'
+            ' Configurations { ' + ' '.join(
+                f'{kind} {platform} {{}}' for platform in
+                ('PC', 'XBOX_ONE : PC', 'XBOX_SERIES : PC', 'PS4 : PC', 'PS5 : PC', 'HEADLESS : PC'))
+            + ' }\n'
             '}\n').encode()
         return f'{{{identity}}}{path}'
 
     catalogue = ['GC_RouletteCatalogue {', ' m_aScenarios {']
     indices = {}
+    playable_wrappers = {}
     for index, row in enumerate(report['scenarios']):
         indices[row['id']] = index
         catalogue.append(f'  GC_RouletteScenario "{row["id"]}" {{')
@@ -232,9 +235,20 @@ def native_configuration(report):
                 if match[2] not in TYPES:
                     raise ValueError('unknown native Roulette type: ' + match[2])
                 line = match[1] + TYPES[match[2]] + line[match.end():]
+            elif line.lstrip().startswith('m_prefab "{'):
+                reference = REF.search(line)
+                if not reference or units.resources.get(reference[1]) != [reference[2]]:
+                    raise ValueError('cannot verify generated group identity: ' + line)
+                if scalar(inheritance(units, reference[1]), 'm_bPlayable') != 1:
+                    if reference[0] not in playable_wrappers:
+                        wrapper = PREFABS + 'Playable/' + reference[1] + '.et'
+                        playable_wrappers[reference[0]] = add_resource(
+                            wrapper, [f'SCR_AIGroup : {reference[0]} {{', ' m_bPlayable 1', '}'],
+                            'EntityTemplateResourceClass')
+                    line = line[:reference.start()] + f'"{playable_wrappers[reference[0]]}"' + line[reference.end():]
             catalogue.append('   ' + line)
         catalogue.append('  }')
-    catalogue_ref = add_config(CATALOGUE, [*catalogue, ' }', '}'])
+    catalogue_ref = add_resource(CATALOGUE, [*catalogue, ' }', '}'])
     for mission in report['missions']:
         path = mission['world'][18:].removesuffix('.ent') + '_Roulette.conf'
         lines = ['GC_RouletteMap {', f' m_sCatalogue "{catalogue_ref}"']
@@ -246,7 +260,8 @@ def native_configuration(report):
                 lines.extend(f'   {name} {value}' for name, value in fields.items())
                 lines.append('  }')
             lines.append(' }')
-        mission['nativeConfig'] = add_config(path, [*lines, '}'])
+        mission['nativeConfig'] = add_resource(path, [*lines, '}'])
+    report['playableGroupWrappers'] = {source[1:-1]: native for source, native in playable_wrappers.items()}
     return files
 
 
@@ -272,10 +287,11 @@ def main():
     files = {path: text.encode('utf-8') for path, text in briefings.items()}
     if args.base_database:
         databases = resource_databases(args.base_database, args.workshop_addons)
+        units = Snapshot(args.units, 'HEAD')
         files.update(resolve_prefabs(
             report, source, Snapshot(args.missions, 'HEAD'), Snapshot(args.units, args.units_source),
-            Snapshot(args.units, 'HEAD'), [Snapshot(repo, 'HEAD') for repo in args.dependency], databases))
-        files.update(native_configuration(report))
+            units, [Snapshot(repo, 'HEAD') for repo in args.dependency], databases))
+        files.update(native_configuration(report, units))
     output.mkdir(parents=True, exist_ok=False)
     for name, contents in files.items():
         path = output / name

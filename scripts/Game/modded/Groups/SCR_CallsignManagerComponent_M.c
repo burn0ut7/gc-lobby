@@ -1,6 +1,33 @@
 //! Authored callsigns still use the native allocator, replication and release path.
 modded class SCR_CallsignManagerComponent
 {
+	//! Reassign a mission-generated group through the native callsign pool.
+	bool GC_TryAssignMissionCallsign(SCR_AIGroup group, int company, int platoon, int squad)
+	{
+		GC_LobbyManager lobby = GC_LobbyManager.GetManager();
+		if (!lobby || !lobby.CanRetireMissionGroup(group))
+			return false;
+		SCR_CallsignGroupComponent component = SCR_CallsignGroupComponent.Cast(group.FindComponent(SCR_CallsignGroupComponent));
+		Faction faction = group.GetFaction();
+		if (!component || !faction || group.IsSlave())
+			return false;
+
+		int oldCompany, oldPlatoon, oldSquad;
+		bool hadCallsign = component.GetCallsignIndexes(oldCompany, oldPlatoon, oldSquad);
+		if (hadCallsign && company == oldCompany && platoon == oldPlatoon && squad == oldSquad)
+			return true;
+
+		SCR_FactionCallsignData data;
+		if (!m_mAvailableCallsigns.Find(faction, data) || !data.GC_FindAuthoredCallsign(group, company, platoon, squad))
+			return false;
+
+		if (hadCallsign)
+			MakeGroupCallsignAvailible(faction, oldCompany, oldPlatoon, oldSquad);
+		RemoveAvailableGroupCallsign(faction, company, platoon, squad);
+		component.DoAssignCallsign(company, platoon, squad);
+		return true;
+	}
+
 	//------------------------------------------------------------------------------------------------
 	override void AssignCallGroupCallsign(notnull SCR_AIGroup group, Faction faction, SCR_CallsignGroupComponent masterCallsignComponent, out int companyIndex, out int platoonIndex, out int squadIndex)
 	{
