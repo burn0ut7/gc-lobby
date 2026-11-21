@@ -18,6 +18,8 @@ class GC_MissionInteractionComponent : ScriptComponent
 	protected GC_MissionFlagName m_sCallFlag;
 	[Attribute("0", UIWidgets.CheckBox, "Hide this interaction after its first successful use. The state lasts for the life of this object.")]
 	protected bool m_bSingleUse;
+	[Attribute("0", UIWidgets.CheckBox, "Delete the interaction entity's immediate parent and its children after successful use.")]
+	protected bool m_bDeleteParentOnUse;
 	[RplProp()]
 	protected bool m_bAvailable;
 	protected bool m_bUsing;
@@ -86,6 +88,10 @@ class GC_MissionInteractionComponent : ScriptComponent
 		if (!Replication.IsServer() || !CanUse(user))
 			return false;
 		GC_LobbyManager manager = GC_LobbyManager.GetManager();
+		IEntity owner = GetOwner();
+		IEntity parent;
+		if (m_bDeleteParentOnUse)
+			parent = owner.GetParent();
 		m_bUsing = true;
 		if (!PerformInteraction(user))
 		{
@@ -98,6 +104,8 @@ class GC_MissionInteractionComponent : ScriptComponent
 		manager.NotifyMissionInteraction(m_sCallFlag);
 		m_bUsing = false;
 		RefreshAvailability();
+		if (parent && owner && owner.GetParent() == parent)
+			SCR_EntityHelper.DeleteEntityAndChildren(parent);
 		return true;
 	}
 

@@ -16,6 +16,7 @@ from vehicle_crew import VERIFIED_DEFAULT_CREW, crew_config_contents
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
 from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, inheritance, reviewed_native_ancestry
+from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_prefab
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
 from markers import DEST as MAP_MARKER_PREFAB, convert_hover_camera, convert_layer
@@ -553,6 +554,10 @@ AI_WORLD_ALIASES = {
                          'Prefabs/AI/SCR_AIWorld_Eden.et'),
 }
 STOCK_RESOURCE_ALIASES = {
+    ('2B24356C351A2538', 'Prefabs/Props/Wrecks/M113_wreck.et'):
+        'Prefabs/Props/Wrecks/M113_wreck/M113_wreck.et',
+    ('6BDDFE9FA1D4B2F0', 'Prefabs/Props/Wrecks/UAZ469_wreck.et'):
+        'Prefabs/Props/Wrecks/UAZ469_wreck/UAZ469_wreck.et',
     ('6813E89F9EF2BDAC', 'PrefabLibrary/Vegetation/Bushes/b_rosa_canina_1s.et'):
         'PrefabLibrary/DefaultLibrary/Vegetation/Bushes/b_rosa_canina_1s.et',
     ('2D556E41F306336C', 'Configs/Destruction/MultiphaseDestruction/FX_Debris/FX_Debris_Snadbags_Plastic.conf'):
@@ -633,6 +638,8 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Scenarios/SP01/SP01_UAZ469_USSR.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('C0221A073A780540', 'Assets/Vehicles/Tracked/BFV/BFV_Wreck.xob'): (
+        'WCS_M2A2_63120AE07E6C0966', 'C0221A073A780540', 'Assets/Vehicles/Tracked/M2A2/M2A2_Wreck.xob'),
     ('C1EAE57BFC75D349', 'Prefabs/Structures/Bulding/HouseK/House_K_8_EP1_full.et'): (
         'ArmaTerrainCore_60B524F7A5AE96A8', 'F4D545DC6824850D',
         'Prefabs/Structures/Bulding/HouseK/House_K_8_EP1_full.et'),
@@ -1094,9 +1101,26 @@ def interaction_rules(source, world, stock, local_resources):
     names, flags = set(), set()
     for path in source.layers[world.lower()]:
         text = source.read(path)
-        if 'TILW_BaseInteraction' not in text and 'TILW_TeleportInteraction' not in text:
+        if 'TILW_BaseInteraction' not in text and 'TILW_TeleportInteraction' not in text and BLACKBOX[0] not in text:
             continue
         for line, block in blocks(text):
+            ref = REF.search(block[0])
+            if ref and ref.groups() == BLACKBOX:
+                location = f'{path}:{line}'
+                try:
+                    if source.resources.get(BLACKBOX[0]) != [BLACKBOX[1]]:
+                        raise ValueError('blackbox prefab identity is ambiguous')
+                    blackbox_prefab(source.read(BLACKBOX[1]))
+                    native = blackbox_placement(block)
+                    if LEGACY.search(native):
+                        raise ValueError('blackbox placement has another legacy override')
+                    placements[(path, line)] = native
+                    flags.add(BLACKBOX_FLAG)
+                    audit[location] = {'objectives': [{'entity': location, 'flag': BLACKBOX_FLAG, 'singleUse': True}],
+                                       'inheritedBlackbox': True}
+                except ValueError as exc:
+                    audit[location] = {'gap': str(exc)}
+                continue
             has_teleport = any(teleports.is_teleport(item) for item in block)
             if not has_teleport and not any('TILW_BaseInteraction' in item for item in block):
                 continue
@@ -1557,6 +1581,8 @@ def passive_asset(source, path):
             return body
     if suffix == '.et':
         body = source.read(path)
+        if path == BLACKBOX[1]:
+            return blackbox_prefab(body)
         if STORAGE_BOX.fullmatch(body.rstrip('\n')):
             return body
         if (sha256(body.strip().encode()).hexdigest() == REVIEWED_NATIVE_ASSETS.get(path)
@@ -3395,6 +3421,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare damage notification timing in Match and confirm no objective damage during staging.')
     if any(asset.get('playable') for asset in roster_assets.values()):
         remaining.append('Compare named playable objectives, their damage flags and extraction with occupied roles.')
+    if any(entry.get('inheritedBlackbox') for entry in supported_interactions):
+        remaining.append('Compare blackbox marker visibility, faction-specific hold times and removal of the radio assembly.')
     if any(asset.get('destroyed') for asset in spawned_assets.values()):
         remaining.append('Compare destruction of a spawned objective, including pre-Match damage and the Match outcome.')
     if any(record.get('placedDestructionFlags') for record in row.get('damageFlagCandidates', {}).values()):

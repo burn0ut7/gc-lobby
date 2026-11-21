@@ -1,8 +1,11 @@
 """Convert static legacy flag-producing actions on replicated world objects."""
+from hashlib import sha256
 import re
 
 from briefings import QUOTED, block_end, guid, properties
 from catalog import REF
+from markers import LEGACY as LEGACY_MARKER, instance as render_marker
+from scenery import FIELD
 
 OBJECT = re.compile(r'GenericEntity(?: ([\w.-]+))?(?: : "[^"]+")? \{')
 MEMBER = re.compile(r' (?:([\w.-]+) )?\{')
@@ -16,6 +19,9 @@ REPLICATED_PREFABS = {
 }
 LEGACY_PREFAB = ('584EB34600E9698D', 'Prefabs/Utils/Interactions/TILW_SetFlagInteraction.et')
 NATIVE_PREFAB = '{B48D431A323D4564}Prefabs/Logic/Mission/Interaction.et'
+BLACKBOX = ('B66EE06D3F5749D6', 'worlds/FloridaMan/Prefabs/Setpeice/Wreck_AH64_Blackbox.et')
+BLACKBOX_MARKER_ID = '655B660447B37DF0'
+BLACKBOX_FLAG = 'BlackboxRemoved'
 LEGACY_ACTION = '61F4C18E863E752C'
 PREFAB_FIELDS = {
     '61F4C18E835074FF': 'ADA66F0D5EA84AC2',
@@ -27,7 +33,49 @@ PREFAB_FIELDS = {
 }
 
 
-def convert_object(lines, name, key, inherited_replication=False, *, standalone=False):
+def blackbox_prefab(text):
+    if sha256(text.strip().encode()).hexdigest() != (
+            'cda3d6acbd54ff720b4942f878293198f2832d2cfb43c4f5de61e959273b8baf'):
+        raise ValueError('blackbox composition differs from the reviewed prefab')
+    lines = text.splitlines()
+    action = next(i for i, line in enumerate(lines) if 'Prefabs/Utils/Interactions/TILW_BaseInteraction.et' in line)
+    end = block_end(lines, action)
+    replacement = lines[action].replace(
+        '{584EB34600E9698D}Prefabs/Utils/Interactions/TILW_BaseInteraction.et', NATIVE_PREFAB)
+    native, details = convert_object(
+        [replacement, *lines[action + 1:end + 1]], '', BLACKBOX[1], inherited_replication=True,
+        standalone=True, allow_parent_removal=True)
+    if len(details) != 2 or any(item['flag'] != BLACKBOX_FLAG for item in details):
+        raise ValueError('blackbox actions differ from the reviewed objective')
+    lines[action:end + 1] = native
+    marker = next(i for i, line in enumerate(lines) if LEGACY_MARKER.fullmatch(line.strip()))
+    end = block_end(lines, marker)
+    identity = lines[marker + 1].strip()
+    if identity != f'ID "{BLACKBOX_MARKER_ID}"':
+        raise ValueError('blackbox marker identity changed')
+    data = [line.strip() for line in lines[marker + 2:end]]
+    header, *body = render_marker(data, '', draw_order=True).splitlines()
+    lines[marker:end + 1] = ['  ' + line for line in (header, ' ' + identity, *body)]
+    return '\n'.join(lines) + '\n'
+
+
+def blackbox_placement(block):
+    """Keep the inherited marker override attached to the migrated prefab child."""
+    lines = block.copy()
+    for index, line in enumerate(block):
+        if line.strip() != 'PS_ManualMarker {':
+            continue
+        end = block_end(block, index)
+        identity, *transform = [field.strip() for field in block[index + 1:end]]
+        if (identity != f'ID "{BLACKBOX_MARKER_ID}"'
+                or any(not FIELD.fullmatch(field) or field.partition(' ')[0] not in
+                       {'coords', 'angleX', 'angleY', 'angleZ', 'angles'} for field in transform)):
+            raise ValueError('unsupported inherited blackbox marker override')
+        lines[index] = line.replace('PS_ManualMarker', 'GenericEntity', 1)
+    return '\n'.join(lines) + '\n'
+
+
+def convert_object(lines, name, key, inherited_replication=False, *, standalone=False, allow_parent_removal=False):
     actions = {i: match[1] for i, line in enumerate(lines) if (match := ACTION.fullmatch(line))}
     if not actions and not standalone:
         return lines, []
@@ -72,7 +120,8 @@ def convert_object(lines, name, key, inherited_replication=False, *, standalone=
         match_key = identity if len(actions) > 1 else ''
         component_id = ('DCEC291493734CD4' if inherited_action
                         else guid(key + '/' + name + ('/' + match_key if match_key else '')))
-        native, fields, detail = convert_action(lines[start:end + 1], name, match_key)
+        native, fields, detail = convert_action(lines[start:end + 1], name, match_key,
+                                                allow_parent_removal=allow_parent_removal)
         replacements[start] = (end, native)
         component = [f'GC_MissionInteractionComponent "{{{component_id}}}" {{', *fields, '}']
         components_out.extend(indent + ' ' + line for line in component)
@@ -96,7 +145,7 @@ def convert_object(lines, name, key, inherited_replication=False, *, standalone=
     return placement, details
 
 
-def convert_action(action, name, match_key):
+def convert_action(action, name, match_key, *, allow_parent_removal=False):
     native = [action[0].replace('TILW_BaseInteraction', 'GC_MissionInteractionAction', 1)]
     legacy = []
     i = 1
@@ -116,11 +165,15 @@ def convert_action(action, name, match_key):
     factions = data.get('m_factionKeys', '').split()
     once = data.get('m_singleUse', '1')
     required = data.get('m_conditionFlag', '""')
+    remove_parent = data.get('m_deleteParent', '0')
     if (not re.fullmatch(QUOTED, title) or title == '""' or not re.fullmatch(KEY, flag)
             or not all(re.fullmatch(KEY, faction) for faction in factions) or once not in ('0', '1')
-            or (required != '""' and not re.fullmatch(KEY, required)) or data.get('m_deleteParent', '0') != '0'):
+            or (required != '""' and not re.fullmatch(KEY, required))
+            or remove_parent not in ('0', '1') or (remove_parent == '1' and not allow_parent_removal)):
         raise ValueError('interaction availability or side effects need review')
     fields = [' m_sActionName ' + title, ' m_sCallFlag ' + flag]
+    if remove_parent == '1':
+        fields.append(' m_bDeleteParentOnUse 1')
     if once == '1':
         fields.append(' m_bSingleUse 1')
     if factions:
