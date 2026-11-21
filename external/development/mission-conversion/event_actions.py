@@ -1,5 +1,6 @@
 """Translate legacy actions with an existing GC Lobby equivalent."""
 from decimal import Decimal
+from functools import partial
 import re
 
 from briefings import block_end, guid, properties
@@ -102,13 +103,13 @@ def edit_map_items(data, key):
                     'factions': {faction[1:-1]: value for faction, value in factions.items()}}
 
 
-def set_flag(data, _key):
+def change_flag(data, _key, *, clear=False):
     flag = data.get('m_flagName', '')
     if not re.fullmatch(r'"[\w.-]+"', flag):
         raise ValueError('invalid mission flag name')
-    return ['       m_sFlagName ' + flag, '       m_iOperation 1', '       m_iAmount 1'], {
-        'setsFlag': flag[1:-1],
-    }
+    fields = ['       m_sFlagName ' + flag]
+    fields.extend(['       m_iOperation 4'] if clear else ['       m_iOperation 1', '       m_iAmount 1'])
+    return fields, {('clearsFlag' if clear else 'setsFlag'): flag[1:-1]}
 
 
 def render_spawn(details, key, spawn_type='GC_PrefabSpawn', fields=()):
@@ -279,7 +280,8 @@ ACTIONS = {
     'TILW_EditMapItemInstruction': (
         'GC_MapMarkerVisibilityAction', edit_map_items, {'m_itemNames', 'm_factionVisibility', 'm_visibleForEmpty'},
     ),
-    'TILW_SetFlagInstruction': ('GC_FlagAction', set_flag, {'m_flagName'}),
+    'TILW_SetFlagInstruction': ('GC_FlagAction', change_flag, {'m_flagName'}),
+    'TILW_ClearFlagInstruction': ('GC_FlagAction', partial(change_flag, clear=True), {'m_flagName'}),
 }
 
 

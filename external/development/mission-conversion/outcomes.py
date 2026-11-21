@@ -18,27 +18,28 @@ EVENT_LABEL = r'"[^"\\\x00-\x1f]+"'
 RESULT = {'EDITOR_FACTION_VICTORY': 1, 'EDITOR_FACTION_DEFEAT': 2, 'EDITOR_FACTION_DRAW': 3}
 TERM = re.compile(r'\s*(?:m_condition )?TILW_(Literal|Conjunction|Disjunction)Term "\{[\da-fA-F]{16}\}" \{')
 AI_FLAG = re.compile(r'^  TILW_FactionAIKilledFlag "\{[\da-fA-F]{16}\}" \{$')
-SET_FLAG = re.compile(r'^    TILW_SetFlagInstruction "\{[\da-fA-F]{16}\}" \{$')
+FLAG_ACTION = re.compile(r'^    TILW_(Set|Clear)FlagInstruction "\{[\da-fA-F]{16}\}" \{$')
 FLAG_FIELD = re.compile(r'^\s+m_flagName (' + KEY + r')\s*$')
 
 
 def instruction_flags(source, world, framework_path, lines, scripts):
-    """Find monotonic flags whose complete authored use stays inside event rules."""
+    """Find flags whose complete authored use stays inside event rules."""
     flags = set()
     known_uses = defaultdict(int)
     for start, line in enumerate(lines):
-        is_set = SET_FLAG.fullmatch(line)
+        action = FLAG_ACTION.fullmatch(line)
         is_literal = line.startswith('   ') and TERM.fullmatch(line)
-        if not is_set and (not is_literal or is_literal[1] != 'Literal'):
+        if not action and (not is_literal or is_literal[1] != 'Literal'):
             continue
         end = block_end(lines, start)
         body = lines[start + 1:end]
         names = [match[1] for item in body if (match := FLAG_FIELD.fullmatch(item))]
         if len(names) != 1:
             continue
-        if is_set:
+        if action and action[1] == 'Set':
             flags.add(names[0])
-        elif any(item.strip() != 'm_invertTerm 0' for item in body if not FLAG_FIELD.fullmatch(item)):
+        if not action and any(item.strip() not in ('m_invertTerm 0', 'm_invertTerm 1')
+                              for item in body if not FLAG_FIELD.fullmatch(item)):
             continue
         known_uses[names[0]] += 1
     legacy_flag_apis = ('AdjustMissionFlag', 'IsMissionFlag', 'GetFlagSetCopy', 'm_flagSet')
@@ -118,8 +119,8 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
                 return {'trigger': 'area capture', 'flag': flag[1:-1], 'inverted': True}
         if invert == '0' and flag[1:-1] in objective_flags:
             return {'trigger': 'interaction flag', 'flag': flag[1:-1]}
-        if invert == '0' and flag[1:-1] in event_flags:
-            return {'trigger': 'event flag', 'flag': flag[1:-1]}
+        if invert in ('0', '1') and flag[1:-1] in event_flags:
+            return {'trigger': 'event flag', 'flag': flag[1:-1], **({'inverted': True} if invert == '1' else {})}
         raise ValueError('unresolved or unsupported outcome flag ' + flag)
     if len(lines) < 4 or lines[1].strip() != 'm_operands {' or block_end(lines, 1) != len(lines) - 2:
         raise ValueError('unsupported compound outcome term fields')
@@ -184,9 +185,9 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                     assignments.append(assignment)
                 elif action_match:
                     delay, body, details = compile_action(action_match, fields[j + 1:last], key, hidden_briefings)
-                    if 'setsFlag' in details and details['setsFlag'] not in event_flags:
-                        raise ValueError('flag has another producer, an inverted check or an unsupported use: '
-                                         + details['setsFlag'])
+                    flag = details.get('setsFlag') or details.get('clearsFlag')
+                    if flag and flag not in event_flags:
+                        raise ValueError('flag has another producer or unsupported use: ' + flag)
                     converted_actions.append(details)
                 elif spawn_match and spawn_match[1] in extraction_spawns:
                     details = extraction_spawns[spawn_match[1]]
@@ -248,8 +249,11 @@ def leaves(term):
 def render_check(term, key, captures, capture_messages, tracked_areas):
     trigger = term['trigger']
     if trigger in ('interaction flag', 'event flag'):
-        return [f'      GC_MissionFlagCondition "{{{guid(key + "/objective")}}}" {{',
-                f'       m_sFlagName "{term["flag"]}"', '      }']
+        check = [f'      GC_MissionFlagCondition "{{{guid(key + "/objective")}}}" {{',
+                 f'       m_sFlagName "{term["flag"]}"']
+        if term.get('inverted'):
+            check.append('       m_bRequireFalse 1')
+        return [*check, '      }']
     if trigger == 'area capture':
         tracked = tracked_areas.get(term['flag'])
         if tracked:
@@ -289,6 +293,15 @@ def render(key, name, term, actions, captures, capture_messages, tracked_areas):
     dormant = term['trigger'] == 'dormant'
     condition = term['trigger'] not in ('Match start', 'dormant')
     startup = term['trigger'] == 'startup choice'
+    needs_match = any(item['trigger'] == 'event flag' and item.get('inverted') for item in leaves(term))
+
+    def match_condition(identity):
+        if not needs_match:
+            return []
+        # A false flag is already true as a negated condition during Lobby.
+        return [f'      GC_GameModeStateCondition "{{{guid(identity + "/match phase")}}}" {{',
+                '       m_eGameModeState GAME', '      }']
+
     latch = 'GC_MigrationChoice_' + term['flag'] if startup else name
     result = []
     if condition and not startup:
@@ -298,7 +311,7 @@ def render(key, name, term, actions, captures, capture_messages, tracked_areas):
             check = render_check(term, key, captures, capture_messages, tracked_areas)
         result.extend([
             f'    GC_Event "{{{guid(key + "/trigger")}}}" {{', f'     m_sName "{name}"',
-            '     m_aConditions {', *check, '     }',
+            '     m_aConditions {', *match_condition(key), *check, '     }',
             '     m_aActions {', f'      GC_MessageAction "{{{guid(key + "/log")}}}" {{',
             f'       m_sMessage "{name}"', '       m_iDelivery 2', '      }', '     }', '    }',
         ])
@@ -306,7 +319,8 @@ def render(key, name, term, actions, captures, capture_messages, tracked_areas):
         delivery = key + '/' + str(delay)
         result.extend([f'    GC_Event "{{{guid(delivery)}}}" {{', f'     m_sName "{name} ({delay:f}s)"'])
         if condition:
-            result.extend(['     m_aConditions {', f'      GC_MissionEventCondition "{{{guid(delivery + "/latch")}}}" {{',
+            result.extend(['     m_aConditions {', *match_condition(delivery),
+                           f'      GC_MissionEventCondition "{{{guid(delivery + "/latch")}}}" {{',
                            f'       m_sEventName "{latch}"', '      }', '     }'])
         if delay or dormant:
             result.append(f'     m_Advanced GC_EventOptions "{{{guid(delivery + "/delay")}}}" {{')
@@ -481,7 +495,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     startup_names = {'GC_MigrationChoice_' + flag[1:-1] for flag in startup}
     if used_choices and (startup_names | {'GC_MigrationStartupSelection'}) & names:
         return [], audit, 'generated startup selection name collides with a mission event'
-    tracked = {item['flag'] for _, _, term, _ in parsed for item in leaves(term) if item.get('inverted')}
+    tracked = {item['flag'] for _, _, term, _ in parsed for item in leaves(term)
+               if item['trigger'] == 'area capture' and item.get('inverted')}
     tracked_areas = {flag: 'GC_MigrationCapture_' + flag for flag in sorted(tracked)}
     if set(tracked_areas.values()) & names:
         return [], audit, 'generated capture tracker name collides with a mission event'

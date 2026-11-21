@@ -1032,7 +1032,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         for target in record.get('teleportDestinations', [])}
     event_flags = {action['setsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
                    if 'setsFlag' in action}
-    unresolved_event_flags = {term['flag'] for term in terms if term['trigger'] == 'event flag'} - event_flags
+    cleared_event_flags = {action['clearsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
+                           if 'clearsFlag' in action}
+    required_event_flags = {term['flag'] for term in terms if term['trigger'] == 'event flag'} | cleared_event_flags
+    unresolved_event_flags = required_event_flags - event_flags
     if unresolved_event_flags:
         blockers.append({'rule': 'framework events', 'file': world,
                          'detail': {'missingConvertedFlagProducers': sorted(unresolved_event_flags)}})
