@@ -50,6 +50,11 @@ REVIEWED_MISSING_TERMS = {
     'worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/MisssionTriggers.layer':
         ('516573a5947dd2aabfafcb80d7b364850f933e64', {'6A9F56058342FF13'}),
 }
+# The legacy hint contains no display content. The outcome and its delay are separate.
+REVIEWED_EMPTY_HINTS = {
+    'worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/default.layer':
+        ('74df0f746d04e31fdd1227c261978d0b01b070ce', '62672C5D0EC091B7'),
+}
 REVIEWED_INACTIVE_FLAGS = {
     'worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/default.layer':
         ('ec2d8e9742da07dccacdb9f37beebfb23449e213', '"Industrial"', 2),
@@ -373,7 +378,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
                resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None,
                log_only=False, named_events=(), inactive=(), binary_startup=None, missing_term=False, ends_match=False,
-               direct_control=False):
+               direct_control=False, empty_hint=None):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -381,6 +386,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
     converted_actions = []
     delayed_areas = []
     unroutable_notices = []
+    omitted_empty_hint = False
     messages = 0
     seen = set()
     term = None
@@ -423,6 +429,10 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 group_match = GROUP_SPAWN.fullmatch(fields[j]) if resolve_spawn else None
                 vehicle_match = VEHICLE_SPAWN.fullmatch(fields[j]) if resolve_spawn and resolve_crew else None
                 if notify_match:
+                    if notify_match[1] == empty_hint and last == j + 1:
+                        omitted_empty_hint = True
+                        j = last + 1
+                        continue
                     delay, body = message(fields[j + 1:last], key + '/' + notify_match[1],
                                           multiline=True, drop_unroutable=compound)
                     messages += 1
@@ -510,6 +520,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         audit['notificationCount'] = messages
     if unroutable_notices:
         audit['notificationsWithoutRecipients'] = unroutable_notices
+    if omitted_empty_hint:
+        audit['omittedEmptyHint'] = empty_hint
     return term, actions, audit
 
 
@@ -928,6 +940,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     missing_term_blob, reviewed_missing_terms = REVIEWED_MISSING_TERMS.get(path, (None, ()))
     if not compound or source.files[path] != missing_term_blob or scripts is None or 'EvalExpression' in scripts:
         reviewed_missing_terms = ()
+    hint_blob, reviewed_empty_hint = REVIEWED_EMPTY_HINTS.get(path, (None, None))
+    if source.files[path] != hint_blob:
+        reviewed_empty_hint = None
     capture_messages = set() if compound else None
     for i, line in enumerate(body):
         event = EVENT.fullmatch(line)
@@ -963,6 +978,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived,
                 log_only=log_only, named_events=source_names, inactive=inactive, binary_startup=binary_startup,
                 direct_control=direct_control, ends_match=ends_match,
+                empty_hint=reviewed_empty_hint,
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
             if any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
