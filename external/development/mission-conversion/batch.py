@@ -100,6 +100,7 @@ DAMAGE_TARGETS = {
     '5117311FB822FD1F': 'Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Officer.et',
     'B3AB6D12D247DDB5': 'Prefabs/Characters/Factions/CIV/Businessman/Character_CIV_Businessman_Randomized.et',
     'E024A74F8A4BC644': 'Prefabs/Characters/Factions/CIV/Businessman/Character_CIV_Businessman_1.et',
+    'A517C72CEF150898': 'Prefabs/Characters/Factions/CIV/Businessman/Character_CIV_Businessman_2.et',
     'FE65E8C60C751352': 'Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_PL.et',
 }
 DAMAGE_FLAG_NAME = re.compile(r'"[\w .-]+"')
@@ -1236,6 +1237,73 @@ def spawned_objectives(source, dev, world, stock, local_resources):
     return reviewed
 
 
+def playable_objectives(source, dev, world, stock, local_resources, source_units, dev_units, respawn):
+    """Migrate named characters in explicitly playable, single-life rosters."""
+    if not stock or respawn.get('ticketGaps'):
+        return {}
+    paths = sorted(path for path in source.closure(world) if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+    originals = {path: source.read(path) for path in paths}
+    corpus = '\n'.join(originals.values())
+    scripts = script_text(source)
+    if 'TILW_EditRespawnTicketsInstruction' in corpus or any(api in scripts for api in SCRIPT_FLAG_APIS):
+        return {}
+    replacement_factions = {entry['faction'] for entry in respawn.get('factions', ())}
+    conflicting_ids = local_resources | source_units.resources.keys() | dev_units.resources.keys()
+    reviewed = {}
+    for layer in source.layers[world.lower()]:
+        for line, group in blocks(originals[layer]):
+            if (not group[0].startswith('SCR_AIGroup ') or ' m_bSetPlayable 1' not in group
+                    or ' m_aUnitPrefabSlots {' not in group):
+                continue
+            faction = [match[1] for field in group if (match := re.fullmatch(r' m_faction "([\w.-]+)"', field))]
+            if len(faction) != 1 or faction[0] in replacement_factions:
+                continue
+            start = group.index(' m_aUnitPrefabSlots {')
+            slots = group[start + 1:block_end(group, start)]
+            for slot in slots:
+                ref = REF.fullmatch(slot.strip())
+                if not ref:
+                    continue
+                resource, path = ref[1].upper(), ref[2]
+                if (source.resources.get(resource) != [path] or dev.resources.get(resource) not in (None, [path])
+                        or resource in source_units.resources or resource in dev_units.resources
+                        or not path.startswith(world.rsplit('/', 1)[0] + '/')
+                        or corpus.upper().count('{' + resource + '}') != 1):
+                    continue
+                entity = source.read(path).splitlines()
+                parent = REF.search(entity[0]) if entity else None
+                if (not parent or not entity[0].startswith('SCR_ChimeraCharacter : ')
+                        or parent[1] in conflicting_ids or DAMAGE_TARGETS.get(parent[1]) != parent[2]
+                        or not parent[2].startswith('Prefabs/Characters/') or not stock.contains(*parent.groups())):
+                    continue
+                try:
+                    fields, death = damage_state_flag_placement(entity)
+                    root = fields.index(' components {')
+                    end = block_end(fields, root)
+                    setters = [i for i in range(root + 1, end) if re.fullmatch(
+                        rf'  TILW_SetNameComponent {SERIALIZED_ID} \{{', fields[i])]
+                    setter, = setters
+                    stop = block_end(fields, setter)
+                    name = properties(fields[setter + 1:stop], {'m_setName'})['m_setName']
+                    if (not re.fullmatch(r'"[\w.-]{1,128}"', name)
+                            or any(field.startswith(('  RplComponent ', '  SCR_CharacterDamageManagerComponent '))
+                                   for field in fields[root + 1:end])):
+                        continue
+                    fields[setter:stop + 1] = [
+                        fields[setter].replace('TILW_SetNameComponent', 'GC_MissionEntityNameComponent', 1),
+                        f'   m_sMissionName {name}', '  }']
+                    body = '\n'.join(fields) + '\n'
+                    if (LEGACY.search(body) or name in scripts or death in scripts
+                            or corpus.count(f'"{death}"') != 1 + literal_flag_reads(corpus, death)
+                            or (path in dev.files and dev.read(path).strip() != body.strip())):
+                        continue
+                except (KeyError, ValueError):
+                    continue
+                reviewed[resource] = {'path': path, 'body': body, 'deathFlag': death, 'entity': name[1:-1],
+                                      'placement': f'{layer}:{line}', 'playable': True}
+    return reviewed
+
+
 def ai_objectives(source, dev, world, stock, local_resources, source_units, dev_units):
     """Convert named objective characters instantiated by the reviewed civilian AI group."""
     reviewed = {}
@@ -2230,8 +2298,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     objective_flags, interaction_placements = interactions
     damage_flags = {record['flag']: record['entity'] for record in row.get('damageFlagCandidates', {}).values()
                     if 'flag' in record and record['flag'] in objective_flags}
-    ai_assets = {resource: asset for resource, asset in spawned_assets.items() if 'deathFlag' in asset}
-    damage_flags.update({asset['deathFlag']: asset['entity'] for asset in ai_assets.values()})
+    roster_assets = {resource: asset for resource, asset in spawned_assets.items() if 'deathFlag' in asset}
+    damage_flags.update({asset['deathFlag']: asset['entity'] for asset in roster_assets.values()
+                         if not asset.get('playable')})
     teleport_targets = {target for record in row.get('interactionCandidate', {}).values() if isinstance(record, dict)
                         for target in record.get('teleportDestinations', [])}
     event_flags = {action['setsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
@@ -2306,10 +2375,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         blockers.append({'rule': 'framework settings', 'file': layer, 'line': line, 'detail': roots})
                 elif kind == 'SCR_AIGroup':
                     try:
-                        ai_members = {identity: asset['path'] for identity, asset in ai_assets.items()
-                                      if asset['placement'] == f'{layer}:{line}'}
+                        members = {identity: asset for identity, asset in roster_assets.items()
+                                   if asset['placement'] == f'{layer}:{line}'}
                         converted, count, slots = convert_group_block(
-                            interaction_placements.get((layer, line), body), ai_members)
+                            interaction_placements.get((layer, line), body),
+                            {identity: asset['path'] for identity, asset in members.items() if not asset.get('playable')},
+                            {identity: asset['path'] for identity, asset in members.items() if asset.get('playable')})
                         result.append(converted)
                         group_blocks.append({'file': layer, 'line': line, 'groups': count, 'slots': slots})
                     except ValueError as exc:
@@ -2434,7 +2505,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     prefab_spawns.extend(spawner_audit)
     spawn_guids = {REF.fullmatch(item['prefab'])[1].upper() for item in prefab_spawns}
     for resource, asset in sorted(spawned_assets.items()):
-        if resource not in ai_assets and asset['flag'] in used_flags and resource not in spawn_guids:
+        if resource not in roster_assets and asset['flag'] in used_flags and resource not in spawn_guids:
             blockers.append({'rule': 'spawned objective', 'file': asset['path'],
                              'detail': 'objective flag has no converted prefab spawn'})
         if asset.get('destroyed'):
@@ -2458,14 +2529,14 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                       for _, fields in re.findall(r'(?ms)^( +)m_aCrewWaypoints \{\n(.*?)^\1\}', body)
                       for name in re.findall(r'"([\w.-]+)"', fields)}
     if not blockers and (assignments or marker_edits or prefab_spawns or extraction_spawns or area_names or teleport_targets
-                         or damage_flags or crew_waypoints
+                         or damage_flags or roster_assets or crew_waypoints
                          or any('m_aStatic' in body for body in draft.values())):
         named = named_placements(draft.values())
-        for resource, asset in ai_assets.items():
+        for resource, asset in roster_assets.items():
             reference = f'"{{{resource}}}{asset["path"]}"'
             occurrences = sum(body.count(reference) for body in draft.values())
             if occurrences != 1 or asset['entity'] in named:
-                blockers.append({'rule': 'AI objective spawn', 'file': asset['path'],
+                blockers.append({'rule': 'roster objective spawn', 'file': asset['path'],
                                  'detail': 'expected one member and one unique runtime name'})
             else:
                 named[asset['entity']] = [('SCR_ChimeraCharacter', reference)]
@@ -2615,6 +2686,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare event deactivation before a trigger and after it queues delayed actions.')
     if damage_flags:
         remaining.append('Compare damage notification timing in Match and confirm no objective damage during staging.')
+    if any(asset.get('playable') for asset in roster_assets.values()):
+        remaining.append('Compare named playable objectives, their damage flags and extraction with occupied roles.')
     if any(asset.get('destroyed') for asset in spawned_assets.values()):
         remaining.append('Compare destruction of a spawned objective, including pre-Match damage and the Match outcome.')
     if any(record.get('placedDestructionFlags') for record in row.get('damageFlagCandidates', {}).values()):

@@ -401,16 +401,22 @@ def main():
         if args.batch and row['serializedTypes'].get('TILW_SetNameComponent') and row['serializedTypes'].get('TILW_Flag_EntityDamage'):
             try:
                 ai_assets = batch.ai_objectives(source, dev, world, stock, locally_owned, source_units, dev_units)
-                ai_flags = [asset[key] for asset in ai_assets.values() for key in ('flag', 'deathFlag')]
+                playable = batch.playable_objectives(source, dev, world, stock, locally_owned, source_units,
+                                                     dev_units, row.get('respawn', {}))
+                if ai_assets.keys() & playable.keys():
+                    raise ValueError('objective character appears in both AI and playable rosters')
+                roster_assets = {**ai_assets, **playable}
+                ai_flags = [asset[key] for asset in roster_assets.values()
+                            for key in ('flag', 'deathFlag') if key in asset]
                 if len(set(ai_flags)) != len(ai_flags) or set(ai_flags) & set(objective_flags):
                     raise ValueError('duplicate AI objective flag producers')
-                if ai_assets:
-                    objectives.update(ai_assets)
+                if roster_assets:
+                    objectives.update(roster_assets)
                     objective_flags = set(objective_flags) | set(ai_flags)
                     batch_interactions[world] = (objective_flags, interaction_placements)
                     spawned_assets[world] = objectives
                     row['aiObjectives'] = {identity: {k: v for k, v in asset.items() if k != 'body'}
-                                           for identity, asset in ai_assets.items()}
+                                           for identity, asset in roster_assets.items()}
             except ValueError as exc:
                 row['aiObjectiveGap'] = str(exc)
         if args.batch and row['serializedTypes'].get('TILW_SpawnPrefabInstruction'):
@@ -857,9 +863,10 @@ def main():
         restored = {old: new for old, new in restored.items()
                     if old[0] not in locally_owned and new[0] not in locally_owned}
 
-        def convert_group_block(body, reviewed_ai_members=None):
+        def convert_group_block(body, reviewed_ai_members=None, reviewed_playable_members=None):
             return group_layer(body, source_units, dev_units, stock, locally_owned,
-                               reviewed_members=reviewed_members, external_ai=external_ai,
+                               reviewed_members={**reviewed_members, **(reviewed_playable_members or {})},
+                               external_ai=external_ai,
                                allow_stock_ai=True, restored_members=restored,
                                reviewed_ai_members={**native_ai_members, **(reviewed_ai_members or {})},
                                forced_external=forced_external,
