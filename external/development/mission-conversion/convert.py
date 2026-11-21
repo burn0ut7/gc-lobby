@@ -6,7 +6,7 @@ from hashlib import sha256
 import json
 import re
 from pathlib import Path, PurePosixPath
-from subprocess import CalledProcessError
+from subprocess import CalledProcessError, run
 
 from boundaries import convert_boundaries
 import breach
@@ -36,6 +36,32 @@ from scenery import StockPrefabs, placements
 from race_ruha import ruha_files, WORLD as RUHA_WORLD
 from race_day import PRIOR_KUNAR_LAYERS, race_files, WORLD as RACE_WORLD
 import wetfeet
+
+
+PREPARED_SETTINGS_SOURCE = 'a75e404c331abce5185f315f47f533d9b8eccf00'
+PREPARED_SETTINGS_REVISIONS = (
+    '5e571911b33f85facef1f21cc62872d1a7e323de',
+    '1e49382a6a20df4686844ca19cece47d18428a8f',
+)
+
+
+def prepared_settings_blobs(source):
+    """Find exact generated ticket and notification presets from the original preparation."""
+    if source.commit != PREPARED_SETTINGS_SOURCE:
+        return {}
+    blobs = defaultdict(set)
+    for revision in PREPARED_SETTINGS_REVISIONS:
+        tree = run(['git', '-C', str(source.repo), 'diff-tree', '--no-commit-id', '--no-renames',
+                    '--no-abbrev', '--raw', '-r', '-z', revision, '--', 'worlds'],
+                   capture_output=True)
+        if tree.returncode:
+            continue
+        entries = iter(tree.stdout.rstrip(b'\0').split(b'\0'))
+        for entry, path in zip(entries, entries):
+            _, _, _, blob, status = entry.split()
+            if status in (b'A', b'M') and path.endswith(b'_GC_Settings.et'):
+                blobs[path.decode()].add(blob.decode())
+    return blobs
 
 
 def main():
@@ -99,6 +125,7 @@ def main():
         args.include_gwotline_mode = True
     source = Snapshot(args.missions, args.source)
     dev = Snapshot(args.missions, args.dev)
+    prepared_settings = prepared_settings_blobs(source) if args.batch else {}
     briefing_layouts = set(STANDARD_LAYOUTS)
     perfk_layout = 'worlds/Perfk/UI/MissionDescription/DescriptionEditableScrollable_size18.layout'
     if (source.files.get(perfk_layout) == '4808df7fdfd404e8ea0d0df16f7ddd93aac464bd'
@@ -436,7 +463,7 @@ def main():
         mode_events = [] if authored_respawns else event
         if messages:
             mode_events = ['   m_aMissionEvents + {', *mode_events[1:-1], *messages, '   }']
-        if briefing or mode_events:
+        if briefing or mode_events or (args.batch and row['headers'] and world not in dev.files and not gaps):
             try:
                 body, compact = render(world, briefing, mode_events)
                 # Keep scenario settings in the owning mission directory under a unique name.
@@ -446,7 +473,7 @@ def main():
                     raise ValueError('generated resource GUID collision')
                 old_name = next(line.strip() for line in template.splitlines() if line.strip().startswith('Name '))
                 meta = template.replace(old_name, f'Name "{{{resource}}}{dest}"')
-                prior_ticket_preset = None
+                prior_preset = None
                 for path, contents in [(dest, body), (dest + '.meta', meta)]:
                     if path not in dev.files:
                         continue
@@ -454,6 +481,9 @@ def main():
                     if existing.strip() != contents.strip():
                         if path != dest:
                             raise ValueError('Dev already has differing ' + path)
+                        if world not in dev.files and dev.files[path] in prepared_settings.get(path, ()):
+                            prior_preset = sha256(existing.encode()).hexdigest()
+                            continue
                         ticket_versions = [render(world, briefing, event)[0].strip()] if event else []
                         if authored_respawns and messages:
                             with_tickets = ['   m_aMissionEvents + {', *event[1:-1], *messages, '   }']
@@ -462,11 +492,13 @@ def main():
                         if existing.strip() not in [previous_briefing, *ticket_versions]:
                             raise ValueError('Dev already has differing ' + path)
                         if authored_respawns and existing.strip() in ticket_versions:
-                            prior_ticket_preset = sha256(existing.encode()).hexdigest()
+                            prior_preset = sha256(existing.encode()).hexdigest()
                 out[dest] = body
                 out[dest + '.meta'] = meta
-                if prior_ticket_preset:
-                    row['reviewedTicketPreset'] = {dest: prior_ticket_preset}
+                if prior_preset:
+                    row['reviewedSettingsPreset'] = {dest: prior_preset}
+                if args.batch:
+                    row['batchModePreset'] = dest
                 if briefing:
                     row['briefingModePreset'] = dest
                     row['renumberedInSourceOrder'] = compact

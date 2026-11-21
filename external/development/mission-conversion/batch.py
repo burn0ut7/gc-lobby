@@ -63,6 +63,22 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/Til/JunctionJabXL.conf': (
+        'de161be13cf65db02c7a982c60fb4c335f996c5e',
+        (('worlds/Til/JunctionJabXL/JunctionJabXL_Layers/players_caf.layer',
+          'ee76d8c1c238c9d957f7b4f987361449a2db426f'),
+         ('worlds/Til/JunctionJabXL/JunctionJabXL_Layers/players_nva.layer',
+          '4b42ceae026d066bc782515fcaafc8530d048d16')),
+        100, 99,
+    ),
+    'Missions/anteante101/Attack of the Howlers.conf': (
+        'db07e88229b315c5af74b96a65d0663e84e07107',
+        (('worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/B4_heart_OP4.layer',
+          '8717b2304cf8fb8fa8f9e4887ce009f7fc46753e'),
+         ('worlds/anteante101/Attack of the Howelrs/Attack of the Howlers_Layers/Howlers.layer',
+          'a65027f6ae9a003d3e79934b068a2cdf87d4e836')),
+        50, 55,
+    ),
     'Missions/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault.conf': (
         '81326ea91d4371e361190f44e19758ad03b59072',
         (('worlds/HitTheMan/Frontline CDF Assault/FrontlineCDFAssault_Layers/NVA_Players/NVA_Players.layer',
@@ -220,6 +236,12 @@ WORKSHOP_RESOURCE_ALIASES = {
         'Prefabs/Structures/Bulding/Military/fort_rampart_ep1.et'),
 }
 UNITS_PREFAB_ALIASES = {
+    ('4F064E9878DCF301', 'Prefabs/Vehicles/Wheeled/M998/M1151_armed_BTR_TAN.et'): (
+        '4F064E9878DCF301', 'Prefabs/Vehicles/Wheeled/M998/M1151/BMP_Turret/M1151_armed_BMP_TAN.et',
+        'f83f4593e93f45e86b3e65f59995c436877a70399bb0d6310934efbfbe06f1fb'),
+    ('E69BD3AC16F5AA77', 'Prefabs/Vehicles/Wheeled/M998/M1151_armed_BMP_TAN.et'): (
+        'E69BD3AC16F5AA77', 'Prefabs/Vehicles/Wheeled/M998/M1151/BTR_Turret/M1151_armed_BTR_TAN.et',
+        'c2ed980a0600ae70cdf3c94909e59b5eb5164c75e78f7474f2efdea330aea0f4'),
     ('AAB3119124C9167A', 'Prefabs/Vehicles/Wheeled/BTR70/1980 Mot Rifle/BTR70_MSV80.et'): (
         'AAB3119124C9167A', 'Prefabs/Vehicles/Wheeled/BTR70/USSR/BTR70_USSR.et',
         '6ff98c749e6e58fb337ad80c11bdb2cabcf5beebe84afdf0fc8a1e6e917bdd94'),
@@ -1414,7 +1436,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             return repairs, {'status': 'generated for file review', 'files': sorted(repairs),
                              'reviewedReplacements': hashes, 'existingLayerRepairs': True, 'blockers': []}
         return {}, {'status': 'existing Dev world', 'review': row['headers']}
-    preset = row.get('briefingModePreset')
+    preset = row.get('batchModePreset')
     if not preset or row['briefingGaps']:
         blockers.append({'rule': 'briefing preset', 'file': world, 'detail': row['briefingGaps']})
     if respawn := row.get('respawn'):
@@ -1703,7 +1725,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         data = dev.read_raw(path) if isinstance(text, bytes) else dev.read_raw(path).decode('utf-8-sig').replace('\r\n', '\n')
         if data.strip() != text.strip():
             if (path == preset and isinstance(data, str)
-                    and sha256(data.encode()).hexdigest() == row.get('reviewedTicketPreset', {}).get(path)):
+                    and sha256(data.encode()).hexdigest() == row.get('reviewedSettingsPreset', {}).get(path)):
                 reviewed_replacements[path] = sha256(data.encode()).hexdigest()
             elif (path.endswith('.layer') and isinstance(data, str) and DUPLICATE_CALLSIGNS.search(data)
                     and DUPLICATE_CALLSIGNS.sub(r'\g<first>', data).strip() == text.strip()):

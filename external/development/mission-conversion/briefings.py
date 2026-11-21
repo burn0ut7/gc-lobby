@@ -14,6 +14,10 @@ STANDARD_LAYOUTS = {
 }
 MODE = '{A79C4E0A43DEB821}Prefabs/MP/Modes/GC_LobbyGameMode.et'
 QUOTED = r'"(?:[^"\\\n]|\\.|"")*"'
+DESCRIPTOR = re.compile(r'components \{\n'
+                        r'PS_EditableMissionDescriptionComponent "\{5EE541289B95FCEA\}" \{\n'
+                        r'm_UIInfo SCR_EditableDescriptorUIInfo "\{5EE5412857A8E166\}" \{\n'
+                        rf'Name {QUOTED}\n\}}\n\}}\n\}}')
 PLACEMENT = re.compile(r'^(?P<group>\$grp )?PS_MissionDescription\b(?P<head>[^\n]*)\{[ \t]*$', re.M)
 ALLOWED = set('coords angles angleX angleY angleZ scale ID m_sTitle m_sTextData m_iOrder m_aVisibleForFactions m_bEmptyFactionVisibility m_bShowForAnyFaction m_sDescriptionLayout'.split())
 
@@ -78,6 +82,12 @@ def page(lines, origin, name='', layouts=STANDARD_LAYOUTS):
     content = []
     i = 0
     while i < len(lines):
+        if lines[i].strip() == 'components {':
+            stop = block_end(lines, i)
+            descriptor = '\n'.join(line.strip() for line in lines[i:stop + 1])
+            if DESCRIPTOR.fullmatch(descriptor):
+                i = stop + 1
+                continue
         if re.fullmatch(r' +editor EntityEditorProps "\{[\da-fA-F]{16}\}" \{', lines[i]):
             stop = block_end(lines, i)
             if stop != i + 1:
@@ -115,7 +125,7 @@ def page(lines, origin, name='', layouts=STANDARD_LAYOUTS):
         raise ValueError('inherited title or content')
     title = values['m_sTitle']
     body = values['m_sTextData']
-    if not re.fullmatch(QUOTED, title) or not all(re.fullmatch(QUOTED, s) for s in body.split('\\\n')):
+    if not all(re.fullmatch(QUOTED, part) for value in (title, body) for part in value.split('\\\n')):
         raise ValueError('unsupported serialized briefing string')
     if len(title.encode()) - 2 > 128 or len(body.encode()) - 2 > 16384:
         raise ValueError('briefing exceeds GC Lobby string limit')
@@ -198,7 +208,8 @@ def render(world, pages, event=()):
         lines.append('   m_aBriefings {')
     for order, p in pages:
         lines.extend([f'    GC_Briefing "{{{guid(p.source)}}}" {{', f'     m_iOrder {order}',
-                      f'     m_sTitle {p.title}', '     m_sContent ' + p.body.replace('\n', '\n     ')])
+                      '     m_sTitle ' + p.title.replace('\n', '\n     '),
+                      '     m_sContent ' + p.body.replace('\n', '\n     ')])
         if p.factions:
             lines.extend(['     m_aFactionKeys {', '      ' + p.factions, '     }'])
         if p.audience != BriefingAudience.DEFAULT:
