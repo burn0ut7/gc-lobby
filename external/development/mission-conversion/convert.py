@@ -210,6 +210,7 @@ def main():
                     args.workshop_addons, occupied) | verified_rhs_forced_roles(
                         rhs_database, locally_owned, source_units, dev_units)
                 asset_aliases = batch.resource_aliases(args.workshop_addons, dev_units, stock)
+                asset_aliases.update(batch.reviewed_units_asset_paths(source_units, dev_units))
             except (OSError, ValueError) as exc:
                 parser.error(str(exc))
 

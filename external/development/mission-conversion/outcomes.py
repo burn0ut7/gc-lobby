@@ -169,19 +169,19 @@ def derived_flags(source, world, framework_path, body, scripts):
     return definitions
 
 
-def end_action(lines, key, *, extended_announcements=False):
+def end_action(lines, key, *, extended_announcements=False, end_match=False):
     data = properties(lines, {'m_factionKey', 'm_gameOverType', 'm_executionDelay'})
     faction = data.get('m_factionKey', '')
     kind = data.get('m_gameOverType', 'EDITOR_FACTION_VICTORY')
     delay = data.get('m_executionDelay', '5')
     if not re.fullmatch(r'\d+(?:\.\d+)?', delay) or Decimal(delay) > 86400:
         raise ValueError('unsupported faction outcome or delay')
-    if extended_announcements and kind == 'EDITOR_FACTION_NEUTRAL' and faction in ('', '""'):
+    if not end_match and extended_announcements and kind == 'EDITOR_FACTION_NEUTRAL' and faction in ('', '""'):
         return Decimal(delay), [
             f'      GC_MessageAction "{{{guid(key)}}}" {{',
             '       m_iDelivery 2', '       m_sMessage "Neutral result reached."', '      }',
         ], {'faction': '', 'result': kind, 'delaySeconds': delay, 'delivery': 'server log'}
-    if extended_announcements and faction in ('', '""') and kind in (
+    if not end_match and extended_announcements and faction in ('', '""') and kind in (
             'EDITOR_FACTION_VICTORY', 'EDITOR_FACTION_DRAW', 'ENDREASON_TIMELIMIT'):
         # The suppressed legacy instruction resolves the faction name before
         # displaying a hint. These instructions supply no faction key.
@@ -189,14 +189,16 @@ def end_action(lines, key, *, extended_announcements=False):
             'faction': '', 'result': kind, 'delaySeconds': delay, 'delivery': 'missing faction',
         }
     result = RESULT.get(kind)
-    if result is None and extended_announcements:
+    if result is None and extended_announcements and not end_match:
         result = ANNOUNCEMENT_RESULTS.get(kind)
     if not re.fullmatch(KEY, faction) or result is None:
         raise ValueError('unsupported faction outcome or delay')
+    delivery = [] if end_match else ['       m_bAnnounceOnly 1']
     return Decimal(delay), [
         f'      GC_EndMissionAction "{{{guid(key)}}}" {{', f'       m_iResult {result}',
-        '       m_bAnnounceOnly 1', '       m_aWinningFactions {', f'        {faction}', '       }', '      }',
-    ], {'faction': faction[1:-1], 'result': kind, 'delaySeconds': delay}
+        *delivery, '       m_aWinningFactions {', f'        {faction}', '       }', '      }',
+    ], {'faction': faction[1:-1], 'result': kind, 'delaySeconds': delay,
+        **({'delivery': 'match end'} if end_match else {})}
 
 
 def waypoint_action(lines, key):
@@ -367,7 +369,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
 
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
                resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None,
-               log_only=False, named_events=(), inactive=(), binary_startup=None, missing_term=False,
+               log_only=False, named_events=(), inactive=(), binary_startup=None, missing_term=False, ends_match=False,
                direct_control=False):
     actions = defaultdict(list)
     notices = []
@@ -425,7 +427,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                         unroutable_notices.append({'instructionId': notify_match[1], 'delaySeconds': str(delay)})
                 elif end_match:
                     delay, body, notice = end_action(fields[j + 1:last], key + '/' + end_match[1],
-                                                     extended_announcements=compound)
+                                                     extended_announcements=compound, end_match=ends_match)
                     notices.append(notice)
                 elif waypoint_match:
                     if last == j + 1:
@@ -879,7 +881,11 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     base = roots[0]
     stop = block_end(lines, base)
     body = lines[base + 1:stop]
-    if any(line.strip() == 'm_suppressGameEnd 0' for line in body):
+    suppression = [line for line in body if line.startswith(' m_suppressGameEnd ')]
+    if suppression not in ([], [' m_suppressGameEnd 0'], [' m_suppressGameEnd 1']):
+        return [], {}, 'unsupported game end suppression settings'
+    ends_match = suppression == [' m_suppressGameEnd 0']
+    if ends_match and not compound:
         return [], {}, 'instance ends the mission and needs a separate runtime port'
     flags = peak_flags(body)
     ai = peak_flags(body, AI_FLAG) if compound else {}
@@ -953,7 +959,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 resolve_spawn, resolve_crew, startup, hidden_briefings,
                 DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived,
                 log_only=log_only, named_events=source_names, inactive=inactive, binary_startup=binary_startup,
-                direct_control=direct_control,
+                direct_control=direct_control, ends_match=ends_match,
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
             if any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):

@@ -132,6 +132,7 @@ GMFX_AMMO_TARGETS = (
 )
 GMFX_PROVIDER = 'GameMasterFX_5994AD5A9F33BE57'
 GMFX_DIGEST = '09a2e7a14300b916b1eaea43446d39d1d3334209e692e50d29406233962f7c80'
+GMFX_AP_MINE = ('E1BBAB7F28FE8B0B', 'Prefabs/Systems/Mines/Mine_AP.et')
 WORKSHOP_DAMAGE_TARGETS = {
     GMFX_PROVIDER: (
         GMFX_DIGEST,
@@ -175,7 +176,7 @@ WORKSHOP_SPAWN_PREFABS = {
     GMFX_PROVIDER: (
         GMFX_DIGEST,
         (('DDDDBEC77B49A995', 'Prefabs/Systems/Explosions/Wrapper_Bomb_Huge.et'),
-         ('30263B4F1FB2A0F2', 'Prefabs/Systems/Artillery/ArtilleryWrapper_WTF.et')),
+         ('30263B4F1FB2A0F2', 'Prefabs/Systems/Artillery/ArtilleryWrapper_WTF.et'), GMFX_AP_MINE),
     ),
 }
 RHS_DAMAGE_PATHS = {
@@ -219,6 +220,14 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/Blue/COTVT80_TheBearWentOvertheMountainCH1S6.conf': (
+        '177b4cd767a9fb3293ac23be596d2562be42180f',
+        (('worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/BLUFOR.layer',
+          '13e9265d879ceae9a2b8a09ab00d804c0cdc04ce'),
+         ('worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/OPFOR.layer',
+          '89c00432d3a54f3d9695d8394699d2f965989043')),
+        80, 78,
+    ),
     'Missions/Blue/TVT69_RUCKUSBerg.conf': (
         'a87dcad8fed68685ca5f79aec8f6ceeb00140fc1',
         (('worlds/Blue/Ruckusberg/RuckusBerg_Layers/UK/UKPlayers.layer', '4d974d42c141ed842ae49e6e3506a45775900f19'),
@@ -2495,6 +2504,17 @@ def registered_alias(resource, path, source, dev, aliases):
     return None
 
 
+def reviewed_units_asset_paths(source_units, dev_units):
+    icon = '5E4DDEE56C6D4D16'
+    original = 'worlds/Blue/TheBearWentOvertheMountain2/Assets/Mujahadeen.edds'
+    current = 'Images/GC_MUJ_icon.edds'
+    if (source_units.resources.get(icon) == dev_units.resources.get(icon) == [current]
+            and source_units.files[current] == dev_units.files[current]
+            and source_units.files[current + '.meta'] == dev_units.files[current + '.meta']):
+        return {(icon, original): (icon, current)}
+    return {}
+
+
 def reviewed_faction_assets(source, dev, source_units, dev_units):
     path = 'worlds/TheLocalPub/BebbleIslandRaid/Configs/Factions/Argentina.conf'
     identity = '0BE3E7B63E7C70AC'
@@ -3474,6 +3494,14 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append(converted)
                 elif kind == 'ParticleEffectEntity' and static_particle_placement(block):
                     result.append(body)
+                elif kind == 'GMFX_MineTriggerEntity':
+                    resource = REF.search(head)
+                    if (resource and resource.groups() == GMFX_AP_MINE and resolve_spawn(*GMFX_AP_MINE)
+                            and all(FIELD.fullmatch(field.strip()) for field in block[1:-1])):
+                        result.append(body)
+                    else:
+                        blockers.append({'rule': kind, 'file': layer, 'line': line,
+                                         'detail': 'unverified GMFX placement'})
                 elif LEGACY_WIRECUTTER.fullmatch(head):
                     result.append(restore_placed_wirecutters(block, asset_aliases, source.files[layer]))
                 elif kind == 'SplineShapeEntity' and static_spline_placement(block):
@@ -3721,10 +3749,16 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             draft[sibling] = ''.join(converted)
             continue
         try:
+            original = dev.read(sibling)
             remaining = ['\n'.join(block) for _, block in blocks(''.join(converted))]
-            for _, existing in blocks(dev.read(sibling)):
+            for _, existing in blocks(original):
                 remaining.remove('\n'.join(existing))
-            reused_layers.add(sibling)
+            updated = replace_registered_paths(original, source, dev, asset_aliases)
+            if updated != original:
+                draft[sibling] = updated
+                reviewed_replacements[sibling] = sha256(original.encode()).hexdigest()
+            else:
+                reused_layers.add(sibling)
             if remaining:
                 supplemental = layer.removesuffix('.layer') + '_GC_AdditionalBoundaries.layer'
                 draft[supplemental] = '\n'.join(remaining) + '\n'
@@ -3762,6 +3796,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             continue
         data = dev.read_raw(path) if isinstance(text, bytes) else dev.read_raw(path).decode('utf-8-sig').replace('\r\n', '\n')
         if data.strip() != text.strip():
+            if path in reviewed_replacements and text == replace_registered_paths(data, source, dev, asset_aliases):
+                continue
             if (path == preset and isinstance(data, str)
                     and sha256(data.encode()).hexdigest() == row.get('reviewedSettingsPreset', {}).get(path)):
                 reviewed_replacements[path] = sha256(data.encode()).hexdigest()
@@ -3818,6 +3854,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                          'Compare possession, faction changes and delayed recounts separately.')
     if delayed:
         remaining.append('Compare delayed extraction polling and status messages in multiplayer.')
+    if any(ending.get('delivery') == 'match end' for event in rules.values() for ending in event.get('announcements', [])):
+        remaining.append('Compare the authored time from the outcome trigger to native after-action report.')
     if event_flags:
         remaining.append('Compare timing of simultaneous flag changes and their dependent event chains.')
     if any(action.get('deactivatesEvents') for event in rules.values() for action in event.get('convertedActions', ())):
