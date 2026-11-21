@@ -170,7 +170,7 @@ def main():
             '26A9756790131354': 'Rifleman', '5B1996C05B1E51A4': 'AR', '84029128FA6F6BB9': 'GL',
             'E398E44759DA1A43': 'TL', 'E45F1E163F5CA080': 'SL',
             '1623EA3AEFACA0E4': 'MG', '27BF1FF235DD6036': 'LAT', '6058AB54781A0C52': 'AMG',
-            'C9E4FEAF5AAC8D8C': 'Medic',
+            'C9E4FEAF5AAC8D8C': 'Medic', 'DE15FB5FAFC3E63F': 'Officer',
         }.items()
     })
     stock_ai.update({
@@ -181,8 +181,12 @@ def main():
             'DCB41B3746FDD1BE': 'Rifleman', '8E0FE664CE7D1CA9': 'GL',
             '98EB9CDD85B8C92C': 'Unarmed', '928DC9882A0AC79D': 'Sergeant',
             'AB9726163EC1BD81': 'Medic',
+            '612F43A4D5AE765F': 'RTO', 'BA010C4C82F3DE92': 'CC', '96C784C502AC37DA': 'MG',
+            '5117311FB822FD1F': 'Officer', '976AC400219898FA': 'Sharpshooter',
         }.items()
     })
+    stock_ai['145DBC42B19FC4D6'] = (
+        'Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Rifleman_KLMK.et')
     if args.batch and stock:
         external_ai.update({guid: path for guid, path in stock_ai.items() if stock.contains(guid, path)})
     forced_external = {}

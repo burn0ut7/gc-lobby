@@ -134,6 +134,10 @@ PLACED_SPAWNER = re.compile(
     r'(?P<group>\$grp )?TILW_PrefabSpawnerEntity(?: (?P<name>[\w.-]+))? : '
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
+STOCK_TERRAIN_PARENTS = {
+    'worlds/Arland/Arland.ent': 'A9806AF617972E97',
+    'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
+}
 REVIEWED_CAPACITY = {
     'Missions/Woody/COTVTXX_Kassel_Crashers.conf': (
         '4941956ada2db5d66db4dacb029d9037e252e032',
@@ -610,6 +614,9 @@ WORKSHOP_RESOURCE_ALIASES = {
         'Prefabs/Structures/Bulding/Military/fort_rampart_ep1.et'),
 }
 UNITS_PREFAB_ALIASES = {
+    ('7A0813F1B65EA589', 'Prefabs/Groups/BLUFOR/US/Army_1985_Rifles/Group_US_Army_1985_RifleSquad.et.et'): (
+        '7A0813F1B65EA589', 'Prefabs/Groups/BLUFOR/US/Deprecated/Army_1985_Rifles/Group_US_Army_1985_RifleSquad.et',
+        '8f08612231343578e903ece165c370d0a48311eee482b803df90ab29dede97a7'),
     ('D57725689E9E8EDA', 'Prefabs/Groups/OPFOR/GC_SEPARATIST/GC_SEPARATIST_RifleSquad.et'): (
         'D57725689E9E8EDA', 'Prefabs/Groups/OPFOR/GC_SEPARATIST/2020/Group_SEP_RifleSquad.et',
         '0305282df1d84452f884b72815847edc9c0785314f54727aa7bfa88ab3ec2a3a'),
@@ -2815,6 +2822,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         for path in (preset, preset + '.meta'):
             draft[path] = staged[path]
     body = source.read(world)
+    path_parent = re.fullmatch(r'\s*SubScene \{\s*Parent "([^"\r\n]+)"\s*}\s*', body)
+    if path_parent and path_parent[1] in STOCK_TERRAIN_PARENTS:
+        parent = path_parent[1]
+        body = body.replace(f'"{parent}"', f'"{{{STOCK_TERRAIN_PARENTS[parent]}}}{parent}"', 1)
     if not re.fullmatch(r'\s*SubScene \{\s*Parent "\{[A-Fa-f0-9]{16}\}[^"]+"\s*}\s*', body):
         blockers.append({'rule': 'terrain and subscene', 'file': world})
     migrated_longmoor = body.strip() == f'SubScene {{\n Parent "{LONGMOOR_LEGACY_PARENT}"\n}}'

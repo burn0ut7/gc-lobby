@@ -737,6 +737,14 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                 out.append(REF.sub(slot, item).rstrip())
             out.append(lines[end])
             i = end
+        elif token == 'm_aUnitPrefabOverrideIcons {':
+            # Published legacy Lobby reads each role icon from its character UI info.
+            # Its group class has no field or consumer for this serialized array.
+            end = block_end(lines, i)
+            if any(not re.fullmatch(r'\s*(?:' + QUOTED + r'\s*)+', entry)
+                   for entry in lines[i + 1:end]):
+                raise ValueError('unsupported legacy role icon override list')
+            i = end
         elif (end := native_group_field_end(lines, i)) is not None:
             out.extend(lines[i:end + 1])
             i = end
