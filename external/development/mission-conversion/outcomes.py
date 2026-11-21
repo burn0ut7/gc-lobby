@@ -177,7 +177,7 @@ def waypoint_trigger(term):
     return term['trigger'] in ('Match start', 'dormant', 'area capture', 'interaction flag', 'event flag')
 
 
-def deactivate_events(lines, key):
+def deactivate_events(lines, key, named_events):
     data = properties(lines, {'m_eventNames', 'm_executionDelay'})
     names = data.get('m_eventNames', '')
     delay = data.get('m_executionDelay', '5')
@@ -187,13 +187,21 @@ def deactivate_events(lines, key):
     targets = list(dict.fromkeys(re.findall(EVENT_LABEL, names)))
     if any(name[1:-1] != name[1:-1].strip() for name in targets) or len(targets) > 128:
         raise ValueError('unsupported event deactivation target names')
-    actions = []
+    actions, active, case_mismatches = [], [], []
+    folded = Counter(name.casefold() for name in named_events)
     for index, target in enumerate(targets):
+        name = target[1:-1]
+        if name not in named_events and folded[name.casefold()] == 1:
+            # A differently capitalized literal does not match the authored
+            # name in the legacy instruction's string list.
+            case_mismatches.append(name)
+            continue
+        active.append(name)
         actions.extend([f'      GC_EventControlAction "{{{guid(f"{key}/{index}")}}}" {{',
                         f'       m_sEventName {target}', '       m_iOperation 1', '      }'])
     return Decimal(delay), actions, {'instruction': 'TILW_DeactivateEventsInstruction',
-                                    'deactivatesEvents': [target[1:-1] for target in targets],
-                                    'delaySeconds': delay}
+                                    'deactivatesEvents': active, 'delaySeconds': delay,
+                                    **({'caseMismatchedTargets': case_mismatches} if case_mismatches else {})}
 
 
 def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0, *,
@@ -281,7 +289,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
 
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
                resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None,
-               log_only=False):
+               log_only=False, named_events=()):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -340,7 +348,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                     delay, body, assignment = waypoint_action(fields[j + 1:last], key + '/' + waypoint_match[1])
                     assignments.append(assignment)
                 elif deactivate_match:
-                    delay, body, details = deactivate_events(fields[j + 1:last], key + '/' + deactivate_match[1])
+                    delay, body, details = deactivate_events(fields[j + 1:last], key + '/' + deactivate_match[1],
+                                                             named_events)
                     converted_actions.append(details)
                 elif action_match:
                     delay, body, details = compile_action(action_match, fields[j + 1:last], key, hidden_briefings)
@@ -364,7 +373,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                     converted_actions.append({'instructionId': vehicle_match[1], **details})
                 else:
                     raise ValueError('unsupported outcome instruction ' + fields[j].strip().split(' ')[0])
-                actions[delay].extend(body)
+                if body:
+                    actions[delay].extend(body)
                 j = last + 1
             i = end
         elif line == '   m_pregameEvent 1':
@@ -728,7 +738,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     match_only_flags = {*match_only_flags, *sampled_flags}
     parsed, audit = [], {}
     names = set()
-    source_names = Counter()
+    source_names = Counter(match[1][1:-1] for item in body
+                           if (match := re.fullmatch(r'   m_name (' + EVENT_LABEL + ')', item)))
     capture_messages = set() if compound else None
     for i, line in enumerate(body):
         event = EVENT.fullmatch(line)
@@ -737,8 +748,6 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         fields = body[i + 1:block_end(body, i)]
         loc = f'{path}:{i + base + 2}'
         label = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
-        if re.fullmatch(EVENT_LABEL, label):
-            source_names[label[1:-1]] += 1
         if 'notificationDelaysSeconds' in notification_audit.get(loc, {}):
             continue
         if compound and len(fields) == 1 and re.fullmatch(r'   m_name "-{3,}"', fields[0]):
@@ -764,7 +773,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns,
                 resolve_spawn, resolve_crew, startup, hidden_briefings,
                 DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived,
-                log_only=log_only)
+                log_only=log_only, named_events=source_names)
             if any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
                 term['requiresMatch'] = True
             suffixes = {f' ({delay:f}s)' for delay in actions}

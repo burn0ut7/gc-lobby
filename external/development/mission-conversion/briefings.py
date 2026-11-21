@@ -78,11 +78,12 @@ def properties(lines, allowed):
     return values
 
 
-def target_names(value):
+def target_names(value, *, skip_blank=False):
     names = value.split()
-    if not 1 <= len(names) <= 128 or not all(re.fullmatch(r'"[\w.-]+"', name) for name in names):
+    if not 1 <= len(names) <= 128 or not all(
+            re.fullmatch(r'"[\w.-]+"', name) or (skip_blank and name == '""') for name in names):
         raise ValueError('unsupported entity name list')
-    return names
+    return [name for name in names if name != '""']
 
 
 def page(lines, origin, name='', layouts=STANDARD_LAYOUTS):

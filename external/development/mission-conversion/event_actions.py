@@ -15,6 +15,7 @@ SPAWN = re.compile(r'    TILW_SpawnPrefabInstruction "\{([\da-fA-F]{16})\}" \{')
 GROUP_SPAWN = re.compile(r'    TILW_SpawnGroupInstruction "\{([\da-fA-F]{16})\}" \{')
 VEHICLE_SPAWN = re.compile(r'    TILW_SpawnVehicleInstruction "\{([\da-fA-F]{16})\}" \{')
 SPAWN_FIELDS = {'m_executionDelay', 'm_prefab', 'm_locationName', 'm_setEntityName'}
+SPAWN_NAME = r'"(?:[\w.-]+(?: +[\w.-]+)*)?"'
 DEFAULT_CREW_PILOTS = {
     ('C012BB3488BEA0C2', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70.et'),
     ('B47110AA1A806556', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_FIA.et'),
@@ -142,7 +143,8 @@ def spawn_details(data, resolve_resource):
     anchor = data.get('m_locationName', '')
     delay = data.get('m_executionDelay', '5')
     if (not ref or not re.fullmatch(r'"[\w.-]+"', anchor)
-            or not re.fullmatch(r'"[\w.-]*"', name) or not re.fullmatch(NUMBER, delay) or Decimal(delay) > 86400):
+            or not re.fullmatch(SPAWN_NAME, name) or len(name.encode()) > 130
+            or not re.fullmatch(NUMBER, delay) or Decimal(delay) > 86400):
         raise ValueError('unsupported prefab spawn placement or delay')
     path = resolve_resource(ref[1].upper(), ref[2])
     if not path:
@@ -156,7 +158,7 @@ def prefab_spawn(lines, key, resolve_resource, group=False):
     data = properties(lines, allowed)
     details = spawn_details(data, resolve_resource)
     fields = []
-    waypoints = target_names(data['m_waypointNames']) if data.get('m_waypointNames') else []
+    waypoints = target_names(data['m_waypointNames'], skip_blank=True) if data.get('m_waypointNames') else []
     if waypoints:
         fields = ['        m_aWaypoints {', *('         ' + name for name in waypoints), '        }']
     kind = 'GC_AIGroupSpawn' if group else 'GC_PrefabSpawn'
@@ -286,7 +288,7 @@ def render_legacy_crew(data, key, resolve_character):
     roles = crew_roles(authored, flags, resolve_character, allow_empty=True) if authored else []
     idle = data.get('m_idleGroup', '0')
     waypoint_delay = data.get('m_waypointDelay', '5')
-    waypoints = target_names(data['m_waypointNames']) if data.get('m_waypointNames') else []
+    waypoints = target_names(data['m_waypointNames'], skip_blank=True) if data.get('m_waypointNames') else []
     if (idle not in ('0', '1')
             or (waypoints and (not re.fullmatch(NUMBER, waypoint_delay) or Decimal(waypoint_delay) > 86400))):
         raise ValueError('unsupported crew order delay or configuration')

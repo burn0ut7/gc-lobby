@@ -11,7 +11,7 @@ from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURR
 from boundaries import ROOT as AO_SHAPE, STANDALONE_SHAPE, convert_boundaries
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import REF, SOURCE_TEXT
-from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, render_crew_config, render_spawn, spawn_details, split_crew_block
+from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, render_crew_config, render_spawn, spawn_details, split_crew_block
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, MISSING_STATUS, condition as extraction_condition
 from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, inheritance
@@ -1475,10 +1475,10 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         if not 1 <= len(timings) <= 128 or any(
                 not re.fullmatch(NUMBER, delay) or Decimal(delay) > 86400 for delay in timings):
             raise ValueError('invalid placed spawner schedule')
-        names = target_names(data['m_setEntityNames']) if data.get('m_setEntityNames') else []
-        if names and (len(names) != 1 or len(timings) != 1):
+        spawned_name = data.get('m_setEntityNames') or '""'
+        if not re.fullmatch(SPAWN_NAME, spawned_name) or (spawned_name != '""' and len(timings) != 1):
             raise ValueError('multiple spawns have success-dependent entity naming')
-        waypoints = target_names(data['m_waypointNames']) if data.get('m_waypointNames') else []
+        waypoints = target_names(data['m_waypointNames'], skip_blank=True) if data.get('m_waypointNames') else []
         ref = REF.fullmatch(data.get('m_prefab', ''))
         group = bool(ref and ref[2].startswith('Prefabs/Groups/'))
         if config is not None and (not ref or not ref[2].startswith('Prefabs/Vehicles/')):
@@ -1489,7 +1489,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         anchor = name or 'GC_Spawner_' + guid(key)
         details = spawn_details({
             'm_prefab': data.get('m_prefab', ''), 'm_locationName': f'"{anchor}"',
-            'm_setEntityName': names[0] if len(names) == 1 else '""', 'm_executionDelay': '0',
+            'm_setEntityName': spawned_name, 'm_executionDelay': '0',
         }, lambda resource, path: resolve_resource(resource, path, group=group))
         flag = data.get('m_conditionFlag', '""')
         term = {'trigger': 'Match start'}
