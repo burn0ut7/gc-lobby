@@ -412,6 +412,8 @@ DUPLICATE_CALLSIGNS = re.compile(
     rf'^(?P<first>(?P<indent> +){CALLSIGN_TRIPLET})(?P=indent){CALLSIGN_TRIPLET}', re.M)
 AI_WORLD_ALIASES = {
     '33A5B976E41B0A4C': ('Prefabs/AI/SCR_AIWorld_BadOrb.et', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et'),
+    '70CCCF16487C927F': ('GitHub/gc-reforger-core/Prefabs/AI/SCR_AIWorld_Eden.et',
+                         'Prefabs/AI/SCR_AIWorld_Eden.et'),
 }
 STOCK_RESOURCE_ALIASES = {
     ('0CA0547EB03759E1', 'Prefabs/Vegetation/Bush/b_rubus_idaeus_1s_collision.et'):
@@ -490,6 +492,9 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Scenarios/SP01/SP01_UAZ469_USSR.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('89B49CDEBBEC973A', 'Prefabs/Weapons/Magazines/Magazine_127x99_M107A1_10rnd_M2.et'): (
+        'TacticalFlava-Weapons_DEADC0DE00000001', '89B49CDEBBEC973A',
+        'Prefabs/Weapons/Magazines/M107A1/Magazine_127x99_M107A1_10rnd_M2.et'),
     ('9AA441DE6DAB6D94', 'Prefabs/Vehicles/Helicopters/Mi24/Mi24V_armed_S8.et'): (
         'WCS_Mi-24V_628933A0D3A0D700', '9AA441DE6DAB6D94',
         'Prefabs/Vehicles/Helicopters/Mi24/Mi24V_Armed_B8V20A_X4.et'),
@@ -632,6 +637,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/arc/CommandosReforged/Prefabs/BLU/Barret_m107a1_IR.et':
+        '38e719f739bb51dc4924dd16f6ddc92a3a476aaf0c91b6c03bffc8ac1a738ab8',
     'worlds/HitTheMan/Prefabs/Vehicles/BMP1_ZSU_base_HTM.et':
         '25b2f4c66289a46fd029a1c0fae3e072d35b1c858982b8a873221d98791d5a1f',
     'worlds/HitTheMan/Prefabs/Vehicles/BaconZU23_Turret_NotEditable_HTM.et':

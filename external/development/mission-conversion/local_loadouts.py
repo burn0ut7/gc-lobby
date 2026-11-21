@@ -114,7 +114,8 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
             if parent_path != parent_asset[0]:
                 header = first.replace(parent[0], f'"{{{resource}}}{parent_asset[0]}"', 1)
                 body = header + body[len(first):]
-        elif resource in dev.resources or not parent_path.lower().startswith('prefabs/characters/'):
+        elif resource in dev.resources or not parent_path.removeprefix('GitHub/gc-reforger-units/').lower().startswith(
+                'prefabs/characters/'):
             return None
         elif resource in source_units.resources or resource in dev_units.resources:
             stock_wrapper = stock_wrapper_ancestry_matches(source_units, dev_units, resource, stock, owned)
@@ -125,9 +126,14 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
             canonical, = dev_units.resources[resource]
             if not canonical.lower().startswith('prefabs/characters/'):
                 return None
+            if (parent_path.startswith('GitHub/gc-reforger-units/')
+                    and PurePosixPath(parent_path).name != PurePosixPath(canonical).name):
+                return None
             header = first.replace(parent[0], f'"{{{resource}}}{canonical}"', 1)
             body = header + body[len(first):]
         else:
+            if parent_path.startswith('GitHub/gc-reforger-units/'):
+                return None
             native = stock_character(resource, parent_path, stock)
             if native:
                 if (native[0] in source.resources or native[0] in dev.resources
