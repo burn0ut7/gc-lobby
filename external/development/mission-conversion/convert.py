@@ -21,7 +21,8 @@ from catalog import REF, Snapshot, WORLD, compare
 from delayed_extraction import collect as collect_delayed_extraction
 from event_actions import ACTIONS
 from events import world_events
-from groups import SLOTS, compare_ai_parents, convert_ai_instance, group_layer, rhs_ai_characters, verified_stock_ai_group
+from groups import (SLOTS, compare_ai_parents, convert_ai_instance, group_layer, rhs_ai_characters,
+                    verified_stock_ai_group, verified_uk_forced_roles)
 import gwotline
 import hnevice
 import industrial
@@ -124,11 +125,18 @@ def main():
     civilian = ('22E43956740A6794', 'Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized.et')
     if args.batch and stock and stock.contains(*civilian):
         external_ai[civilian[0]] = civilian[1]
+    forced_external = {}
     if args.units:
         source_units = Snapshot(args.units, args.units_source)
         dev_units = Snapshot(args.units, args.units_dev)
         report['sourceUnits'] = source_units.commit
         report['targetUnits'] = dev_units.commit
+        if args.batch:
+            try:
+                forced_external = verified_uk_forced_roles(
+                    args.workshop_addons, locally_owned | source_units.resources.keys() | dev_units.resources.keys())
+            except (OSError, ValueError) as exc:
+                parser.error(str(exc))
 
     def resolve_spawn(objectives, resource, path, *, group=False):
         if group:
@@ -242,7 +250,8 @@ def main():
                     if (arc_worlds.get(world), PurePosixPath(layer).name) in arc_capture.FOREIGN_ROLE_LAYERS:
                         groups = arc_capture.foreign_roster(source, source_units, dev_units, stock, locally_owned, layer)
                     else:
-                        groups = group_layer(text, source_units, dev_units, stock, locally_owned, external_ai=external_ai)
+                        groups = group_layer(text, source_units, dev_units, stock, locally_owned, external_ai=external_ai,
+                                             forced_external=forced_external)
                     if groups:
                         body, count, slots = groups
                         if layer in dev.files and dev.read(layer).strip() != body.strip():
@@ -777,7 +786,7 @@ def main():
             return group_layer(body, source_units, dev_units, stock, locally_owned,
                                reviewed_members=reviewed_members, external_ai=external_ai,
                                allow_stock_ai=True, restored_members=restored,
-                               reviewed_ai_members=reviewed_ai_members)
+                               reviewed_ai_members=reviewed_ai_members, forced_external=forced_external)
 
         def convert_crew(block):
             return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned,

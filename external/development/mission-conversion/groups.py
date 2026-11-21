@@ -29,6 +29,32 @@ WRAPPERS = json.loads(Path(__file__).with_name('stock_wrappers.json').read_text(
 STOCK_AI_GROUPS = json.loads(Path(__file__).with_name('stock_ai_groups.json').read_text(encoding='utf-8'))
 BASE_CHARACTER = ('37578B1666981FCE', 'Prefabs/Characters/Core/Character_Base.et')
 UK_CHARACTER_BASE = ('542CBB6908CA71D8', 'Prefabs/Characters/Factions/BLUFOR/UK_Army/Character_UK_Base.et')
+UK_REGULAR_DIRECTORY = 'Prefabs/Characters/Factions/BLUFOR/UK_Army/1989/Regulars/'
+UK_FORCED_ROLES = {
+    '59DC74EF0ECF7E49': ('Medic', 'Medic'),
+    'D0F124C1610D3232': ('LSW', 'LSW'),
+    'B10659FFD99279DC': ('Rifleman_LAT', 'Rifleman_LAT_LAW80'),
+    '4AF2023E868540E7': ('Rifleman', 'Rifleman'),
+    'F9E2E97FA21AA133': ('Section2IC', 'Section2IC'),
+}
+
+
+def verified_uk_forced_roles(workshop, owned):
+    if not workshop:
+        return {}
+    registry = workshop / 'BritishForces_5AE50EC5B8D6F4AE' / 'resourceDatabase.rdb'
+    if not registry.is_file():
+        return {}
+    database = StockPrefabs(registry)
+    if not database.contains(*UK_CHARACTER_BASE):
+        return {}
+    prefix = UK_REGULAR_DIRECTORY + 'Character_UK_1989_Regulars_'
+    result = {}
+    for guid, (old, current) in UK_FORCED_ROLES.items():
+        path = prefix + current + '.et'
+        if guid not in owned and database.contains(guid, path):
+            result[guid] = (prefix + old + '.et', path)
+    return result
 # These exact Units Dev overlays came from the published legacy Core package.
 EXTERNAL_PARENT_BRIDGES = {
     '7A9EE19AB67B298B': ('Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_base.et',
@@ -350,7 +376,7 @@ def inherited_playable_roster(old, new, stock, owned_resources):
 
 def convert_instance(lines, guid, old, new, source_units, dev_units, stock, locally_owned,
                      reviewed_callsigns=frozenset(), reviewed_members=None, external_ai=None, restored_members=None,
-                     reviewed_ai_members=None):
+                     reviewed_ai_members=None, forced_external=None):
     reviewed_members = reviewed_members or {}
     restored_members = restored_members or {}
     explicit_force = any(l.strip() == 'm_bSetPlayable 1' for l in lines)
@@ -377,10 +403,28 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             old, new, stock, (locally_owned, source_units.resources, dev_units.resources))
     override = next((l.strip()[-1] for l in lines if l.strip().startswith('m_bSetPlayable ')), None)
     force = override == '1' if override is not None else scalar(inheritance(source_units, guid), 'm_bSetPlayable') == 1
+    forced_external = (forced_external or {}) if force else {}
+    approved_external = set()
     out = []
     metadata = []
     depth = len(lines[0]) - len(lines[0].lstrip()) if lines else 1
     indent = ' ' * depth
+    inherited = []
+    if forced_external and not replace_slots and any(member.upper() in forced_external for member in roster):
+        before, after = SLOTS.search(old), SLOTS.search(new)
+        if REF.sub('', before[1]).strip() or REF.sub('', after[1]).strip():
+            raise ValueError('unsupported inherited British roster')
+        for resource, path in REF.findall(after[1]):
+            identity = resource.upper()
+            if identity in forced_external:
+                paths = forced_external[identity]
+                if path not in paths:
+                    raise ValueError('unverified British role path ' + path)
+                path = paths[1]
+                approved_external.add(identity)
+            elif identity in dev_units.resources:
+                path = only_path(dev_units, identity)
+            inherited.append(indent + f' "{{{resource}}}{path}"')
     i = 0
     while i < len(lines):
         line = lines[i]
@@ -430,6 +474,9 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             end = block_end(lines, i)
             def slot(match):
                 guid, path = match.groups()
+                if (paths := forced_external.get(guid.upper())) and path in paths:
+                    approved_external.add(guid.upper())
+                    return '"{' + guid + '}' + paths[1] + '"'
                 restored = restored_members.get((guid.upper(), path))
                 if restored:
                     converted_wrappers.add(guid.upper())
@@ -454,7 +501,11 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             if '+' not in token:
                 roster.clear()
             roster.extend(g for item in lines[i+1:end] for g, _ in REF.findall(item))
-            out.append(line)
+            if inherited:
+                out.extend([indent + 'm_aUnitPrefabSlots {', *inherited])
+                inherited.clear()
+            else:
+                out.append(line)
             for item in lines[i+1:end]:
                 if REF.sub('', item).replace('""', '').strip():
                     raise ValueError('unsupported slot list')
@@ -478,8 +529,10 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
         i += 1
     if not roster:
         raise ValueError('empty group roster')
+    if inherited:
+        out.extend([indent + 'm_aUnitPrefabSlots {', *inherited, indent + '}'])
     for member in roster:
-        if member.upper() in reviewed_members or member.upper() in converted_wrappers:
+        if member.upper() in reviewed_members or member.upper() in converted_wrappers or member.upper() in approved_external:
             continue
         if not (legacy_member(source_units, member, force)
                 or (force and inherits_legacy_playable_base(source_units, member, stock, dev_units))
@@ -529,7 +582,7 @@ def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_
 
 def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset(),
                 reviewed_members=None, external_ai=None, allow_stock_ai=False, restored_members=None,
-                reviewed_ai_members=None):
+                reviewed_ai_members=None, forced_external=None):
     if not re.search(r'^(?:\$grp )?SCR_AIGroup\b', text, re.M):
         return None
     lines = text.splitlines()
@@ -570,7 +623,7 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
                               dev_units=dev_units, stock=stock, locally_owned=locally_owned,
                               reviewed_callsigns=reviewed_callsigns, reviewed_members=reviewed_members,
                               external_ai=external_ai, restored_members=restored_members,
-                              reviewed_ai_members=reviewed_ai_members)
+                              reviewed_ai_members=reviewed_ai_members, forced_external=forced_external)
         result.append(REF.sub(lambda _: '"{' + resource + '}' + dest + '"', lines[i], count=1))
         end = block_end(lines, i)
         if match['group']:
