@@ -112,9 +112,10 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
         if flag == '""' and invert == '0' and allow_dormant and depth == 0:
             # Legacy AdjustMissionFlag rejects the empty string.
             return {'trigger': 'dormant'}
-        if invert == '0' and flag in flags:
+        if invert in ('0', '1') and flag in flags:
             faction, ratio = flags[flag]
-            return {'trigger': 'peak player loss', 'flag': flag[1:-1], 'faction': faction, 'ratio': ratio}
+            return {'trigger': 'peak player loss', 'flag': flag[1:-1], 'faction': faction, 'ratio': ratio,
+                    **({'inverted': True} if invert == '1' else {})}
         if invert == '0' and flag in ai:
             faction, ratio = ai[flag]
             return {'trigger': 'AI loss', 'flag': flag[1:-1], 'faction': faction, 'ratio': ratio}
@@ -295,6 +296,8 @@ def render_check(term, key, captures, capture_messages, tracked_areas):
               f'       m_Script {check} "{{{guid(key + "/check")}}}" {{']
     if trigger != 'AI loss':
         result.append(f'        m_sFaction "{term["faction"]}"')
+    if term.get('inverted'):
+        result.append('        m_bInvert 1')
     return result + [f'        m_fRatio {term["ratio"]}', '       }', '      }']
 
 

@@ -16,9 +16,13 @@ DATE = {
     'm_iSetMonth': ('m_iMonth', '8'),
     'm_iSetYear': ('m_iYear', '1989'),
 }
-LEGACY_SWITCHES = {
-    'm_bOverrideGeocoords': {'m_fLatitude', 'm_fLongitude'},
-    'm_bOverrideTimeZoneInfo': {'m_fUTCTimeZone', 'm_fDSTEnabled', 'm_fDSTOffsetHours'},
+GEOGRAPHY = {
+    'm_fLatitude': ('m_fLatitude', '49.019001', -90, 90),
+    'm_fLongitude': ('m_fLongitude', '37.921001', -180, 180),
+}
+TIME_ZONE = {
+    'm_fUTCTimeZone': ('m_fTimeZoneOffset', '2', -12, 12),
+    'm_fDSTOffsetHours': ('m_fDSTOffsetHours', '1', 0, 5),
 }
 NATIVE_FIELDS = set('''
     Enabled m_iStartingHours m_iStartingMinutes m_bRandomStartingDaytime
@@ -54,11 +58,8 @@ def convert_weather(world, lines):
             raise ValueError('invalid weather switch ' + field)
         return value == '1'
 
-    omit = {'m_bUseSpecifiedDate', 'm_bOverrideEnvironment', *DATE, *ENVIRONMENT}
-    for switch, inactive in LEGACY_SWITCHES.items():
-        if enabled(switch):
-            raise ValueError('legacy weather requires ' + switch)
-        omit.update({switch, *inactive})
+    omit = {'m_bUseSpecifiedDate', 'm_bOverrideEnvironment', 'm_bOverrideGeocoords',
+            'm_bOverrideTimeZoneInfo', 'm_fDSTEnabled', *DATE, *ENVIRONMENT, *GEOGRAPHY, *TIME_ZONE}
     unknown = fields.keys() - omit - NATIVE_FIELDS
     if unknown:
         raise ValueError('legacy weather field needs review: ' + ', '.join(sorted(unknown)))
@@ -72,17 +73,33 @@ def convert_weather(world, lines):
             raise ValueError('legacy weather has an invalid date') from exc
         omit.update({'m_bDateOverride', *date_values})
         output.extend(['   m_bDateOverride 1', *(f'   {key} {value}' for key, value in date_values.items())])
-    environment = ''
-    if enabled('m_bOverrideEnvironment'):
+    atmosphere = enabled('m_bOverrideEnvironment')
+    values = {}
+    for switch, native_switch, settings in (
+        ('m_bOverrideGeocoords', 'm_bOverrideGeographicCoordinates', GEOGRAPHY),
+        ('m_bOverrideTimeZoneInfo', 'm_bOverrideTimeZone', TIME_ZONE),
+    ):
+        if not enabled(switch):
+            continue
+        values[native_switch] = '1'
+        for legacy, (native, default, minimum, maximum) in settings.items():
+            value = fields.get(legacy, default)
+            if not re.fullmatch(r'[+-]?\d+(?:\.\d+)?', value) or not minimum <= Decimal(value) <= maximum:
+                raise ValueError('legacy weather value out of range: ' + legacy)
+            values[native] = value
+    if 'm_bOverrideTimeZone' in values:
+        values['m_bDSTEnabled'] = str(int(enabled('m_fDSTEnabled')))
+    if atmosphere:
         if enabled('m_bFogOverride') or enabled('m_bWindOverride'):
             raise ValueError('combined native and legacy environmental overrides need review')
-        values = {}
         for legacy, (native, limit) in ENVIRONMENT.items():
             value = fields.get(legacy, '1')
             if not re.fullmatch(r'\d+(?:\.\d+)?', value) or Decimal(value) > limit:
                 raise ValueError('legacy weather value out of range: ' + legacy)
             values[native] = value
-        environment = environment_component(world, values)
+    elif values:
+        values['m_bOverrideAtmosphere'] = '0'
+    environment = environment_component(world, values) if values else ''
     header = '  SCR_TimeAndWeatherHandlerComponent "{6B71E9A8B1A8C501}" {'
     if re.search(r'\b(?:TILW|PS)_\w+', '\n'.join(lines)):
         raise ValueError('custom legacy weather component')

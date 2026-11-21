@@ -38,7 +38,7 @@ LEGACY_JIP_MODES = {'Deny': 'DISABLED', 'Auto': 'AUTO', 'Manual': 'MANUAL',
                     '0': 'DISABLED', '1': 'AUTO', '2': 'MANUAL'}
 NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|Turret|SCR_AIWorld|GameEntity|GenericEntity|GenericTerrainEntity|GenericWorldFogEntity|StaticModelEntity|Tree|'
                     r'DecalEntity|SCR_DestructibleEntity|SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
-                    r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity|LightEntity)\b')
+                    r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity|LightEntity|Projectile)\b')
 WEATHER = re.compile(r'  SCR_TimeAndWeatherHandlerComponent "\{5EE3229927D4D2F5\}" \{')
 INIT_WEATHER = '  SCR_InitWeatherComponent "{61B68227C35BFE9A}" {'
 INIT_WEATHER_FIELD = re.compile(
@@ -67,6 +67,12 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/Til/AndresBeacon.conf': (
+        'a9ef521d896898eabd7a513d7e8a6c02ca7150ef',
+        (('worlds/Til/AndresBeacon/AndresBeacon_Layers/players.layer',
+          'd4972c5249abef9e68891dfb3aac0f8549e7a725'),),
+        68, 67,
+    ),
     'Missions/Til/JunctionJabXL.conf': (
         'de161be13cf65db02c7a982c60fb4c335f996c5e',
         (('worlds/Til/JunctionJabXL/JunctionJabXL_Layers/players_caf.layer',
@@ -174,6 +180,14 @@ AI_WORLD_ALIASES = {
     '33A5B976E41B0A4C': ('Prefabs/AI/SCR_AIWorld_BadOrb.et', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et'),
 }
 STOCK_RESOURCE_ALIASES = {
+    ('B3E8911E396DE447', 'Prefabs/Props/Services/FireExtinguisherBox_01_Shovel.et'):
+        'Prefabs/Props/Services/Fire/FireExtinguisherBox_01_Shovel.et',
+    ('4CC2C69DE1AEF103', 'Prefabs/Props/Core/Destructible_Props_Base.et'):
+        'Prefabs/Props/Core/DestructibleMultiPhase_Props_Base.et',
+    ('4F8AAD383330D2B9', 'Configs/Weapons/AIBallisiticTables/AIBT_Smoke_M18_Violet.conf'):
+        'Configs/Weapons/AIBallisticTables/AIBT_Smoke_M18_Violet.conf',
+    ('E26B2BD5B751713D', 'Configs/Weapons/AIBallisiticTables/AIBT_Smoke_ANM8HC.conf'):
+        'Configs/Weapons/AIBallisticTables/AIBT_Smoke_ANM8HC.conf',
     ('1D0B32AA80873228', 'Prefabs/Props/Wrecks/LAV25_wreck.et'):
         'Prefabs/Props/Wrecks/LAV25_wreck/LAV25_wreck.et',
     ('1F3291C2A7E2BA00', 'Prefabs/Props/Wrecks/BRDM2_wreck_static.et'):
@@ -202,6 +216,9 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Vegetation/Bush/b_corylus_avellana_1.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('1DC01AAACFFA8B63', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_base.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '1DC01AAACFFA8B63',
+        'Prefabs/Vehicles/Tracked/BMP1/BMP1_Base.et'),
     ('24223D0679CDD612', 'Prefabs/Vehicles/Tracked/BFV/M2A2_OD.et'): (
         'WCS_M2A2_63120AE07E6C0966', '24223D0679CDD612',
         'Prefabs/Vehicles/Tracked/M2A2/M2A2_OD.et'),
@@ -264,6 +281,18 @@ UNITS_PREFAB_ALIASES = {
     ('B343AB76B0725657', 'Prefabs/Items/Equipment/Radios/Radio_R187P1_OLD_Single_Separatist.et'): (
         'B343AB76B0725657', 'Prefabs/Items/Equipment/Radios/RU/Radio_R187P1_OLD.et',
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
+}
+REVIEWED_NATIVE_ASSETS = {
+    'worlds/HitTheMan/Prefabs/Vehicles/M113A2_APC_CDF_HTM.et':
+        'afb884dab973abe538fd9fc9d63092e2838da18ed50ddc77f774404eefbf71a8',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Props/Military/Camps/AmmoboxBLUE.et':
+        '1c0cd1aeba2d805cc47a56dae9ae30ed352b4131662c71766b0dde6765dd6e1d',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Magazines/Magzine_1shot_blue.et':
+        '4c25a48693ffb6bcbcfb4ef89821fd4dc74f260d048f8f94980ea2bd93349d23',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Grenades/M18/Smoke_M18_Violet_US.et':
+        '4915c486c26c3c384c5306930c966c5f45d747d9f295142e48098bf99ae7b827',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Grenades/Smoke_ANM8HC_US.et':
+        '8f65ccfdb561457e84aef0ceabb73c1297a9460d07c764c8920626c8a8917d04',
 }
 
 
@@ -591,6 +620,9 @@ def passive_asset(source, path):
     if suffix == '.et':
         body = source.read(path)
         if STORAGE_BOX.fullmatch(body.rstrip('\n')):
+            return body
+        if (sha256(body.strip().encode()).hexdigest() == REVIEWED_NATIVE_ASSETS.get(path)
+                and not LEGACY.search(body)):
             return body
         lines = body.splitlines()
         material = MATERIAL_OVERRIDE.fullmatch(body.rstrip('\n'))
@@ -1800,10 +1832,15 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare timing of simultaneous flag changes and their dependent event chains.')
     if damage_flags:
         remaining.append('Compare damage notification timing in Match and confirm no objective damage during staging.')
+    if any(item['trigger'] == 'peak player loss' and item.get('inverted')
+           for rule in rules.values() if 'trigger' in rule for item in leaves(rule)):
+        remaining.append('Compare victory notices below and at the authored casualty threshold after the first sample.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Compare framing and zoom against the legacy cover.')
     if mode and any(line.startswith((' m_iReconnectTime ', ' m_iReconnectTimeAfterBriefing ')) for line in mode):
         remaining.append('Compare reconnect reservations before and after entering Match.')
+    if mode and any(line.strip() in ('m_bOverrideGeocoords 1', 'm_bOverrideTimeZoneInfo 1') for line in mode):
+        remaining.append('Compare geographic coordinates, local time and sunlight at mission start.')
     if any(path.endswith('.layer') and isinstance(body, str) and 'GC_AOLimitEntity' in body
            and ('\n  GC_AOLimitEntity ' in body or '\n  PolylineShapeEntity ' in body)
            for path, body in draft.items()):

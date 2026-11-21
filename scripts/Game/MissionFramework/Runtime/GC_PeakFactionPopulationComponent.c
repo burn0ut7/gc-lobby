@@ -101,11 +101,14 @@ class GC_PeakFactionPopulationComponent : SCR_BaseGameModeComponent
 		m_bHasSample = true;
 	}
 
-	bool HasLostProportion(FactionKey faction, float ratio)
+	bool HasLostProportion(FactionKey faction, float ratio, bool inverted = false)
 	{
 		FactionManager factions = GetGame().GetFactionManager();
-		return IsActiveMatch() && m_bHasSample && factions && factions.GetFactionByKey(faction)
-			&& m_mLiving.Get(faction) <= m_mPeak.Get(faction) * (1 - ratio);
+		if (!IsActiveMatch() || !m_bHasSample || !factions || !factions.GetFactionByKey(faction))
+			return false;
+
+		bool reached = m_mLiving.Get(faction) <= m_mPeak.Get(faction) * (1 - ratio);
+		return reached != inverted;
 	}
 }
 
@@ -116,6 +119,8 @@ class GC_PeakFactionPopulationCheck : GC_MissionScript
 	FactionKey m_sFaction;
 	[Attribute("0.8", UIWidgets.Slider, "Required loss as a proportion of the historical peak.", "0 1 0.01")]
 	float m_fRatio;
+	[Attribute("0", UIWidgets.CheckBox, "Pass while losses are below the threshold after the first sample.")]
+	bool m_bInvert;
 
 	override bool IsValid()
 	{
@@ -128,6 +133,6 @@ class GC_PeakFactionPopulationCheck : GC_MissionScript
 		if (!mode || manager != GC_LobbyManager.GetManager() || !Replication.IsServer())
 			return false;
 		GC_PeakFactionPopulationComponent observer = GC_PeakFactionPopulationComponent.Cast(mode.FindComponent(GC_PeakFactionPopulationComponent));
-		return observer && observer.HasLostProportion(m_sFaction, m_fRatio);
+		return observer && observer.HasLostProportion(m_sFaction, m_fRatio, m_bInvert);
 	}
 }
