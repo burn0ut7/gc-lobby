@@ -9,10 +9,9 @@ import re
 from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURRENT_PARENT,
                          LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, capture_status_texts, faction_keys)
 from boundaries import STANDALONE_SHAPE, convert_boundaries
-from briefings import QUOTED, block_end, guid, properties
+from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import REF, SOURCE_TEXT
-from event_actions import (NUMBER, SPAWN, SPAWN_FIELDS, render_crew_config, render_spawn, spawn_details,
-                           split_crew_block, target_names)
+from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, render_crew_config, render_spawn, spawn_details, split_crew_block
 from events import LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, MISSING_STATUS, condition as extraction_condition
 from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, inheritance
@@ -2116,8 +2115,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'delayed extraction', 'file': world,
                              'detail': 'extraction needs all spawns and one positive consumer per flag'})
     missing_waypoints = []
+    crew_waypoints = {name for path, body in draft.items() if path.endswith('.layer')
+                      for _, fields in re.findall(r'(?ms)^( +)m_aCrewWaypoints \{\n(.*?)^\1\}', body)
+                      for name in re.findall(r'"([\w.-]+)"', fields)}
     if not blockers and (assignments or marker_edits or prefab_spawns or extraction_spawns or area_names or teleport_targets
-                         or damage_flags
+                         or damage_flags or crew_waypoints
                          or any('m_aStatic' in body for body in draft.values())):
         named = named_placements(draft.values())
         for resource, asset in ai_assets.items():
@@ -2163,6 +2165,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                      'detail': 'expected one placed AI waypoint named ' + waypoint})
         for gap in waypoint_gaps(named, assignments):
             blockers.append({'rule': 'waypoint assignments', 'file': world, 'detail': gap})
+        for waypoint in sorted(crew_waypoints):
+            targets = named.get(waypoint, [])
+            if len(targets) != 1 or not re.fullmatch(WAYPOINT_CLASS, targets[0][0]):
+                blockers.append({'rule': 'placed crew waypoint', 'file': world,
+                                 'detail': 'expected one placed AI waypoint named ' + waypoint})
         for layer, field, target in static_link_gaps(draft, named):
             reviewed_blob, reviewed_targets = REVIEWED_MISSING_WAYPOINTS.get(layer, (None, ()))
             if (field == 'm_aStaticWaypoints' and target in reviewed_targets
@@ -2269,6 +2276,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(path.endswith('.layer') and 'GC_VehicleCrewComponent' in body
            for path, body in draft.items() if isinstance(body, str)):
         remaining.append('Compare placed crew arrival at Match start, compartment order and gunner dismount policy.')
+    if crew_waypoints:
+        remaining.append('Compare placed crew waypoint order, delay and separate idle turret grouping.')
     if any('m_bShareIdleGunnerGroup 1' in body for body in draft.values() if isinstance(body, str)):
         remaining.append('Compare boarding, idle turret grouping and delayed waypoints for spawned vehicle crews.')
     if any(item['trigger'] == 'peak player loss' and item.get('inverted')

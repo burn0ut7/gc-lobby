@@ -17,8 +17,17 @@ class GC_VehicleCrewComponent : ScriptComponent
 	[Attribute("0", UIWidgets.CheckBox, "Keep AI gunners in their turret compartments.")]
 	protected bool m_bKeepGunnersSeated;
 
+	[Attribute("0", UIWidgets.CheckBox, "Keep the gunners together in a separate group without waypoint orders.")]
+	protected bool m_bShareIdleGunnerGroup;
+
 	[Attribute("", UIWidgets.ResourceAssignArray, "Character prefabs in native compartment order.", params: "et")]
 	protected ref array<ResourceName> m_aCharacters;
+
+	[Attribute("", UIWidgets.Auto, "Existing AI waypoint names assigned to the main crew group in order.")]
+	protected ref array<string> m_aCrewWaypoints;
+
+	[Attribute("0", UIWidgets.SpinBox, "Seconds after boarding before assigning crew waypoints.", params: "0 86400")]
+	protected float m_fCrewWaypointDelay;
 
 	protected GC_LobbyManager m_Manager;
 
@@ -51,8 +60,7 @@ class GC_VehicleCrewComponent : ScriptComponent
 	protected void SpawnCrew()
 	{
 		IEntity owner = GetOwner();
-		if (!owner || !Replication.IsServer() || !m_Manager || m_Manager != GC_LobbyManager.GetManager()
-			|| m_Manager.GetLobbyPhase() != SCR_EGameModeState.GAME)
+		if (!owner || !IsActiveMatch())
 			return;
 
 		SCR_BaseCompartmentManagerComponent compartments = SCR_BaseCompartmentManagerComponent.Cast(owner.FindComponent(SCR_BaseCompartmentManagerComponent));
@@ -62,6 +70,7 @@ class GC_VehicleCrewComponent : ScriptComponent
 		array<BaseCompartmentSlot> seats = {};
 		compartments.GetCompartments(seats);
 		AIGroup group;
+		AIGroup idleGroup;
 		int characterIndex;
 		foreach (BaseCompartmentSlot seat : seats)
 		{
@@ -70,8 +79,13 @@ class GC_VehicleCrewComponent : ScriptComponent
 			if (!seat || seat.IsOccupied() || !seat.IsCompartmentAccessible() || !AllowsSeat(seat.GetType()))
 				continue;
 
-			IEntity occupant = seat.SpawnCharacterInCompartment(m_aCharacters[characterIndex], group);
-			if (occupant && m_bKeepGunnersSeated && seat.GetType() == ECompartmentType.TURRET)
+			bool turret = seat.GetType() == ECompartmentType.TURRET;
+			IEntity occupant;
+			if (turret && m_bShareIdleGunnerGroup)
+				occupant = seat.SpawnCharacterInCompartment(m_aCharacters[characterIndex], idleGroup);
+			else
+				occupant = seat.SpawnCharacterInCompartment(m_aCharacters[characterIndex], group);
+			if (occupant && m_bKeepGunnersSeated && turret)
 			{
 				SCR_AICombatComponent combat = SCR_AICombatComponent.Cast(occupant.FindComponent(SCR_AICombatComponent));
 				if (combat)
@@ -79,6 +93,22 @@ class GC_VehicleCrewComponent : ScriptComponent
 			}
 			characterIndex++;
 		}
+		if (group && m_aCrewWaypoints && !m_aCrewWaypoints.IsEmpty())
+		{
+			GetGame().GetCallqueue().CallLater(AssignOrders, Math.Round(m_fCrewWaypointDelay * 1000), false, group);
+		}
+	}
+
+	protected bool IsActiveMatch()
+	{
+		return Replication.IsServer() && m_Manager && m_Manager == GC_LobbyManager.GetManager()
+			&& m_Manager.GetLobbyPhase() == SCR_EGameModeState.GAME;
+	}
+
+	protected void AssignOrders(AIGroup group)
+	{
+		if (group && IsActiveMatch())
+			GC_WaypointOrders.Apply(group, m_aCrewWaypoints);
 	}
 
 	protected bool AllowsSeat(ECompartmentType type)
@@ -94,6 +124,7 @@ class GC_VehicleCrewComponent : ScriptComponent
 			m_Manager.m_OnLobbyPhaseChanged.Remove(OnLobbyPhaseChanged);
 		GetGame().GetCallqueue().Remove(ConnectToLobby);
 		GetGame().GetCallqueue().Remove(SpawnCrew);
+		GetGame().GetCallqueue().Remove(AssignOrders);
 		super.OnDelete(owner);
 	}
 }

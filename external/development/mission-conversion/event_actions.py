@@ -3,7 +3,7 @@ from decimal import Decimal
 from functools import partial
 import re
 
-from briefings import block_end, guid, properties
+from briefings import block_end, guid, properties, target_names
 from catalog import REF
 from vehicle_crew import SEAT_TYPES, SERIALIZED_ID, contents, crew_roles, crew_station
 
@@ -15,13 +15,6 @@ SPAWN = re.compile(r'    TILW_SpawnPrefabInstruction "\{([\da-fA-F]{16})\}" \{')
 GROUP_SPAWN = re.compile(r'    TILW_SpawnGroupInstruction "\{([\da-fA-F]{16})\}" \{')
 VEHICLE_SPAWN = re.compile(r'    TILW_SpawnVehicleInstruction "\{([\da-fA-F]{16})\}" \{')
 SPAWN_FIELDS = {'m_executionDelay', 'm_prefab', 'm_locationName', 'm_setEntityName'}
-
-
-def target_names(value):
-    names = value.split()
-    if not 1 <= len(names) <= 128 or not all(re.fullmatch(r'"[\w.-]+"', name) for name in names):
-        raise ValueError('unsupported entity name list')
-    return names
 
 
 def entity_fields(names):

@@ -1,11 +1,12 @@
 """Convert authored AI crews on registered vehicles and composition turrets."""
+from decimal import Decimal
 from hashlib import sha256
 from pathlib import PurePosixPath
 import re
 
-from briefings import block_end, properties
+from briefings import block_end, properties, target_names
 from catalog import REF
-from groups import legacy_member
+from groups import inheritance, legacy_member
 from local_loadouts import unchanged_units_parent
 from polygon_capture import members
 from scenery import StockPrefabs
@@ -22,6 +23,7 @@ WORKSHOP_VEHICLES = {
     '9AEDF323A812F9ED': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2_AFRF.et'),
     '18378FFFC82F30BF': ('M113APC_5E5C154FEE1094BB', 'Prefabs/Vehicles/Tracked/M113/M113_APC.et'),
     '31F0866273C46D76': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/K17/APC_K17_Berezok.et'),
+    '447CFE8D73F95C3E': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_AFRF.et'),
     '6B7CD408BDFB94F5': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM_Green.et'),
     '7BC76F92B882889D': ('TacticalFlava-TIGR_DEADC0DE00000003',
@@ -47,6 +49,10 @@ COMPOSITION_TURRETS = {
 }
 # The Units override only alters three scenery model flags, leaving the turret inherited.
 COMPOSITION_OVERRIDES = {'7A40BF128BB47EFD': '46f28ca4f00646d4223fc72a3e03c28331c99c1e1fae3a42dda45e268b67a45a'}
+# The smoke-only ancestor moved from published Core to Units Dev.
+BTR70_CREW_OVERLAY = '447CFE8D73F95C3E'
+BTR70_CREW_LEAF = '81a8ccf59bed709f4eb87c25c260e529acd6cbb74dab97d09566adf828395c78'
+BTR70_SMOKE_ANCESTOR = 'ae982b43b504904f7b97947e7fc45c83f584e46ce5f7fa8d7c08c05e386eee74'
 
 
 def workshop_vehicles(workshop):
@@ -112,17 +118,29 @@ def render_component(component, lines, resolve_character, single_turret):
     configs = [i for i, line in enumerate(lines) if line.strip().startswith('m_crewConfig ')]
     if not configs:
         data = properties(lines, {'m_customCrew', 'm_noTurretDismount', 'm_idleGroup', 'm_pregameSpawn',
+                                  'm_waypointNames', 'm_waypointDelay',
                                   *('m_spawn' + seat for seat in SEAT_TYPES)})
         flags = {seat: data.get('m_spawn' + seat, '0') for seat in SEAT_TYPES}
         if all(flag == '0' for flag in flags.values()):
             flags = dict.fromkeys(SEAT_TYPES, '1')
         seated = data.get('m_noTurretDismount', '0')
         idle = data.get('m_idleGroup', '0')
+        if 'm_customCrew' not in data:
+            raise ValueError('legacy placed crew omits its character list')
         roles = crew_roles(data.get('m_customCrew', ''), flags, resolve_character)
+        waypoints = target_names(data['m_waypointNames']) if data.get('m_waypointNames') else []
+        delay = data.get('m_waypointDelay', '5')
         if (seated not in ('0', '1') or idle not in ('0', '1') or data.get('m_pregameSpawn', '0') != '0'
-                or (idle == '1' and not (single_turret and flags['Turret'] == '1' and len(roles) == 1))):
-            raise ValueError('legacy crew timing or separate gunner group needs review')
-        return crew_fields(component, flags, seated, roles)
+                or (waypoints and (not re.fullmatch(r'\d+(?:\.\d+)?', delay) or Decimal(delay) > 86400))):
+            raise ValueError('unsupported placed crew timing or gunner settings')
+        separate = idle == '1' and flags['Turret'] == '1'
+        options = []
+        if separate and not (single_turret and len(roles) == 1 and not waypoints):
+            options.append('   m_bShareIdleGunnerGroup 1')
+        if waypoints:
+            options.extend(['   m_fCrewWaypointDelay ' + delay, '   m_aCrewWaypoints {',
+                            *('    ' + name for name in waypoints), '   }'])
+        return crew_fields(component, flags, seated, roles, options)
     if len(configs) != 1:
         raise ValueError('ambiguous placed crew configuration')
     index, = configs
@@ -148,11 +166,19 @@ def render_component(component, lines, resolve_character, single_turret):
     return crew_fields(component, flags, seated, roles)
 
 
-def crew_fields(component, flags, seated, roles):
+def crew_fields(component, flags, seated, roles, options=()):
     return [f'  GC_VehicleCrewComponent {component["id"]} {{',
             *(f'   m_bAllow{seat} 0' for seat in SEAT_TYPES if flags[seat] == '0'),
             *(['   m_bKeepGunnersSeated 1'] if seated == '1' else []),
-            '   m_aCharacters {', *('    ' + role for role in roles), '   }', '  }']
+            *options, '   m_aCharacters {', *('    ' + role for role in roles), '   }', '  }']
+
+
+def verified_btr70_overlay(guid, path, source_units, dev_units):
+    if guid != BTR70_CREW_OVERLAY or source_units.resources.get(guid) != [path] or dev_units.resources.get(guid) != [path]:
+        return False
+    before = [sha256(body.strip().encode()).hexdigest() for body in inheritance(source_units, guid)]
+    after = [sha256(body.strip().encode()).hexdigest() for body in inheritance(dev_units, guid)]
+    return before == [BTR70_CREW_LEAF] and after == [BTR70_CREW_LEAF, BTR70_SMOKE_ANCESTOR]
 
 
 def convert(block, source_units, dev_units, stock, owned, external_vehicles=None, external_ai=None):
@@ -173,7 +199,8 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
                           and source_units.resources.get(guid) == dev_units.resources.get(guid) == [path]
                           and source_units.read(path) == dev_units.read(path)
                           and sha256(dev_units.read(path).strip().encode()).hexdigest() == COMPOSITION_OVERRIDES[guid])
-    if (guid in owned or (units_owned and not inherited_override)
+    vehicle_overlay = vehicle and external_vehicle and verified_btr70_overlay(guid, path, source_units, dev_units)
+    if (guid in owned or (units_owned and not (inherited_override or vehicle_overlay))
             or not (stock.contains(guid, path) or external_vehicle)):
         raise ValueError('unverified crew vehicle ' + guid)
 
