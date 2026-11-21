@@ -284,9 +284,11 @@ modded class GC_LobbyManager
 		}
 	}
 
-	protected void GC_QueueAuthoredRespawn(GC_Slot slot)
+	protected void GC_QueueAuthoredRespawn(GC_Slot slot, bool retry = false)
 	{
 		if (!m_bGC_AuthoredRespawnsStarted || !HasMissionRuleAuthority() || GetLobbyPhase() != SCR_EGameModeState.GAME)
+			return;
+		if (!slot || m_mGC_AuthoredRespawns.Contains(slot.GetID()))
 			return;
 		SCR_AIGroup group = ResolveSlotGroup(slot);
 		if (!group || !group.GetFaction())
@@ -296,7 +298,8 @@ modded class GC_LobbyManager
 			return;
 		foreach (GC_AuthoredFactionRespawn policy : m_aAuthoredRespawns)
 		{
-			if (!policy || policy.m_sFaction != faction || policy.m_iTickets <= 0
+			if (!policy || policy.m_sFaction != faction || policy.m_iTickets < 0
+				|| (policy.m_iTickets == 0 && !policy.m_bAllowDynamicTickets)
 				|| policy.m_iIntervalMs < 0 || (policy.m_bWave && policy.m_iIntervalMs == 0))
 				continue;
 			GC_AuthoredRespawnRequest request = new GC_AuthoredRespawnRequest();
@@ -304,8 +307,24 @@ modded class GC_LobbyManager
 			request.m_Claim = new GC_RespawnWaveCandidate(slot);
 			request.m_Policy = policy;
 			m_mGC_AuthoredRespawns.Set(slot.GetID(), request);
-			GetGame().GetCallqueue().CallLater(GC_AdmitAuthoredRespawn, 200, false, request);
+			if (retry)
+				GC_AdmitAuthoredRespawn(request);
+			else
+				GetGame().GetCallqueue().CallLater(GC_AdmitAuthoredRespawn, 200, false, request);
 			return;
+		}
+	}
+
+	//! A mission ticket action can retry claimed casualties waiting in spectator.
+	protected void GC_RetryAuthoredRespawns()
+	{
+		if (!m_bGC_AuthoredRespawnsStarted || !HasMissionRuleAuthority() || GetLobbyPhase() != SCR_EGameModeState.GAME)
+			return;
+		foreach (GC_Slot slot : GetSlots())
+		{
+			string faction;
+			if (GC_CanJoinRespawnWave(slot, null, faction))
+				GC_QueueAuthoredRespawn(slot, true);
 		}
 	}
 

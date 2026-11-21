@@ -76,6 +76,21 @@ def change_weather(data, _key):
     }
 
 
+def edit_respawn_tickets(data, _key):
+    faction = data.get('m_factionKey', '')
+    operation = {'SET': 0, 'ADD': 1, '0': 0, '1': 1}.get(data.get('m_operation', 'SET'))
+    amount = data.get('m_amount', '0')
+    retry = data.get('m_allowSpecRespawn', '0')
+    if (not re.fullmatch(r'"[\w.-]+"', faction) or operation is None
+            or not re.fullmatch(r'\d+', amount) or int(amount) > 1000000 or retry not in ('0', '1')):
+        raise ValueError('unsupported respawn ticket operation')
+    fields = [f'       m_sFaction {faction}', f'       m_iOperation {operation}', f'       m_iAmount {amount}']
+    if retry == '1':
+        fields.append('       m_bRetryCasualties 1')
+    return fields, {'ticketFaction': faction[1:-1], 'ticketAmount': int(amount),
+                    'ticketOperation': operation, 'retryCasualties': retry == '1'}
+
+
 def edit_map_items(data, key):
     names = target_names(data.get('m_itemNames', ''))
     unassigned = data.get('m_visibleForEmpty', '0')
@@ -276,6 +291,9 @@ ACTIONS = {
     'TILW_ChangeTimeInstruction': ('GC_WeatherAction', change_time, set(CLOCK_FIELDS)),
     'TILW_ChangeWeatherInstruction': (
         'GC_WeatherAction', change_weather, {'m_sWeatherPresetName', 'm_bAllowRandomChanges'},
+    ),
+    'TILW_EditRespawnTicketsInstruction': (
+        'GC_RespawnTicketsAction', edit_respawn_tickets, {'m_factionKey', 'm_operation', 'm_amount', 'm_allowSpecRespawn'},
     ),
     'TILW_EditMapItemInstruction': (
         'GC_MapMarkerVisibilityAction', edit_map_items, {'m_itemNames', 'm_factionVisibility', 'm_visibleForEmpty'},

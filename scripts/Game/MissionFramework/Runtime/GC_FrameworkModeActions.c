@@ -281,7 +281,11 @@ modded class GC_LobbyManager
 		}
 		else
 			tickets = Math.Max(0, tickets - action.m_iAmount);
-		return GC_SetFactionRespawnTickets(action.m_sTextOrName, tickets);
+		if (!GC_SetFactionRespawnTickets(action.m_sTextOrName, tickets))
+			return false;
+		if (action.m_bRetryCasualties)
+			GC_RetryAuthoredRespawns();
+		return true;
 	}
 
 

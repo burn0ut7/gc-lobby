@@ -5,6 +5,8 @@ class GC_AuthoredFactionRespawn
 	FactionKey m_sFaction;
 	[Attribute("0", UIWidgets.EditBox, "Finite shared ticket budget at Match start.")]
 	int m_iTickets;
+	[Attribute("0", UIWidgets.CheckBox, "Allow this policy to begin with zero tickets and activate when a mission action grants tickets.")]
+	bool m_bAllowDynamicTickets;
 	[Attribute("0", UIWidgets.EditBox, "Individual delay or world-aligned wave interval in milliseconds.")]
 	int m_iIntervalMs;
 	[Attribute("0", UIWidgets.CheckBox, "Align to the next multiple of the interval on the world clock.")]

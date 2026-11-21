@@ -68,10 +68,10 @@ def ticket_event(world, records, gaps):
     return lines + ['     }', '    }', '   }']
 
 
-def authored_respawn_fields(world, records, gaps):
+def authored_respawn_fields(world, records, gaps, dynamic_factions=()):
     if gaps or len({row['faction'] for row in records}) != len(records):
         raise ValueError('invalid or duplicate faction respawn records')
-    funded = [row for row in records if row['tickets']]
+    funded = [row for row in records if row['tickets'] or row['faction'] in dynamic_factions]
     if not funded:
         return ''
     lines = ['   m_aAuthoredRespawns {']
@@ -80,12 +80,14 @@ def authored_respawn_fields(world, records, gaps):
         count = row['tickets']
         interval = row['intervalMs']
         anchor = row['destination']
-        if (not 0 < count <= 1000000 or not 0 <= interval <= 2147483647 or (row['wave'] and not interval)
+        if (not 0 <= count <= 1000000 or not 0 <= interval <= 2147483647 or (row['wave'] and not interval)
                 or (anchor and not re.fullmatch(r'[\w.-]+', anchor))):
             raise ValueError('unsupported faction respawn settings for ' + faction)
         key = guid(world + '/scheduled respawn/' + faction)
         lines.extend([f'    GC_AuthoredFactionRespawn "{{{key}}}" {{', f'     m_sFaction "{faction}"',
                       f'     m_iTickets {count}', f'     m_iIntervalMs {interval}'])
+        if not count:
+            lines.append('     m_bAllowDynamicTickets 1')
         if row['wave']:
             lines.append('     m_bWave 1')
         if anchor:

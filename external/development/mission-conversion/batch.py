@@ -1306,7 +1306,8 @@ def mode_children(lines, disable_photo=False):
     return '\n'.join([*output, ' }', ''])
 
 
-def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None):
+def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None,
+                *, dynamic_respawn_factions=()):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, environment, freeze = '', '', 0
@@ -1361,7 +1362,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         elif line == ' m_aFactionRespawnCount {' and not respawn_table_seen:
             end = block_end(root, index)
             records, gaps = read_respawns('\n'.join([root[0], *root[index:end + 1], '}']), world)
-            respawn_fields = authored_respawn_fields(world, records, gaps)
+            respawn_fields = authored_respawn_fields(world, records, gaps, dynamic_respawn_factions)
             respawn_table_seen = True
             index = end
         elif line.startswith((' m_eJIPState ', ' m_denyJIPTime ')):
@@ -1530,6 +1531,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'respawn', 'file': world, 'detail': str(exc)})
     outcome = row.get('outcomeCandidate', {})
     rules = outcome.get('events', {})
+    ticket_edits = [action for event in rules.values() for action in event.get('convertedActions', [])
+                    if 'ticketFaction' in action]
+    edited_factions = {action['ticketFaction'] for action in ticket_edits if action['ticketAmount']}
+    source_respawns = {entry['faction'] for entry in row.get('respawn', {}).get('factions', [])}
+    if edited_factions - source_respawns:
+        blockers.append({'rule': 'respawn', 'file': world, 'detail': 'ticket edit lacks a verified respawn policy for '
+                         + ', '.join(sorted(edited_factions - source_respawns))})
     notices = {location for location, entry in row.get('frameworkEvents', {}).items()
                if 'notificationDelaysSeconds' in entry}
     represented = notices | {location for location, entry in rules.items() if 'gap' not in entry}
@@ -1713,7 +1721,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         try:
             layer, index = mode_index
             rendered = render_mode(world, mode, preset or '', rule_text, zones, ai_faction,
-                                   set(objective_flags) | event_flags, damage_flags)
+                                   set(objective_flags) | event_flags, damage_flags,
+                                   dynamic_respawn_factions=edited_factions)
             if preset:
                 parts[layer][index] = rendered
         except ValueError as exc:
@@ -1872,6 +1881,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare victory notices below and at the authored casualty threshold after the first sample.')
     if any(rule.get('requiresMatch') for rule in rules.values()):
         remaining.append('Compare compound outcome activation around the authored threshold during Match.')
+    if ticket_edits:
+        remaining.append('Compare event-driven ticket changes and any spectator respawn requests.')
+    if any(path.endswith('.layer') and isinstance(body, str)
+           and re.search(r'^ {2,}(?:\$grp )?SCR_AIGroup\b', body, re.M)
+           for path, body in draft.items()):
+        remaining.append('Compare nested group placement, child roster registration and slot order.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Compare framing and zoom against the legacy cover.')
     if status_areas:

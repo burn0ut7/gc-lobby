@@ -128,12 +128,14 @@ class GC_EndMissionAction : GC_ActionBase
 [BaseContainerProps(), BaseContainerCustomStringTitleField("Respawn Tickets Action")]
 class GC_RespawnTicketsAction : GC_ActionBase
 {
-	[Attribute("", UIWidgets.Auto, "Faction key whose remaining respawn tickets will change. This action does not respawn anyone.")]
+	[Attribute("", UIWidgets.Auto, "Faction key whose remaining respawn tickets will change.")]
 	FactionKey m_sFaction;
 	[Attribute("0", UIWidgets.ComboBox, "Set replaces the remaining tickets. Add increases them. Subtract removes tickets, stopping at zero.", enums: {ParamEnum("Set", "0"), ParamEnum("Add", "1"), ParamEnum("Subtract", "2")})]
 	int m_iOperation;
 	[Attribute("1", UIWidgets.SpinBox, "Number of tickets to set, add or subtract.", "0 1000000 1")]
 	int m_iAmount;
+	[Attribute("0", UIWidgets.CheckBox, "Retry claimed casualties from all factions using their authored policies and available tickets.")]
+	bool m_bRetryCasualties;
 
 	//------------------------------------------------------------------------------------------------
 	override GC_RuleAction BuildAction()
@@ -143,6 +145,7 @@ class GC_RespawnTicketsAction : GC_ActionBase
 		action.m_sTextOrName = m_sFaction;
 		action.m_iOperation = m_iOperation;
 		action.m_iAmount = m_iAmount;
+		action.m_bRetryCasualties = m_bRetryCasualties;
 		return action;
 	}
 }

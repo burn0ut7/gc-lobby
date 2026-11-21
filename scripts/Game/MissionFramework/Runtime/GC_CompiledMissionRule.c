@@ -60,6 +60,7 @@ class GC_RuleAction
 	int m_iSelectionCount;
 	int m_iOperation;
 	int m_iAmount;
+	bool m_bRetryCasualties;
 	ref GC_PrefabSpawn m_Spawn;
 	ref GC_RespawnLocation m_RespawnLocation;
 	ref GC_MissionScript m_Script;

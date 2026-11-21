@@ -604,9 +604,33 @@ def convert_stock_instance(lines, spec, source_units, dev_units, stock, locally_
 
 def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset(),
                 reviewed_members=None, external_ai=None, allow_stock_ai=False, restored_members=None,
-                reviewed_ai_members=None, forced_external=None):
+                reviewed_ai_members=None, forced_external=None, *, depth=0):
     if not re.search(r'^(?:\$grp )?SCR_AIGroup\b', text, re.M):
         return None
+
+    def convert_member(convert, fields, indent):
+        prefix = ' ' * indent
+        start = next((i for i, line in enumerate(fields) if line == prefix + '{'), None)
+        if start is None:
+            body, members = convert(fields)
+            return body, int(members > 0), members
+        stop = block_end(fields, start)
+        if depth >= 12 or stop != len(fields) - 1 or stop == start + 1:
+            raise ValueError('unsupported group child list')
+        child_prefix = prefix + ' '
+        if any(line.strip() and not line.startswith(child_prefix) for line in fields[start + 1:stop]):
+            raise ValueError('invalid group child indentation')
+        nested = '\n'.join(line[len(child_prefix):] for line in fields[start + 1:stop])
+        children = group_layer(nested, source_units, dev_units, stock, locally_owned, reviewed_callsigns,
+                               reviewed_members, external_ai, allow_stock_ai, restored_members,
+                               reviewed_ai_members, forced_external, depth=depth + 1)
+        if children is None:
+            raise ValueError('unsupported child entity on a group')
+        body, members = convert(fields[:start])
+        child_body, child_groups, child_slots = children
+        return ([*body, fields[start], *(child_prefix + line for line in child_body.splitlines()), fields[stop]],
+                int(members > 0) + child_groups, members + child_slots)
+
     lines = text.splitlines()
     result = []
     count = slots = i = 0
@@ -654,16 +678,16 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
                 if not re.fullmatch(r' (?:[\w.\-]+ )?\{', lines[j]):
                     raise ValueError('unexpected group instance')
                 last = block_end(lines, j)
-                body, members = convert(lines[j+1:last])
+                body, groups, members = convert_member(convert, lines[j+1:last], 2)
                 result.extend([lines[j], *body, lines[last]])
                 slots += members
-                count += int(members > 0)
+                count += groups
                 j = last + 1
         else:
-            body, members = convert(lines[i+1:end])
+            body, groups, members = convert_member(convert, lines[i+1:end], 1)
             result.extend(body)
             slots += members
-            count += int(members > 0)
+            count += groups
         result.append(lines[end])
         i = end + 1
     return '\n'.join(result) + '\n', count, slots
