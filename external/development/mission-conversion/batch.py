@@ -8,7 +8,7 @@ import re
 
 from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURRENT_PARENT,
                          LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, capture_status_texts, faction_keys)
-from boundaries import ROOT as AO_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE, convert_boundaries
+from boundaries import ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE, convert_boundaries
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import REF, SOURCE_TEXT
 from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, render_crew_config, render_spawn, spawn_details, split_crew_block
@@ -112,10 +112,14 @@ GMFX_AMMO_TARGETS = (
     ('8B9AFAD3A1548FCE', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage.et'),
     ('4C931B452C796A2A', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage_USSR.et'),
 )
+GMFX_PROVIDER = 'GameMasterFX_5994AD5A9F33BE57'
+GMFX_DIGEST = '09a2e7a14300b916b1eaea43446d39d1d3334209e692e50d29406233962f7c80'
 WORKSHOP_DAMAGE_TARGETS = {
-    'GameMasterFX_5994AD5A9F33BE57': (
-        '09a2e7a14300b916b1eaea43446d39d1d3334209e692e50d29406233962f7c80',
-        GMFX_AMMO_TARGETS,
+    GMFX_PROVIDER: (
+        GMFX_DIGEST,
+        (*GMFX_AMMO_TARGETS,
+         ('6B52C6B5FEC3E369', 'Prefabs/Destructible/GMFX_Destructible_AmmoDump.et'),
+         ('FFCDFB1375A99125', 'Prefabs/Destructible/GMFX_Destructible_RPL5_01_generator.et')),
     ),
     'ZU-23_5C9AD9EF76F6B5EA': (
         '5f647d652a2104e0570f662f2d8199ef2aedea5837810b03bac91eada81a86a2',
@@ -123,9 +127,12 @@ WORKSHOP_DAMAGE_TARGETS = {
     ),
 }
 WORKSHOP_SPAWN_PREFABS = {
-    'BritishForces_5AE50EC5B8D6F4AE': {
-        ('775DFB7F4529A122', 'Prefabs/Weapons/Rifles/L42A1/Rifle_L42A1.et'),
-    },
+    'BritishForces_5AE50EC5B8D6F4AE': (
+        None, (('775DFB7F4529A122', 'Prefabs/Weapons/Rifles/L42A1/Rifle_L42A1.et'),),
+    ),
+    GMFX_PROVIDER: (
+        GMFX_DIGEST, (('DDDDBEC77B49A995', 'Prefabs/Systems/Explosions/Wrapper_Bomb_Huge.et'),),
+    ),
 }
 RHS_DAMAGE_PATHS = {
     '52B13341B4A2F012': 'Prefabs/Vehicles/Tracked/2S1/Tank_2S1_Green.et',
@@ -1255,18 +1262,19 @@ def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs, 
     members, flags = [], []
     for name, fields in polygon_capture.members(block, True, None):
         member = ['{', *fields, '}']
-        flag = None
+        member_flags = []
         if any('TILW_Flag_EntityDamage' in line for line in fields):
-            member, flag = damage_state_flag_placement(member, allow_multiple_states=True)
-            flags.append(flag)
-        members.append((name, member, flag))
+            member, member_flags = damage_state_flag_placements(member, allow_multiple_states=True)
+            flags.extend(member_flags)
+        members.append((name, member, member_flags))
     shared = Counter(flags)
     lines = [block[0]]
-    for name, member, flag in members:
-        if shared[flag] > 1:
-            # Each legacy producer could clear the shared flag before its own first match.
-            setting = member.index(f'   m_sFlag "{flag}"')
-            member.insert(setting + 1, '   m_bClearOnMismatch 1')
+    for name, member, member_flags in members:
+        shared_settings = {f'   m_sFlag "{flag}"' for flag in member_flags if shared[flag] > 1}
+        # Each legacy producer could clear the shared flag before its own first match.
+        for setting in range(len(member) - 1, -1, -1):
+            if member[setting] in shared_settings:
+                member.insert(setting + 1, '   m_bClearOnMismatch 1')
         lines.extend([f' {name} {{' if name else ' {', *(' ' + part for part in member[1:-1]), ' }'])
     native = native_placement([*lines, block[-1]], reviewed_character=is_character)
     if not native or not flags:
@@ -1542,33 +1550,45 @@ def reviewed_group_aliases(source, dev, source_units, dev_units):
 
 
 def damage_state_flag_placement(block, *, allow_multiple_states=False):
-    starts = [i for i, line in enumerate(block) if DAMAGE_COMPONENT.fullmatch(line)]
-    if len(starts) != 1 or block.count(' components {') != 1:
+    lines, flags = damage_state_flag_placements(block, allow_multiple_states=allow_multiple_states)
+    if len(flags) != 1:
         raise ValueError('expected one authored damage producer')
-    start, = starts
-    stop = block_end(block, start)
+    return lines, flags[0]
+
+
+def damage_state_flag_placements(block, *, allow_multiple_states):
+    starts = [i for i, line in enumerate(block) if DAMAGE_COMPONENT.fullmatch(line)]
+    if not starts or block.count(' components {') != 1:
+        raise ValueError('expected authored damage producers in root components')
     root = block.index(' components {')
-    if not root < start < stop < block_end(block, root):
-        raise ValueError('damage producer is outside root components')
-    data = properties(block[start + 1:stop], {'m_flagName', 'm_targetState', 'm_targetZone',
-                                               'm_continuous', 'm_initialHealth'})
-    flag = data.get('m_flagName', '')
-    state = data.get('m_targetState', '2')
-    continuous = data.get('m_continuous', '0')
+    end = block_end(block, root)
     allowed = {'0', 'UNDAMAGED', '1', 'INTERMEDIARY', '2', 'DESTROYED'} if allow_multiple_states else {'2', 'DESTROYED'}
-    if (not re.fullmatch(r'"[\w.-]+"', flag) or state not in allowed
-            or data.get('m_targetZone', '""') != '""' or continuous not in ('0', '1')
-            or (continuous == '1' and not allow_multiple_states)
-            or data.get('m_initialHealth', '1') != '1'):
-        raise ValueError('unsupported destruction state or flag')
-    settings = ['   m_sFlag ' + flag]
-    if state not in ('2', 'DESTROYED'):
-        settings.append('   m_eTargetState ' + state)
-    if continuous == '1':
-        settings.append('   m_bTrackChanges 1')
-    lines = [*block[:start], block[start].replace('TILW_Flag_EntityDamage', 'GC_DestroyedEntityFlagComponent'),
-             *settings, *block[stop:]]
-    return lines, flag[1:-1]
+    lines, flags = [], []
+    cursor = 0
+    for start in starts:
+        stop = block_end(block, start)
+        if not root < start < stop < end or start < cursor:
+            raise ValueError('damage producer is outside root components')
+        data = properties(block[start + 1:stop], {'m_flagName', 'm_targetState', 'm_targetZone',
+                                                    'm_continuous', 'm_initialHealth'})
+        flag = data.get('m_flagName', '')
+        state = data.get('m_targetState', '2')
+        continuous = data.get('m_continuous', '0')
+        if (not re.fullmatch(r'"[\w.-]+"', flag) or state not in allowed
+                or data.get('m_targetZone', '""') != '""' or continuous not in ('0', '1')
+                or (continuous == '1' and not allow_multiple_states)
+                or data.get('m_initialHealth', '1') != '1'):
+            raise ValueError('unsupported destruction state or flag')
+        lines.extend(block[cursor:start])
+        lines.extend([block[start].replace('TILW_Flag_EntityDamage', 'GC_DestroyedEntityFlagComponent'),
+                      '   m_sFlag ' + flag])
+        if state not in ('2', 'DESTROYED'):
+            lines.append('   m_eTargetState ' + state)
+        if continuous == '1':
+            lines.append('   m_bTrackChanges 1')
+        flags.append(flag[1:-1])
+        cursor = stop
+    return [*lines, *block[cursor:]], flags
 
 
 def spawned_damage_objective(block, stock, local_resources, workshop_targets):
@@ -1786,28 +1806,20 @@ def ai_objectives(source, dev, world, stock, local_resources, source_units, dev_
     return reviewed
 
 
-def workshop_spawn_resources(workshop):
+def workshop_resources(workshop, packages):
     approved = set()
-    if workshop:
-        for provider, references in WORKSHOP_SPAWN_PREFABS.items():
-            registry = workshop / provider / 'resourceDatabase.rdb'
-            if registry.is_file():
-                database = StockPrefabs(registry)
-                approved.update(reference for reference in references if database.contains(*reference))
-    return approved
-
-
-def workshop_damage_resources(workshop):
-    approved = set()
-    for provider, (digest, references) in WORKSHOP_DAMAGE_TARGETS.items():
+    for provider, (digest, references) in packages.items():
         directory = workshop / provider
         archive = directory / 'data.pak'
         registry = directory / 'resourceDatabase.rdb'
-        if not archive.is_file() or not registry.is_file():
+        if not registry.is_file():
             continue
-        with archive.open('rb') as stream:
-            if file_digest(stream, 'sha256').hexdigest() != digest:
+        if digest:
+            if not archive.is_file():
                 continue
+            with archive.open('rb') as stream:
+                if file_digest(stream, 'sha256').hexdigest() != digest:
+                    continue
         database = StockPrefabs(registry)
         approved.update(reference for reference in references if database.contains(*reference))
     return approved
@@ -2822,6 +2834,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     boundaries = {}
     converted_cover = False
     converted_passive_cover = False
+    converted_bare_map = False
     reused_layers = set()
     group_blocks = []
     area_names = []
@@ -2951,14 +2964,17 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append(convert_layer(body, dev, draw_order=True)[0])
                 elif kind == 'PS_ManuaMarkerRender':
                     result.append(convert_hover_camera(block, f'{layer}:{line}'))
-                elif 'TILW_AOLimit.et' in head or 'TILW_MapShape.et' in head or PASSIVE_COVER.fullmatch(head):
-                    converted, audit = convert_boundaries(body, allow_public_faction_color=True, extended_shapes=True)
+                elif ('TILW_AOLimit.et' in head or 'TILW_MapShape.et' in head or PASSIVE_COVER.fullmatch(head)
+                        or (BARE_SHAPE.fullmatch(head) and 'TILW_MapShapeComponent' in body)):
+                    converted, audit = convert_boundaries(body, allow_public_faction_color=True, extended_shapes=True,
+                                                          allow_bare=True)
                     if not converted or any('gap' in item for item in audit.values()):
                         blockers.append({'rule': 'boundary or map shape', 'file': layer, 'line': line, 'detail': audit})
                     else:
                         boundaries.setdefault(layer, []).append(converted)
                         converted_cover |= 'm_bAutoFrameMap 1' in converted
                         converted_passive_cover |= bool(PASSIVE_COVER.fullmatch(head))
+                        converted_bare_map |= bool(BARE_SHAPE.fullmatch(head))
                 elif PERCEPTION.fullmatch(head) and all(
                     field.strip().partition(' ')[0] in SPAWNER_TRANSFORM and FIELD.fullmatch(field.strip())
                     for field in block[1:-1]
@@ -3369,6 +3385,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(path.endswith('.layer') and isinstance(body, str) and DYNAMIC_LOD_DISTANCE in body
            for path, body in draft.items()):
         remaining.append('Compare group simulation as players cross the authored LOD distance.')
+    if converted_bare_map:
+        remaining.append('Compare authored map fill, outline and faction visibility, including unassigned viewers.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Compare framing and zoom against the legacy cover.')
     if converted_passive_cover:

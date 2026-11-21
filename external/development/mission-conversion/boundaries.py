@@ -10,6 +10,7 @@ ROOT = re.compile(r'^(?P<group>\$grp )?PolylineShapeEntity(?: (?P<name>[\w.-]+))
 STANDALONE_SHAPE = re.compile(
     r'^(?P<group>\$grp )?PolylineShapeEntity(?: (?P<name>[\w.-]+))? : '
     r'"\{A0468F86F76FCEE7\}Prefabs/Logic/Map/TILW_MapShape.et" \{$')
+BARE_SHAPE = re.compile(r'^(?P<group>\$grp )?PolylineShapeEntity(?: (?P<name>[\w.-]+))? \{$')
 PASSIVE_COVER = re.compile(
     r'^(?P<group>\$grp )?PolylineShapeEntity(?: (?P<name>[\w.-]+))? : '
     r'"\{25C6E66E6C14258D\}Prefabs/Logic/Map/Cover_Map.et" \{$')
@@ -80,10 +81,10 @@ def validate_polygon(vertices, origin, yaw=0, pitch=0, roll=0):
                 raise ValueError('crossing or touching polygon edges')
 
 
-def settings(lines, extended_shapes, standalone=False, passive_cover=False):
+def settings(lines, extended_shapes, standalone=False, passive_cover=False, *, bare=False):
     result, overlay, cover = {}, {}, {}
     navmesh = []
-    ids = {'TILW_MapShapeComponent': '6508F5526836BC09'} if standalone else COMPONENTS
+    ids = {} if standalone else COMPONENTS
     if passive_cover:
         ids = {'TILW_MapShapeComponent': '6508F5522A2E1971'}
     seen = set()
@@ -102,11 +103,16 @@ def settings(lines, extended_shapes, standalone=False, passive_cover=False):
             navmesh.extend([f'  GC_NavmeshRebuildComponent "{{{head[2]}}}" {{', '  }'])
         elif extended_shapes and standalone and head[1] == 'Hierarchy' and not body:
             navmesh.extend([f'  Hierarchy "{{{head[2]}}}" {{', '  }'])
+        elif bare and head[1] == 'RplComponent' and not body:
+            # The destination map and AO prefabs provide their own replication component.
+            pass
         elif extended_shapes and standalone and head[1] == 'TILW_AOLimitComponent':
             result = {'Enabled': '1', **properties(body, ALLOWED)}
             if result['Enabled'] not in ('0', '1'):
                 raise ValueError('unsupported added AO state')
-        elif ids.get(head[1]) != head[2].upper():
+        elif ids.get(head[1]) != head[2].upper() and not (
+                standalone and head[1] == 'TILW_MapShapeComponent'
+                and (bare or head[2].upper() == '6508F5526836BC09')):
             raise ValueError('custom AO component')
         elif head[1] == 'TILW_AOLimitComponent':
             result = properties(body, ALLOWED)
@@ -136,6 +142,11 @@ def settings(lines, extended_shapes, standalone=False, passive_cover=False):
 
 def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=False, world_width=False, navmesh=()):
     keys = overlay.get('m_factionKeys', '')
+    if '""' in keys and re.fullmatch(r'(?:\s*"[\w.-]*"\s*)+', keys):
+        assigned = re.findall(r'"[\w.-]+"', keys)
+        if assigned:
+            # The legacy component gates empty factions separately from its inclusion list.
+            keys = ' '.join(assigned)
     empty = overlay.get('m_visibleForEmptyFaction', '1')
     color = overlay.get('m_color', '0 0 0 0.75')
     invert = overlay.get('m_invert', '0' if standalone else '1')
@@ -198,7 +209,7 @@ def render_cover(coords, vertices, yaw, cover, pitch=0, roll=0):
 
 def convert_instance(lines, name, passive_only=False, allow_public_faction_color=False, split_fill=True,
                      extended_shapes=False, standalone=False, parent_origin=(0, 0, 0), parent_yaw=0,
-                     parent_scale=1, passive_cover=False):
+                     parent_scale=1, passive_cover=False, bare=False):
     values, overlay, cover = {}, {}, {}
     navmesh = []
     placement = []
@@ -214,7 +225,8 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
             if passive_cover and overlay:
                 raise ValueError('duplicate passive cover component list')
             end = block_end(lines, i)
-            values, overlay, cover, navmesh = settings(lines[i+1:end], extended_shapes, standalone, passive_cover)
+            values, overlay, cover, navmesh = settings(lines[i+1:end], extended_shapes, standalone,
+                                                       passive_cover, bare=bare)
             i = end
         elif field == 'Points {':
             end = block_end(lines, i)
@@ -260,6 +272,8 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
         i += 1
     if passive_cover and not overlay:
         raise ValueError('passive cover requires explicit component overrides')
+    if bare and not (overlay or values):
+        raise ValueError('bare map shape needs authored map or AO settings')
     if coords is None and not (standalone and extended_shapes):
         raise ValueError('missing explicit AO transform')
     origin = floats(coords, 3) if coords is not None else (0, 0, 0)
@@ -457,7 +471,7 @@ def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, pa
                 child_name = ' ' + member_name if member_name else ''
                 child, vertices = convert_hierarchy(
                     lines[start + 1:end], child_name,
-                    {**options, 'standalone': bool(standalone), 'passive_cover': bool(passive_cover)},
+                    {**options, 'standalone': bool(standalone), 'passive_cover': bool(passive_cover), 'bare': False},
                     origin, depth + 1, yaw + parent_yaw, marker=child_marker, area_children=area_children,
                     parent_scale=world_scale)
                 children.extend('  ' + line for line in child.splitlines())
@@ -474,12 +488,13 @@ def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, pa
 
 
 def convert_boundaries(text, allow_public_faction_color=False, split_fill=True, *, extended_shapes=False,
-                       area_children=None):
+                       area_children=None, allow_bare=False):
     lines = text.splitlines()
     emitted, review = [], {}
     for i,line in enumerate(lines):
         passive_cover = PASSIVE_COVER.fullmatch(line) if extended_shapes else None
-        standalone = passive_cover or (STANDALONE_SHAPE.fullmatch(line) if extended_shapes else None)
+        bare = BARE_SHAPE.fullmatch(line) if allow_bare else None
+        standalone = bare or passive_cover or (STANDALONE_SHAPE.fullmatch(line) if extended_shapes else None)
         root = standalone or ROOT.fullmatch(line)
         if not root:
             continue
@@ -494,7 +509,8 @@ def convert_boundaries(text, allow_public_faction_color=False, split_fill=True, 
                 body,count = convert_hierarchy(lines[start+1:stop], ' '+name if name else '',
                                                {'allow_public_faction_color': allow_public_faction_color,
                                                 'split_fill': split_fill, 'extended_shapes': extended_shapes,
-                                                'standalone': bool(standalone), 'passive_cover': bool(passive_cover)},
+                                                'standalone': bool(standalone), 'passive_cover': bool(passive_cover),
+                                                'bare': bool(bare)},
                                                area_children=area_children)
                 emitted.append(body)
                 review[str(start+1)] = {'vertices':count,'name':name,'lastLine':stop+1}

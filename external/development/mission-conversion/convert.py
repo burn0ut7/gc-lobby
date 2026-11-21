@@ -156,8 +156,9 @@ def main():
             external_vehicles = vehicle_crew.workshop_vehicles(args.workshop_addons)
             external_vehicle_parents = vehicle_crew.workshop_vehicles(
                 args.workshop_addons, vehicle_crew.WORKSHOP_VEHICLE_PARENTS)
-            workshop_spawn_resources = batch.workshop_spawn_resources(args.workshop_addons) | set(external_vehicles.items())
-            workshop_damage_resources = batch.workshop_damage_resources(args.workshop_addons)
+            workshop_spawn_resources = (batch.workshop_resources(args.workshop_addons, batch.WORKSHOP_SPAWN_PREFABS)
+                                        | set(external_vehicles.items()))
+            workshop_damage_resources = batch.workshop_resources(args.workshop_addons, batch.WORKSHOP_DAMAGE_TARGETS)
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
         if rhs_database:
