@@ -86,7 +86,7 @@ class Snapshot:
 
     def headers(self):
         for path in self.files:
-            if path.lower().endswith('.conf') and re.match(r'\s*SCR_MissionHeader\w*\b', self.read(path)):
+            if path.lower().endswith('.conf') and re.match(r'\s*(?:SCR_MissionHeader\w*|GC_MissionHeader)\b', self.read(path)):
                 yield path
 
 

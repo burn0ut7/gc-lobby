@@ -41,6 +41,12 @@ Stop each Workbench run once its assigned behaviors are verified. Record results
 
 The migration generates Arma launcher and world resource registrations. The resource audit checks against the dependency graph declared by the Dev projects. The metadata table in `plan.md` separately reports GC headers, generated metadata snapshots, catalogue data, explicit per-mission addon IDs and portable launch files. The standard GC launcher requires a generated snapshot or portable export. The conversion files and shared addon dependency audit leave that per-mission metadata generation open. Confirm script-selected content and use the supported exporter for the published build.
 
+Stage the header type for the native exporter with the same committed Dev revision used by the plan.
+
+    python "$tools/launchers.py" --missions $repo --dev HEAD --prepare-metadata "$output/plan.json" --stage $metadataStage
+
+Omit header paths for the entire file-cleared set. The preparation edits only the root type of plain `SCR_MissionHeader` files in staging. Existing GC headers can go directly to metadata collection. Custom header types are reported for review so their existing fields survive. The native exporter fills the generated snapshot using the mission subscene, and the direct launcher exports the portable file from that saved header.
+
 After reviewing the file-cleared drafts, give the installer its plan with `--all-ready` to install them in one pass. The installer checks that the plan came from the exact inventory and validates file hashes, paths, collisions and resources before writing. Omit `--all-ready` to install only the suggested batch. Review the committed files and push grouped deliveries of roughly ten launchers. The number of launchers in a push is independent of the size of the local install.
 
     python "$tools/install_batch.py" --missions $repo --inventory "$output/inventory.json" --stage "$output/drafts" --plan "$output/plan.json" --all-ready --dependency . --dependency ../gc-reforger-units --dependency ../gc-reforger-core --base-database $base --workshop-addons $workshop

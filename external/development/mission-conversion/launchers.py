@@ -1,6 +1,7 @@
 """Prepare launcher resources in an external staging directory for world assembly."""
 import argparse
 import hashlib
+import json
 from pathlib import Path
 import re
 import subprocess
@@ -17,6 +18,8 @@ META_NAME = field('Name')
 SHARED_ID = '321510A1C6838890'
 BUSTERS = 'worlds/Corax/SerriffBusters/SerrifBusters.ent'
 TOPDOWN = 'worlds/Delfer/Topdown/Topdown.ent'
+LEGACY_HEADER_TYPE = re.compile(rb'\A((?:\xef\xbb\xbf)?[ \t\r\n]*)SCR_MissionHeader(?=\s*\{)')
+GC_HEADER_TYPE = re.compile(rb'\A(?:\xef\xbb\xbf)?[ \t\r\n]*GC_MissionHeader(?=\s*\{)')
 
 
 def replace_reference(text, pattern, guid, path):
@@ -73,38 +76,82 @@ def launcher(source, dev, header):
     return world, world_id, files
 
 
+def prepare_metadata_headers(dev, plan, headers):
+    """Stage only the root type of file-cleared launchers for the native metadata exporter."""
+    if plan.get('target') != dev.commit:
+        raise ValueError('the metadata plan was generated for a different Dev commit')
+    eligible = plan.get('committedLauncherMetadata')
+    if not eligible:
+        raise ValueError('the metadata plan contains no file-cleared launcher checks')
+    selected = set(headers) if headers else set(eligible)
+    if selected - eligible.keys():
+        raise ValueError('the plan did not clear these launchers: ' + ', '.join(sorted(selected - eligible.keys())))
+    prepared, unsupported = {}, {}
+    for header in sorted(selected):
+        if header not in dev.files or not header.endswith('.conf'):
+            raise ValueError(f'{header} is missing from Dev')
+        body = dev.read_raw(header)
+        world = WORLD_REF.search(dev.read(header))
+        identity = META_NAME.search(dev.read(header + '.meta')) if header + '.meta' in dev.files else None
+        if (not identity or identity[3] != header or dev.resources.get(identity[2].upper()) != [header]
+                or not world or dev.resources.get(world[2].upper()) != [world[3]]):
+            raise ValueError(f'{header} has a missing or ambiguous launcher or world registration')
+        if GC_HEADER_TYPE.match(body):
+            continue
+        updated, changed = LEGACY_HEADER_TYPE.subn(rb'\g<1>GC_MissionHeader', body, count=1)
+        if not changed:
+            unsupported[header] = dev.read(header).lstrip().split(maxsplit=1)[0]
+            continue
+        prepared[header] = updated
+    return prepared, len(selected), unsupported
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--missions', required=True, type=Path)
     parser.add_argument('--source', default='origin/master')
     parser.add_argument('--dev', default='origin/dev')
     parser.add_argument('--stage', required=True, type=Path)
-    parser.add_argument('headers', nargs='*', help='source paths, defaults to every legacy launcher')
+    parser.add_argument('--prepare-metadata', type=Path, metavar='PLAN',
+                        help='stage GC header types for the file-cleared Dev launchers in this plan')
+    parser.add_argument('headers', nargs='*', help='launcher paths, defaults to all eligible launchers')
     args = parser.parse_args()
     stage = args.stage.resolve()
     if any(stage.is_relative_to(root.resolve()) for root in [args.missions, Path(__file__).resolve().parents[3]]):
         parser.error('use an external staging directory')
-    source = Snapshot(args.missions, args.source)
     dev = Snapshot(args.missions, args.dev)
-    headers = set(source.headers())
-    selected = set(args.headers) if args.headers else headers
-    if selected - headers:
-        parser.error('unknown launcher: ' + ', '.join(sorted(selected - headers)))
-    output = {}
-    for header in sorted(selected):
-        _, _, files = launcher(source, dev, header)
-        for path, contents in files.items():
-            if path in output and output[path] != contents:
-                parser.error(f'conflicting output for {path}')
-            output[path] = contents
+    if args.prepare_metadata:
+        try:
+            output, count, unsupported = prepare_metadata_headers(
+                dev, json.loads(args.prepare_metadata.read_text(encoding='utf-8')), args.headers)
+        except (OSError, ValueError) as exc:
+            parser.error(str(exc))
+    else:
+        source = Snapshot(args.missions, args.source)
+        headers = set(source.headers())
+        selected = set(args.headers) if args.headers else headers
+        if selected - headers:
+            parser.error('unknown launcher: ' + ', '.join(sorted(selected - headers)))
+        output = {}
+        for header in sorted(selected):
+            _, _, files = launcher(source, dev, header)
+            for path, contents in files.items():
+                body = contents.encode()
+                if path in output and output[path] != body:
+                    parser.error(f'conflicting output for {path}')
+                output[path] = body
+        count = len(selected)
+        unsupported = {}
     for path in stage.rglob('*'):
-        if path.is_file() and output.get(path.relative_to(stage).as_posix(), None) != path.read_bytes().decode('utf-8'):
+        if path.is_file() and output.get(path.relative_to(stage).as_posix()) != path.read_bytes():
             parser.error(f'staging directory contains differing file {path}')
     for path, contents in output.items():
         target = stage / path
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(contents.encode())
-    print(f'{len(selected)} launchers, {len(output)} files')
+        target.write_bytes(contents)
+    print(f'{count} launchers, {len(output)} files')
+    for header, root in unsupported.items():
+        print(f'{header} requires review for header type {root}')
 
 
 if __name__ == '__main__':
