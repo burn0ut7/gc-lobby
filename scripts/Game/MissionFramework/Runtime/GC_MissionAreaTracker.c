@@ -162,6 +162,8 @@ class GC_MissionAreaObservation
 			return false;
 		if (m_Definition.m_bAreaAnywhere != other.m_bAreaAnywhere || m_Definition.m_sAreaName != other.m_sAreaName || m_Definition.m_iAreaTargets != other.m_iAreaTargets)
 			return false;
+		if (m_Definition.m_bCountMissingAsOutside != other.m_bCountMissingAsOutside || m_Definition.m_bExcludeDestroyedAreaTargets != other.m_bExcludeDestroyedAreaTargets)
+			return false;
 		array<string> first = m_Definition.m_aAreaNames;
 		array<string> second = other.m_aAreaNames;
 		if (other.m_iAreaTargets == 1)
@@ -226,10 +228,19 @@ class GC_MissionAreaObservation
 			{
 				if (!target.m_Entity)
 				{
-					available = false;
+					if (m_Definition.m_bCountMissingAsOutside)
+						total++;
+					else
+						available = false;
 					continue;
 				}
 				total++;
+				if (m_Definition.m_bExcludeDestroyedAreaTargets)
+				{
+					SCR_DamageManagerComponent damage = SCR_DamageManagerComponent.GetDamageManager(target.m_Entity);
+					if (damage && damage.GetState() == EDamageState.DESTROYED)
+						continue;
+				}
 				if (available && m_Area.ContainsEntity(target.m_Entity, target.m_vPosition))
 					inside++;
 			}
@@ -281,10 +292,13 @@ class GC_MissionAreaObservation
 	{
 		if (!m_bAvailable || (!m_Definition.m_bAreaAnywhere && (!m_Area || !m_Area.IsAvailable())))
 			return false;
-		foreach (GC_AreaEntityReference target : m_aTargets)
+		if (!m_Definition.m_bCountMissingAsOutside)
 		{
-			if (!target.m_Entity)
-				return false;
+			foreach (GC_AreaEntityReference target : m_aTargets)
+			{
+				if (!target.m_Entity)
+					return false;
+			}
 		}
 		return true;
 	}
@@ -321,7 +335,7 @@ class GC_MissionAreaObservation
 			int count = m_iInside;
 			if (check.m_bAreaOutside)
 				count = m_iTotal - m_iInside;
-			return PassesProportion(count, m_iTotal, check.m_fAreaProportion);
+			return PassesProportion(count, m_iTotal, check.m_fAreaProportion, check.m_bAreaProportionAtMost, check.m_bAreaWholeNumberQuotient);
 		}
 		return Passes(check.m_bAreaOutside, check.m_iAreaComparison, check.m_iAreaRequired);
 	}
@@ -334,12 +348,17 @@ class GC_MissionAreaObservation
 
 	//------------------------------------------------------------------------------------------------
 	//! Divide as floats so a matching threshold uses the same representation as the ratio.
-	static bool PassesProportion(int count, int total, float required)
+	static bool PassesProportion(int count, int total, float required, bool atMost = false, bool wholeNumberQuotient = false)
 	{
 		if (total <= 0 || count < 0 || count > total || !(required >= 0 && required <= 1))
 			return false;
 		float fraction = count;
-		fraction /= total;
+		if (wholeNumberQuotient)
+			fraction = count / total;
+		else
+			fraction /= total;
+		if (atMost)
+			return fraction <= required;
 		return fraction >= required;
 	}
 
@@ -505,7 +524,8 @@ class GC_MissionAreaTracker
 						status = capture.Sample(check.m_Capture, answer, m_fSampleTime);
 					if (status >= 0 && messages && check.m_Capture.m_Messages)
 					{
-						GC_RuleAction message = check.m_Capture.m_Messages.BuildMessage(status, check.m_aAreaFactions, check.m_bLocalFactionShare && check.m_bShareAtMost);
+						bool reversed = (check.m_bLocalFactionShare && check.m_bShareAtMost) || check.m_bAreaProportionAtMost;
+						GC_RuleAction message = check.m_Capture.m_Messages.BuildMessage(status, check.m_aAreaFactions, reversed);
 						if (message)
 							messages.Insert(message);
 					}

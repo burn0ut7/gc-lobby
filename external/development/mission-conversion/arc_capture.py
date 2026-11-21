@@ -174,6 +174,24 @@ def faction_keys(value):
     return keys
 
 
+def capture_messages(key, data, location, recipients, defaults):
+    if data.get('m_sendStatusMessages', '0') == '0':
+        return ''
+    texts = defaults
+    if 'm_statusMessages' in data:
+        value = data['m_statusMessages']
+        texts = re.findall(QUOTED, value)
+        if (len(texts) != 6 or not re.fullmatch(rf'(?:{QUOTED}\s*)+', value)
+                or any(len(text.encode()) - 2 > 256 or '<' in text or '>' in text for text in texts)):
+            raise ValueError('unsupported custom capture status messages')
+    fields = ''.join(f'         {field} {text}\n' for field, text in zip(CAPTURE_TEXT, texts))
+    audience = '         m_aFactions {\n          ' + ' '.join(recipients) + '\n         }\n' if recipients else ''
+    return f'''        m_Messages GC_CaptureMessages "{{{guid(key + '/messages')}}}" {{
+         m_sLocation {location}
+{audience}{fields}        }}
+'''
+
+
 def capture_instance(world, area_name, lines, *, polygon=False):
     data = properties(lines, {
         'm_queryRadius', 'm_captureTime', 'm_sendStatusMessages', 'm_locationName',
@@ -217,21 +235,7 @@ def capture_instance(world, area_name, lines, *, polygon=False):
     share = '        m_bAtMost 1\n' if at_most else ''
     if ignored:
         share += '        m_aIgnoredFactions {\n         ' + ' '.join(ignored) + '\n        }\n'
-    messages = ''
-    if status == '1':
-        texts = list(CAPTURE_TEXT.values())
-        if 'm_statusMessages' in data:
-            value = data['m_statusMessages']
-            texts = re.findall(QUOTED, value)
-            if (len(texts) != 6 or not re.fullmatch(rf'(?:{QUOTED}\s*)+', value)
-                    or any(len(text.encode()) - 2 > 256 or '<' in text or '>' in text for text in texts)):
-                raise ValueError('unsupported custom capture status messages')
-        fields = ''.join(f'         {field} {text}\n' for field, text in zip(CAPTURE_TEXT, texts))
-        audience = '         m_aFactions {\n          ' + ' '.join(recipients) + '\n         }\n' if recipients else ''
-        messages = f'''        m_Messages GC_CaptureMessages "{{{guid(key + '/messages')}}}" {{
-         m_sLocation {location}
-{audience}{fields}        }}
-'''
+    messages = capture_messages(key, data, location, recipients, CAPTURE_TEXT.values())
     condition = f'''      GC_AreaCondition "{{{guid(key)}}}" {{
        m_sArea "{area_name}"
        m_Targets GC_CharacterAreaTargets "{{{guid(key + '/players')}}}" {{

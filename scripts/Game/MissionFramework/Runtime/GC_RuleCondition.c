@@ -62,6 +62,8 @@ class GC_RuleCondition
 	float m_fDamageNeeded;
 	int m_iAreaTargets;
 	ref array<string> m_aAreaNames;
+	bool m_bCountMissingAsOutside;
+	bool m_bExcludeDestroyedAreaTargets;
 	int m_iAreaWho;
 	ref array<string> m_aAreaFactions;
 	int m_iAreaComparison;
@@ -70,6 +72,8 @@ class GC_RuleCondition
 	bool m_bAreaOutside;
 	bool m_bAreaAnywhere;
 	bool m_bAreaProportion;
+	bool m_bAreaProportionAtMost;
+	bool m_bAreaWholeNumberQuotient;
 	float m_fAreaProportion;
 	bool m_bLocalFactionShare;
 	bool m_bShareWholeMission;

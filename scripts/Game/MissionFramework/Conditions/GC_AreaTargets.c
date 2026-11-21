@@ -14,12 +14,20 @@ class GC_NamedAreaTargets : GC_AreaTargetsBase
 	[Attribute("", UIWidgets.EditComboBox, "Exact unique world names of any entity: vehicles, props, cargo, characters or mixed types. Not prefab paths or account names. Count and Proportion both support capture timing. One entry per target. Duplicate names count once. Every listed name must resolve; a missing object is not treated as Outside. Spawned replacements with the same name are resolved on a later check. Dead or destroyed named objects still count while they exist.", enums: {ParamEnum("", "", "gc-choices:2:GC_EntityReferenceChoices")})]
 	ref array<string> m_aNames;
 
+	[Attribute("0", UIWidgets.CheckBox, "Missing names stay in the population and count outside the area until they resolve.")]
+	bool m_bCountMissingAsOutside;
+
+	[Attribute("0", UIWidgets.CheckBox, "Destroyed entities stay in the population and count outside the area.")]
+	bool m_bExcludeDestroyed;
+
 	//------------------------------------------------------------------------------------------------
 	override bool BuildTargets(GC_RuleCondition check)
 	{
 		if (!m_aNames || m_aNames.IsEmpty() || m_aNames.Count() > 256)
 			return false;
 		check.m_aAreaNames = {};
+		check.m_bCountMissingAsOutside = m_bCountMissingAsOutside;
+		check.m_bExcludeDestroyedAreaTargets = m_bExcludeDestroyed;
 		foreach (string name : m_aNames)
 		{
 			if (name.IsEmpty())

@@ -67,11 +67,19 @@ class GC_LivingProportion : GC_LivingRequirementBase
 	[Attribute("0.9", UIWidgets.Slider, "Minimum proportion on the selected side of Area: 0.9 means at least 90%, 1 means everyone, and 0 means any proportion of a nonempty population. Named Entities uses all distinct listed names; every name must resolve, and destroyed objects count while they exist. Players / AI uses all currently living characters matching Who and Factions, wherever they are; deaths, respawns and faction changes update that total. An empty population is false. Requires Area.", "0 1 0.01")]
 	float m_fRequiredProportion;
 
+	[Attribute("0", UIWidgets.CheckBox, "Check for at most this proportion instead of at least this proportion.")]
+	bool m_bAtMost;
+
+	[Attribute("0", UIWidgets.CheckBox, "Use a whole-number quotient for converted missions that compared integer counts. Partial presence evaluates as zero.")]
+	bool m_bWholeNumberQuotient;
+
 	//------------------------------------------------------------------------------------------------
 	override bool BuildRequirement(GC_RuleCondition check)
 	{
 		check.m_bAreaProportion = true;
 		check.m_fAreaProportion = m_fRequiredProportion;
+		check.m_bAreaProportionAtMost = m_bAtMost;
+		check.m_bAreaWholeNumberQuotient = m_bWholeNumberQuotient;
 		return true;
 	}
 }

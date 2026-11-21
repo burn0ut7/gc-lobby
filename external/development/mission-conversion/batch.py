@@ -6,9 +6,9 @@ from hashlib import sha256
 from pathlib import PurePosixPath
 import re
 
-from arc_capture import CAPTURE_EDITOR_FIELDS, capture_instance
+from arc_capture import CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, capture_instance, capture_messages, faction_keys
 from boundaries import STANDALONE_SHAPE, convert_boundaries
-from briefings import block_end, guid, properties
+from briefings import QUOTED, block_end, guid, properties
 from catalog import REF, SOURCE_TEXT
 from event_actions import (NUMBER, SPAWN, SPAWN_FIELDS, render_crew_config, render_spawn, spawn_details,
                            split_crew_block, target_names)
@@ -750,6 +750,12 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
 
 TRIGGER = re.compile(r'(?P<group>\$grp )?TILW_(?P<kind>Extraction|Faction)TriggerEntity(?: (?P<name>[\w.-]+))?'
                      r' : "\{(?P<guid>192ABD6B9232E064|8C576D46F6579229)\}[^"\n]+" \{')
+PRESENCE_TRIGGER = re.compile(r'(?P<group>\$grp )?TILW_(?P<kind>Presence)TriggerEntity(?: (?P<name>[\w.-]+))?'
+                              r' : "\{826E6F2246328952\}Prefabs/Logic/Triggers/TILW_PresenceTrigger\.et" \{')
+PRESENCE_MESSAGES = (
+    '"Established presence at %2."', '"Establishing presence at %2."', '"No longer establishing presence at %2."',
+    '"Abandoned presence at %2."', '"Abandoning presence at %2."', '"No longer abandoning presence at %2."',
+)
 
 
 def attached_trigger_map(fields, dev):
@@ -786,10 +792,10 @@ def area_rules(source, world, dev=None):
     scripts = None
     for layer in source.layers[world.lower()]:
         text = source.read(layer)
-        if 'TILW_ExtractionTriggerEntity' not in text and 'TILW_FactionTriggerEntity' not in text:
+        if not any(f'TILW_{kind}TriggerEntity' in text for kind in ('Extraction', 'Faction', 'Presence')):
             continue
         for line, block in blocks(text):
-            match = TRIGGER.fullmatch(block[0])
+            match = TRIGGER.fullmatch(block[0]) or PRESENCE_TRIGGER.fullmatch(block[0])
             shape = polygon_capture.SHAPE.fullmatch(block[0])
             if not match and not shape:
                 continue
@@ -815,9 +821,16 @@ def area_rules(source, world, dev=None):
                     if len(token.encode()) > 100 or not re.fullmatch(r'[\w.-]+', token):
                         token = guid(world + '/area/' + flag)
                     area_name = 'GC_MigrationArea_' + token
-                    if shape or trigger['kind'] == 'Faction':
+                    if shape or trigger['kind'] in ('Faction', 'Presence'):
                         area_name = name or area_name
-                    if trigger['kind'] == 'Extraction' and trigger['guid'] == '192ABD6B9232E064':
+                    if trigger['kind'] == 'Presence':
+                        if scripts is None:
+                            scripts = script_text(source)
+                        if (name and name in scripts) or flag[1:-1] in scripts:
+                            raise ValueError('presence trigger may be controlled by mission scripts')
+                        rule, area, details = presence_rule(world, area_name, flag, fields)
+                        capture_details[flag[1:-1]] = {'area': area_name, **details}
+                    elif trigger['kind'] == 'Extraction' and trigger['guid'] == '192ABD6B9232E064':
                         rule, area = extraction_rule(world, area_name, flag, fields, polygon=bool(shape))
                     elif trigger['kind'] == 'Faction' and trigger['guid'] == '8C576D46F6579229':
                         built, area, details = capture_instance(world, area_name, fields, polygon=bool(shape))
@@ -854,6 +867,73 @@ def area_rules(source, world, dev=None):
             if capture_details:
                 audit[f'{layer}:{line}'] = capture_details
     return conditions, placements, audit
+
+
+def presence_rule(world, area_name, flag, fields):
+    data = properties(fields, {
+        'm_queryRadius', 'm_captureTime', 'm_flagName', 'm_stopAfterFirstChange', 'm_entityNames',
+        'm_allowDestroyed', 'm_ratioThreshold', 'm_comparisonMode', 'm_skipFirstQuery',
+        'm_eventsOnlyDuringGame', 'm_sendStatusMessages', 'm_locationName', 'm_statusMessages', 'm_displayTo',
+    } | CAPTURE_TRANSFORM | CAPTURE_EDITOR_FIELDS)
+    names = target_names(data.get('m_entityNames', ''))
+    transform = {key: value for key, value in data.items() if key in CAPTURE_TRANSFORM}
+    radius, hold, ratio = (data.get('m_queryRadius', '25'), data.get('m_captureTime', '0'),
+                           data.get('m_ratioThreshold', '1'))
+    comparison = data.get('m_comparisonMode', 'EQUAL_OR_MORE')
+    destroyed = data.get('m_allowDestroyed', '0')
+    skip = data.get('m_skipFirstQuery', '0')
+    stop = data.get('m_stopAfterFirstChange', '0')
+    status = data.get('m_sendStatusMessages', '0')
+    location = data.get('m_locationName', '"the location"')
+    if (len(set(names)) != len(names) or 'coords' not in transform
+            or any(not FIELD.fullmatch(f'{key} {value}') for key, value in transform.items())
+            or any(value not in ('0', '1') for value in (destroyed, skip, stop, status))
+            or comparison not in ('0', '1', 'EQUAL_OR_LESS', 'EQUAL_OR_MORE')
+            or data.get('m_eventsOnlyDuringGame', '1') != '1'
+            or not all(re.fullmatch(NUMBER, n) for n in (radius, hold, ratio))
+            or not (Decimal('0.1') <= Decimal(radius) <= 100000 and 0 <= Decimal(hold) <= 86400
+                    and 0 <= Decimal(ratio) <= 1)
+            or not re.fullmatch(QUOTED, location) or len(location.encode()) - 2 > 80
+            or '<' in location or '>' in location
+            or (status == '1' and '%1' in data.get('m_statusMessages', ''))):
+        raise ValueError('unsupported named presence settings')
+    key = world + '/presence/' + flag
+    at_most = comparison in ('0', 'EQUAL_OR_LESS')
+    maximum = '        m_bAtMost 1\n' if at_most else ''
+    exclude = '        m_bExcludeDestroyed 1\n' if destroyed == '0' else ''
+    discovery = '        m_bSkipDiscovery 1\n' if skip == '1' else ''
+    once = '        m_bStopAfterFirstChange 1\n' if stop == '1' else ''
+    recipients = faction_keys(data.get('m_displayTo', ''))
+    messages = capture_messages(key, data, location, recipients, PRESENCE_MESSAGES)
+    rule = f'''      GC_AreaCondition "{{{guid(key)}}}" {{
+       m_sArea "{area_name}"
+       m_Targets GC_NamedAreaTargets "{{{guid(key + '/entities')}}}" {{
+        m_aNames {{
+         {' '.join(names)}
+        }}
+        m_bCountMissingAsOutside 1
+{exclude}       }}
+       m_Requirement GC_LivingProportion "{{{guid(key + '/proportion')}}}" {{
+        m_fRequiredProportion {ratio}
+        m_bWholeNumberQuotient 1
+{maximum}       }}
+       m_Capture GC_AreaCaptureOptions "{{{guid(key + '/timer')}}}" {{
+        m_fSeconds {hold}
+        m_bUseElapsedTime 1
+        m_iInterruption 3
+{once}{discovery}{messages}       }}
+      }}'''
+    position = ''.join(f' {field} {value}\n' for field, value in transform.items())
+    area = f'''GC_RadiusAreaEntity {area_name} : "{{2C4447C53A1E450B}}Prefabs/Logic/Mission/RadiusArea.et" {{
+{position} m_fRadius {radius}
+}}
+'''
+    return rule.splitlines(), area, {
+        'targets': [name[1:-1] for name in names], 'radiusMeters': float(radius), 'ratio': float(ratio),
+        'comparison': 'at most' if at_most else 'at least', 'countsDestroyed': destroyed == '1',
+        'quotient': 'whole number',
+        'seconds': float(hold), 'skipDiscovery': skip == '1', 'stopsAfterFirstChange': stop == '1',
+    }
 
 
 def extraction_rule(world, area_name, flag, fields, *, polygon=False):
