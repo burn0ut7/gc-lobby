@@ -256,6 +256,9 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_randomized.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('72C04A6EABC12143', 'Prefabs/Vehicles/Helicopters/AH6M/AH6M_M134.et'): (
+        'WCS_AH-6M_6273146ADFE8241D', '72C04A6EABC12143',
+        'Prefabs/Vehicles/Helicopters/AH6M/AH6M_M134_X2.et'),
     ('1DC01AAACFFA8B63', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_base.et'): (
         'WCS_BMP-1_5E524E4FEECCA92B', '1DC01AAACFFA8B63',
         'Prefabs/Vehicles/Tracked/BMP1/BMP1_Base.et'),
@@ -400,6 +403,28 @@ def startup_cleanup(block):
     if not output:
         raise ValueError('empty startup cleanup group')
     return '\n'.join([*output, ''])
+
+
+def static_particle_placement(block):
+    """Preserve effect-only native placements and leave their resources to the file audit."""
+    if block[0] == '$grp ParticleEffectEntity {':
+        members = []
+        cursor = 1
+        while cursor < len(block) - 1:
+            if not re.fullmatch(r' (?:[\w.-]+ )?\{', block[cursor]):
+                return False
+            end = block_end(block, cursor)
+            members.append(block[cursor + 1:end])
+            cursor = end + 1
+    elif re.fullmatch(r'ParticleEffectEntity(?: [\w.-]+)? \{', block[0]):
+        members = [block[1:-1]]
+    else:
+        return False
+    for fields in members:
+        effect = [line.strip() for line in fields if not FIELD.fullmatch(line.strip())]
+        if len(effect) != 1 or not re.fullmatch(r'EffectPath "\{[\dA-Fa-f]{16}\}[^"\r\n]+\.ptc"', effect[0]):
+            return False
+    return bool(members)
 
 
 def native_placement(block):
@@ -1751,6 +1776,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     names, converted = restriction_zones(block, len(zones) + 1)
                     zones.extend(names)
                     result.append(converted)
+                elif kind == 'ParticleEffectEntity' and static_particle_placement(block):
+                    result.append(body)
                 elif NATIVE.match(head):
                     try:
                         converted = native_placement(convert_crew(block))
@@ -1768,7 +1795,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'layer conversion', 'file': layer, 'detail': str(exc)})
 
     if status_areas:
-        names = {event['name'] for event in rules.values()}
+        names = {event.get('eventName', event['name']) for event in rules.values()}
         trackers = {flag[1:-1]: 'GC_MigrationAreaStatus_' + guid(world + '/status/' + flag)
                     for flag in status_areas}
         if names.intersection(trackers.values()):

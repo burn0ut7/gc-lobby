@@ -410,7 +410,7 @@ def render_check(term, key, captures, capture_messages, tracked_areas):
     return result + [f'        m_fRatio {term["ratio"]}', '       }', '      }']
 
 
-def render(key, name, term, actions, captures, capture_messages, tracked_areas):
+def render(key, name, term, actions, captures, capture_messages, tracked_areas, display_name=None):
     dormant = term['trigger'] == 'dormant'
     condition = term['trigger'] not in ('Match start', 'dormant')
     startup = term['trigger'] == 'startup choice'
@@ -435,7 +435,7 @@ def render(key, name, term, actions, captures, capture_messages, tracked_areas):
             f'    GC_Event "{{{guid(key + "/trigger")}}}" {{', f'     m_sName "{name}"',
             '     m_aConditions {', *match_condition(key), *check, '     }',
             '     m_aActions {', f'      GC_MessageAction "{{{guid(key + "/log")}}}" {{',
-            f'       m_sMessage "{name}"', '       m_iDelivery 2', '      }', '     }', '    }',
+            f'       m_sMessage "{display_name or name}"', '       m_iDelivery 2', '      }', '     }', '    }',
         ])
     for delay, body in actions.items():
         delivery = key + '/' + str(delay)
@@ -589,6 +589,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         loc = f'{path}:{i + base + 2}'
         if 'notificationDelaysSeconds' in notification_audit.get(loc, {}):
             continue
+        if compound and len(fields) == 1 and re.fullmatch(r'   m_name "-{3,}"', fields[0]):
+            audit[loc] = {'name': fields[0].strip().removeprefix('m_name ')[1:-1], 'trigger': 'editor divider'}
+            continue
         spawns = {child.split('/')[1]: detail for child, detail in extraction_spawns.items()
                   if child.startswith(event[1] + '/')}
         if not spawns and not any(
@@ -607,13 +610,20 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns,
                 resolve_spawn, resolve_crew, startup, hidden_briefings,
                 DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived)
-            emitted_names = {f'{name} ({delay:f}s)' for delay in actions}
+            suffixes = {f' ({delay:f}s)' for delay in actions}
             if term['trigger'] not in ('Match start', 'startup choice', 'dormant'):
-                emitted_names.add(name)
+                suffixes.add('')
+            native_name = name
+            emitted_names = {name + suffix for suffix in suffixes}
+            if compound and emitted_names & names:
+                native_name = f'{name} [{event[1]}]'
+                emitted_names = {native_name + suffix for suffix in suffixes}
             if emitted_names & names:
                 raise ValueError('duplicate generated event name')
-            parsed.append((event[1], name, term, actions))
+            parsed.append((event[1], native_name, name, term, actions))
             audit[loc] = {**term, 'name': name, **details}
+            if native_name != name:
+                audit[loc]['eventName'] = native_name
             names.update(emitted_names)
         except ValueError as exc:
             audit[loc] = {'name': name, 'gap': str(exc)}
@@ -621,13 +631,13 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 spawns_for_review = review_prefab_spawns(fields, world + '/' + event[1], resolve_spawn, resolve_crew)
                 if spawns_for_review:
                     audit[loc]['prefabSpawnCandidates'] = spawns_for_review
-    used_choices = [f'"{term["flag"]}"' for _, _, term, _ in parsed if term['trigger'] == 'startup choice']
+    used_choices = [f'"{term["flag"]}"' for _, _, _, term, _ in parsed if term['trigger'] == 'startup choice']
     if used_choices and (len(used_choices) != len(startup) or set(used_choices) != set(startup)):
         return [], audit, 'startup draw does not have one converted event per option'
     startup_names = {'GC_MigrationChoice_' + flag[1:-1] for flag in startup}
     if used_choices and (startup_names | {'GC_MigrationStartupSelection'}) & names:
         return [], audit, 'generated startup selection name collides with a mission event'
-    tracked = {item['flag'] for _, _, term, _ in parsed for item in leaves(term)
+    tracked = {item['flag'] for _, _, _, term, _ in parsed for item in leaves(term)
                if item['trigger'] == 'area capture' and item.get('inverted')}
     tracked_areas = {
         flag: 'GC_MigrationCapture_' + (flag if len(flag.encode()) <= 100 and re.fullmatch(r'[\w.-]+', flag)
@@ -638,6 +648,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         return [], audit, 'generated capture tracker name collides with a mission event'
     compiled = render_startup_selection(world, startup) if used_choices else []
     compiled.extend(render_capture_trackers(world, tracked_areas, captures, capture_messages))
-    for identity, name, term, actions in parsed:
-        compiled.extend(render(world + '/' + identity, name, term, actions, captures, capture_messages, tracked_areas))
+    for identity, name, display_name, term, actions in parsed:
+        compiled.extend(render(world + '/' + identity, name, term, actions, captures, capture_messages,
+                               tracked_areas, display_name))
     return compiled, audit, derived_gap
