@@ -1912,6 +1912,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         for target in record.get('teleportDestinations', [])}
     event_flags = {action['setsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
                    if 'setsFlag' in action}
+    event_flags.update(flag for sample in outcome.get('startupSamples', []) for flag in sample['flags'])
     cleared_event_flags = {action['clearsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
                            if 'clearsFlag' in action}
     required_event_flags = {term['flag'] for term in terms if term['trigger'] == 'event flag'} | cleared_event_flags
@@ -1962,7 +1963,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         if roots.count(name) == 1 and FIELD.fullmatch(field):
                             unsupported.discard(name)
                     if unsupported == {'m_randomFlags'} and roots.count('m_randomFlags') == 1:
-                        if any(term['trigger'] == 'startup choice' for term in terms):
+                        if outcome.get('startupSamples') or any(term['trigger'] == 'startup choice' for term in terms):
                             unsupported.clear()
                         else:
                             unused_flags = unused_flag_sampling(source, world, layer, line, block)
@@ -2301,6 +2302,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare nested boundary positions, faction outlines and enforcement.')
     if any(spawn['startupChoice'] for spawn in prefab_spawns):
         remaining.append('Compare pregame selection, spawn timing and faction-specific briefing and map updates.')
+    if outcome.get('startupSamples'):
+        remaining.append('Compare startup flag draws and verify selected events activate only in Match.')
     if any(not spawn['startupChoice'] for spawn in prefab_spawns):
         remaining.append('Compare spawn placement and timing in Match, including concurrent actions.')
     return ({} if blockers else draft), {

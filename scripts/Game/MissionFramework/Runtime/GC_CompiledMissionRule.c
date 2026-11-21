@@ -58,6 +58,7 @@ class GC_RuleAction
 	float m_fChancePercent;
 	ref array<string> m_aFlagNames;
 	int m_iSelectionCount;
+	bool m_bSelectWithReplacement;
 	int m_iOperation;
 	int m_iAmount;
 	bool m_bRetryCasualties;
@@ -185,7 +186,8 @@ class GC_RuleAction
 				return !m_sTextOrName.IsEmpty() && m_fChancePercent >= 0 && m_fChancePercent <= 100;
 			case GC_ERuleAction.SELECT_FLAGS:
 				if (!m_aFlagNames || m_aFlagNames.IsEmpty() || m_aFlagNames.Count() > 256
-					|| m_iSelectionCount < 1 || m_iSelectionCount > m_aFlagNames.Count())
+					|| m_iSelectionCount < 1 || m_iSelectionCount > 256
+					|| (!m_bSelectWithReplacement && m_iSelectionCount > m_aFlagNames.Count()))
 					return false;
 				foreach (int index, string name : m_aFlagNames)
 				{

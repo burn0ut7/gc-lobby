@@ -21,6 +21,29 @@ class GC_FlagAction : GC_ActionBase
 	}
 }
 
+[BaseContainerProps(), BaseContainerCustomStringTitleField("Flag Sampling Action")]
+class GC_FlagSamplingAction : GC_ActionBase
+{
+	[Attribute("", UIWidgets.Auto, "Unique flag names in the draw pool.")]
+	ref array<string> m_aFlags;
+	[Attribute("1", UIWidgets.SpinBox, "Number of draws.", "1 256 1")]
+	int m_iDrawCount;
+	[Attribute("0", UIWidgets.CheckBox, "Allow repeated draws of the same flag. A repeated draw still enables the flag once.")]
+	bool m_bWithReplacement;
+
+	override GC_RuleAction BuildAction()
+	{
+		GC_RuleAction action = new GC_RuleAction();
+		action.m_eDo = GC_ERuleAction.SELECT_FLAGS;
+		action.m_aFlagNames = {};
+		if (m_aFlags)
+			action.m_aFlagNames.Copy(m_aFlags);
+		action.m_iSelectionCount = m_iDrawCount;
+		action.m_bSelectWithReplacement = m_bWithReplacement;
+		return action;
+	}
+}
+
 [BaseContainerProps(), BaseContainerCustomStringTitleField("Event Action")]
 class GC_EventControlAction : GC_ActionBase
 {

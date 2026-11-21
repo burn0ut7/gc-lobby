@@ -502,21 +502,95 @@ def startup_flags(source, world, owner, body, scripts):
     return tuple(flags)
 
 
-def render_startup_selection(world, flags):
-    key = world + '/startup selection'
-    lines = [f'    GC_RandomEventGroup "{{{guid(key)}}}" {{',
-             '     m_sName "GC_MigrationStartupSelection"', '     m_iPickCount 1',
-             '     m_aConditions {', f'      GC_ConditionGroup "{{{guid(key + "/phases")}}}" {{',
+def startup_samples(source, world, owner, body, scripts):
+    """Read isolated draws whose flag consumers run during Match."""
+    roots = [i for i, line in enumerate(body) if line == ' m_randomFlags {']
+    if len(roots) != 1 or any(api in scripts for api in SCRIPT_FLAG_APIS):
+        return []
+    try:
+        index = roots[0] + 1
+        end = block_end(body, roots[0])
+        samples = []
+        sampled = set()
+        while index < end:
+            if not re.fullmatch(r'  TILW_FlagSampling "\{[0-9A-Fa-f]{16}\}" \{', body[index]):
+                return []
+            stop = block_end(body, index)
+            data = properties(body[index + 1:stop], {'m_flagNames', 'm_k', 'm_withReplacement'})
+            flags = data.get('m_flagNames', '').split()
+            draws = data.get('m_k', '1')
+            replacement = data.get('m_withReplacement', '0')
+            if (not 1 <= len(flags) <= 32 or len(set(flags)) != len(flags) or sampled.intersection(flags)
+                    or any(not re.fullmatch(KEY, flag) for flag in flags)
+                    or not re.fullmatch(r'[1-9]\d?', draws) or int(draws) > 32
+                    or replacement not in ('0', '1') or (replacement == '0' and int(draws) > len(flags))):
+                return []
+            samples.append({'flags': [flag[1:-1] for flag in flags],
+                            'drawCount': int(draws), 'withReplacement': replacement == '1'})
+            sampled.update(flags)
+            index = stop + 1
+        if not 1 <= len(sampled) <= 64:
+            return []
+        reads = defaultdict(int)
+        labels = defaultdict(int)
+        for start, line in enumerate(body):
+            if not EVENT.fullmatch(line):
+                continue
+            fields = body[start + 1:block_end(body, start)]
+            match_only = '   m_pregameEvent 1' not in fields
+            for position, field in enumerate(fields):
+                label = re.fullmatch(r'   m_name (' + KEY + ')', field)
+                if label:
+                    labels[label[1]] += 1
+                if match_only and (term := TERM.fullmatch(field)) and term[1] == 'Literal':
+                    close = block_end(fields, position)
+                    values = properties(fields[position + 1:close], {'m_flagName', 'm_invertTerm'})
+                    if values.get('m_invertTerm', '0') in ('0', '1'):
+                        reads[values.get('m_flagName')] += 1
+    except (IndexError, ValueError):
+        return []
+    authored = source.read(owner)
+    outside = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                        if path != owner and PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+    if any(not reads[flag] or authored.count(flag) != 1 + reads[flag] + labels[flag]
+           or flag in outside or flag[1:-1] in scripts for flag in sampled):
+        return []
+    return samples
+
+
+def startup_conditions(key):
+    lines = ['     m_aConditions {', f'      GC_ConditionGroup "{{{guid(key + "/phases")}}}" {{',
              '       m_iMatch 1', '       m_aConditions {']
     for phase in ('0', '1787356801', '1787356802'):
         lines.extend([f'        GC_GameModeStateCondition "{{{guid(key + "/" + phase)}}}" {{',
                       '         m_eGameModeState ' + phase, '        }'])
-    lines.extend(['       }', '      }', '     }', '     m_aEvents {'])
+    return [*lines, '       }', '      }', '     }']
+
+
+def render_startup_selection(world, flags):
+    key = world + '/startup selection'
+    lines = [f'    GC_RandomEventGroup "{{{guid(key)}}}" {{',
+             '     m_sName "GC_MigrationStartupSelection"', '     m_iPickCount 1',
+             *startup_conditions(key), '     m_aEvents {']
     for flag in flags:
         name = 'GC_MigrationChoice_' + flag[1:-1]
         lines.extend([f'      GC_Event "{{{guid(key + "/" + name)}}}" {{', f'       m_sName "{name}"',
                       '       m_aActions {', f'        GC_MessageAction "{{{guid(key + "/" + name + "/log")}}}" {{',
                       f'         m_sMessage "{name}"', '         m_iDelivery 2', '        }', '       }', '      }'])
+    return [*lines, '     }', '    }']
+
+
+def render_startup_samples(world, samples):
+    key = world + '/startup sampling'
+    lines = [f'    GC_Event "{{{guid(key)}}}" {{', '     m_sName "GC_MigrationStartupSampling"',
+             *startup_conditions(key), '     m_aActions {']
+    for index, sample in enumerate(samples):
+        lines.extend([f'      GC_FlagSamplingAction "{{{guid(f"{key}/{index}")}}}" {{',
+                      f'       m_iDrawCount {sample["drawCount"]}'])
+        if sample['withReplacement']:
+            lines.append('       m_bWithReplacement 1')
+        lines.extend(['       m_aFlags {', *(f'        "{flag}"' for flag in sample['flags']),
+                      '       }', '      }'])
     return [*lines, '     }', '    }']
 
 
@@ -545,7 +619,7 @@ def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
 
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
                      extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None,
-                     derived_audit=None, match_only_flags=()):
+                     derived_audit=None, match_only_flags=(), startup_samples_audit=None):
     captures = captures or {}
     notification_audit = notification_audit or {}
     extraction_spawns = extraction_spawns or {}
@@ -581,7 +655,14 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             derived_gap = str(exc)
     if derived and derived_audit is not None:
         derived_audit.extend(flag[1:-1] for flag in derived)
-    startup = startup_flags(source, world, path, body, scripts or '') if compound and resolve_spawn else ()
+    samples, startup = [], ()
+    if compound and resolve_spawn:
+        samples = startup_samples(source, world, path, body, scripts or '')
+        if not samples:
+            startup = startup_flags(source, world, path, body, scripts or '')
+    sampled_flags = {flag for sample in samples for flag in sample['flags']}
+    event_flags = {*event_flags, *sampled_flags}
+    match_only_flags = {*match_only_flags, *sampled_flags}
     parsed, audit = [], {}
     names = set()
     capture_messages = set() if compound else None
@@ -643,6 +724,14 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     startup_names = {'GC_MigrationChoice_' + flag[1:-1] for flag in startup}
     if used_choices and (startup_names | {'GC_MigrationStartupSelection'}) & names:
         return [], audit, 'generated startup selection name collides with a mission event'
+    if samples:
+        used_samples = {item.get('flag') for _, _, _, term, _ in parsed for item in leaves(term)}
+        if not sampled_flags <= used_samples:
+            return [], audit, 'startup sampled flag still has an unconverted consumer'
+        if 'GC_MigrationStartupSampling' in names:
+            return [], audit, 'generated startup sampling name collides with a mission event'
+        if startup_samples_audit is not None:
+            startup_samples_audit.extend(samples)
     tracked = {item['flag'] for _, _, _, term, _ in parsed for item in leaves(term)
                if item['trigger'] == 'area capture' and item.get('inverted')}
     tracked_areas = {
@@ -653,6 +742,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     if set(tracked_areas.values()) & names:
         return [], audit, 'generated capture tracker name collides with a mission event'
     compiled = render_startup_selection(world, startup) if used_choices else []
+    if samples:
+        compiled.extend(render_startup_samples(world, samples))
     compiled.extend(render_capture_trackers(world, tracked_areas, captures, capture_messages))
     for identity, name, display_name, term, actions in parsed:
         compiled.extend(render(world + '/' + identity, name, term, actions, captures, capture_messages,

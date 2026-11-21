@@ -456,6 +456,7 @@ def main():
                     hidden_briefings = {page.name: order for order, page in indexed
                                         if names[page.name] == 1 and page.audience == BriefingAudience.HIDDEN}
                 derived_audit = []
+                startup_samples_audit = []
                 damage_flags_before_match = {flag for candidate in row.get('damageFlagCandidates', {}).values()
                                              for flag in candidate.get('placedDestructionFlags', [])}
                 rules, outcome_audit, gap = compile_outcomes(
@@ -465,12 +466,14 @@ def main():
                     for kind in ('TILW_SetFlagInstruction', 'TILW_FlagSampling', 'TILW_MetaFlag')) else None,
                     resolve_spawn=partial(resolve_spawn, objectives) if args.batch else None,
                     resolve_crew=resolve_crew if args.batch else None, hidden_briefings=hidden_briefings,
-                    derived_audit=derived_audit,
+                    derived_audit=derived_audit, startup_samples_audit=startup_samples_audit,
                     match_only_flags=damage_flags_before_match |
                     {asset['flag'] for asset in objectives.values() if asset.get('destroyed')})
                 outcome = {'events': outcome_audit}
                 if derived_audit:
                     outcome['derivedFlags'] = derived_audit
+                if startup_samples_audit:
+                    outcome['startupSamples'] = startup_samples_audit
                 if gap:
                     outcome['gap'] = gap
                 if rules:

@@ -1165,7 +1165,8 @@ class GC_MissionRuleEngine
 		{
 			int pick = Math.Min(Math.Floor(RandomUnit() * pool.Count()), pool.Count() - 1);
 			selected.Insert(pool[pick]);
-			pool.RemoveOrdered(pick);
+			if (!action.m_bSelectWithReplacement)
+				pool.RemoveOrdered(pick);
 		}
 		// Dispatch is already deferred by Execute's caller: observers see the final selection.
 		foreach (string name : action.m_aFlagNames)
