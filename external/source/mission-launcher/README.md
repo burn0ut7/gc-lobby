@@ -1,4 +1,74 @@
-# Mission dependency prototype
+# Launch a GC mission on Windows
+
+Copy [Start-GCMission.bat](../../Start-GCMission.bat) beside
+`ArmaReforgerServer.exe` and your existing server JSON. Drop a mission header
+from its addon folder, or its portable `.launch.json`, onto the batch file.
+The batch file contains the launcher and native reader and runs with Windows
+PowerShell 5.1. You can also call it from a terminal or scheduler:
+
+```powershell
+.\Start-GCMission.bat "C:\GC\missions\Operation.launch.json"
+.\Start-GCMission.bat "C:\GC\MissionAddon\Missions\Operation.conf" -Config "C:\GC\private\event.json"
+```
+
+Discovery uses the single JSON with a `game` object beside the batch file,
+regardless of its filename or the caller's working directory. With multiple
+matches or a config elsewhere, pass `-Config`. Keep your normal server settings
+and always-on mods there. Pass a different mission path for the next launch.
+Add `-PlanOnly` to preview the
+scenario and merged mod list without downloading anything or starting a process.
+
+**What to deploy.** On the authoring PC use **GC → Create Mission Data → Refresh
+metadata only**. Generate portable metadata from the saved header on that PC:
+
+```powershell
+.\Start-GCMission.bat "C:\GC\MissionAddon\Missions\Operation.conf" -ExportMetadata "C:\GC\deploy\Operation.launch.json"
+```
+
+Copy that JSON to the server. It contains the scenario, world, required addon
+IDs, coverage and header hash. Export again to the same path after a mission
+update. You can also pass the native `.conf` directly when its adjacent
+`.conf.meta` and owning `addon.gproj` are deployed in their original relative
+layout. Windows PowerShell 5.1 reads native text with the included .NET helper.
+The actual scenario, GC Lobby startup receipt code and content must be
+in Workshop packages available to the server. Use metadata from that published
+build. A mission with script-selected content can declare extra Workshop GUIDs
+in its catalogue's `m_aRequiredAddonIds`. Schema 1 captures fewer references
+than schema 2. Inherited headers and missing snapshots require a self-contained
+metadata export for this prototype.
+
+**What happens on launch.** The script reads the base config afresh. It keeps
+baseline mod entries, including version pins, and adds the mission owner,
+author-declared requirements and captured references by GUID. An optional
+baseline entry becomes required for that launch if the mission names it.
+Unpinned versions follow Workshop resolution. Reforger receives `-config` with
+one replaceable private runtime copy under `gc-server-profile` beside the base
+config. The same profile and Workshop cache serve subsequent missions.
+`-ServerExe`, `-ProfileDirectory` and `-AddonDownloadDirectory` override these
+locations. Use a profile writable only by the server account because its runtime
+config includes the server's private settings.
+
+Workshop downloads the native dependencies. After startup the launcher checks
+the nonce-bound GC receipt against the scenario, world and exact addon closure
+read from the cache's downloaded projects. It checks configured version pins.
+When the world's loose metadata is available in the mission addon, it also
+checks that exact world owner. Otherwise it checks the world GUID and resource
+path and requires a loaded world owner. Allow extra time for a cold download
+with `-StartupTimeoutSeconds` (default 300). Keep the launcher running with
+the server. Shut the server down normally before selecting the next mission.
+After an interrupted launcher, check the server process before clearing an
+orphaned `gc-launch.active` marker. Startup failures stop the child created by
+this invocation.
+
+This direct path runs independently of the website and Python. The existing
+[website queue worker](server-worker.md) has its own deployment and configuration
+contract. For an unpublished development fixture, use `-Local` with installed
+`-Project` paths or `-AddonDirectory` roots. That mode uses `-server` and
+`-addons` and applies only the base config's mod selection.
+
+[Dedicated experiment and regression checks](../../development/rhs-load-only/README.md#direct-powershell-launch)
+
+## Earlier source-scanning prototype
 
 This is a **source-scanning experiment, not a production mission restart worker**.
 It implements a recursive saved-resource graph, a mission metadata sidecar, a
