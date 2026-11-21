@@ -50,6 +50,16 @@ class GC_ItemCatalogueEntry
 //! Shared resource discovery and metadata indexing; caller owns lifetime and frame ticks.
 class GC_ItemCatalogue
 {
+	protected ref GC_ItemCatalogue m_VehicleCatalogue;
+
+	//------------------------------------------------------------------------------------------------
+	GC_ItemCatalogue GetVehicles()
+	{
+		if (!m_VehicleCatalogue)
+			m_VehicleCatalogue = new GC_ItemCatalogue();
+		return m_VehicleCatalogue;
+	}
+
 	protected ref array<ResourceName> m_aPending = {};
 	protected ref array<string> m_aSources = {};
 	protected ref map<ResourceName, bool> m_mSeen = new map<ResourceName, bool>();
@@ -69,15 +79,41 @@ class GC_ItemCatalogue
 	protected bool m_bDiscoveryFailed;
 	protected ref array<string> m_aDiscoveryIssues = {};
 	protected ref array<ResourceName> m_aFailedResources = {};
-	protected static const int INDEX_BATCH_SIZE = 32;
+	protected static const int INDEX_BATCH_SIZE = 4096;
 	protected static const float INDEX_BUDGET_MS = 2;
+	protected float m_fBudgetMS = INDEX_BUDGET_MS;
+	protected float m_fLastTickMS;
 	protected static int s_iAuthoredRevision;
 	protected int m_iAuthoredRevision;
+	protected ref GC_ItemCatalogueQuery m_CachedQuery;
+	protected int m_iSearchIndexed;
+	protected ref array<string> m_aSearchTerms = {};
+	protected ref array<GC_ItemCatalogueEntry> m_aSearchMatches = {};
+	protected ref array<string> m_aSearchKeys = {};
+	protected ref map<string, GC_ItemCatalogueEntry> m_mSearchEntries = new map<string, GC_ItemCatalogueEntry>();
 
 	//------------------------------------------------------------------------------------------------
 	static void NotifyAuthoredSave()
 	{
 		s_iAuthoredRevision++;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	bool HasAuthoredChanges()
+	{
+		return m_iAuthoredRevision != s_iAuthoredRevision;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	void TickFrame(float timeSlice)
+	{
+		// Estimate non-index work from the previous frame. Target at most
+		// 10 ms, and fall back to 1 ms when the frame has no spare time at 60 Hz.
+		float otherWorkMS = Math.Max(0, timeSlice * 1000 - m_fLastTickMS);
+		m_fBudgetMS = Math.Clamp(16 - otherWorkMS, 1, 10);
+		float started = System.GetTickCount();
+		Tick();
+		m_fLastTickMS = System.GetTickCount() - started;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -123,29 +159,29 @@ class GC_ItemCatalogue
 		float started = System.GetTickCount();
 		// Drain each discovered addon before searching the next one, so usable
 		// entries reach the browser before discovery of the whole mod pack finishes.
-		if (m_iProcessed >= m_aPending.Count() && m_iAddon < m_aAddons.Count())
+		for (int batch; batch < INDEX_BATCH_SIZE && !IsFinished(); batch++)
 		{
-			m_sDiscovering = m_aAddons[m_iAddon++];
-			SearchResourcesFilter filter = new SearchResourcesFilter();
-			filter.rootPath = "$" + m_sDiscovering + ":";
-			filter.fileExtensions = {"et"};
-			if (!ResourceDatabase.SearchResources(filter, OnResource))
+			if (m_iProcessed >= m_aPending.Count() && m_iAddon < m_aAddons.Count())
 			{
-				m_bDiscoveryFailed = true;
-				m_aDiscoveryIssues.Insert(m_sDiscovering);
+				m_sDiscovering = m_aAddons[m_iAddon++];
+				SearchResourcesFilter filter = new SearchResourcesFilter();
+				filter.rootPath = "$" + m_sDiscovering + ":";
+				filter.fileExtensions = {"et"};
+				if (!ResourceDatabase.SearchResources(filter, OnResource))
+				{
+					m_bDiscoveryFailed = true;
+					m_aDiscoveryIssues.Insert(m_sDiscovering);
+				}
 			}
-		}
-		else
-		{
-			// Metadata only; the UI schedules visible image previews separately.
-			for (int batch; batch < INDEX_BATCH_SIZE && m_iProcessed < m_aPending.Count(); batch++)
+			else if (m_iProcessed < m_aPending.Count())
 			{
 				ReadEntry(m_aPending[m_iProcessed], m_aSources[m_iProcessed]);
 				m_iProcessed++;
-				// Resource.Load is synchronous: yield after a costly individual prefab.
-				if (System.GetTickCount() - started >= INDEX_BUDGET_MS)
-					break;
 			}
+			// Native discovery and Resource.Load cannot be interrupted. Check after
+			// either operation, including empty addons, without an extra idle frame.
+			if (System.GetTickCount() - started >= m_fBudgetMS)
+				break;
 		}
 		m_fMaxTickMS = Math.Max(m_fMaxTickMS, System.GetTickCount() - started);
 		m_fElapsedMS = System.GetTickCount() - m_fStartedMS;
@@ -207,6 +243,16 @@ class GC_ItemCatalogue
 			return;
 		}
 		IEntitySource entity = SCR_BaseContainerTools.FindEntitySource(resource);
+		if (entity && m_bStarted)
+		{
+			typename rootType = entity.GetClassName().ToType();
+			if (rootType && rootType.IsInherited(Vehicle))
+			{
+				GC_VehicleCatalogueEntry vehicle = GC_VehicleCatalogueEntry.Read(prefab, resource, entity);
+				if (vehicle)
+					GetVehicles().m_aItems.Insert(vehicle);
+			}
+		}
 		IEntityComponentSource inventory = SCR_ComponentHelper.GetInventoryItemComponentSource(entity);
 		if (!inventory)
 		{
@@ -219,6 +265,54 @@ class GC_ItemCatalogue
 		entity.GetSourceAddons(entry.m_aSourceAddons);
 		entry.m_sName = FilePath.StripExtension(FilePath.StripPath(prefab));
 		entry.m_sCategory = "Equipment";
+		// Resolve the first matching components in one pass. Repeated helper
+		// searches traverse and convert the same component sources for every item.
+		IEntityComponentSource mesh;
+		IEntityComponentSource weapon;
+		IEntityComponentSource magazine;
+		IEntityComponentSource cloth;
+		IEntityComponentSource storage;
+		array<IEntityComponentSource> mounts = {};
+		array<IEntityComponentSource> children = {};
+		array<IEntityComponentSource> grandchildren = {};
+		for (int c, componentCount = entity.GetComponentCount(); c < componentCount; c++)
+		{
+			IEntityComponentSource component = entity.GetComponent(c);
+			if (!component)
+				continue;
+			string className = component.GetClassName();
+			if (!mesh && className == "MeshObject")
+				mesh = component;
+			typename componentType = className.ToType();
+			if (!componentType)
+				continue;
+			if (!weapon && componentType.IsInherited(WeaponComponent))
+				weapon = component;
+			if (!magazine && componentType.IsInherited(BaseMagazineComponent))
+				magazine = component;
+			if (!cloth && componentType.IsInherited(BaseLoadoutClothComponent))
+				cloth = component;
+			if (!storage && componentType.IsInherited(BaseInventoryStorageComponent))
+				storage = component;
+			if (componentType.IsInherited(AttachmentSlotComponent))
+				mounts.Insert(component);
+			// Match the native helper's root/child/grandchild order, but reuse
+			// scratch arrays instead of allocating two arrays for every component.
+			SCR_BaseContainerTools.GetComponentSourceChildren(component, children);
+			foreach (IEntityComponentSource child : children)
+			{
+				typename childType = child.GetClassName().ToType();
+				if (childType && childType.IsInherited(AttachmentSlotComponent))
+					mounts.Insert(child);
+				SCR_BaseContainerTools.GetComponentSourceChildren(child, grandchildren);
+				foreach (IEntityComponentSource grandchild : grandchildren)
+				{
+					typename grandchildType = grandchild.GetClassName().ToType();
+					if (grandchildType && grandchildType.IsInherited(AttachmentSlotComponent))
+						mounts.Insert(grandchild);
+				}
+			}
+		}
 		SCR_ItemAttributeCollection attributes = SCR_ComponentHelper.GetInventoryItemInfo(inventory);
 		if (attributes)
 		{
@@ -234,7 +328,6 @@ class GC_ItemCatalogue
 			ItemPhysicalAttributes physical = ItemPhysicalAttributes.Cast(attributes.FindAttribute(ItemPhysicalAttributes));
 			entry.m_bPortable = attributes.IsDraggable() && visible && enabled && physical && attributes.GetSlotType() != ESlotID.SLOT_LOOT_STORAGE;
 			// Empty or placeholder models are not finished inventory gear, even when named otherwise.
-			IEntityComponentSource mesh = SCR_BaseContainerTools.FindComponentSource(entity, "MeshObject");
 			ResourceName model;
 			if (mesh)
 				mesh.Get("Object", model);
@@ -261,7 +354,6 @@ class GC_ItemCatalogue
 				entry.m_sCategory = "Attachments";
 			}
 		}
-		IEntityComponentSource weapon = SCR_BaseContainerTools.FindComponentSource(resource, WeaponComponent);
 		if (weapon)
 		{
 			entry.m_sCategory = "Weapons";
@@ -269,7 +361,6 @@ class GC_ItemCatalogue
 			if (entry.m_sEquipmentSlot == "grenade" || entry.m_sEquipmentSlot == "throwable")
 				entry.m_sCategory = "Grenades";
 		}
-		IEntityComponentSource magazine = SCR_BaseContainerTools.FindComponentSource(resource, BaseMagazineComponent);
 		if (magazine)
 		{
 			entry.m_sCategory = "Magazines";
@@ -277,7 +368,6 @@ class GC_ItemCatalogue
 			if (well)
 				entry.m_MagazineWell = well.GetClassName().ToType();
 		}
-		IEntityComponentSource cloth = SCR_BaseContainerTools.FindComponentSource(resource, BaseLoadoutClothComponent);
 		bool clothEnabled = true;
 		if (cloth)
 			cloth.Get("Enabled", clothEnabled);
@@ -286,7 +376,7 @@ class GC_ItemCatalogue
 			entry.m_sCategory = "Equipment";
 			// Wearable pouches can have storage without a standard body slot.
 			// Dedicated headwear, vest and backpack categories still take precedence.
-			if (SCR_BaseContainerTools.FindComponentSource(resource, BaseInventoryStorageComponent))
+			if (storage)
 				entry.m_sCategory = "Clothing";
 			BaseContainer area = cloth.GetObject("AreaType");
 			if (area)
@@ -304,8 +394,6 @@ class GC_ItemCatalogue
 					entry.m_sCategory = "Backpacks";
 			}
 		}
-		array<IEntityComponentSource> mounts = {};
-		SCR_BaseContainerTools.FindComponentSourcesOfClass(entity, AttachmentSlotComponent, true, mounts);
 		foreach (IEntityComponentSource mount : mounts)
 		{
 			BaseContainer slot = mount.GetObject("AttachmentSlot");
@@ -398,7 +486,7 @@ class GC_ItemCatalogue
 	//------------------------------------------------------------------------------------------------
 	string Metrics()
 	{
-		return Status() + string.Format(" | batch=%1 budgetMS=%2 maxIndexTickMS=%3 elapsedMS=%4", INDEX_BATCH_SIZE, INDEX_BUDGET_MS, m_fMaxTickMS, m_fElapsedMS);
+		return Status() + string.Format(" | batch=%1 budgetMS=%2 maxIndexTickMS=%3 elapsedMS=%4", INDEX_BATCH_SIZE, m_fBudgetMS, m_fMaxTickMS, m_fElapsedMS);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -435,36 +523,50 @@ class GC_ItemCatalogue
 		results.Clear();
 		if (!query || offset < 0 || limit < 1 || limit > 100)
 			return -1;
-		array<string> terms = {};
-		string text = query.m_sText;
-		text.ToLower();
-		text.Split(" ", terms, true);
-		int total;
-		array<string> sortedKeys = {};
-		map<string, GC_ItemCatalogueEntry> sortedEntries = new map<string, GC_ItemCatalogueEntry>();
-		for (int index; index < Count(); index++)
+		// The catalogue is append-only. Paging reuses the current query, and
+		// background indexing evaluates only newly appended metadata.
+		if (!m_CachedQuery || !m_CachedQuery.Equals(query))
+		{
+			m_CachedQuery = query.Copy();
+			m_iSearchIndexed = 0;
+			m_aSearchMatches.Clear();
+			m_aSearchKeys.Clear();
+			m_mSearchEntries.Clear();
+			m_aSearchTerms.Clear();
+			string text = query.m_sText;
+			text.ToLower();
+			text.Split(" ", m_aSearchTerms, true);
+		}
+		int previousMatches = m_aSearchMatches.Count();
+		for (int index = m_iSearchIndexed; index < Count(); index++)
 		{
 			if (query.m_bPortableOnly && !Get(index).m_bPortable)
 				continue;
-			if (!Matches(index, terms, query.m_sCategory, query.m_sEquipmentSlot, query.m_sSourceAddon, query.m_sFaction, query.m_MountType))
+			if (!Matches(index, m_aSearchTerms, query.m_sCategory, query.m_sEquipmentSlot, query.m_sSourceAddon, query.m_sFaction, query.m_MountType))
 				continue;
 			if (query.m_bWeaponItems && !query.MatchesWeapon(Get(index)))
 				continue;
 			if (query.m_bAlphabetical)
 			{
 				string key = Get(index).GetSortKey(query.m_bDescending);
-				sortedKeys.Insert(key);
-				sortedEntries.Insert(key, Get(index));
+				m_aSearchKeys.Insert(key);
+				m_mSearchEntries.Insert(key, Get(index));
 			}
-			else if (total >= offset && results.Count() < limit)
-				results.Insert(Get(index));
-			total++;
+			m_aSearchMatches.Insert(Get(index));
 		}
+		m_iSearchIndexed = Count();
+		int total = m_aSearchMatches.Count();
 		if (query.m_bAlphabetical)
 		{
-			sortedKeys.Sort(query.m_bDescending);
+			if (total != previousMatches)
+				m_aSearchKeys.Sort(query.m_bDescending);
 			for (int position = offset; position < total && results.Count() < limit; position++)
-				results.Insert(sortedEntries.Get(sortedKeys[position]));
+				results.Insert(m_mSearchEntries.Get(m_aSearchKeys[position]));
+		}
+		else
+		{
+			for (int position = offset; position < total && results.Count() < limit; position++)
+				results.Insert(m_aSearchMatches[position]);
 		}
 		return total;
 	}
@@ -486,6 +588,48 @@ class GC_ItemCatalogueQuery
 	bool m_bWeaponItems;
 	ref array<typename> m_aMagazineWells = {};
 	ref array<typename> m_aAttachmentTypes = {};
+
+	//------------------------------------------------------------------------------------------------
+	//! Snapshot mutable filters, including weapon compatibility arrays.
+	GC_ItemCatalogueQuery Copy()
+	{
+		GC_ItemCatalogueQuery copy = new GC_ItemCatalogueQuery();
+		copy.m_bPortableOnly = m_bPortableOnly;
+		copy.m_bAlphabetical = m_bAlphabetical;
+		copy.m_bDescending = m_bDescending;
+		copy.m_sText = m_sText;
+		copy.m_sCategory = m_sCategory;
+		copy.m_sEquipmentSlot = m_sEquipmentSlot;
+		copy.m_sSourceAddon = m_sSourceAddon;
+		copy.m_sFaction = m_sFaction;
+		copy.m_MountType = m_MountType;
+		copy.m_bWeaponItems = m_bWeaponItems;
+		copy.m_aMagazineWells.Copy(m_aMagazineWells);
+		copy.m_aAttachmentTypes.Copy(m_aAttachmentTypes);
+		return copy;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	bool Equals(GC_ItemCatalogueQuery other)
+	{
+		if (!other || m_bPortableOnly != other.m_bPortableOnly || m_bAlphabetical != other.m_bAlphabetical
+			|| m_bDescending != other.m_bDescending || m_sText != other.m_sText || m_sCategory != other.m_sCategory
+			|| m_sEquipmentSlot != other.m_sEquipmentSlot || m_sSourceAddon != other.m_sSourceAddon
+			|| m_sFaction != other.m_sFaction || m_MountType != other.m_MountType || m_bWeaponItems != other.m_bWeaponItems
+			|| m_aMagazineWells.Count() != other.m_aMagazineWells.Count() || m_aAttachmentTypes.Count() != other.m_aAttachmentTypes.Count())
+			return false;
+		foreach (int index, typename well : m_aMagazineWells)
+		{
+			if (well != other.m_aMagazineWells[index])
+				return false;
+		}
+		foreach (int index, typename attachment : m_aAttachmentTypes)
+		{
+			if (attachment != other.m_aAttachmentTypes[index])
+				return false;
+		}
+		return true;
+	}
 
 	//------------------------------------------------------------------------------------------------
 	//! Same inheritance direction as the native magazine and compatible-attachment predicates.

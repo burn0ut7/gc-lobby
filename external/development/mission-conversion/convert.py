@@ -213,7 +213,10 @@ def main():
             except (OSError, ValueError) as exc:
                 parser.error(str(exc))
 
-    def resolve_spawn(objectives, resource, path, *, group=False):
+    def resolve_spawn(objectives, resource, path, *, group=False, vehicle=False):
+        if vehicle:
+            asset = objectives.get(resource, {})
+            return path if asset.get('vehicle') and asset['path'] == path else None
         if group:
             owners = (locally_owned, source_units.resources, dev_units.resources)
             if verified_stock_ai_group(resource, path, stock, locally_owned, source_units, dev_units, rhs_database):
@@ -466,7 +469,8 @@ def main():
                                            for identity, asset in roster_assets.items()}
             except ValueError as exc:
                 row['aiObjectiveGap'] = str(exc)
-        if args.batch and row['serializedTypes'].get('TILW_SpawnPrefabInstruction'):
+        if args.batch and any(row['serializedTypes'].get(kind)
+                              for kind in ('TILW_SpawnPrefabInstruction', 'TILW_SpawnVehicleInstruction')):
             spawned = batch.spawned_objectives(source, dev, world, stock, locally_owned, workshop_damage_resources)
             if spawned:
                 asset_flags = [item['flag'] for item in spawned.values()]
@@ -482,6 +486,7 @@ def main():
                     row.setdefault('interactionCandidate', {})['spawnedObjectives'] = {
                         'prefabs': {guid: {key: value for key, value in item.items() if key != 'body'}
                                     for guid, item in spawned.items()}}
+        if args.batch and row['serializedTypes'].get('TILW_SpawnPrefabInstruction'):
             try:
                 delayed = collect_delayed_extraction(source, world)
                 if delayed.conditions:

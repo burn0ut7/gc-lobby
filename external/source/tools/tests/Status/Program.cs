@@ -15,10 +15,16 @@ File.WriteAllText(Path.Combine(control,"installation.json"),JsonSerializer.Seria
 var paths=new Dictionary<string,string>{["support/payload/generic/gcworkbench.dll"]=Path.Combine(install,"payload/generic/gcworkbench.dll"),["support/payload/helper/GC Tools.dll"]=Path.Combine(install,"payload/helper/GC Tools.dll"),["support/payload/lobby2-tools/GC-GitHub.ps1"]=Path.Combine(profile,"GCWorkbench/tools/GC-GitHub.ps1")};
 foreach(var target in paths.Values){Directory.CreateDirectory(Path.GetDirectoryName(target)!);File.WriteAllText(target,"expected");}
 var zipPath=Path.Combine(package,"GCWorkbench.zip");
-using(var zip=ZipFile.Open(zipPath,ZipArchiveMode.Create))using(var writer=new StreamWriter(zip.CreateEntry("support/files.json").Open()))writer.Write(JsonSerializer.Serialize(paths.Select(p=>new{path=p.Key,sha256=Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(p.Value)))})));
-File.WriteAllText(zipPath+".sha256",Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(zipPath)))+"  GCWorkbench.zip");
 File.WriteAllText(Path.Combine(ui,"GC Tools.dll"),"expected");
-Check(ToolStatus.CheckWorkbench(control,package,ui).Status=="Up to date","Matching package");
+foreach (var manifestName in new[] { "support/files.json", @"support\files.json" })
+{
+    File.Delete(zipPath);
+    using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    using (var writer = new StreamWriter(zip.CreateEntry(manifestName).Open()))
+        writer.Write(JsonSerializer.Serialize(paths.Select(p => new { path = p.Key, sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(p.Value))) })));
+    File.WriteAllText(zipPath + ".sha256", Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(zipPath))) + "  GCWorkbench.zip");
+    Check(ToolStatus.CheckWorkbench(control, package, ui).Status == "Up to date", "Matching package with " + manifestName);
+}
 File.WriteAllText(Path.Combine(ui,"GC Tools.dll"),"old running UI");
 var restart=ToolStatus.CheckWorkbench(control,package,ui);
 Check(restart.State=="ready"&&restart.Status=="Restart Workbench","Updated installed UI mistaken for another required install");

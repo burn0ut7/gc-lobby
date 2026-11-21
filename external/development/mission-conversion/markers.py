@@ -1,4 +1,5 @@
 """Port standalone legacy icon layers whose visual and audience fields are understood."""
+from decimal import Decimal
 import json
 from pathlib import Path
 import re
@@ -44,6 +45,47 @@ WIDE_COVER_FIELDS = {
     'm_fWorldSize': '128000',
 }
 EMPTY_CLEANUP_PROTECTION = re.compile(r'\s*PK_EntityProtectorComponent "(\{[A-Fa-f0-9]{16}\})" \{')
+BAKED_MARKER_GENERATOR = re.compile(
+    r'PolylineShapeEntity \{\n coords (?P<origin>[^\n]+)\n Points \{\n'
+    r'(?:  ShapePoint "\{[\da-fA-F]{16}\}" \{\n   Position [^\n]+\n  \}\n)+'
+    r' \}\n \{\n'
+    r'  PrefabGeneratorEntity : "\{0555ABAB329C6DFB\}Prefabs/WEGenerators/Markers/PG_MarkerGenerator_Base.et" \{\n'
+    r'   Flags 0x100003 0\n   m_iSeed \d+\n   m_PrefabNames \{\n'
+    r'    (?P<reference>"\{(?P<guid>[\da-fA-F]{16})\}(?P<path>[^"\n]+\.et)")\n   \}\n'
+    r'   m_fDistance [\d.]+\n   \{\n    \$grp PS_ManualMarker : (?P=reference) \{\n'
+    r'(?P<members>.*?)\n    \}\n   \}\n  \}\n \}\n\}', re.S)
+BAKED_MARKER_MEMBER = re.compile(r'     \{\n      coords ([^\n]+)\n      angles ([^\n]+)\n     \}')
+
+
+def convert_baked_marker_generator(block, source, dev):
+    """Keep saved runtime arrows from a native editor-only shape and generator."""
+    match = BAKED_MARKER_GENERATOR.fullmatch('\n'.join(block))
+    if not match or source.resources.get(match['guid'].upper()) != [match['path']]:
+        raise ValueError('unverified baked marker generator')
+    template = source.read(match['path']).splitlines()
+    if len(template) < 3:
+        raise ValueError('baked marker template has no authored fields')
+    root = LEGACY.fullmatch(template[0])
+    if (not root or root['guid'].upper() != BASE or root['group'] or root['name'] or template[-1] != '}'
+            or not re.fullmatch(r' ID "[\da-fA-F]{16}"', template[1])):
+        raise ValueError('unsupported baked marker template')
+    inherited = properties(template[2:-1], ALLOWED)
+    if TRANSFORM.intersection(inherited) != {'coords', 'angles'}:
+        raise ValueError('baked marker template has additional transforms')
+    origin = match['origin']
+    members = match['members']
+    if not FIELD.fullmatch('coords ' + origin) or BAKED_MARKER_MEMBER.sub('', members).strip():
+        raise ValueError('invalid saved marker transforms')
+    output = []
+    for coords, angles in BAKED_MARKER_MEMBER.findall(members):
+        if not FIELD.fullmatch('coords ' + coords) or not FIELD.fullmatch('angles ' + angles):
+            raise ValueError('invalid saved marker transforms')
+        absolute = ' '.join(format(Decimal(parent) + Decimal(child), 'f')
+                            for parent, child in zip(origin.split(), coords.split()))
+        output.append(instance([' coords ' + absolute, ' angles ' + angles], '', inherited, draw_order=True))
+    if not output:
+        raise ValueError('baked marker generator has no saved markers')
+    return relocate_images('\n'.join(output) + '\n', dev)
 
 
 def phase_fields(value):

@@ -11,6 +11,13 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 	protected Widget m_DestinationRoot;
 	protected SCR_ComboBoxComponent m_Destination;
 	protected Widget m_InventoryContent;
+	protected Widget m_VehiclePanel;
+	protected ItemPreviewWidget m_VehiclePreview;
+	protected Widget m_VehicleSpawn;
+	protected Widget m_VehicleCategories;
+	protected ref array<string> m_aVehicleClasses = {};
+	protected ResourceName m_sSelectedVehicle;
+	protected bool m_bVehicleView;
 	protected Widget m_CratePanel;
 	protected Widget m_CrateStorages;
 	protected bool m_bCrateView;
@@ -54,6 +61,9 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 	//------------------------------------------------------------------------------------------------
 	bool Attach(Widget inventoryRoot)
 	{
+		GC_LobbyGameMode mode = GC_LobbyGameMode.GetGameMode();
+		if (!mode)
+			return false;
 		Widget left = inventoryRoot.FindAnyWidget("LeftArea");
 		m_Vicinity = inventoryRoot.FindAnyWidget("StorageLootSlot");
 		m_Opened = inventoryRoot.FindAnyWidget("OpenedStorages");
@@ -96,6 +106,16 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 			m_Destination = SCR_ComboBoxComponent.Cast(m_DestinationRoot.FindAnyWidget("GearDestination").FindHandler(SCR_ComboBoxComponent));
 			m_Destination.AddItem("#GC-Gear_Inventory");
 			m_Destination.AddItem("#GC-Gear_Crate");
+			m_Destination.AddItem("#GC-Vehicle_Browser");
+			m_VehiclePanel = m_DestinationRoot.FindAnyWidget("VehiclePanel");
+			m_VehiclePreview = ItemPreviewWidget.Cast(m_VehiclePanel.FindAnyWidget("VehiclePreview"));
+			m_VehiclePreview.SetClearColor(false, 0);
+			m_VehiclePreview.SetBlendMode(RenderTargetWidgetBlendMode.ALPHA_BLEND);
+			m_VehicleSpawn = m_VehiclePanel.FindAnyWidget("SpawnVehicle");
+			TextWidget.Cast(m_VehicleSpawn.FindAnyWidget("Text")).SetText("#GC-Vehicle_Spawn");
+			BindButton(m_VehicleSpawn);
+			m_VehicleCategories = m_Root.FindAnyWidget("VehicleCategories");
+			AddVehicleCategory(string.Empty);
 			m_Destination.SetCurrentItem(0, false, false, false);
 			m_Destination.m_OnChanged.Insert(OnDestination);
 			m_InventoryContent = inventoryRoot.FindAnyWidget("InventoryContent");
@@ -115,8 +135,7 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 			preview.SetClearColor(false, 0);
 			preview.SetBlendMode(RenderTargetWidgetBlendMode.ALPHA_BLEND);
 		}
-		m_Catalogue = new GC_ItemCatalogue();
-		m_Catalogue.Start();
+		m_Catalogue = mode.GetGearCatalogue();
 		m_Query.m_bPortableOnly = true;
 		m_Query.m_bAlphabetical = true;
 		Refresh();
@@ -131,6 +150,11 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 			m_QuantityDialog.m_OnClose.Remove(OnQuantityClosed);
 			m_QuantityDialog.Close();
 			m_QuantityDialog = null;
+		}
+		if (m_bVehicleView)
+		{
+			m_InventoryContent.SetVisible(m_bInventoryContentVisible);
+			m_PlayerWeight.SetVisible(m_bPlayerWeightVisible);
 		}
 		SetCrateView(false);
 		if (m_Destination)
@@ -183,11 +207,58 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 		if (m_DestinationRoot)
 		{
 			GC_LobbyPlayerController controller = GC_LobbyPlayerController.Cast(GetGame().GetPlayerController());
-			m_Destination.GetRootWidget().SetEnabled(controller && !controller.GC_IsGearPending());
+			bool ready = controller && !controller.GC_IsGearPending();
+			m_Destination.GetRootWidget().SetEnabled(ready);
+			if (m_bVehicleView)
+			{
+				m_VehicleSpawn.SetEnabled(ready && !m_sSelectedVehicle.IsEmpty());
+				float width, height;
+				m_VehiclePreview.GetParent().GetScreenSize(width, height);
+				if (width > 0 && height > 0)
+				{
+					float inset = Math.Max(0, (1 - width / height) * 0.5);
+					if (FrameSlot.GetAnchorMin(m_VehiclePreview)[1] != inset)
+					{
+						FrameSlot.SetAnchorMin(m_VehiclePreview, 0, inset);
+						FrameSlot.SetAnchorMax(m_VehiclePreview, 1, 1 - inset);
+					}
+				}
+			}
 		}
 		if (!m_Root)
 			return;
-		m_Catalogue.Tick();
+		GC_LobbyGameMode mode = GC_LobbyGameMode.GetGameMode();
+		if (!mode)
+			return;
+		GC_ItemCatalogue catalogue = mode.GetGearCatalogue();
+		if (catalogue != m_Catalogue)
+		{
+			// A successful authored save invalidates metadata as well as previews.
+			m_Catalogue = catalogue;
+			m_bFinished = false;
+			m_iIndexed = -1;
+			if (m_VehicleCategories)
+			{
+				Widget child = m_VehicleCategories.GetChildren();
+				while (child)
+				{
+					Widget next = child.GetSibling();
+					SCR_ButtonBaseComponent button = SCR_ButtonBaseComponent.Cast(child.GetChildren().FindHandler(SCR_ButtonBaseComponent));
+					button.m_OnClicked.Remove(OnButton);
+					m_aButtons.RemoveItem(button);
+					child.RemoveFromHierarchy();
+					child = next;
+				}
+				m_aVehicleClasses.Clear();
+				AddVehicleCategory(string.Empty);
+				if (m_bVehicleView)
+					m_Query.m_sCategory = string.Empty;
+			}
+			m_iOffset = 0;
+			m_mPreviewPrefabs.Clear();
+			m_iPreview = 0;
+			Refresh();
+		}
 		m_fWeaponRefresh += timeSlice;
 		if (m_WeaponStorage && m_fWeaponRefresh >= 0.25)
 		{
@@ -221,7 +292,10 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 			Refresh();
 		}
 		m_fRefresh += timeSlice;
-		if (m_bFinished != m_Catalogue.IsFinished() || (m_fRefresh >= 0.5 && m_iIndexed != m_Catalogue.Count()))
+		float refreshInterval = 0.5;
+		if (m_aPage.Count() < PAGE_SIZE)
+			refreshInterval = 0.1;
+		if (m_bFinished != m_Catalogue.IsFinished() || (m_fRefresh >= refreshInterval && m_iIndexed != ActiveCatalogue().Count()))
 			Refresh(true);
 		// Only visible cells, one request per frame. A new query cancels the old page queue.
 		while (m_iPreview < m_aPage.Count() && m_mPreviewPrefabs.Get(m_aCells[m_iPreview]) == m_aPage[m_iPreview].m_sPrefab)
@@ -245,6 +319,8 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 	//------------------------------------------------------------------------------------------------
 	void SetSlot(string slot)
 	{
+		if (m_bVehicleView)
+			return;
 		bool wasWeapon = m_WeaponStorage != null;
 		m_WeaponStorage = null;
 		m_WeaponEntity = null;
@@ -265,6 +341,8 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 	//------------------------------------------------------------------------------------------------
 	void SetWeaponSlot(BaseInventoryStorageComponent storage, int slotID, string slotType)
 	{
+		if (m_bVehicleView)
+			return;
 		SetSlot(string.Empty);
 		m_WeaponStorage = storage;
 		m_iWeaponSlot = slotID;
@@ -335,6 +413,8 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 	//------------------------------------------------------------------------------------------------
 	void SetInspectionSlot(InventoryStorageSlot slot, typename type)
 	{
+		if (m_bVehicleView)
+			return;
 		SetSlot(string.Empty);
 		m_iOffset = 0;
 		m_InspectionSlot = slot;
@@ -384,11 +464,18 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 	//------------------------------------------------------------------------------------------------
 	protected void PopulateMods()
 	{
+		m_Mod.m_OnChanged.Remove(OnSearchOption);
+		m_Mod.ClearAll();
+		m_Mod.AddItem("All mods");
+		m_aModIDs.Clear();
+		m_aModIDs.Insert("");
+		m_mModTitles.Clear();
 		array<string> contributing = {};
-		for (int i; i < m_Catalogue.Count(); i++)
+		GC_ItemCatalogue active = ActiveCatalogue();
+		for (int i; i < active.Count(); i++)
 		{
-			GC_ItemCatalogueEntry entry = m_Catalogue.Get(i);
-			if (!entry.m_bPortable)
+			GC_ItemCatalogueEntry entry = active.Get(i);
+			if (!m_bVehicleView && !entry.m_bPortable)
 				continue;
 			foreach (string source : entry.m_aSourceAddons)
 			{
@@ -423,6 +510,10 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 			m_Mod.AddItem(labels.Get(key));
 			m_aModIDs.Insert(ids.Get(key));
 		}
+		int selected = Math.Max(0, m_aModIDs.Find(m_Query.m_sSourceAddon));
+		m_Query.m_sSourceAddon = m_aModIDs[selected];
+		m_Mod.SetCurrentItem(selected, false, false, false);
+		m_Mod.m_OnChanged.Insert(OnSearchOption);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -433,7 +524,7 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 			PopulateMods();
 		array<GC_ItemCatalogueEntry> previousPage = {};
 		previousPage.Copy(m_aPage);
-		m_iTotal = m_Catalogue.Search(m_Query, m_iOffset, PAGE_SIZE, m_aPage);
+		m_iTotal = ActiveCatalogue().Search(m_Query, m_iOffset, PAGE_SIZE, m_aPage);
 		bool changed = previousPage.Count() != m_aPage.Count();
 		if (!changed)
 		{
@@ -443,7 +534,28 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 					changed = true;
 			}
 		}
-		m_iIndexed = m_Catalogue.Count();
+		if (m_bVehicleView)
+		{
+			GC_ItemCatalogue vehicles = ActiveCatalogue();
+			for (int v = Math.Max(0, m_iIndexed); v < vehicles.Count(); v++)
+			{
+				string category = vehicles.Get(v).m_sCategory;
+				if (!m_aVehicleClasses.Contains(category))
+					AddVehicleCategory(category);
+			}
+			if (m_aPage.IsEmpty())
+				SelectVehicle(null);
+			else
+			{
+				bool retained;
+				foreach (GC_ItemCatalogueEntry candidate : m_aPage)
+					if (candidate.m_sPrefab == m_sSelectedVehicle)
+						retained = true;
+				if (!retained)
+					SelectVehicle(m_aPage[0]);
+			}
+		}
+		m_iIndexed = ActiveCatalogue().Count();
 		m_bFinished = m_Catalogue.IsFinished();
 		m_fRefresh = 0;
 		if (changed)
@@ -462,6 +574,7 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 			cell.SetVisible(populated);
 			if (populated)
 			{
+				cell.FindAnyWidget("VehicleSelection").SetVisible(m_bVehicleView && m_aPage[index].m_sPrefab == m_sSelectedVehicle);
 				// Match SCR_AddonTool.GetResourceLastAddon: the resolved resource's
 				// last provider, rather than every inherited dependency.
 				array<string> sources = m_aPage[index].m_aSourceAddons;
@@ -485,7 +598,9 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 			if (background)
 				break;
 			string name = button.GetRootWidget().GetName();
-			if (name.StartsWith("Category"))
+			if (m_bVehicleView && button.GetRootWidget().GetParent().GetParent() == m_VehicleCategories)
+				button.SetToggled(m_aVehicleClasses[button.GetRootWidget().GetUserID()] == m_Query.m_sCategory, false, false);
+			else if (name.StartsWith("Category"))
 			{
 				string selected = "Category" + m_sCategoryLabel;
 				if (m_sCategoryLabel == "All items")
@@ -564,6 +679,13 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 			SCR_InventoryMenuUI.GetInventoryMenu().Close();
 			return true;
 		}
+		if (m_bVehicleView && w == m_VehicleSpawn)
+		{
+			GC_LobbyPlayerController controller = GC_LobbyPlayerController.Cast(GetGame().GetPlayerController());
+			if (controller && controller.GC_RequestVehicle(m_sSelectedVehicle) && controller.GC_IsGearPending())
+				GearMessage("#GC-Vehicle_Pending");
+			return true;
+		}
 		if (w == m_ClearSearch)
 		{
 			m_Search.SetText(string.Empty);
@@ -573,6 +695,13 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 			m_iOffset = 0;
 			m_ClearSearch.SetVisible(false);
 			GetGame().GetWorkspace().SetFocusedWidget(m_Search);
+			Refresh();
+			return true;
+		}
+		if (m_bVehicleView && w.GetParent().GetParent() == m_VehicleCategories)
+		{
+			m_Query.m_sCategory = m_aVehicleClasses[w.GetUserID()];
+			m_iOffset = 0;
 			Refresh();
 			return true;
 		}
@@ -595,6 +724,12 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 		{
 			if (index < m_aPage.Count() && w == cell.FindAnyWidget("SelectItem"))
 			{
+				if (m_bVehicleView)
+				{
+					SelectVehicle(m_aPage[index]);
+					Refresh();
+					return true;
+				}
 				SCR_InventoryMenuUI.GetInventoryMenu().GC_ClickWeaponCatalogueItem(m_aPage[index]);
 				return true;
 			}
@@ -605,6 +740,8 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 	//------------------------------------------------------------------------------------------------
 	GC_ItemCatalogueEntry EntryAt(Widget widget)
 	{
+		if (m_bVehicleView)
+			return null;
 		while (widget && widget != m_Root)
 		{
 			foreach (int index, Widget cell : m_aCells)
@@ -626,6 +763,8 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 			int index;
 			if (GC_GearSession.s_bCrate)
 				index = 1;
+			if (m_bVehicleView)
+				index = 2;
 			m_Destination.SetCurrentItem(index, false, false, false);
 		}
 		m_fFeedbackTime = 4;
@@ -643,16 +782,133 @@ class GC_InventoryCataloguePanel : ScriptedWidgetEventHandler
 			int current;
 			if (GC_GearSession.s_bCrate)
 				current = 1;
+			if (m_bVehicleView)
+				current = 2;
 			combo.SetCurrentItem(current, false, false, false);
 			return;
 		}
-		if (index == 0)
+		SetVehicleView(index == 2);
+		if (index != 1)
 			GC_GearSession.s_bCrate = false;
 		else
 		{
 			m_Destination.GetRootWidget().SetEnabled(false);
 			controller.GC_RequestGearCrate(true);
 		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected GC_ItemCatalogue ActiveCatalogue()
+	{
+		if (m_bVehicleView)
+			return m_Catalogue.GetVehicles();
+		return m_Catalogue;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void AddVehicleCategory(string category)
+	{
+		Widget bounds = GetGame().GetWorkspace().CreateWidgets("{842FC18B9C1365AD}UI/layouts/Inventory/GC_CatalogueCategory.layout", m_VehicleCategories);
+		int index = m_aVehicleClasses.Insert(category);
+		bounds.SetName("VehicleClass" + index);
+		if (category == "Other vehicles")
+			bounds.SetZOrder(int.MAX);
+		else
+			bounds.SetZOrder(index);
+		Widget button = bounds.FindAnyWidget("CategoryAll");
+		BindButton(button);
+		button.SetName("VehicleFilter" + index);
+		button.SetUserID(index);
+		string label = category;
+		if (label.IsEmpty())
+			label = "#GC-Vehicle_All";
+		TextWidget.Cast(button.FindAnyWidget("SourceMods")).SetText(label);
+		ResourceName atlas = "{CB9C19A2219A4BFC}UI/Textures/Icons/Lobby_PS_Atlas_x64.imageset";
+		string icon;
+		switch (category)
+		{
+			case "Cars": icon = "Car"; break;
+			case "Trucks": icon = "Truck"; break;
+			case "Armored personnel carriers":
+			case "Infantry fighting vehicles":
+				icon = "APC";
+				break;
+			case "Tanks": icon = "Tank"; break;
+			case "Helicopters": icon = "Helicopter"; break;
+			case "Other vehicles": icon = "Dots"; break;
+			default:
+				atlas = "{3262679C50EF4F01}UI/Textures/Icons/icons_wrapperUI.imageset";
+				icon = "gridView";
+				if (category == "Mortars")
+					icon = "artilleryFireMission";
+				break;
+		}
+		ImageWidget image = ImageWidget.Cast(button.FindAnyWidget("Icon"));
+		image.LoadImageFromSet(0, atlas, icon);
+		int width, height;
+		image.GetImageSize(0, width, height);
+		if (width > 0 && height > 0)
+		{
+			float scale = 36.0 / Math.Max(width, height);
+			float horizontalInset = (64 - width * scale) * 0.5;
+			float verticalInset = (64 - height * scale) * 0.5;
+			OverlaySlot.SetPadding(image, horizontalInset, verticalInset, horizontalInset, verticalInset);
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void SelectVehicle(GC_ItemCatalogueEntry entry)
+	{
+		m_VehicleSpawn.SetEnabled(entry != null);
+		TextWidget name = TextWidget.Cast(m_VehiclePanel.FindAnyWidget("VehicleName"));
+		if (!entry)
+		{
+			m_sSelectedVehicle = string.Empty;
+			m_VehiclePreview.SetVisible(false);
+			name.SetText("#GC-Vehicle_Empty");
+			return;
+		}
+		if (entry.m_sPrefab == m_sSelectedVehicle)
+			return;
+		m_sSelectedVehicle = entry.m_sPrefab;
+		name.SetText(entry.m_sName);
+		ChimeraWorld world = GetGame().GetWorld();
+		ItemPreviewManagerEntity previews = world.GetItemPreviewManager();
+		m_VehiclePreview.SetVisible(previews != null);
+		if (previews)
+			previews.SetPreviewItemFromPrefab(m_VehiclePreview, entry.m_sPrefab, null, false, 1000);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void SetVehicleView(bool enabled)
+	{
+		if (enabled == m_bVehicleView)
+			return;
+		SCR_InventoryMenuUI.GetInventoryMenu().GC_PrepareCatalogueRefresh();
+		SetCrateView(false);
+		m_bVehicleView = enabled;
+		m_WeaponStorage = null;
+		m_WeaponEntity = null;
+		m_InspectionSlot = null;
+		m_bInspectionContext = false;
+		m_Query = new GC_ItemCatalogueQuery();
+		m_Query.m_bPortableOnly = !enabled;
+		m_Query.m_bAlphabetical = true;
+		m_Query.m_bDescending = m_Sort.GetCurrentIndex() == 1;
+		m_sCategoryLabel = "All items";
+		m_fFeedbackTime = 0;
+		m_iOffset = 0;
+		m_iIndexed = -1;
+		m_Search.SetText(string.Empty);
+		m_sPendingText = string.Empty;
+		m_sSelectedVehicle = string.Empty;
+		m_VehiclePanel.SetVisible(enabled);
+		m_InventoryContent.SetVisible(!enabled && m_bInventoryContentVisible);
+		m_PlayerWeight.SetVisible(!enabled && m_bPlayerWeightVisible);
+		m_Root.FindAnyWidget("Categories").SetVisible(!enabled);
+		m_Root.FindAnyWidget("VehicleCategoryRail").SetVisible(enabled);
+		PopulateMods();
+		Refresh();
 	}
 
 	//------------------------------------------------------------------------------------------------

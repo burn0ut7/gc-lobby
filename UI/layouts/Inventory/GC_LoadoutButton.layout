@@ -1,11 +1,11 @@
 ButtonWidgetClass {
- Name "LoadoutButton" Clipping False
+ Name "LoadoutButton" Clipping Ancestor
  Slot LayoutSlot { HorizontalAlign 3 Padding 0 2 0 2 }
  Color 1 1 1 0
  components { SCR_ButtonTextComponent { m_bCanBeToggled 0 m_BackgroundDefault 1 1 1 0.025 m_BackgroundHovered 1 1 1 0.1 m_BackgroundSelected 0.65 0.59 0.3 0.32 m_BackgroundSelectedHovered 0.65 0.59 0.3 0.42 m_BackgroundClicked 1 1 1 0.3 m_bShowBorderOnFocus 1 } }
  {
- SizeLayoutWidgetClass "{DC391DA320AE3011}" { Name "Size" Clipping False Slot ButtonWidgetSlot { HorizontalAlign 3 VerticalAlign 3 } AllowHeightOverride 1 HeightOverride 54 {
- OverlayWidgetClass "{DC391DA320AE3012}" { Name "Content" Clipping False Slot AlignableSlot { HorizontalAlign 3 VerticalAlign 3 } {
+ SizeLayoutWidgetClass "{DC391DA320AE3011}" { Name "Size" Clipping Ancestor Slot ButtonWidgetSlot { HorizontalAlign 3 VerticalAlign 3 } AllowHeightOverride 1 HeightOverride 54 {
+ OverlayWidgetClass "{DC391DA320AE3012}" { Name "Content" Clipping Ancestor Slot AlignableSlot { HorizontalAlign 3 VerticalAlign 3 } {
  PanelWidgetClass { Name "Background" Slot OverlayWidgetSlot { HorizontalAlign 3 VerticalAlign 3 } Color 1 1 1 0 style full "Ignore Cursor" 1 }
  PanelWidgetClass { Name "Border" Slot OverlayWidgetSlot { HorizontalAlign 3 VerticalAlign 3 } Color 0.7 0.7 0.7 0.5 style pixel_outline "Ignore Cursor" 1 }
  SizeLayoutWidgetClass { Name "SelectedEdge" Slot OverlayWidgetSlot { HorizontalAlign 0 VerticalAlign 3 Padding 0 6 0 6 } AllowWidthOverride 1 WidthOverride 3 "Is Visible" 0 "Ignore Cursor" 1 { ImageWidgetClass { Slot AlignableSlot { HorizontalAlign 3 VerticalAlign 3 } Size 0 0 Color 0.85 0.77 0.38 1 "Ignore Cursor" 1 } } }
@@ -15,9 +15,9 @@ ButtonWidgetClass {
  SizeLayoutWidgetClass { Slot OverlayWidgetSlot { HorizontalAlign 3 VerticalAlign 1 Padding 7 0 0 0 } AllowHeightOverride 1 HeightOverride 2 "Ignore Cursor" 1 { ImageWidgetClass { Slot AlignableSlot { HorizontalAlign 3 VerticalAlign 3 } Size 0 0 Color 0.55 0.55 0.55 1 "Ignore Cursor" 1 } } }
  } }
  } }
- TextWidgetClass "{DC391DA320AE3013}" { Name "Text" Slot OverlayWidgetSlot { HorizontalAlign 3 VerticalAlign 3 Padding 16 4 16 4 } FontProperties FontProperties { Font "{3E7733BAC8C831F6}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt" } Color 1 1 1 1 "Font Size" 24 Wrap 1 "Vertical Alignment" Center "Ignore Cursor" 1 }
+ TextWidgetClass "{DC391DA320AE3013}" { Name "Text" Clipping Ancestor Slot OverlayWidgetSlot { HorizontalAlign 3 VerticalAlign 3 Padding 16 4 16 4 } FontProperties FontProperties { Font "{3E7733BAC8C831F6}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt" } Color 1 1 1 1 "Font Size" 24 Wrap 1 "Vertical Alignment" Center "Ignore Cursor" 1 }
  SizeLayoutWidgetClass { Slot OverlayWidgetSlot { HorizontalAlign 0 VerticalAlign 1 Padding 12 0 0 0 } AllowWidthOverride 1 WidthOverride 48 AllowHeightOverride 1 HeightOverride 48 "Ignore Cursor" 1 {
-  ImageWidgetClass { Name "RoleIcon" Slot AlignableSlot { HorizontalAlign 3 VerticalAlign 3 } Color 1 1 1 1 "Is Visible" 0 "Ignore Cursor" 1 }
+  ImageWidgetClass { Name "RoleIcon" Clipping Ancestor Slot AlignableSlot { HorizontalAlign 3 VerticalAlign 3 } Color 1 1 1 1 "Is Visible" 0 "Ignore Cursor" 1 }
  } }
  } }
  } }

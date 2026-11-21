@@ -174,11 +174,10 @@ def prefab_spawn(lines, key, resolve_resource, group=False):
 
 def vehicle_spawn(lines, key, resolve_resource, resolve_character):
     kind = 'GC_CrewedVehicleSpawn'
-    if any(line.strip().startswith('m_crewConfig ') for line in lines):
+    structured = any(line.strip().startswith('m_crewConfig ') for line in lines)
+    if structured:
         config, spawn = split_crew_block(lines, 'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID)
         data = properties(spawn, SPAWN_FIELDS)
-        fields, groups = render_crew_config(config, key, resolve_character)
-        crew = {'crewGroups': groups, 'crewWaypoints': [point for group in groups for point in group['waypoints']]}
     else:
         data = properties(lines, SPAWN_FIELDS | {
             'm_customCrew', 'm_waypointNames', 'm_waypointDelay', 'm_idleGroup',
@@ -191,8 +190,16 @@ def vehicle_spawn(lines, key, resolve_resource, resolve_character):
         else:
             fields, crew = render_legacy_crew(data, key, resolve_character)
     ref = REF.fullmatch(data.get('m_prefab', ''))
-    if not ref or not ref[2].startswith('Prefabs/Vehicles/'):
+    if not ref:
         raise ValueError('crewed spawn requires a vehicle prefab')
+    reviewed_vehicle = (structured and not ref[2].startswith('Prefabs/Vehicles/')
+                        and resolve_resource(ref[1].upper(), ref[2], vehicle=True))
+    if not reviewed_vehicle and not ref[2].startswith('Prefabs/Vehicles/'):
+        raise ValueError('crewed spawn requires a vehicle prefab')
+    if structured:
+        fields, groups = render_crew_config(config, key, resolve_character,
+                                            allow_default_crew=bool(reviewed_vehicle))
+        crew = {'crewGroups': groups, 'crewWaypoints': [point for group in groups for point in group['waypoints']]}
     details = spawn_details(data, resolve_resource)
     seconds, body = render_spawn(details, key, kind, fields)
     return seconds, body, {'instruction': 'TILW_SpawnVehicleInstruction', 'delaySeconds': details['delay'],

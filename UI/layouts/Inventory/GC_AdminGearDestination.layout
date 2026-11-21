@@ -22,6 +22,19 @@ FrameWidgetClass {
    }
   }
   FrameWidgetClass {
+   Name "VehiclePanel" "Is Visible" 0
+   Slot FrameWidgetSlot { Anchor 0 0 1 1 OffsetLeft 608 OffsetTop 24 OffsetRight 24 OffsetBottom 24 }
+   {
+    FrameWidgetClass { Name "VehiclePreviewArea" Slot FrameWidgetSlot { Anchor 0 0 1 1 OffsetTop 48 OffsetBottom 62 } "Ignore Cursor" 1 {
+     ItemPreviewWidgetClass { Name "VehiclePreview" Slot FrameWidgetSlot { Anchor 0 0 1 1 } "Ignore Cursor" 1 }
+    } }
+    TextWidgetClass { Name "VehicleName" Slot FrameWidgetSlot { Anchor 0 0 1 0 OffsetRight 360 OffsetBottom -40 } FontProperties FontProperties { Font "{3E7733BAC8C831F6}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt" } "Font Size" 30 "Vertical Alignment" Center "Ignore Cursor" 1 }
+    ButtonWidgetClass : "{DC391DA320AE3002}UI/layouts/Inventory/GC_LoadoutButton.layout" {
+     Name "SpawnVehicle" Slot FrameWidgetSlot { Anchor 1 1 1 1 OffsetLeft -232 OffsetTop -54 OffsetRight 0 OffsetBottom 0 }
+    }
+   }
+  }
+  FrameWidgetClass {
    Name "GearCratePanel"
    "Is Visible" 0
    Slot FrameWidgetSlot { Anchor 1 0 1 1 OffsetLeft -440 OffsetTop 100 OffsetRight 24 OffsetBottom 144 }

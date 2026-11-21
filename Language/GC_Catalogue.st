@@ -2,6 +2,15 @@ StringTable {
  ItemClassName "CustomStringTableItem"
  Items {
   CustomStringTableItem "{618DBD5BF860DA01}" { Id "GC-Gear_Inventory" Target_en_us "Inventory" }
+  CustomStringTableItem "{8A00323DE2000000}" { Id "GC-Vehicle_Browser" Target_en_us "Vehicles" }
+  CustomStringTableItem "{8A00323DE2000001}" { Id "GC-Vehicle_All" Target_en_us "All vehicle classes" }
+  CustomStringTableItem "{8A00323DE2000002}" { Id "GC-Vehicle_Spawn" Target_en_us "Spawn vehicle" }
+  CustomStringTableItem "{8A00323DE2000003}" { Id "GC-Vehicle_Empty" Target_en_us "No vehicles" }
+  CustomStringTableItem "{8A00323DE2000004}" { Id "GC-Vehicle_Pending" Target_en_us "Spawning vehicle..." }
+  CustomStringTableItem "{8A00323DE2000005}" { Id "GC-Vehicle_Denied" Target_en_us "Admin login required." }
+  CustomStringTableItem "{8A00323DE2000006}" { Id "GC-Vehicle_Unavailable" Target_en_us "Vehicle unavailable." }
+  CustomStringTableItem "{8A00323DE2000007}" { Id "GC-Vehicle_NoSpace" Target_en_us "No clear spawn position nearby." }
+  CustomStringTableItem "{8A00323DE2000008}" { Id "GC-Vehicle_Spawned" Target_en_us "Vehicle spawned." }
   CustomStringTableItem "{618DBD5BF860DA02}" { Id "GC-Gear_Crate" Target_en_us "Crate" }
   CustomStringTableItem "{618DBD5BF860DA03}" { Id "GC-Gear_Vicinity" Target_en_us "Vicinity" }
   CustomStringTableItem "{618DBD5BF860DA04}" { Id "GC-Gear_Amount" Target_en_us "Amount" }

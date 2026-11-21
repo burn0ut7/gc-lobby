@@ -7,7 +7,7 @@ SizeLayoutWidgetClass {
   m_fMaxListHeight 300
   m_bCreateListBelow 1
   m_sListRootLayout "{6A5A000000000072}UI/layouts/Admin/Lobby_AdminComboRoot.layout"
-  m_sElementLayout "{7C41F8A018B24C11}UI/layouts/Admin/Lobby_AdminPlayerRow.layout"
+  m_sElementLayout "{F84B269BBA680B3E}UI/layouts/WidgetLibrary/ComboBox/Elements/WLib_ComboBoxElement.layout"
  } }
  {
   FrameWidgetClass { Name "ComboButton" Slot AlignableSlot { HorizontalAlign 3 VerticalAlign 3 } {

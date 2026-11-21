@@ -10,7 +10,7 @@ FrameWidgetClass { Name "LoadoutFiles" Slot FrameWidgetSlot { Anchor 0 0 1 1 Off
  PanelWidgetClass { Slot FrameWidgetSlot { Anchor 0.03 0.235 0.34 0.29 OffsetLeft 0 OffsetTop 0 OffsetRight 0 OffsetBottom 0 } Color 0.35 0.35 0.35 0.8 style pixel_outline "Ignore Cursor" 1 }
  EditBoxWidgetClass : "{E341A258BC700001}UI/layouts/Admin/Lobby_AdminEditBox.layout" { Name "LoadoutSearch" Slot FrameWidgetSlot { Anchor 0.04 0.235 0.33 0.29 OffsetLeft 0 OffsetTop 0 OffsetRight 0 OffsetBottom 0 } "Font Size" 24 Color 1 1 1 1 components { SCR_EventHandlerComponent {} } }
  TextWidgetClass { Name "SearchHint" Slot FrameWidgetSlot { Anchor 0.04 0.235 0.33 0.29 OffsetLeft 0 OffsetTop 0 OffsetRight 0 OffsetBottom 0 } Text "#GC-Loadout_Search" "Font Size" 24 Color 0.7 0.7 0.7 1 "Ignore Cursor" 1 }
- ScrollLayoutWidgetClass { Slot FrameWidgetSlot { Anchor 0.03 0.31 0.34 0.79 OffsetLeft 0 OffsetTop 0 OffsetRight 0 OffsetBottom 0 } "Scrollbar Always Visible" 0 {
+ ScrollLayoutWidgetClass { Clipping True Slot FrameWidgetSlot { Anchor 0.03 0.31 0.34 0.79 OffsetLeft 0 OffsetTop 0 OffsetRight 0 OffsetBottom 0 } "Scrollbar Always Visible" 0 {
  VerticalLayoutWidgetClass { Name "SavedRows" Slot AlignableSlot { HorizontalAlign 3 VerticalAlign 0 } }
  } }
  ItemPreviewWidgetClass { Name "LoadoutPreview" Slot FrameWidgetSlot { Anchor 0.36 0.1 0.67 0.87 OffsetLeft 0 OffsetTop 0 OffsetRight 0 OffsetBottom 0 } "Ignore Cursor" 1 "Use Engine Scale" 0 xscale 1 yscale 1 Filter Bilinear Format LDR "Use clear color" 1 "Clear Color" 0 0 0 0 "Blend mode" Blend }

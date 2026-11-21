@@ -130,7 +130,7 @@ internal static class ToolStatus
                 if (!Convert.ToHexString(SHA256.HashData(bytes)).Equals(expected, StringComparison.OrdinalIgnoreCase))
                     return new("GC Workbench Tools", "", "Dependency package needs repair", "warning");
             using var zip = ZipFile.OpenRead(zipPath);
-            var entry = zip.GetEntry("support/files.json") ?? throw new IOException("No manifest");
+            var entry = zip.GetEntry("support/files.json") ?? zip.GetEntry(@"support\files.json") ?? throw new IOException("No manifest");
             using var manifest = JsonDocument.Parse(entry.Open());
             var checkedFiles = 0;
             var restartRequired = false;

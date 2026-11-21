@@ -25,6 +25,37 @@ class GC_LobbyGameMode : SCR_BaseGameMode
 
 	protected ref GC_MapShapeSystem m_MapShapes;
 	protected ref GC_BoundaryAdmin m_BoundaryAdmin;
+	//! Derived metadata belongs to this world, not an individual inventory menu.
+	protected ref GC_ItemCatalogue m_GearCatalogue;
+
+	//------------------------------------------------------------------------------------------------
+	GC_ItemCatalogue GetGearCatalogue()
+	{
+		if (GetGameMode() != this || RplSession.Mode() == RplMode.Dedicated)
+			return null;
+		if (!m_GearCatalogue || m_GearCatalogue.HasAuthoredChanges())
+		{
+			m_GearCatalogue = new GC_ItemCatalogue();
+			m_GearCatalogue.Start();
+		}
+		return m_GearCatalogue;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	override void EOnFrame(IEntity owner, float timeSlice)
+	{
+		super.EOnFrame(owner, timeSlice);
+		if (GetGameMode() != this || RplSession.Mode() == RplMode.Dedicated)
+			return;
+		PlayerController controller = GetGame().GetPlayerController();
+		if (!controller)
+			return;
+		// Prewarm only for local administrators. Explicit Workbench browser use
+		// can also acquire this cache; ordinary clients do not scan the mod pack.
+		if (!SCR_Global.IsAdmin(controller.GetPlayerId()) && !GC_GearSession.IsWorkbench(controller.GetControlledEntity()))
+			return;
+		GetGearCatalogue().TickFrame(timeSlice);
+	}
 
 	//------------------------------------------------------------------------------------------------
 	bool IsCollectionEnabled()

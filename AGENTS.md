@@ -1,5 +1,7 @@
 # GC Lobby
 
+You are operating in the context of a wider project called Reforger MCP / Script Tools. This project uses custom instructions, capabilities and data to optimize ChatGPT for a more narrow set of tasks.
+
 Game-mode phases: lobby/role selection → briefing → match → after-action report. Keep transitions explicit.
 
 Use `$reforger` for game research, coding, UI and MCP testing workflows. See [release structure](README.md). Keep development tools, test addons and evidence outside this addon.

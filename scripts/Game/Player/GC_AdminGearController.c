@@ -164,6 +164,67 @@ modded class GC_LobbyPlayerController
 	}
 
 	//------------------------------------------------------------------------------------------------
+	bool GC_RequestVehicle(ResourceName prefab)
+	{
+		if (prefab.IsEmpty() || GC_IsGearPending() || !GC_GearSession.IsAdmin(GetControlledEntity()))
+			return false;
+		m_bGC_GearPending = true;
+		m_iGC_GearRequestRevision = GC_GearSession.GetRevision();
+		Rpc(GC_RpcAskVehicle, prefab, GC_GearEntityId(GetControlledEntity()));
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
+	protected void GC_RpcAskVehicle(ResourceName prefab, RplId character)
+	{
+		string context = "prefab=" + prefab + " character=" + character;
+		if (!GC_AuthorizeGear("vehicle-spawn", context))
+		{
+			Rpc(GC_RpcDoVehicle, "#GC-Vehicle_Denied");
+			return;
+		}
+
+		IEntity owner = GetControlledEntity();
+		string message = "#GC-Vehicle_Unavailable";
+		if (m_bGC_GearAuditOpen && owner && character.IsValid() && GC_GearEntityId(owner) == character && prefab.GetPath().EndsWith(".et"))
+		{
+			Resource resource = Resource.Load(prefab);
+			if (resource && resource.IsValid() && GC_VehicleCatalogueEntry.Read(prefab, resource, SCR_BaseContainerTools.FindEntitySource(resource)))
+			{
+				EntitySpawnParams spawn = new EntitySpawnParams();
+				message = "#GC-Vehicle_NoSpace";
+				if (GC_VehicleSpawnPlacement.Find(owner, resource, spawn))
+				{
+					IEntity vehicle = GetGame().SpawnEntityPrefab(resource, owner.GetWorld(), spawn);
+					message = "#GC-Vehicle_Unavailable";
+					if (vehicle && GC_GearEntityId(vehicle).IsValid())
+					{
+						context += " entity=" + GC_AdminGearAudit.Entity(vehicle) + " position=" + spawn.Transform[3];
+						message = "#GC-Vehicle_Spawned";
+					}
+					else if (vehicle)
+						SCR_EntityHelper.DeleteEntityAndChildren(vehicle);
+				}
+			}
+		}
+		GC_AdminActionLogger.Log(GetPlayerId(), "vehicle-spawn", context, message);
+		Rpc(GC_RpcDoVehicle, message);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
+	protected void GC_RpcDoVehicle(string message)
+	{
+		m_bGC_GearPending = false;
+		if (!GC_GearSession.IsAdmin(GetControlledEntity()) || m_iGC_GearRequestRevision != GC_GearSession.GetRevision())
+			return;
+		SCR_InventoryMenuUI menu = SCR_InventoryMenuUI.GetInventoryMenu();
+		if (menu)
+			menu.GC_GearMessage(message);
+	}
+
+	//------------------------------------------------------------------------------------------------
 	bool GC_RequestGearItem(ResourceName prefab, BaseInventoryStorageComponent target, int slot, bool automatic)
 	{
 		if (GC_IsGearPending() || !GC_GearSession.IsAdmin(GetControlledEntity()))

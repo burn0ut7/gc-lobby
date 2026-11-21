@@ -11,15 +11,16 @@ from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURR
 from boundaries import ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE, convert_boundaries, passive_shape_component
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import REF, SOURCE_TEXT
-from event_actions import FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, render_crew_config, render_spawn, spawn_details
-from vehicle_crew import VERIFIED_DEFAULT_CREW, crew_config_contents
+from event_actions import (FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, VEHICLE_SPAWN,
+                           render_crew_config, render_spawn, spawn_details)
+from vehicle_crew import CREW_CONFIG_FIELD, VERIFIED_DEFAULT_CREW, crew_config_contents, split_crew_block
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
 from groups import COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, SLOTS, inheritance, reviewed_native_ancestry
 from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_prefab
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
-from markers import DEST as MAP_MARKER_PREFAB, convert_hover_camera, convert_layer
+from markers import DEST as MAP_MARKER_PREFAB, convert_baked_marker_generator, convert_hover_camera, convert_layer
 from outcomes import FRAMEWORK, SCRIPT_FLAG_APIS, leaves, render as render_outcome, render_capture_trackers
 import polygon_capture
 from respawns import authored_respawn_fields, read_respawns
@@ -119,6 +120,10 @@ SPAWN_DAMAGE_TARGETS = {
     ('ADA7E056B17AC663',
      'PrefabsEditable/Auto/Props/Military/AmmoBoxes/EquipmentBoxStack/E_EquipmentBoxStack_USSR_01_V2_covered.et'),
 }
+SPAWN_DAMAGE_VEHICLES = {
+    ('0FBF8F010F81A4E5', 'Prefabs/Vehicles/Wheeled/LAV25/LAV25.et'),
+    ('48A6D4372444B85A', 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_covered_closed.et'),
+}
 GMFX_AMMO_TARGETS = (
     ('8B9AFAD3A1548FCE', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage.et'),
     ('4C931B452C796A2A', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage_USSR.et'),
@@ -209,6 +214,12 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/Blue/TVT69_RUCKUSBerg.conf': (
+        'a87dcad8fed68685ca5f79aec8f6ceeb00140fc1',
+        (('worlds/Blue/Ruckusberg/RuckusBerg_Layers/UK/UKPlayers.layer', '4d974d42c141ed842ae49e6e3506a45775900f19'),
+         ('worlds/Blue/Ruckusberg/RuckusBerg_Layers/USSR/USSRPlayer.layer', '73b066ac63781cd5c6cd6ab25acd297e5a645989')),
+        73, 74,
+    ),
     'Missions/HitTheMan/VDV Blockade/VDVBlockadeEvent.conf': (
         'f5c78882ccc913c7ddc1579744ebb99da98d1fb7',
         (('worlds/HitTheMan/VDV Blockade/VDVBlockadeEvent_Layers/Players_Soviets/OPFOR_Players.layer',
@@ -1877,14 +1888,15 @@ def reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed
     return aliases
 
 
-def damage_state_flag_placement(block, *, allow_multiple_states=False):
-    lines, flags = damage_state_flag_placements(block, allow_multiple_states=allow_multiple_states)
+def damage_state_flag_placement(block, *, allow_multiple_states=False, clear_on_mismatch=False):
+    lines, flags = damage_state_flag_placements(block, allow_multiple_states=allow_multiple_states,
+                                                clear_on_mismatch=clear_on_mismatch)
     if len(flags) != 1:
         raise ValueError('expected one authored damage producer')
     return lines, flags[0]
 
 
-def damage_state_flag_placements(block, *, allow_multiple_states):
+def damage_state_flag_placements(block, *, allow_multiple_states, clear_on_mismatch=False):
     starts = [i for i, line in enumerate(block) if DAMAGE_COMPONENT.fullmatch(line)]
     if not starts or block.count(' components {') != 1:
         raise ValueError('expected authored damage producers in root components')
@@ -1914,21 +1926,30 @@ def damage_state_flag_placements(block, *, allow_multiple_states):
             lines.append('   m_eTargetState ' + state)
         if continuous == '1':
             lines.append('   m_bTrackChanges 1')
+        elif clear_on_mismatch:
+            lines.append('   m_bClearOnMismatch 1')
         flags.append(flag[1:-1])
         cursor = stop
     return [*lines, *block[cursor:]], flags
 
 
-def spawned_damage_objective(block, stock, local_resources, workshop_targets):
+def spawned_damage_objective(block, stock, local_resources, workshop_targets, *, vehicle=False):
     parent = REF.search(block[0])
-    if not parent or not block[0].startswith('GenericEntity : '):
+    owner_type = 'Vehicle' if vehicle else 'GenericEntity'
+    if not parent or not block[0].startswith(owner_type + ' : '):
         raise ValueError('unsupported spawned damage owner')
     ref = (parent[1].upper(), parent[2])
-    registered_stock = ref in SPAWN_DAMAGE_TARGETS and stock and stock.contains(*ref)
-    registered_workshop = ref in GMFX_AMMO_TARGETS and ref in workshop_targets
+    registered_stock = ref in (SPAWN_DAMAGE_VEHICLES if vehicle else SPAWN_DAMAGE_TARGETS) and (
+        stock and stock.contains(*ref))
+    registered_workshop = not vehicle and ref in GMFX_AMMO_TARGETS and ref in workshop_targets
     if ref[0] in local_resources or not (registered_stock or registered_workshop):
         raise ValueError('unverified spawned damage prefab')
-    lines, flag = damage_state_flag_placement(block)
+    if vehicle and (len(block) != 9 or not re.fullmatch(r' ID "[\da-fA-F]{16}"', block[1])
+                    or block[2] != ' components {' or not DAMAGE_COMPONENT.fullmatch(block[3])
+                    or block[6:] != ['  }', ' }', '}']):
+        raise ValueError('spawned damage vehicle has other authored overrides')
+    # A replacement vehicle observes its initial state and can clear a flag left by the previous instance.
+    lines, flag = damage_state_flag_placement(block, allow_multiple_states=vehicle, clear_on_mismatch=vehicle)
     return '\n'.join(lines) + '\n', flag
 
 
@@ -1939,10 +1960,14 @@ def spawned_objectives(source, dev, world, stock, local_resources, workshop_targ
     for layer in source.layers[world.lower()]:
         lines = source.read(layer).splitlines()
         for index, line in enumerate(lines):
-            if not SPAWN.fullmatch(line):
+            vehicle = bool(VEHICLE_SPAWN.fullmatch(line))
+            if not vehicle and not SPAWN.fullmatch(line):
                 continue
             try:
-                values = properties(lines[index + 1:block_end(lines, index)], SPAWN_FIELDS)
+                fields = lines[index + 1:block_end(lines, index)]
+                if vehicle:
+                    _, fields = split_crew_block(fields, CREW_CONFIG_FIELD)
+                values = properties(fields, SPAWN_FIELDS)
                 prefab = REF.fullmatch(values.get('m_prefab', ''))
                 if not prefab:
                     continue
@@ -1956,9 +1981,12 @@ def spawned_objectives(source, dev, world, stock, local_resources, workshop_targ
                     continue
                 (_, block), = blocks(text)
                 if 'TILW_Flag_EntityDamage' in text:
-                    native, flag = spawned_damage_objective(block, stock, local_resources, workshop_targets)
-                    kind = {'destroyed': True}
+                    native, flag = spawned_damage_objective(
+                        block, stock, local_resources, workshop_targets, vehicle=vehicle)
+                    kind = {'destroyed': True, **({'vehicle': True} if vehicle else {})}
                 else:
+                    if vehicle:
+                        continue
                     native, objectives = convert_interaction_block(block, path, stock, local_resources)
                     if len(objectives) != 1:
                         continue
@@ -3359,6 +3387,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append(convert_layer(body, dev, draw_order=True)[0])
                 elif kind == 'PS_ManuaMarkerRender':
                     result.append(convert_hover_camera(block, f'{layer}:{line}'))
+                elif BARE_SHAPE.fullmatch(head) and 'PG_MarkerGenerator_Base.et' in body:
+                    result.append(convert_baked_marker_generator(block, source, dev))
+                    converted_scenery_map = True
                 elif ('TILW_AOLimit.et' in head or 'TILW_MapShape.et' in head or PASSIVE_COVER.fullmatch(head)
                         or (BARE_SHAPE.fullmatch(head) and 'TILW_MapShapeComponent' in body)):
                     converted, audit = convert_boundaries(body, allow_public_faction_color=True, extended_shapes=True,
@@ -3739,6 +3770,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare waypoint assignment timing and order after the event condition becomes true.')
     if crew_names:
         remaining.append('Compare named crew groups across vehicle spawns, initial routes and rollback.')
+    if any(asset.get('vehicle') for asset in spawned_assets.values()):
+        remaining.append('Compare default convoy crew, rearming and flag reset when a replacement vehicle arrives.')
     if any(path.endswith('.layer') and '{7FF511EDC4034D9F}Prefabs/Vehicles/Helicopters/Mi24/Mi24V_Armed_UB1657_X4.et'
            in body for path, body in draft.items()):
         remaining.append('Compare the registered Mi-24V S5 loadout with the historical mission loadout.')

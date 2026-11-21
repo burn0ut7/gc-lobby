@@ -12,6 +12,10 @@ ID/mount is `GlobalConflictsLobbyDev`; its addon GUID remains `6A115D5DFF7ED870`
 Existing resource GUIDs, profile paths, database schema, `Lobby2` tool argument
 keys and the `LOBBY2` compatibility define retain their existing contracts.
 
+## Workbench authorization
+
+Gray grants standing permission to use Reforger MCP and Arma Reforger Workbench for project development and verification. Proceed without asking again to launch or restart Workbench, open projects and worlds, reload scripts, start or stop Play, authorize development scripts, interact with the UI, capture screenshots, and run multiplayer checks. Preserve unsaved authored work before switching worlds or restarting.
+
 ## Addon contents
 
 - `scripts/Game`, `scripts/GameCode`: gameplay and integrations with the game.
