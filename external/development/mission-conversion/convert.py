@@ -156,6 +156,8 @@ def main():
             '23ADBBC31B6A3DC6': 'AR', '426F7FAAC77A2A6D': 'PL', '1C78331E156A3D65': 'AT',
             '631158F6898738A4': 'AAT', '333DA6244C7DA34C': 'SR', '5436629450D8387A': 'SL',
             'DCB41B3746FDD1BE': 'Rifleman', '8E0FE664CE7D1CA9': 'GL',
+            '98EB9CDD85B8C92C': 'Unarmed', '928DC9882A0AC79D': 'Sergeant',
+            'AB9726163EC1BD81': 'Medic',
         }.items()
     })
     if args.batch and stock:

@@ -97,6 +97,14 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/Burger4606/Hush.conf': (
+        'c36a235738f8d82c94a2ca091948be6b340718c8',
+        (('worlds/Burger4606/Hush/Hush_Layers/players_UK.layer',
+          '256de7aa2cf79a8b39bcd62c908cdb316ecf016f'),
+         ('worlds/Burger4606/Hush/Hush_Layers/OPFOR.layer',
+          '6518e72ec35ab6c08c0594aec99554815403036d')),
+        20, 21,
+    ),
     'Missions/HitTheMan/Battalion Breakthrough/BattalionBreakthrough.conf': (
         '45f4dd177e24450169695f8db49b9434a3b036e0',
         (('worlds/HitTheMan/Battalion Breakthrough/BattalionBreakthrough_Layers/Players_Soviets/OPFOR_Players.layer',
@@ -112,6 +120,14 @@ REVIEWED_CAPACITY = {
          ('worlds/HitTheMan/Encircled NVA/EncircledNVA_Layers/US_Players/US_Players.layer',
           'd111df69e5a5afa0fa81d64de2d2cd6cda681283')),
         111, 50,
+    ),
+    'Missions/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo.conf': (
+        '2b7159d447acd626e736710f294eaeddc62f7047',
+        (('worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo_Layers/BLUFOR_Players/BLUFOR_Players.layer',
+          '84b6ca4a01e3188815f1fc0078582f610f0e7be3'),
+         ('worlds/HitTheMan/Clearing Out Gorshkovo/ClearingOutGorshkovo_Layers/OPFOR_Players/OPFOR_Players.layer',
+          '05a370a236bdb82e0b5ac867ac973704ac0b4d26')),
+        110, 35,
     ),
     'Missions/Reapzr/Deadlock.conf': (
         'ceaac59d93946de86c2f59625d0adda978d92a98',
@@ -310,6 +326,8 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Vegetation/Bush/b_corylus_avellana_2.et',
     ('1A1CE09F7BCA6650', 'Prefabs/Props/Wrecks/S105_wreck_static.et'):
         'Prefabs/Props/Wrecks/S105_wreck/S105_wreck_static.et',
+    ('137DCF41459A89BE', 'Prefabs/Vehicles/Helicopters/UH1H/UH1H_gunship.et'):
+        'Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_empty.et',
     ('DCAF0585D17B917A', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_ranomized.et'):
         'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_randomized.et',
 }
