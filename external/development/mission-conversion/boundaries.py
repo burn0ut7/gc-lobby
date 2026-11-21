@@ -4,6 +4,7 @@ import re
 from struct import pack, unpack
 
 from briefings import block_end, guid, properties
+from markers import LEGACY as MARKER, instance as render_marker, marker_fields
 
 ROOT = re.compile(r'^(?P<group>\$grp )?PolylineShapeEntity(?: (?P<name>[\w.-]+))? : "\{85222A2744768C81\}[^"]+" \{$')
 STANDALONE_SHAPE = re.compile(
@@ -345,19 +346,47 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     return cover_shape + standalone_overlay + passive_fill + '\n'.join([*lines,*placement,'}']), len(vertices)
 
 
-def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, parent_yaw=0):
+def group_members(lines, start, stop, root):
+    if not root['group']:
+        yield start, stop, root['name']
+        return
+    indent = len(lines[start]) - len(lines[start].lstrip()) + 1
+    index = start + 1
+    while index < stop:
+        head = re.fullmatch(' ' * indent + r'(?:([\w.-]+) )?\{', lines[index])
+        if not head:
+            raise ValueError('unsupported grouped map entity')
+        end = block_end(lines, index)
+        if end >= stop:
+            raise ValueError('group member extends outside the map entity group')
+        yield index, end, head[1]
+        index = end + 1
+
+
+def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, parent_yaw=0,
+                      *, marker=None, area_children=None):
     child_start = next((i for i, line in enumerate(lines) if line.strip() == '{'), None)
     # Only a brace at the root-property indent opens the entity's child list.
     if child_start is not None:
         indent = min(len(line) - len(line.lstrip()) for line in lines if line.strip())
         child_start = next((i for i, line in enumerate(lines) if line == ' ' * indent + '{'), None)
+    field_end = child_start if options['extended_shapes'] else None
+    if marker:
+        body = render_marker(lines[:field_end], name, marker_fields(marker), draw_order=True)
+        count = 0
+    else:
+        body, count = convert_instance(lines[:field_end], name, parent_origin=parent_origin,
+                                       parent_yaw=parent_yaw, **options)
     if child_start is None or not options['extended_shapes']:
-        return convert_instance(lines, name, parent_origin=parent_origin, parent_yaw=parent_yaw, **options)
+        return body, count
     if (depth >= 16 or child_start == len(lines) - 2
             or block_end(lines, child_start) != len(lines) - 1):
         raise ValueError('unsupported boundary child list')
-    fields = [line.strip() for line in lines[:child_start] if line.startswith(' ' * indent)
-              and not line.startswith(' ' * (indent + 1))]
+    if marker:
+        fields = [line[1:] for line in body.splitlines() if line.startswith(' ') and not line.startswith('  ')]
+    else:
+        fields = [line.strip() for line in lines[:child_start] if line.startswith(' ' * indent)
+                  and not line.startswith(' ' * (indent + 1))]
     if any(field.startswith(('angleX ', 'angleZ ', 'scale ')) for field in fields):
         raise ValueError('nested boundary requires an unscaled parent with yaw-only rotation')
     yaw = 0
@@ -375,32 +404,39 @@ def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, pa
         raise ValueError('nested boundary requires one explicit parent origin')
     relative = rotate_point(position[0], parent_yaw, 0, 0) if parent_yaw else position[0]
     origin = tuple(local + parent for local, parent in zip(relative, parent_origin))
-    body, count = convert_instance(lines[:child_start], name, parent_origin=parent_origin,
-                                   parent_yaw=parent_yaw, **options)
-    if not options['standalone'] and not re.search(r'^GC_AOLimitEntity\b', body, re.M):
-        raise ValueError('nested boundary needs an active AO or standalone map shape')
+    if not marker and not options['standalone'] and not re.search(r'^GC_AOLimitEntity\b', body, re.M):
+        raise ValueError('nested boundary needs an active AO, standalone map shape, or marker')
     children = []
     index = child_start + 1
     while index < len(lines) - 1:
         header = lines[index][indent + 1:]
         standalone = STANDALONE_SHAPE.fullmatch(header)
-        match = standalone or ROOT.fullmatch(header)
-        if not match or match['group'] or lines[index][:indent + 1] != ' ' * (indent + 1):
-            raise ValueError('unrecognized nested boundary entity')
+        child_marker = MARKER.fullmatch(header)
+        match = standalone or ROOT.fullmatch(header) or child_marker
+        if lines[index][:indent + 1] != ' ' * (indent + 1):
+            raise ValueError('invalid nested map entity indentation')
         stop = block_end(lines, index)
         if stop >= len(lines) - 1:
             raise ValueError('nested entity lies outside boundary child list')
-        child_name = ' ' + match['name'] if match['name'] else ''
-        child, vertices = convert_hierarchy(lines[index + 1:stop], child_name,
-                                            {**options, 'standalone': bool(standalone)}, origin, depth + 1,
-                                            yaw + parent_yaw)
-        children.extend('  ' + line for line in child.splitlines())
-        count += vertices
+        if match:
+            for start, end, member_name in group_members(lines, index, stop, match):
+                child_name = ' ' + member_name if member_name else ''
+                child, vertices = convert_hierarchy(
+                    lines[start + 1:end], child_name, {**options, 'standalone': bool(standalone)},
+                    origin, depth + 1, yaw + parent_yaw, marker=child_marker, area_children=area_children)
+                children.extend('  ' + line for line in child.splitlines())
+                count += vertices
+        elif area_children and name and options['standalone'] and 'IsClosed 0' not in fields:
+            child_block = [line[indent + 1:] for line in lines[index:stop + 1]]
+            children.extend('  ' + line for line in area_children(name.strip(), child_block))
+        else:
+            raise ValueError('unrecognized nested boundary entity')
         index = stop + 1
     return '\n'.join([body.rsplit('\n', 1)[0], ' {', *children, ' }', '}']), count
 
 
-def convert_boundaries(text, allow_public_faction_color=False, split_fill=True, *, extended_shapes=False):
+def convert_boundaries(text, allow_public_faction_color=False, split_fill=True, *, extended_shapes=False,
+                       area_children=None):
     lines = text.splitlines()
     emitted, review = [], {}
     for i,line in enumerate(lines):
@@ -409,25 +445,17 @@ def convert_boundaries(text, allow_public_faction_color=False, split_fill=True, 
         if not root:
             continue
         end = block_end(lines,i)
-        instances = []
-        if root['group']:
-            j = i+1
-            while j < end:
-                head = re.fullmatch(r' (?:([\w.-]+) )?\{',lines[j])
-                if not head:
-                    review[str(j+1)] = {'gap':'unsupported grouped boundary'}
-                    break
-                last = block_end(lines,j)
-                instances.append((j,last,head[1]))
-                j = last+1
-        else:
-            instances.append((i,end,root['name']))
+        try:
+            instances = list(group_members(lines, i, end, root))
+        except ValueError as error:
+            review[str(i+1)] = {'gap': str(error)}
+            continue
         for start, stop, name in instances:
             try:
                 body,count = convert_hierarchy(lines[start+1:stop], ' '+name if name else '',
                                                {'allow_public_faction_color': allow_public_faction_color,
                                                 'split_fill': split_fill, 'extended_shapes': extended_shapes,
-                                                'standalone': bool(standalone)})
+                                                'standalone': bool(standalone)}, area_children=area_children)
                 emitted.append(body)
                 review[str(start+1)] = {'vertices':count,'name':name,'lastLine':stop+1}
             except (ArithmeticError, ValueError) as error:

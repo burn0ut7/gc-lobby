@@ -8,7 +8,7 @@ import re
 
 from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURRENT_PARENT,
                          LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, capture_status_texts, faction_keys)
-from boundaries import STANDALONE_SHAPE, convert_boundaries
+from boundaries import ROOT as AO_SHAPE, STANDALONE_SHAPE, convert_boundaries
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import REF, SOURCE_TEXT
 from event_actions import NUMBER, SPAWN, SPAWN_FIELDS, render_crew_config, render_spawn, spawn_details, split_crew_block
@@ -1582,6 +1582,18 @@ def area_rules(source, world, dev=None):
         for line, block in blocks(text):
             match = TRIGGER.fullmatch(block[0]) or PRESENCE_TRIGGER.fullmatch(block[0])
             shape = polygon_capture.SHAPE.fullmatch(block[0])
+            if AO_SHAPE.fullmatch(block[0]) or STANDALONE_SHAPE.fullmatch(block[0]):
+                if any(TRIGGER.fullmatch(field.strip()) or PRESENCE_TRIGGER.fullmatch(field.strip())
+                       for field in block[1:-1]):
+                    try:
+                        checks, converted, records = nested_map_areas(source, world, block, conditions)
+                    except (ArithmeticError, KeyError, ValueError) as exc:
+                        audit[f'{layer}:{line}'] = {'gap': str(exc)}
+                    else:
+                        conditions.update(checks)
+                        placements[(layer, line)] = checks, converted
+                        audit[f'{layer}:{line}'] = records
+                continue
             if not match and not shape:
                 continue
             if shape and not any(TRIGGER.fullmatch(field.strip()) for field in block):
@@ -1678,7 +1690,44 @@ def area_rules(source, world, dev=None):
     return conditions, placements, audit
 
 
-def presence_rule(world, area_name, flag, fields):
+def nested_map_areas(source, world, block, known_conditions):
+    checks, records = {}, {}
+    scripts = script_text(source)
+
+    def render_trigger(area_name, child):
+        root = TRIGGER.fullmatch(child[0]) or PRESENCE_TRIGGER.fullmatch(child[0])
+        if not root or (root['kind'] != 'Presence'
+                        and (root['kind'], root['guid']) != ('Extraction', '192ABD6B9232E064')):
+            raise ValueError('unsupported child on named map extraction polygon')
+        anchors = []
+        for name, fields in polygon_capture.members(child, root['group'], root['name']):
+            flag = next((value.strip().removeprefix('m_flagName ') for value in fields
+                         if value.strip().startswith('m_flagName ')), '')
+            if (not LEGACY_FLAG.fullmatch(flag) or len(flag.encode()) > 130
+                    or flag in known_conditions or flag in checks):
+                raise ValueError('invalid or duplicate nested extraction flag ' + flag)
+            if (name and (name == area_name or f'"{name}"' in scripts)) or flag in scripts:
+                raise ValueError('nested extraction trigger may be controlled by mission scripts')
+            build = extraction_rule if root['kind'] == 'Extraction' else presence_rule
+            check, _, record = build(world, area_name, flag, fields, polygon=True)
+            checks[flag] = check
+            records[flag[1:-1]] = {'area': area_name, **record}
+            if name:
+                transform = [field for field in fields if FIELD.fullmatch(field.strip())]
+                anchors.extend([f'GenericEntity {name} {{', *transform, '}'])
+                records[flag[1:-1]]['triggerAnchor'] = name
+        return anchors
+
+    converted, audit = convert_boundaries('\n'.join(block) + '\n', allow_public_faction_color=True,
+                                          extended_shapes=True, area_children=render_trigger)
+    if gap := next((entry['gap'] for entry in audit.values() if 'gap' in entry), None):
+        raise ValueError(gap)
+    if not converted or not checks:
+        raise ValueError('named map polygon has no converted extraction triggers')
+    return checks, converted, records
+
+
+def presence_rule(world, area_name, flag, fields, *, polygon=False):
     data = properties(fields, {
         'm_queryRadius', 'm_captureTime', 'm_flagName', 'm_stopAfterFirstChange', 'm_entityNames',
         'm_allowDestroyed', 'm_ratioThreshold', 'm_comparisonMode', 'm_skipFirstQuery',
@@ -1694,14 +1743,14 @@ def presence_rule(world, area_name, flag, fields):
     stop = data.get('m_stopAfterFirstChange', '0')
     status = data.get('m_sendStatusMessages', '0')
     location = data.get('m_locationName', '"the location"')
-    if (len(set(names)) != len(names) or 'coords' not in transform
+    if (len(set(names)) != len(names) or (not polygon and 'coords' not in transform)
             or any(not FIELD.fullmatch(f'{key} {value}') for key, value in transform.items())
             or any(value not in ('0', '1') for value in (destroyed, skip, stop, status))
             or comparison not in ('0', '1', 'EQUAL_OR_LESS', 'EQUAL_OR_MORE')
             or data.get('m_eventsOnlyDuringGame', '1') != '1'
             or not all(re.fullmatch(NUMBER, n) for n in (radius, hold, ratio))
-            or not (Decimal('0.1') <= Decimal(radius) <= 100000 and 0 <= Decimal(hold) <= 86400
-                    and 0 <= Decimal(ratio) <= 1)
+            or (not polygon and not Decimal('0.1') <= Decimal(radius) <= 100000)
+            or not (0 <= Decimal(hold) <= 86400 and 0 <= Decimal(ratio) <= 1)
             or not re.fullmatch(QUOTED, location) or len(location.encode()) - 2 > 80
             or '<' in location or '>' in location
             or (status == '1' and '%1' in data.get('m_statusMessages', ''))):
@@ -1733,12 +1782,13 @@ def presence_rule(world, area_name, flag, fields):
 {once}{discovery}{messages}       }}
       }}'''
     position = ''.join(f' {field} {value}\n' for field, value in transform.items())
-    area = f'''GC_RadiusAreaEntity {area_name} : "{{2C4447C53A1E450B}}Prefabs/Logic/Mission/RadiusArea.et" {{
+    area = '' if polygon else f'''GC_RadiusAreaEntity {area_name} : "{{2C4447C53A1E450B}}Prefabs/Logic/Mission/RadiusArea.et" {{
 {position} m_fRadius {radius}
 }}
 '''
     return rule.splitlines(), area, {
-        'targets': [name[1:-1] for name in names], 'radiusMeters': float(radius), 'ratio': float(ratio),
+        'targets': [name[1:-1] for name in names], 'ratio': float(ratio),
+        **({} if polygon else {'radiusMeters': float(radius)}),
         'comparison': 'at most' if at_most else 'at least', 'countsDestroyed': destroyed == '1',
         'quotient': 'whole number',
         'seconds': float(hold), 'skipDiscovery': skip == '1', 'stopsAfterFirstChange': stop == '1',
@@ -2238,6 +2288,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                             else:
                                 status_areas[flag] = check
                     area_names.extend(re.findall(r'^(?:GC_RadiusAreaEntity|PolylineShapeEntity) ([\w.-]+) ', areas, re.M))
+                    area_names.extend(match[1] for check in checks.values() for field in check
+                                      if (match := re.fullmatch(r'\s*m_sArea "([\w.-]+)"', field)))
                     result.append(areas)
                 elif (gap := row.get('captureCandidate', {}).get(f'{layer}:{line}', {}).get('gap')):
                     blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': gap})
