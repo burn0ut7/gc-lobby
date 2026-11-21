@@ -240,6 +240,11 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/Til/OwlsPrey.conf': (
+        '4f5817d0d3f1824f202cc6e0722dfffe2b99751b',
+        (('worlds/Til/OwlsPrey/OwlsPrey_Layers/players.layer', '927a4841ce88685181a781b1f26c6c1838504977'),),
+        38, 37,
+    ),
     'Missions/blackskimask/ZarichneFront.conf': (
         'b543004e58932c8a1864fa33d592c074a27f332b',
         (('worlds/blackskimask/ZarichneFront/ZarichneFront_Layers/players_ru.layer', 'ae2d0e8f28285129561a0b7d9d9330f38272a45d'),
