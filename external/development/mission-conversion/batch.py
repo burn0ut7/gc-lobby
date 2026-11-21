@@ -82,11 +82,22 @@ DAMAGE_TARGETS = {
     '21E9A875C0A3C409': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HE.et',
     '3133602B406D131C': 'Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HEDP_sharkNose.et',
     '7BD282AF716ED639': 'Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed.et',
+    # These stock character chains inherit SCR_CharacterDamageManagerComponent.
+    '42A502E3BB727CEB': 'Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_HeliPilot.et',
+    '5117311FB822FD1F': 'Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Officer.et',
+    'B3AB6D12D247DDB5': 'Prefabs/Characters/Factions/CIV/Businessman/Character_CIV_Businessman_Randomized.et',
+    'E024A74F8A4BC644': 'Prefabs/Characters/Factions/CIV/Businessman/Character_CIV_Businessman_1.et',
+    'FE65E8C60C751352': 'Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_PL.et',
 }
 DAMAGE_FLAG_NAME = re.compile(r'"[\w .-]+"')
 SPAWN_DAMAGE_TARGETS = {
     ('ADA7E056B17AC663',
      'PrefabsEditable/Auto/Props/Military/AmmoBoxes/EquipmentBoxStack/E_EquipmentBoxStack_USSR_01_V2_covered.et'),
+}
+WORKSHOP_SPAWN_PREFABS = {
+    'BritishForces_5AE50EC5B8D6F4AE': {
+        ('775DFB7F4529A122', 'Prefabs/Weapons/Rifles/L42A1/Rifle_L42A1.et'),
+    },
 }
 RHS_DAMAGE_PATHS = {
     '52B13341B4A2F012': 'Prefabs/Vehicles/Tracked/2S1/Tank_2S1_Green.et',
@@ -589,8 +600,9 @@ def static_particle_placement(block):
     return bool(members)
 
 
-def native_placement(block):
-    if not NATIVE.match(block[0]):
+def native_placement(block, *, reviewed_character=False):
+    if not NATIVE.match(block[0]) and not (
+            reviewed_character and re.match(r'^(?:\$grp )?SCR_ChimeraCharacter(?: [\w.-]+)? : ', block[0])):
         return None
     lines = block
     if any('TILW_NavmeshRegenComponent' in line or 'PK_EntityProtectorComponent' in line for line in block):
@@ -691,6 +703,7 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                 if len(components) != 1 or not ref or not stock or ref[1].upper() in local_resources:
                     raise ValueError('unverified damage objective prefab or component placement')
                 is_group = block[0].startswith('SCR_AIGroup ')
+                is_character = block[0].startswith('SCR_ChimeraCharacter ')
                 resource = ref[1].upper()
                 start = components[0]
                 stop = block_end(block, start)
@@ -707,10 +720,13 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                 initial_health = Decimal(health) < 1
                 stock_default = (zone == '""' and DAMAGE_TARGETS.get(resource) == ref[2]
                                  and stock.contains(*ref.groups())
+                                 and is_character == ref[2].startswith('Prefabs/Characters/')
                                  and resource not in source_units.resources and resource not in dev_units.resources)
                 verified_zone = (resource, ref[2], zone) in REVIEWED_HIT_ZONES
                 if not (is_group or stock_default or verified_zone):
                     raise ValueError('unverified damage objective prefab or component placement')
+                if is_character and (not stock_default or initial_health):
+                    raise ValueError('character damage flag needs a verified default hit zone')
                 initial = []
                 if initial_health and not is_group:
                     initial = [block[start].replace('TILW_Flag_EntityDamage', 'GC_InitialHitZoneHealthComponent', 1),
@@ -726,10 +742,10 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                     audit[location] = {'initialHealth': health, 'hitZone': zone[1:-1]}
                     continue
                 if (stock_default and not is_group and not initial_health
-                        and (data.get('m_targetState', '2') not in ('2', 'DESTROYED')
+                        and (is_character or data.get('m_targetState', '2') not in ('2', 'DESTROYED')
                              or data.get('m_continuous', '0') != '0')):
                     converted, observed_flag = damage_state_flag_placement(block, allow_multiple_states=True)
-                    native = native_placement(converted)
+                    native = native_placement(converted, reviewed_character=is_character)
                     if not native:
                         raise ValueError('damage objective has another legacy component')
                     observed[(path, line)] = (native, [observed_flag])
@@ -794,6 +810,8 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
         placements[(path, line)] = native
         flags.update(dict.fromkeys(observed_flags))
         audit[f'{path}:{line}'] = {'placedDestructionFlags': observed_flags}
+        if re.match(r'^(?:\$grp )?SCR_ChimeraCharacter ', native):
+            audit[f'{path}:{line}']['placedCharacterDamage'] = True
     return flags, placements, audit
 
 
@@ -820,12 +838,15 @@ def verified_rhs_damage(resource, path, source_units, dev_units, rhs):
 
 def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs):
     ref = REF.search(block[0])
-    if not ref or not re.match(r'^\$grp (Vehicle|Tank|RHS_Tank|GameEntity|GenericEntity) ', block[0]) or ref[1].upper() in owned:
+    if (not ref or not re.match(r'^\$grp (Vehicle|Tank|RHS_Tank|GameEntity|GenericEntity|SCR_ChimeraCharacter) ', block[0])
+            or ref[1].upper() in owned):
         raise ValueError('unverified grouped damage objective prefab')
     resource, path = ref[1].upper(), ref[2]
+    is_character = block[0].startswith('$grp SCR_ChimeraCharacter ')
     stock_target = (stock and DAMAGE_TARGETS.get(resource) == path and stock.contains(resource, path)
                     and resource not in source_units.resources and resource not in dev_units.resources)
-    if not stock_target and not verified_rhs_damage(resource, path, source_units, dev_units, rhs):
+    if (is_character != path.startswith('Prefabs/Characters/')
+            or not (stock_target or not is_character and verified_rhs_damage(resource, path, source_units, dev_units, rhs))):
         raise ValueError('unverified grouped damage objective prefab')
     lines, flags = [block[0]], []
     for name, fields in polygon_capture.members(block, True, None):
@@ -834,7 +855,7 @@ def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs):
             member, flag = damage_state_flag_placement(member, allow_multiple_states=True)
             flags.append(flag)
         lines.extend([f' {name} {{' if name else ' {', *(' ' + part for part in member[1:-1]), ' }'])
-    native = native_placement([*lines, block[-1]])
+    native = native_placement([*lines, block[-1]], reviewed_character=is_character)
     if not native or not flags:
         raise ValueError('grouped damage placement has another legacy component')
     return native, flags
@@ -1215,7 +1236,18 @@ def ai_objectives(source, dev, world, stock, local_resources, source_units, dev_
     return reviewed
 
 
-def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, objectives):
+def workshop_spawn_resources(workshop):
+    approved = set()
+    if workshop:
+        for provider, references in WORKSHOP_SPAWN_PREFABS.items():
+            registry = workshop / provider / 'resourceDatabase.rdb'
+            if registry.is_file():
+                database = StockPrefabs(registry)
+                approved.update(reference for reference in references if database.contains(*reference))
+    return approved
+
+
+def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, objectives, workshop_resources=()):
     if not path.lower().endswith('.et') or path.lower().startswith('prefabs/groups/'):
         return None
     owned = source.resources.get(guid)
@@ -1238,7 +1270,7 @@ def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, obje
             return None
         body = source_units.read(path)
         return path if body == dev_units.read(path) and not LEGACY.search(body) else None
-    return path if stock.contains(guid, path) else None
+    return path if (guid, path) in workshop_resources or stock.contains(guid, path) else None
 
 
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew):
@@ -2101,7 +2133,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append('')
                 elif kind == 'PS_MissionDescription' and preset and not row['briefingGaps']:
                     continue
-                elif FRAMEWORK.fullmatch(head) and framework_supported and represented:
+                elif FRAMEWORK.fullmatch(head) and framework_supported and (represented or outcome.get('startupSamples')):
                     root_fields = [field.strip() for field in block[1:-1]
                                    if field.startswith(' ') and not field.startswith('  ') and field.strip() != '}']
                     roots = [field.split()[0] for field in root_fields]
@@ -2421,6 +2453,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare destruction of a spawned objective, including pre-Match damage and the Match outcome.')
     if any(record.get('placedDestructionFlags') for record in row.get('damageFlagCandidates', {}).values()):
         remaining.append('Compare grouped objective destruction, including pre-Match damage and the Match outcome.')
+    if any(record.get('placedCharacterDamage') for record in row.get('damageFlagCandidates', {}).values()):
+        remaining.append('Compare character damage flags as the default hit zone changes, including death and removal.')
     if any(isinstance(text, str) and 'm_eTargetState ' in text and 'GC_DestroyedEntityFlagComponent ' in text
            for text in draft.values()):
         remaining.append('Compare damage flags at the authored hit zone state during Match.')

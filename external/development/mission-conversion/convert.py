@@ -142,9 +142,11 @@ def main():
         report['baseResourceDatabaseSHA256'] = sha256(stock.data).hexdigest()
     external_ai = {}
     rhs_database = None
+    workshop_spawn_resources = ()
     if args.batch and args.workshop_addons:
         try:
             external_ai, rhs_database = rhs_ai_characters(args.workshop_addons)
+            workshop_spawn_resources = batch.workshop_spawn_resources(args.workshop_addons)
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
         if rhs_database:
@@ -198,7 +200,8 @@ def main():
             except ValueError:
                 return None
             return path
-        return batch.spawn_resource(source, dev, source_units, dev_units, stock, resource, path, objectives)
+        return batch.spawn_resource(source, dev, source_units, dev_units, stock, resource, path, objectives,
+                                    workshop_spawn_resources)
 
     def resolve_crew(resource, path):
         return vehicle_crew.character_reference(resource, path, source_units, dev_units, stock, locally_owned,
@@ -434,7 +437,10 @@ def main():
         has_event_actions = args.batch and any(row['serializedTypes'].get(kind) for kind in
                                               ('TILW_AssignWaypointsInstruction', 'TILW_SendMessageInstruction',
                                                'TILW_SpawnPrefabInstruction', 'TILW_SpawnVehicleInstruction', *ACTIONS))
-        if args.include_outcomes and (has_outcomes or has_event_actions or (delayed and delayed.spawns)):
+        has_spawner_sampling = (args.batch and row['serializedTypes'].get('TILW_FlagSampling')
+                                and row['serializedTypes'].get('TILW_PrefabSpawnerEntity'))
+        if args.include_outcomes and (has_outcomes or has_event_actions or has_spawner_sampling
+                                      or (delayed and delayed.spawns)):
             try:
                 captures = {}
                 if world in arc_worlds:
@@ -469,12 +475,12 @@ def main():
                     derived_audit=derived_audit, startup_samples_audit=startup_samples_audit,
                     match_only_flags=damage_flags_before_match |
                     {asset['flag'] for asset in objectives.values() if asset.get('destroyed')},
-                    flag_reads=(Counter(flag for placement in row.get('interactionCandidate', {}).values()
-                                        if isinstance(placement, dict)
-                                        for field in ('teleportRequiredFlags', 'interactionRequiredFlags')
-                                        for flag in placement.get(field, []))
-                                + (batch.placed_spawner_flag_reads(source, source.layers[world.lower()])
-                                   if args.batch else Counter())))
+                    interaction_reads=Counter(flag for placement in row.get('interactionCandidate', {}).values()
+                                              if isinstance(placement, dict)
+                                              for field in ('teleportRequiredFlags', 'interactionRequiredFlags')
+                                              for flag in placement.get(field, [])),
+                    spawner_reads=batch.placed_spawner_flag_reads(source, source.layers[world.lower()])
+                    if args.batch else None)
                 outcome = {'events': outcome_audit}
                 if derived_audit:
                     outcome['derivedFlags'] = derived_audit

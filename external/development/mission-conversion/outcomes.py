@@ -334,11 +334,15 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                            for action in converted_actions)):
         raise ValueError('unsupported pregame action')
     if assignments and term['trigger'] not in ('Match start', 'dormant'):
-        capture = captures.get('"' + term.get('flag', '') + '"', [])
-        one_shot_capture = term['trigger'] == 'area capture' and any(
+        guard = term
+        while (guard['trigger'] in ('all', 'any') and not guard.get('inverted')
+               and len(guard['operands']) == 1):
+            guard, = guard['operands']
+        capture = captures.get('"' + guard.get('flag', '') + '"', [])
+        one_shot_capture = guard['trigger'] == 'area capture' and any(
             line.strip() == 'm_bStopAfterFirstChange 1' for line in capture)
-        if term.get('inverted') or not (one_shot_capture or term['trigger'] == 'interaction flag'):
-            raise ValueError('waypoint assignments need a positive one-shot capture, objective flag, or Match start')
+        if guard.get('inverted') or not (one_shot_capture or guard['trigger'] in ('interaction flag', 'event flag')):
+            raise ValueError('waypoint assignments need a positive one-shot capture, verified flag, or Match start')
     audit = {'announcements': notices, 'instructionDelaysSeconds': [f'{delay:f}' for delay in actions]}
     if assignments:
         audit['waypointAssignments'] = assignments
@@ -503,7 +507,7 @@ def startup_flags(source, world, owner, body, scripts):
     return tuple(flags)
 
 
-def startup_samples(source, world, owner, body, scripts):
+def startup_samples(source, world, owner, body, scripts, spawner_reads):
     """Read isolated draws whose flag consumers run during Match."""
     roots = [i for i, line in enumerate(body) if line == ' m_randomFlags {']
     if len(roots) != 1 or any(api in scripts for api in SCRIPT_FLAG_APIS):
@@ -553,9 +557,11 @@ def startup_samples(source, world, owner, body, scripts):
     authored = source.read(owner)
     outside = '\n'.join(source.read(path) for path in sorted(source.closure(world))
                         if path != owner and PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
-    if any(not reads[flag] or authored.count(flag) != 1 + reads[flag] + labels[flag]
-           or flag in outside or flag[1:-1] in scripts for flag in sampled):
-        return []
+    for flag in sampled:
+        spawner_count = spawner_reads.get(flag[1:-1], 0)
+        if (not (reads[flag] or spawner_count) or flag[1:-1] in scripts
+                or authored.count(flag) + outside.count(flag) != 1 + reads[flag] + labels[flag] + spawner_count):
+            return []
     return samples
 
 
@@ -620,7 +626,8 @@ def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
 
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
                      extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None,
-                     derived_audit=None, match_only_flags=(), startup_samples_audit=None, flag_reads=None):
+                     derived_audit=None, match_only_flags=(), startup_samples_audit=None,
+                     interaction_reads=None, spawner_reads=None):
     captures = captures or {}
     notification_audit = notification_audit or {}
     extraction_spawns = extraction_spawns or {}
@@ -647,7 +654,11 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         return [], {}, 'ambiguous AI casualty faction tracking'
     if set(objective_flags) & {key[1:-1] for key in (*flags, *ai, *captures)}:
         return [], {}, 'ambiguous interaction flag producer'
-    event_flags = instruction_flags(source, world, path, body, scripts, flag_reads or {}) if scripts is not None else ()
+    spawner_reads = spawner_reads or {}
+    flag_reads = defaultdict(int, interaction_reads or {})
+    for flag, count in spawner_reads.items():
+        flag_reads[flag] += count
+    event_flags = instruction_flags(source, world, path, body, scripts, flag_reads) if scripts is not None else ()
     derived, derived_gap = {}, None
     if compound:
         try:
@@ -658,7 +669,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         derived_audit.extend(flag[1:-1] for flag in derived)
     samples, startup = [], ()
     if compound and resolve_spawn:
-        samples = startup_samples(source, world, path, body, scripts or '')
+        samples = startup_samples(source, world, path, body, scripts or '', spawner_reads)
         if not samples:
             startup = startup_flags(source, world, path, body, scripts or '')
     sampled_flags = {flag for sample in samples for flag in sample['flags']}
@@ -727,6 +738,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         return [], audit, 'generated startup selection name collides with a mission event'
     if samples:
         used_samples = {item.get('flag') for _, _, _, term, _ in parsed for item in leaves(term)}
+        used_samples.update(spawner_reads)
         if not sampled_flags <= used_samples:
             return [], audit, 'startup sampled flag still has an unconverted consumer'
         if 'GC_MigrationStartupSampling' in names:
