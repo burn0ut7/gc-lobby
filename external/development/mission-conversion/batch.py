@@ -110,6 +110,14 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/Cunnah/A_Hop_Skip_And_A_Jump.conf': (
+        '727183f983e89f5ccbbdc75856d72c7c420fe90d',
+        (('worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/BLUFOR.layer',
+          'e344b83766a3aca6f6ff32292858c0791a772542'),
+         ('worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/OPFOR.layer',
+          '9a5b8ff212d1ba8c484e8e17dfed060b9baff796')),
+        67, 66,
+    ),
     'Missions/IronFunnelEvent/MSN1.conf': (
         'bc54df59d5f3682b81e89394990e787b2d0e4b53',
         (('worlds/IronFunnelEvent/MSN1/StPierre_Air_Assault_Layers/NATO_playergroups.layer',
@@ -285,6 +293,10 @@ REVIEWED_MISSING_WAYPOINTS = {
             'AIWaypoint_SearchandDestroy_1', 'AIWaypoint_SearchandDestroy_2',
         }),
 }
+REVIEWED_MISSING_STATIC_VEHICLES = {
+    'worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/OPFOR.layer':
+        ('9a5b8ff212d1ba8c484e8e17dfed060b9baff796', {'T72A_1'}),
+}
 MATERIAL_OVERRIDE = re.compile(
     rf'SCR_DestructibleBuildingEntity : "\{{[\da-fA-F]{{16}}\}}Prefabs/Structures/[^"\n]+\.et" \{{\n'
     rf' ID "[\da-fA-F]{{16}}"\n components \{{\n  MeshObject {SERIALIZED_ID} \{{\n   Materials \{{\n'
@@ -361,6 +373,18 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_randomized.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('023236B2A390BA5B', 'Prefabs/Weapons/Tripods/BGM71_TOW/Tripod_BGM-71_TOW.et'): (
+        'WCS_Armaments_629B2BA37EFFD577', '023236B2A390BA5B',
+        'Prefabs/Weapons/Tripods/BGM71_TOW/Tripod_BGM71_TOW.et'),
+    ('C45AE68B74B6136D', 'Prefabs/Weapons/Tripods/BGM71_TOW/Pod_BGM-71_TOW.et'): (
+        'WCS_Armaments_629B2BA37EFFD577', 'C45AE68B74B6136D',
+        'Prefabs/Weapons/Tripods/BGM71_TOW/Pod_BGM71_TOW.et'),
+    ('E7B6EE8A99C7F760', 'Prefabs/Weapons/Ammo/Ammo_Missile_BGM-71_BFV.et'): (
+        'WCS_M2A2_63120AE07E6C0966', 'E7B6EE8A99C7F760',
+        'Prefabs/Weapons/Ammo/Ammo_Missile_BGM-71_M2A2.et'),
+    ('19D504D46A48529A', 'Prefabs/Structures/Military/Fortifications/Trenches/ACE_TrenchHalf_01_long.et'): (
+        'ACETrenchesDev_65AD7CE59E8DB349', '19D504D46A48529A',
+        'Prefabs/Structures/Military/Fortifications/Trenches/ACE_TrenchSegment_01_short.et'),
     ('12C35C0A24EDA6D0', 'Prefabs/Vehicles/Tracked/BFV/M2A3_BUSK_MERDC.et'): (
         'WCS_M2A2_63120AE07E6C0966', '12C35C0A24EDA6D0',
         'Prefabs/Vehicles/Tracked/M2A2/M2A3/M2A3_BUSK_MERDC.et'),
@@ -434,6 +458,9 @@ WORKSHOP_RESOURCE_ALIASES = {
         'Prefabs/Structures/Bulding/Military/fort_rampart_ep1.et'),
 }
 UNITS_PREFAB_ALIASES = {
+    ('26BBC4FA9CE02F61', 'Prefabs/Characters/Backpacks/Radio/Kombat_Radio_Pack_MTP.et'): (
+        '26BBC4FA9CE02F61', 'Prefabs/Items/Equipment/Radios/UK/Kombat_Radio_Pack_MTP.et',
+        '7803e7446801c2bed2905beb134571e78b0b5f6b4b88e34a06c4c3a2a06a0d8a'),
     ('4F064E9878DCF301', 'Prefabs/Vehicles/Wheeled/M998/M1151_armed_BTR_TAN.et'): (
         '4F064E9878DCF301', 'Prefabs/Vehicles/Wheeled/M998/M1151/BMP_Turret/M1151_armed_BMP_TAN.et',
         'f83f4593e93f45e86b3e65f59995c436877a70399bb0d6310934efbfbe06f1fb'),
@@ -1206,6 +1233,18 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         raise ValueError('unverified placed spawner prefab')
     placements, rules, audit = [], [], []
     for index, (name, lines) in enumerate(polygon_capture.members(block, root['group'], root['name'])):
+        children = []
+        if ' {' in lines:
+            child_start = lines.index(' {')
+            if block_end(lines, child_start) != len(lines) - 1:
+                raise ValueError('custom placement after spawner children')
+            children = lines[child_start:]
+            for _, child in blocks('\n'.join(line[2:] for line in children[1:-1])):
+                head = PLACED_ENTITY.fullmatch(child[0])
+                if (not head or head['group'] or not head['name'] or not REF.search(child[0])
+                        or not re.fullmatch(WAYPOINT_CLASS, head['kind']) or LEGACY.search('\n'.join(child))):
+                    raise ValueError('spawner child needs a named native waypoint')
+            lines = lines[:child_start]
         config = None
         if any(line.strip().startswith('m_crewConfig ') for line in lines):
             config, lines = split_crew_block(lines, 'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID)
@@ -1228,7 +1267,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         group = bool(ref and ref[2].startswith('Prefabs/Groups/'))
         if config is not None and (not ref or not ref[2].startswith('Prefabs/Vehicles/')):
             raise ValueError('crewed spawner needs a verified vehicle')
-        if waypoints and not group:
+        if waypoints and not group and config is None:
             raise ValueError('spawner waypoints need a verified AI group')
         key = f'{location}/spawner/{index}'
         anchor = name or 'GC_Spawner_' + guid(key)
@@ -1248,7 +1287,9 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                 term = {'trigger': 'interaction flag', 'flag': flag[1:-1]}
             else:
                 raise ValueError('spawner flag lacks a verified producer: ' + flag)
-        fields = ['        m_aWaypoints {', *('         ' + point for point in waypoints), '        }'] if waypoints else []
+        group_waypoints = waypoints if group else []
+        fields = (['        m_aWaypoints {', *('         ' + point for point in group_waypoints), '        }']
+                  if group_waypoints else [])
         actions = defaultdict(list)
         crew_groups = []
         for sequence, delay in enumerate(timings):
@@ -1265,11 +1306,14 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             rendered[3:3] = [f'      GC_GameModeStateCondition "{{{guid(key + "/match")}}}" {{',
                              '       m_eGameModeState GAME', '      }']
         rules.extend(rendered)
-        placements.extend([f'GenericEntity {anchor} {{', *(' ' + line for line in transform), '}'])
+        placements.extend([f'GenericEntity {anchor} {{', *(' ' + line for line in transform), *children, '}'])
         audit.append({'spawnAnchor': anchor, 'spawnName': details['area'], 'prefab': details['prefab'],
-                      'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in waypoints], **term})
+                      'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in group_waypoints], **term})
         if config is not None:
             audit[-1]['crewWaypoints'] = [point for group in crew_groups for point in group['waypoints']]
+            if waypoints:
+                # The legacy spawner applies this field only to spawned AI group entities.
+                audit[-1]['ignoredVehicleGroupWaypoints'] = [point[1:-1] for point in waypoints]
     if not audit:
         raise ValueError('empty placed spawner group')
     return '\n'.join(placements) + '\n', '\n'.join(rules) + '\n', audit
@@ -2196,6 +2240,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'delayed extraction', 'file': world,
                              'detail': 'extraction needs all spawns and one positive consumer per flag'})
     missing_waypoints = []
+    missing_static_vehicles = []
     crew_waypoints = {name for path, body in draft.items() if path.endswith('.layer')
                       for _, fields in re.findall(r'(?ms)^( +)m_aCrewWaypoints \{\n(.*?)^\1\}', body)
                       for name in re.findall(r'"([\w.-]+)"', fields)}
@@ -2252,11 +2297,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 blockers.append({'rule': 'placed crew waypoint', 'file': world,
                                  'detail': 'expected one placed AI waypoint named ' + waypoint})
         for layer, field, target in static_link_gaps(draft, named):
-            reviewed_blob, reviewed_targets = REVIEWED_MISSING_WAYPOINTS.get(layer, (None, ()))
-            if (field == 'm_aStaticWaypoints' and target in reviewed_targets
-                    and source.files.get(layer) == reviewed_blob
+            reviews = REVIEWED_MISSING_WAYPOINTS if field == 'm_aStaticWaypoints' else REVIEWED_MISSING_STATIC_VEHICLES
+            reviewed_blob, reviewed_targets = reviews.get(layer, (None, ()))
+            if (target in reviewed_targets and source.files.get(layer) == reviewed_blob
                     and target not in named and target not in spawned_names and f'"{target}"' not in script_text(source)):
-                missing_waypoints.append(target)
+                missing = missing_waypoints if field == 'm_aStaticWaypoints' else missing_static_vehicles
+                missing.append(target)
                 continue
             blockers.append({'rule': 'static group links', 'file': layer,
                              'detail': f'{field} requires a unique placed target named {target}'})
@@ -2322,6 +2368,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     remaining = []
     for target in sorted(set(missing_waypoints)):
         remaining.append(f'The original static waypoint link to {target} has no authored target.')
+    for target in sorted(set(missing_static_vehicles)):
+        remaining.append(f'The original static vehicle link to {target} has no mission-layer target.')
     if any(record.get('statusMessages') for trigger in row.get('captureCandidate', {}).values()
            for record in trigger.values() if isinstance(record, dict)):
         remaining.append('Compare extraction progress and status recipients during Match.')
