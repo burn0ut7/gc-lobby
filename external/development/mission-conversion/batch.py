@@ -63,6 +63,14 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/Jub/MissionWithAssets.conf': (
+        '00bd356069766c8d7d0c7235edf17f9992941a32',
+        (('worlds/Jub/MissionWithAssets/MissionWithAssets_Layers/players_RU.layer',
+          'dec5abeb11a238728fbe3d180ea3626ae980e070'),
+         ('worlds/Jub/MissionWithAssets/MissionWithAssets_Layers/players_usmc.layer',
+          'd8e3e76dc13d012582dc32edb30b974c4e2395a9')),
+        66, 78,
+    ),
     'Missions/HitTheMan/Green Hill Military Assault/GreenHillAssault.conf': (
         'a24e2eafb399d77eccd92a73a8e9e71c5ec6821e',
         (('worlds/HitTheMan/Green Hill Assault/GreenHillAssault_Layers/BLUFOR_Players/BLUFOR_Players.layer',
@@ -157,6 +165,9 @@ WORKSHOP_RESOURCE_ALIASES = {
     ('5CFD8CB5C3E55A4E', 'Prefabs/Vehicles/Tracked/BFV/M2A2_MERDC.et'): (
         'WCS_M2A2_63120AE07E6C0966', '5CFD8CB5C3E55A4E',
         'Prefabs/Vehicles/Tracked/M2A2/M2A2_MERDC.et'),
+    ('65FE6DD2E27E366E', 'Prefabs/Vehicles/Wheeled/JLTV/CROWS_2/Javelin/JLTV_CROWSII_Javelin_Olive.et'): (
+        'WCS_JLTV_5C721177A220B42F', '65FE6DD2E27E366E',
+        'Prefabs/Vehicles/Wheeled/JLTV/CROWS_II/Javelin/JLTV_CROWS_II_Javelin_Olive.et'),
     ('77CA4803A4A2B8E3', 'Prefabs/Drones/FPVBase/FPVRPG.et'): (
         'RealisticCombatDrones_65AD60E204191D37', '77CA4803A4A2B8E3', 'Prefabs/Drones/FPVBase/FPVRpg.et'),
     ('B0DFDF7AAA9C5D39', 'Prefabs/Weapons/Magazines/BC_Shell_12ga_Buckshot.et'): (

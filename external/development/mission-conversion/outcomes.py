@@ -20,6 +20,12 @@ TERM = re.compile(r'\s*(?:m_condition )?TILW_(Literal|Conjunction|Disjunction)Te
 AI_FLAG = re.compile(r'^  TILW_FactionAIKilledFlag "\{[\da-fA-F]{16}\}" \{$')
 FLAG_ACTION = re.compile(r'^    TILW_(Set|Clear)FlagInstruction "\{[\da-fA-F]{16}\}" \{$')
 FLAG_FIELD = re.compile(r'^\s+m_flagName (' + KEY + r')\s*$')
+# The reviewed source produces US_KIA, while this notice consumes USMC_KIA.
+DORMANT_NOTICES = {
+    ('a75e404c331abce5185f315f47f533d9b8eccf00',
+     'worlds/Jub/MissionWithAssets/MissionWithAssets_Layers/default.layer',
+     '65DAD44B20B959A8'): '"USMC_KIA"',
+}
 
 
 def instruction_flags(source, world, framework_path, lines, scripts):
@@ -135,7 +141,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
 
 
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
-               resolve_spawn, resolve_crew, startup_flags, hidden_briefings):
+               resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -158,6 +164,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
             literal_flag = fields[i + 1].strip().removeprefix('m_flagName ') if literal and end == i + 2 else ''
             if literal_flag in startup_flags:
                 term = {'trigger': 'startup choice', 'flag': literal_flag[1:-1]}
+            elif literal_flag == dormant_flag:
+                term = {'trigger': 'dormant', 'flag': literal_flag[1:-1], 'reason': 'no legacy flag producer'}
             else:
                 term = read_term(fields[i:end + 1], flags, captures, ai, objective_flags, event_flags,
                                  allow_dormant=compound)
@@ -474,7 +482,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         try:
             term, actions, details = read_event(
                 fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns,
-                resolve_spawn, resolve_crew, startup, hidden_briefings)
+                resolve_spawn, resolve_crew, startup, hidden_briefings,
+                DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None)
             emitted_names = {f'{name} ({delay:f}s)' for delay in actions}
             if term['trigger'] not in ('Match start', 'startup choice', 'dormant'):
                 emitted_names.add(name)
