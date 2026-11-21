@@ -3764,7 +3764,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 elif ('TILW_AOLimit.et' in head or 'TILW_MapShape.et' in head or PASSIVE_COVER.fullmatch(head)
                         or (BARE_SHAPE.fullmatch(head) and 'TILW_MapShapeComponent' in body)):
                     converted, audit = convert_boundaries(body, allow_public_faction_color=True, extended_shapes=True,
-                                                          allow_bare=True)
+                                                          allow_bare=True, source_blob=source.files[layer],
+                                                          source_line=line)
                     if not converted or any('gap' in item for item in audit.values()):
                         blockers.append({'rule': 'boundary or map shape', 'file': layer, 'line': line, 'detail': audit})
                     else:
@@ -4304,6 +4305,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
            and ('\n  GC_AOLimitEntity ' in body or '\n  PolylineShapeEntity ' in body)
            for path, body in draft.items()):
         remaining.append('Compare nested boundary positions, faction outlines and enforcement.')
+    if any(instance.get('bridgeMetres') for layer in row.get('boundaryLayers', {}).values()
+           for instance in layer.get('instances', {}).values()):
+        remaining.append('Compare boundary containment and the map outline at the repaired crossing.')
     if any(spawn['startupChoice'] for spawn in prefab_spawns):
         remaining.append('Compare pregame selection, spawn timing and faction-specific briefing and map updates.')
     if outcome.get('startupSamples'):

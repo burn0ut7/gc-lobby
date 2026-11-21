@@ -311,7 +311,8 @@ def main():
                     ao_body, instances = irish.boundaries(text)
                 else:
                     ao_body, instances = convert_boundaries(text, allow_public_faction_color=reviewed_tint,
-                                                            extended_shapes=args.batch)
+                                                            extended_shapes=args.batch,
+                                                            source_blob=source.files[layer] if args.batch else None)
                 if instances:
                     audit = {'instances': instances}
                     row.setdefault('boundaryLayers', {})[layer] = audit

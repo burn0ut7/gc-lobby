@@ -16,6 +16,9 @@ PASSIVE_COVER = re.compile(
     r'"\{25C6E66E6C14258D\}Prefabs/Logic/Map/Cover_Map.et" \{$')
 DEST = '{8F470B543A20D944}Prefabs/Logic/Mission/AOLimit.et'
 MAP_SHAPE = '{8F470B543A20D963}Prefabs/Logic/Mission/MapShape.et'
+REVIEWED_BOUNDARY_CROSSINGS = {
+    'd140047c759fdf8f7bda1e1a11689c2659d14142': (49, 'Two Bloody Miles/outer AO/', 0, 5, 0.005),
+}
 ALLOWED = {'m_killTimer', 'm_factionKeys', 'm_ignoredVehicles', 'm_visibility', 'm_defaultColor',
            'm_useFactionColor', 'm_lineWidth', 'Enabled'}
 COMPONENTS = {
@@ -521,10 +524,48 @@ def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, pa
     return '\n'.join([body.rsplit('\n', 1)[0], ' {', *children, ' }', '}']), count
 
 
+def bridge_polygon(lines, name, first, second, metres):
+    """Join the lobes of a reviewed single crossing while retaining every source vertex."""
+    start = next((i for i, line in enumerate(lines) if line.strip() == 'Points {'), None)
+    if start is None:
+        raise ValueError('reviewed polygon is missing its point list')
+    stop = block_end(lines, start)
+    fields = lines[start + 1:stop]
+    indent = ' ' * (len(lines[start]) - len(lines[start].lstrip()) + 1)
+    if (len(fields) % 3 or not 0 <= first < second < len(fields) // 3 - 1
+            or any(not re.fullmatch(indent + r'ShapePoint "\{[\dA-Fa-f]{16}\}" \{', fields[i])
+                   or not fields[i + 1].startswith(indent + ' Position ') or fields[i + 2] != indent + '}'
+                   for i in range(0, len(fields), 3))):
+        raise ValueError('reviewed crossing point list changed')
+    authored = [fields[i:i + 3] for i in range(0, len(fields), 3)]
+    points = [floats(point[1].strip().removeprefix('Position '), 3) for point in authored]
+    a, b, c, d = (points[index] for index in (first, first + 1, second, second + 1))
+    ux, uz, vx, vz = b[0] - a[0], b[2] - a[2], d[0] - c[0], d[2] - c[2]
+    determinant = ux * vz - uz * vx
+    if not determinant:
+        raise ValueError('reviewed polygon edges no longer cross')
+    t = ((c[0] - a[0]) * vz - (c[2] - a[2]) * vx) / determinant
+    u = ((c[0] - a[0]) * uz - (c[2] - a[2]) * ux) / determinant
+    dt, du = metres / math.hypot(ux, uz), metres / math.hypot(vx, vz)
+    if not (0 < t - dt < t + dt < 1 and 0 < u - du < u + du < 1):
+        raise ValueError('reviewed crossing cannot fit its bridge within both edges')
+
+    def nearby(label, start, end, fraction):
+        position = ' '.join(f'{a + fraction * (b - a):.5f}' for a, b in zip(start, end))
+        return [indent + f'ShapePoint "{{{guid(name + label)}}}" {{',
+                indent + ' Position ' + position, indent + '}']
+
+    ordered = [*authored[:first + 1], nearby('A', a, b, t - dt), nearby('C', c, d, u - du),
+               *reversed(authored[first + 1:second + 1]), nearby('B', a, b, t + dt), nearby('D', c, d, u + du),
+               *authored[second + 1:]]
+    return [*lines[:start + 1], *(line for point in ordered for line in point), *lines[stop:]]
+
+
 def convert_boundaries(text, allow_public_faction_color=False, split_fill=True, *, extended_shapes=False,
-                       area_children=None, allow_bare=False):
+                       area_children=None, allow_bare=False, source_blob=None, source_line=1):
     lines = text.splitlines()
     emitted, review = [], {}
+    bridge = REVIEWED_BOUNDARY_CROSSINGS.get(source_blob)
     for i,line in enumerate(lines):
         passive_cover = PASSIVE_COVER.fullmatch(line) if extended_shapes else None
         bare = BARE_SHAPE.fullmatch(line) if allow_bare else None
@@ -540,7 +581,11 @@ def convert_boundaries(text, allow_public_faction_color=False, split_fill=True, 
             continue
         for start, stop, name in instances:
             try:
-                body,count = convert_hierarchy(lines[start+1:stop], ' '+name if name else '',
+                fields = lines[start + 1:stop]
+                bridge_here = bridge and start + source_line == bridge[0]
+                if bridge_here:
+                    fields = bridge_polygon(fields, *bridge[1:])
+                body,count = convert_hierarchy(fields, ' '+name if name else '',
                                                {'allow_public_faction_color': allow_public_faction_color,
                                                 'split_fill': split_fill, 'extended_shapes': extended_shapes,
                                                 'standalone': bool(standalone), 'passive_cover': bool(passive_cover),
@@ -548,6 +593,8 @@ def convert_boundaries(text, allow_public_faction_color=False, split_fill=True, 
                                                area_children=area_children)
                 emitted.append(body)
                 review[str(start+1)] = {'vertices':count,'name':name,'lastLine':stop+1}
+                if bridge_here:
+                    review[str(start+1)]['bridgeMetres'] = bridge[-1]
             except (ArithmeticError, ValueError) as error:
                 review[str(start+1)] = {'gap':str(error)}
     return '\n'.join(emitted)+'\n' if emitted else '', review
