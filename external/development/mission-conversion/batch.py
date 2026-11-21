@@ -2997,6 +2997,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare victory notices below and at the authored casualty threshold after the first sample.')
     if any(rule.get('requiresMatch') for rule in rules.values()):
         remaining.append('Compare compound outcome activation around the authored threshold during Match.')
+    for rule in rules.values():
+        if rule.get('reason') == 'no authored event condition':
+            remaining.append(f'The original event {rule["name"]} has no authored condition and does not run.')
     if outcome.get('derivedFlags'):
         remaining.append('Compare derived outcomes as source flags change, including inverted consumers in Match.')
     if ticket_edits:

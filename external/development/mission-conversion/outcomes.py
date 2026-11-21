@@ -38,6 +38,10 @@ DORMANT_NOTICES = {
      'worlds/Jub/MissionWithAssets/MissionWithAssets_Layers/default.layer',
      '65DAD44B20B959A8'): '"USMC_KIA"',
 }
+REVIEWED_MISSING_TERMS = {
+    'worlds/RedTheKnown/DownhillStryke/DownhillStryke_Layers/MisssionTriggers.layer':
+        ('516573a5947dd2aabfafcb80d7b364850f933e64', '6A9F56058342FF13'),
+}
 REVIEWED_INACTIVE_FLAGS = {
     'worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/default.layer':
         ('ec2d8e9742da07dccacdb9f37beebfb23449e213', '"Industrial"', 2),
@@ -268,7 +272,9 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
                 return {'trigger': 'area capture', 'flag': flag[1:-1]}
             if invert == '1' and any(line.strip() == 'm_bStopAfterFirstChange 1' for line in captures[flag]):
                 return {'trigger': 'area capture', 'flag': flag[1:-1], 'inverted': True}
-            if invert == '1' and depth and any(line.strip() == 'm_fSeconds 0' for line in captures[flag]):
+            if invert == '1' and depth:
+                # Both copies advance in the area tracker on the same samples. Keep
+                # status messages on the required positive consumer.
                 return {'trigger': 'area capture', 'flag': flag[1:-1], 'inverted': True,
                         'liveCapture': True, 'requiresMatch': True}
         if invert in ('0', '1') and flag[1:-1] in objective_flags:
@@ -327,7 +333,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
 
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
                resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None,
-               log_only=False, named_events=(), inactive=(), binary_startup=None):
+               log_only=False, named_events=(), inactive=(), binary_startup=None, missing_term=False):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -425,6 +431,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         elif not re.fullmatch(r'   m_name ' + (EVENT_LABEL if compound else KEY), line) and line != '   m_pregameEvent 0':
             raise ValueError('unsupported outcome event field ' + field)
         i += 1
+    if not term and missing_term and 'm_condition' not in seen and not pregame:
+        term = {'trigger': 'dormant', 'reason': 'no authored event condition'}
     if not term or not (notices or assignments or converted_actions or delayed_areas or (compound and messages)
                         or log_only or empty_waypoints):
         raise ValueError('missing condition or supported framework instruction')
@@ -873,7 +881,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns,
                 resolve_spawn, resolve_crew, startup, hidden_briefings,
                 DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived,
-                log_only=log_only, named_events=source_names, inactive=inactive, binary_startup=binary_startup)
+                log_only=log_only, named_events=source_names, inactive=inactive, binary_startup=binary_startup,
+                missing_term=(compound and not controls and scripts is not None and 'EvalExpression' not in scripts
+                              and REVIEWED_MISSING_TERMS.get(path) == (source.files[path], event[1])))
             if any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
                 term['requiresMatch'] = True
             suffixes = {f' ({delay:f}s)' for delay in actions}

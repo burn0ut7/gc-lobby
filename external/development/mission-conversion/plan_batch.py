@@ -47,7 +47,8 @@ def authored_file_note(note):
         r'The original (?:reinforcement waypoint .+ has no authored target'
         r'|static waypoint link to .+ has no authored target'
         r'|static vehicle link to .+ has no mission-layer target'
-        r'|spawn at .+ has no authored anchor and does not run)\.', note
+        r'|spawn at .+ has no authored anchor and does not run'
+        r'|event .+ has no authored condition and does not run)\.', note
     ) is not None
 
 
@@ -215,7 +216,7 @@ def markdown(plan):
     if not plan['runtimeChecks']:
         lines.append('The file-cleared missions reported no additional behavior checks.')
     if plan['authoredFileNotesByLauncher']:
-        lines.extend(['', '## Inactive links confirmed in source files', ''])
+        lines.extend(['', '## Inactive behavior confirmed in source files', ''])
         for header, notes in sorted(plan['authoredFileNotesByLauncher'].items()):
             lines.append(f'- `{header}`')
             lines.extend(f'  - {note}' for note in notes)
