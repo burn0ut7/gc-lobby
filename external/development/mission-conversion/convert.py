@@ -146,6 +146,7 @@ def main():
     external_vehicles = {}
     rhs_database = None
     workshop_spawn_resources = ()
+    workshop_damage_resources = ()
     external_vehicle_parents = {}
     if args.batch and args.workshop_addons:
         try:
@@ -154,6 +155,7 @@ def main():
             external_vehicle_parents = vehicle_crew.workshop_vehicles(
                 args.workshop_addons, vehicle_crew.WORKSHOP_VEHICLE_PARENTS)
             workshop_spawn_resources = batch.workshop_spawn_resources(args.workshop_addons) | set(external_vehicles.items())
+            workshop_damage_resources = batch.workshop_damage_resources(args.workshop_addons)
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
         if rhs_database:
@@ -425,7 +427,8 @@ def main():
         if args.batch and row['serializedTypes'].get('TILW_Flag_EntityDamage'):
             try:
                 damage_flags, damage, audit = batch.damage_flag_rules(
-                    source, world, stock, locally_owned, source_units, dev_units, rhs_database)
+                    source, world, stock, locally_owned, source_units, dev_units, rhs_database,
+                    workshop_targets=workshop_damage_resources)
                 if set(damage_flags) & set(objective_flags) or damage.keys() & interaction_placements.keys():
                     raise ValueError('damage flag or target also has an interaction')
                 objective_flags = set(objective_flags) | set(damage_flags)

@@ -2,7 +2,7 @@
 from collections import Counter, defaultdict
 from decimal import Decimal
 from functools import lru_cache, partial
-from hashlib import sha256
+from hashlib import file_digest, sha256
 from pathlib import PurePosixPath
 import re
 
@@ -108,6 +108,12 @@ SPAWN_DAMAGE_TARGETS = {
     ('ADA7E056B17AC663',
      'PrefabsEditable/Auto/Props/Military/AmmoBoxes/EquipmentBoxStack/E_EquipmentBoxStack_USSR_01_V2_covered.et'),
 }
+WORKSHOP_DAMAGE_TARGETS = {
+    'ZU-23_5C9AD9EF76F6B5EA': (
+        '5f647d652a2104e0570f662f2d8199ef2aedea5837810b03bac91eada81a86a2',
+        (('FD109F3702AAB392', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ZU23.et'),),
+    ),
+}
 WORKSHOP_SPAWN_PREFABS = {
     'BritishForces_5AE50EC5B8D6F4AE': {
         ('775DFB7F4529A122', 'Prefabs/Weapons/Rifles/L42A1/Rifle_L42A1.et'),
@@ -139,6 +145,12 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/RoseOutTheAshes/FIALeMouleRaid.conf': (
+        '55381d7ee37738834726dcde83d4e0256269ccf6',
+        (('worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid_layers/players.layer',
+          '3a8fe16cfe672cfa4cc1ef3f545f2d6ba9132bdb'),),
+        16, 17,
+    ),
     'Missions/Woody/COTVTXX_Kassel_Crashers.conf': (
         '4941956ada2db5d66db4dacb029d9037e252e032',
         (('worlds/Woody/COTVTXX_Kassel_Crashers/COTVTXX_Kassel_Crashers_Layers/playergroups.layer',
@@ -842,7 +854,8 @@ def script_text(source):
                      for path in source.files if path.lower().endswith('.c'))
 
 
-def damage_flag_rules(source, world, stock, local_resources, source_units, dev_units, rhs=None):
+def damage_flag_rules(source, world, stock, local_resources, source_units, dev_units, rhs=None, *,
+                      workshop_targets=()):
     placements, audit, candidates = {}, {}, defaultdict(list)
     observed = {}
     layers = source.layers[world.lower()]
@@ -884,14 +897,15 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                 if not re.fullmatch(NUMBER, health) or not 0 <= Decimal(health) <= 1:
                     raise ValueError('unsupported initial hit zone health')
                 initial_health = Decimal(health) < 1
-                stock_default = (zone == '""' and DAMAGE_TARGETS.get(resource) == ref[2]
-                                 and stock.contains(*ref.groups())
-                                 and is_character == ref[2].startswith('Prefabs/Characters/')
-                                 and resource not in source_units.resources and resource not in dev_units.resources)
+                stock_target = DAMAGE_TARGETS.get(resource) == ref[2] and stock.contains(*ref.groups())
+                verified_default = (
+                    zone == '""' and (stock_target or (resource, ref[2]) in workshop_targets)
+                    and is_character == ref[2].startswith('Prefabs/Characters/')
+                    and resource not in source_units.resources and resource not in dev_units.resources)
                 verified_zone = (resource, ref[2], zone) in REVIEWED_HIT_ZONES
-                if not (is_group or stock_default or verified_zone):
+                if not (is_group or verified_default or verified_zone):
                     raise ValueError('unverified damage objective prefab or component placement')
-                if is_character and (not stock_default or initial_health):
+                if is_character and (not verified_default or initial_health):
                     raise ValueError('character damage flag needs a verified default hit zone')
                 initial = []
                 if initial_health and not is_group:
@@ -907,7 +921,7 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                     placements[(path, line)] = converted
                     audit[location] = {'initialHealth': health, 'hitZone': zone[1:-1]}
                     continue
-                if (stock_default and not is_group and not initial_health
+                if (verified_default and not is_group and not initial_health
                         and (is_character or data.get('m_targetState', '2') not in ('2', 'DESTROYED')
                              or data.get('m_continuous', '0') != '0')):
                     converted, observed_flag = damage_state_flag_placement(block, allow_multiple_states=True)
@@ -1520,6 +1534,22 @@ def workshop_spawn_resources(workshop):
             if registry.is_file():
                 database = StockPrefabs(registry)
                 approved.update(reference for reference in references if database.contains(*reference))
+    return approved
+
+
+def workshop_damage_resources(workshop):
+    approved = set()
+    for provider, (digest, references) in WORKSHOP_DAMAGE_TARGETS.items():
+        directory = workshop / provider
+        archive = directory / 'data.pak'
+        registry = directory / 'resourceDatabase.rdb'
+        if not archive.is_file() or not registry.is_file():
+            continue
+        with archive.open('rb') as stream:
+            if file_digest(stream, 'sha256').hexdigest() != digest:
+                continue
+        database = StockPrefabs(registry)
+        approved.update(reference for reference in references if database.contains(*reference))
     return approved
 
 
@@ -2964,6 +2994,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare group simulation as players cross the authored LOD distance.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Compare framing and zoom against the legacy cover.')
+    if any(isinstance(text, str) and '{3B62608C6AB716B9}' in text and 'm_fSize 128000\n' in text
+           for text in draft.values()):
+        remaining.append('Compare the oversized cover marker at the authored scale across map zoom levels.')
     if any(' IsClosed 0' in body for bodies in boundaries.values() for body in bodies):
         remaining.append('Compare open briefing map outlines as zoom and faction view change.')
     if any(path.endswith('.layer') and isinstance(body, str)

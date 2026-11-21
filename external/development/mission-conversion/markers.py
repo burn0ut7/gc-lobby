@@ -29,6 +29,12 @@ DEFAULTS = {
 PHASES = ('PREGAME', 'SLOTTING', 'BRIEFING', 'GAME', 'POSTGAME')
 LEGACY_STATES = {'SLOTSELECTION': 'SLOTTING', '1': 'GAME', '5': 'BRIEFING'}
 UNUSED_STATES = {'CUTSCENE', 'DEBRIEFING', 'NULL'}
+WIDE_COVER_FIELDS = {
+    'm_sImageSet': '"{3B62608C6AB716B9}Covermap/UCAMF_CoverMap.imageset"',
+    'm_sQuadName': '"8x4"',
+    'm_bUseWorldScale': '1',
+    'm_fWorldSize': '128000',
+}
 
 
 def phase_fields(value):
@@ -82,7 +88,8 @@ def instance(lines, name, inherited=None, *, draw_order=False):
         merged.pop('angleY')
     if len(merged['m_sDescription'].encode()) - 2 > 512 or len(name.encode()) > 128:
         raise ValueError('marker exceeds native Lobby snapshot limits')
-    if not 0.01 <= float(merged['m_fWorldSize']) <= 100000:
+    wide_cover = all(merged[field] == value for field, value in WIDE_COVER_FIELDS.items())
+    if not wide_cover and not 0.01 <= float(merged['m_fWorldSize']) <= 100000:
         raise ValueError('unsupported marker size')
     output = [f'GenericEntity{name} : "{DEST}" {{', ' components {',
               '  GC_BriefingMarkerComponent "{00C8292F836D4D6F}" {']
