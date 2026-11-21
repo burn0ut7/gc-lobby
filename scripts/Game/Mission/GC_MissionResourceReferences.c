@@ -230,6 +230,11 @@ class GC_MissionResourceReferences
 			// Saved evidence is output, never a new dependency input.
 			if (key == "m_GC_GeneratedMetadata" || m_aExcludedFields.Contains(key))
 				continue;
+			// Inherited faction catalogues enumerate alternatives across the addon pack.
+			// Visit catalogue fields the container reports as local, and prefabs reached through mission content.
+			if (!m_bLoadoutFields && key == "m_aEntityCatalogs"
+				&& container.GetClassName() == "SCR_Faction" && !container.IsVariableSetDirectly(key))
+				continue;
 			string field = fieldPrefix + key;
 			if (type == DataVarType.RESOURCE_NAME || type == DataVarType.STRING)
 			{

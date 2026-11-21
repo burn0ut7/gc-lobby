@@ -461,7 +461,15 @@ class GC_MissionMetadataExport
 		snapshot.m_aLoadedAddons = {};
 		snapshot.m_sWorld = world;
 		snapshot.m_sCaptureScope = "world_subscene";
-		snapshot.m_aLimitations = {"Captured mission subscene and prefab children only; other subscenes and runtime spawns excluded.", "Editor snapshot; refresh explicitly after saving mission changes.", "Effective nested resource fields and linked .et/.conf containers are expanded, including authored inventory and identity references.", "Resource rows retain their first origin for non-vanilla or unresolved containers. Expanded vanilla-only containers and unexpanded non-container resources are counted separately. Specialized texture fields and script-selected assets are not fully resolved.", "Broad authored references can include unused editor/catalogue alternatives; source addons are evidence, not a minimal or complete dependency manifest.", "Asset presence does not imply player availability; mod configuration may be inaccurate."};
+		snapshot.m_aLimitations = {
+			"Captured mission subscene and prefab children only; other subscenes and runtime spawns excluded.",
+			"Editor snapshot; refresh explicitly after saving mission changes.",
+			"Effective nested resource fields and linked .et/.conf containers are expanded, including authored inventory and identity references.",
+			"Inherited faction catalogues are excluded. Add explicit catalogue dependencies when gameplay selects from them.",
+			"Resource rows retain their first origin for non-vanilla or unresolved containers. Expanded vanilla-only containers and unexpanded non-container resources are counted separately. Specialized texture fields and script-selected assets are not fully resolved.",
+			"Source addons are evidence of observed use. Other editor or catalogue alternatives may still appear.",
+			"Asset presence does not imply player availability; mod configuration may be inaccurate."
+		};
 		snapshot.m_aPlayerSlots = {};
 		foreach (GC_MissionMetadataSlot slot : m_aPlayerSlots)
 			snapshot.m_aPlayerSlots.Insert(slot);

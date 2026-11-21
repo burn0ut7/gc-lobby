@@ -2,14 +2,18 @@
 import argparse
 from functools import cache
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+import re
 
-from catalog import Snapshot
+from catalog import SOURCE_TEXT, Snapshot
 from dependencies import BASE_GAME, DEPENDENCIES, checkout_project, dependency_catalogue
 from install_batch import resource_databases, unregistered_references
 from launchers import WORLD_REF
 from review import closure, inspect
 from scenery import StockPrefabs
+
+
+AUTHORED_CATALOGUE = re.compile(r'^[ \t]*m_aEntityCatalogs\b', re.M)
 
 
 def capture_dependencies(project, local, installed, omit):
@@ -69,11 +73,19 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
     files = set()
     candidates = {}
     excluded = {}
+    authored_catalogues = {}
     for header, checks in audit['committedLauncherMetadata'].items():
         if not checks['gcMissionHeader'] or checks['generatedSnapshot']:
             continue
         world = WORLD_REF.search(dev.read(header))[3]
         paths = closure(dev, world, header)
+        catalogue_paths = sorted(
+            path for path in paths if PurePosixPath(path).suffix.lower() in SOURCE_TEXT
+            and AUTHORED_CATALOGUE.search(dev.read(path))
+        )
+        if catalogue_paths:
+            authored_catalogues[header] = catalogue_paths
+            continue
         candidates[header] = world, paths, set(inspect(dev, paths)[2])
     missing = unregistered_references({
         ref for _, _, refs in candidates.values() for ref in refs if ref not in available
@@ -109,6 +121,7 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
         'excludedDependencies': sorted(excluded_addons),
         'eligible': eligible,
         'referencesOutsideScope': excluded,
+        'authoredCataloguesForReview': authored_catalogues,
     }
 
 
