@@ -15,9 +15,16 @@ STANDARD_CALLSIGN = '63616C6C7369676E'
 INDEX = {'m_iCompanyCallsign': 'm_iGC_CallsignCompany', 'm_iPlatoonCallsign': 'm_iGC_CallsignPlatoon',
          'm_iSquadCallsign': 'm_iGC_CallsignSquad'}
 SLOTS = re.compile(r'^ m_aUnitPrefabSlots \{\n(.*?)^ \}', re.M | re.S)
-NATIVE_GROUP_FIELD = re.compile(r'm_faction "[\w.-]+"|m_iGroupRadioFrequency \d+')
+NATIVE_GROUP_FIELD = re.compile(r'm_faction "[\w.-]+"|m_iGroupRadioFrequency \d+|'
+                                r'm_bDeleteIfNoPlayer [01]|m_iMaxMembers \d{1,4}|'
+                                r'DangerEventRange \d+(?:\.\d+)?')
 STATIC_LINK_FIELDS = {'m_aStaticWaypoints {', 'm_aStaticVehicles {'}
 FORMATION = re.compile(r'AIFormationComponent "\{[\da-fA-F]{16}\}" \{')
+MOVEMENT = 'SCR_AIGroupMovementComponent "{6126A0E02097C7FF}" {'
+MOVEMENT_FIELD = re.compile(r'Enabled [01]|"(?:Min|Max) Speed" \d+(?:\.\d+)?|DefaultFormation "[A-Z_]+"')
+EDITABLE_GROUP = 'SCR_EditableGroupComponent "{50D291F6C83FA532}" {'
+EDITABLE_UI = 'm_UIInfo SCR_EditableGroupUIInfo "{5298E609432D192D}" {'
+EDITABLE_UI_FIELD = re.compile(r'(?:Name|Description) "[^"\n]*"|m_sFaction "[\w.-]+"|m_Image ' + REF.pattern)
 WRAPPERS = json.loads(Path(__file__).with_name('stock_wrappers.json').read_text(encoding='utf-8'))
 STOCK_AI_GROUPS = json.loads(Path(__file__).with_name('stock_ai_groups.json').read_text(encoding='utf-8'))
 BASE_CHARACTER = ('37578B1666981FCE', 'Prefabs/Characters/Core/Character_Base.et')
@@ -232,6 +239,18 @@ def native_group_field_end(lines, index):
     return None
 
 
+def native_group_component(lines, start, end):
+    header = lines[start].strip()
+    if FORMATION.fullmatch(header):
+        return True
+    if header == MOVEMENT:
+        return all(MOVEMENT_FIELD.fullmatch(line.strip()) for line in lines[start + 1:end])
+    if header != EDITABLE_GROUP or end < start + 3 or lines[start + 1].strip() != EDITABLE_UI:
+        return False
+    return (block_end(lines, start + 1) == end - 1
+            and all(EDITABLE_UI_FIELD.fullmatch(line.strip()) for line in lines[start + 2:end - 1]))
+
+
 def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai, stock_group=None):
     old_chain = () if stock_group else compare_ai_parents(source_units, dev_units, guid)
     inherited_stock_slots = {tuple(slot) for slot in stock_group['slots']} if stock_group else set()
@@ -271,10 +290,21 @@ def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, ext
             index = end
         elif token == 'components {':
             end = block_end(lines, index)
-            if (end < index + 3 or not FORMATION.fullmatch(lines[index + 1].strip())
-                    or block_end(lines, index + 1) != end - 1):
-                raise ValueError('AI group components need a conversion rule')
-            result.extend(lines[index:end + 1])
+            start = index + 1
+            components = []
+            while start < end:
+                stop = block_end(lines, start)
+                assigner = CALL.fullmatch(lines[start])
+                if assigner and assigner[1].upper() == STANDARD_CALLSIGN:
+                    # This component is consulted only when a legacy player slot is registered.
+                    callsign(lines[start + 1:stop])
+                elif native_group_component(lines, start, stop):
+                    components.extend(lines[start:stop + 1])
+                else:
+                    raise ValueError('AI group component needs review: ' + lines[start].strip().split()[0])
+                start = stop + 1
+            if components:
+                result.extend([lines[index], *components, lines[end]])
             index = end
         elif token.startswith(('coords ', 'angles ', 'angleX ', 'angleY ', 'angleZ ', 'scale ', 'm_bSnapToTerrain ')):
             result.append(line)
@@ -365,10 +395,10 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                     effective.update(placed)
                     metadata.extend(indent + f'{dest} "{effective[k]}"' for k, dest in INDEX.items())
                     assigned = (match[1].upper(), placed)
-                elif FORMATION.fullmatch(lines[j].strip()):
+                elif native_group_component(lines, j, last):
                     components.extend(lines[j:last+1])
                 else:
-                    raise ValueError('group component needs review')
+                    raise ValueError('group component needs review: ' + lines[j].strip().split()[0])
                 j = last + 1
             if components:
                 out.extend([line, *components, lines[end]])

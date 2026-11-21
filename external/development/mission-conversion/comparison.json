@@ -1,6 +1,6 @@
 {
   "source": "a75e404c331abce5185f315f47f533d9b8eccf00",
-  "target": "0fd4483a6ffb03265ea8f7643bf375ec5b3f5119",
+  "target": "4ff10132a70c8a2ff399d539d0aa9e45cbaef208",
   "headers": {
     "Missions/Aurelas/SpearheadAirSupport.conf": {
       "worlds": [
@@ -2466,13 +2466,13 @@
       },
       "groupLayers": {
         "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Army/Army_Players.layer": {
-          "gap": "group component needs review"
+          "gap": "group component needs review: SCR_EditableGroupComponent"
         },
         "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Army/Army_Wounded_Brad.layer": {
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Insurgents/Insurgent_AI.layer": {
-          "gap": "AI group components need a conversion rule"
+          "gap": "AI group component needs review: SCR_AIConfigComponent"
         },
         "worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Insurgents/Insurgent_Players.layer": {
           "gap": "mission-owned slot 4677203BEDF7D1A9"
@@ -2541,10 +2541,10 @@
       },
       "groupLayers": {
         "worlds/Blue/Bangalorious/Bangalorious_Layers/RU/RUPlayer.layer": {
-          "gap": "group component needs review"
+          "gap": "group component needs review: PS_GroupCallsignAssigner"
         },
         "worlds/Blue/Bangalorious/Bangalorious_Layers/US/USPlayer.layer": {
-          "gap": "group component needs review"
+          "gap": "group component needs review: PS_GroupCallsignAssigner"
         }
       },
       "boundaryLayers": {
@@ -2965,7 +2965,7 @@
           "gap": "AI slots require character playability review 9FB82322D0798CEE"
         },
         "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/BLUFOR/BLUFORPlayer.layer": {
-          "gap": "group component needs review"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/OPFOR/OPFORPlayer.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -5475,7 +5475,7 @@
       ],
       "markerLayers": {
         "worlds/Cunnah/Rocky_Start/Rocky_Start_Layers/Markers.layer": {
-          "candidateIcons": 4
+          "gap": "Dev has different layer content"
         }
       },
       "boundaryLayers": {
@@ -5788,7 +5788,7 @@
       },
       "groupLayers": {
         "worlds/Delfer/Topdown/Topdown_Layers/blufor_AI.layer": {
-          "gap": "AI group components need a conversion rule"
+          "gap": "AI group component needs review: AIChimeraBehaviorTreeComponent"
         },
         "worlds/Delfer/Topdown/Topdown_Layers/blufor_players.layer": {
           "gap": "group field needs review: {"
@@ -5888,7 +5888,7 @@
       ],
       "markerLayers": {
         "worlds/Elite/ConcreteJungle/ConcreteJungle_Layers/Markers.layer": {
-          "candidateIcons": 10
+          "gap": "Dev has different layer content"
         }
       },
       "groupLayers": {
@@ -6006,7 +6006,7 @@
       ],
       "markerLayers": {
         "worlds/Elite/DesertHeat/DesertHeat_Layers/Markers.layer": {
-          "candidateIcons": 3
+          "gap": "Dev has different layer content"
         }
       },
       "groupLayers": {
@@ -6137,7 +6137,7 @@
       ],
       "markerLayers": {
         "worlds/Elite/PonderingThyOrb/PonderingThyOrb_Layers/Markers.layer": {
-          "candidateIcons": 2
+          "gap": "Dev has different layer content"
         }
       },
       "groupLayers": {
@@ -7215,7 +7215,7 @@
       },
       "groupLayers": {
         "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/Blufor1/Blufor.layer": {
-          "gap": "group component needs review"
+          "gap": "group component needs review: PS_GroupCallsignAssigner"
         },
         "worlds/Fruz/Gwotline Bling/Gwotline Bling_Layers/Opfor1/OPFOR.layer": {
           "gap": "legacy slot playability requires review 328AFF9E8B3F3AE9"
@@ -7351,7 +7351,7 @@
           "gap": "line 1 mixed or custom placement"
         },
         "worlds/Fruz/Korengal Vacation/Korengal Vacation_Layers/markers.layer": {
-          "candidateIcons": 5
+          "gap": "Dev has different layer content"
         }
       },
       "groupLayers": {
@@ -7481,10 +7481,12 @@
           "gap": "unresolved or duplicate Units prefab 22E43956740A6794"
         },
         "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/Blufor.layer": {
-          "gap": "group field needs review: m_bDeleteIfNoPlayer"
+          "playableGroups": 5,
+          "unitPrefabEntries": 41
         },
         "worlds/Fruz/Operation Tampa/Operation Tampa_Layers/Opfor.layer": {
-          "gap": "group field needs review: m_bDeleteIfNoPlayer"
+          "playableGroups": 4,
+          "unitPrefabEntries": 26
         }
       },
       "stockPlacementLayers": {
@@ -8644,7 +8646,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/BLUFOR/BLU_AI_Mid_Trench_28xAI.layer": {
-          "gap": "AI group field needs review: DangerEventRange"
+          "gap": "unresolved or duplicate Units prefab 5B1996C05B1E51A4"
         },
         "worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/BLUFOR/BLU_AI_Town_Defene_60xAI.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -10815,10 +10817,10 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Encircled NVA/EncircledNVA_Layers/NVA_Players/NVA_Players.layer": {
-          "gap": "AI group components need a conversion rule"
+          "gap": "AI slots require character playability review 5DB24CC9BAA2001B"
         },
         "worlds/HitTheMan/Encircled NVA/EncircledNVA_Layers/US_Players/US_Players.layer": {
-          "gap": "group field needs review: DangerEventRange"
+          "gap": "group field needs review: DynamicsimLastlodDistance"
         }
       },
       "boundaryLayers": {
@@ -11661,7 +11663,7 @@
       },
       "groupLayers": {
         "worlds/HitTheMan/Leaf and Two Bridges/Leaf and Two Bridges_Layers/BLU_Players.layer": {
-          "gap": "group field needs review: m_bDeleteIfNoPlayer"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/HitTheMan/Leaf and Two Bridges/Leaf and Two Bridges_Layers/OPFOR_Recon_AI.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -14149,7 +14151,7 @@
       },
       "groupLayers": {
         "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/AiA.layer": {
-          "gap": "AI group field needs review: m_bDeleteIfNoPlayer"
+          "gap": "mixed layer or custom group declaration"
         },
         "worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/AiB.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -15359,7 +15361,7 @@
           "gap": "unresolved or duplicate Units prefab 1BB20A4B3A53D0F5"
         },
         "worlds/Huska/MortonBay/MortonBay_Layers/Players.layer": {
-          "gap": "group component needs review"
+          "gap": "group component needs review: SCR_CallsignBaseComponent"
         }
       },
       "boundaryLayers": {
@@ -16327,7 +16329,7 @@
           "unitPrefabEntries": 20
         },
         "worlds/James/LacourtManor/LacourtManor_Layers/red_players.layer": {
-          "gap": "group component needs review"
+          "gap": "group component needs review: SCR_EditableGroupComponent"
         }
       },
       "boundaryLayers": {
@@ -17286,7 +17288,7 @@
       },
       "groupLayers": {
         "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/AI/BluAI.layer": {
-          "gap": "group field needs review: m_bDeleteIfNoPlayer"
+          "gap": "legacy slot playability requires review 6BF18027F0A6A47A"
         },
         "worlds/Jub/CombinedAntiArmorTeam/CombinedAntiArmorTeam_Layers/players.layer": {
           "playableGroups": 5,
@@ -18084,7 +18086,7 @@
           "unitPrefabEntries": 0
         },
         "worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/players.layer": {
-          "gap": "group component needs review"
+          "gap": "mission-owned slot 6249D34810999F63"
         }
       },
       "boundaryLayers": {
@@ -18716,7 +18718,8 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Perfk/AbadDayinKunarUSTVT/AbadDayinKunarUSTVT_Layers/OPFOR/OPFOR_Players.layer": {
-          "gap": "group component needs review"
+          "playableGroups": 9,
+          "unitPrefabEntries": 39
         }
       },
       "boundaryLayers": {
@@ -19271,7 +19274,7 @@
           "gap": "group field needs review: {"
         },
         "worlds/Reapzr/Deadlock/Deadlock_Layers/Groups/Defenders.layer": {
-          "gap": "group component needs review"
+          "gap": "group component needs review: SCR_EditableGroupComponent"
         }
       },
       "directBriefingsRead": 1,
@@ -19925,7 +19928,8 @@
           "gap": "AI group field needs review: m_bDeleteWhenEmpty"
         },
         "worlds/Sasha20k_pro/Assault of Thirty Palms/Assault of Thirty Palms_Layers/Players_us.layer": {
-          "gap": "group field needs review: m_iMaxMembers"
+          "playableGroups": 4,
+          "unitPrefabEntries": 46
         }
       },
       "stockPlacementLayers": {
@@ -20164,7 +20168,7 @@
       },
       "groupLayers": {
         "worlds/StatusRed/OSITheAirfieldIncident/OSITheAirfieldIncident_Layers/Players.layer": {
-          "gap": "group component needs review"
+          "gap": "group component needs review: SCR_GroupIdentityComponent"
         }
       },
       "directBriefingsRead": 11,
@@ -21302,7 +21306,7 @@
           "gap": "legacy slot playability requires review 6E8835E4D8B1510E"
         },
         "worlds/TheLocalPub/CleanHouse/CleanHouse_Layers/OFPOR/Players.layer": {
-          "gap": "group component needs review"
+          "gap": "group component needs review: PK_EntityProtectorComponent"
         }
       },
       "boundaryLayers": {
@@ -22178,7 +22182,7 @@
           "unitPrefabEntries": 24
         },
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/CIVFOR/Players.layer": {
-          "gap": "group component needs review"
+          "gap": "mission-owned slot 9EE540627801DB2C"
         },
         "worlds/TheLocalPub/QuickReaction/QuickReactions_Layers/INDFOR/AI.layer": {
           "gap": "AI group field needs review: m_sCustomNameSet"
@@ -22764,7 +22768,7 @@
           "unitPrefabEntries": 29
         },
         "worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Opfor/Players.layer": {
-          "gap": "AI group components need a conversion rule"
+          "gap": "AI slots require character playability review 87655FFE44D468FA"
         }
       },
       "boundaryLayers": {
@@ -23093,7 +23097,7 @@
           "gap": "line 13 mixed or custom placement"
         },
         "worlds/TheLocalPub/WeHateStairsExpress/WeHateStairsExpress_Layers/Markers.layer": {
-          "candidateIcons": 4
+          "gap": "Dev has different layer content"
         }
       },
       "groupLayers": {
@@ -23180,7 +23184,7 @@
       },
       "groupLayers": {
         "worlds/TheLocalPub/WetFeet/WetFeet_Layers/BLUFOR/Players.layer": {
-          "gap": "group component needs review"
+          "gap": "group component needs review: PS_GroupCallsignAssigner"
         },
         "worlds/TheLocalPub/WetFeet/WetFeet_Layers/OPFOR/Players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -23443,7 +23447,7 @@
       },
       "groupLayers": {
         "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/cdf.layer": {
-          "gap": "AI group components need a conversion rule"
+          "gap": "AI slots require character playability review C1BBE6CDE5695940"
         },
         "worlds/Til/ALittleWhileLonger/ALittleWhileLonger_Layers/ru.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -23723,7 +23727,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Til/CompanyTeamCounterAttack/CompanyTeamCounterAttack_Layers/nva.layer": {
-          "gap": "AI group components need a conversion rule"
+          "gap": "AI slots require character playability review E3D02636057FC2B4"
         }
       },
       "stockPlacementLayers": {
@@ -24201,7 +24205,7 @@
       },
       "groupLayers": {
         "worlds/Til/DevilsDrive/DevilsDrive_Layers/nva.layer": {
-          "gap": "AI group components need a conversion rule"
+          "gap": "AI slots require character playability review E3D02636057FC2B4"
         },
         "worlds/Til/DevilsDrive/DevilsDrive_Layers/us.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -24843,7 +24847,7 @@
           "gap": "unresolved or duplicate Units prefab B50B7BF31273C2A6"
         },
         "worlds/Til/GullBayGuns/GullBayGuns_Layers/Players.layer": {
-          "gap": "group component needs review"
+          "gap": "group component needs review: SCR_PreviewEntityComponent"
         }
       },
       "boundaryLayers": {
@@ -25949,7 +25953,7 @@
       },
       "groupLayers": {
         "worlds/Til/Metalwave/Metalwave_Layers/ai.layer": {
-          "gap": "AI group components need a conversion rule"
+          "gap": "unresolved or duplicate Units prefab 1701B425406974A0"
         },
         "worlds/Til/Metalwave/Metalwave_Layers/players.layer": {
           "gap": "mixed layer or custom group declaration"
@@ -27936,7 +27940,7 @@
           "gap": "mixed layer or custom group declaration"
         },
         "worlds/Woody/COTVTXX_Zavarak_Farmland/COTVTXX_Zavarak_Farmland_Layers/playergroups.layer": {
-          "gap": "group component needs review"
+          "gap": "mixed layer or custom group declaration"
         }
       },
       "boundaryLayers": {
@@ -29000,7 +29004,7 @@
       },
       "groupLayers": {
         "worlds/anteante101/Role Reversal CDF edition/Role Reversal CDF edition_Layers/players.layer": {
-          "gap": "group component needs review"
+          "gap": "group component needs review: TILW_Flag_EntityDamage"
         }
       },
       "directBriefingsRead": 0,
@@ -36810,10 +36814,10 @@
       },
       "groupLayers": {
         "worlds/chllboy/Hephaestus Forge/Hephaestus Forge_Layers/Blufor.layer": {
-          "gap": "group component needs review"
+          "gap": "group component needs review: PS_GroupCallsignAssigner"
         },
         "worlds/chllboy/Hephaestus Forge/Hephaestus Forge_Layers/Opfor.layer": {
-          "gap": "group component needs review"
+          "gap": "group component needs review: PS_GroupCallsignAssigner"
         }
       },
       "boundaryLayers": {
