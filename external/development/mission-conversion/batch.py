@@ -108,7 +108,15 @@ SPAWN_DAMAGE_TARGETS = {
     ('ADA7E056B17AC663',
      'PrefabsEditable/Auto/Props/Military/AmmoBoxes/EquipmentBoxStack/E_EquipmentBoxStack_USSR_01_V2_covered.et'),
 }
+GMFX_AMMO_TARGETS = (
+    ('8B9AFAD3A1548FCE', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage.et'),
+    ('4C931B452C796A2A', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage_USSR.et'),
+)
 WORKSHOP_DAMAGE_TARGETS = {
+    'GameMasterFX_5994AD5A9F33BE57': (
+        '09a2e7a14300b916b1eaea43446d39d1d3334209e692e50d29406233962f7c80',
+        GMFX_AMMO_TARGETS,
+    ),
     'ZU-23_5C9AD9EF76F6B5EA': (
         '5f647d652a2104e0570f662f2d8199ef2aedea5837810b03bac91eada81a86a2',
         (('FD109F3702AAB392', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ZU23.et'),),
@@ -145,6 +153,14 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/Devils Crossing/DevilsCrossing.conf': (
+        '4567fcab9ab11d0ad160f4c47933ea073cd2bb67',
+        (('worlds/HitTheMan/Devils Crossing/DevilsCrossing_Layers/BLUFOR_Players/BLUFOR_Players.layer',
+          'da0328ab2dd786247848531d951f38357fb19533'),
+         ('worlds/HitTheMan/Devils Crossing/DevilsCrossing_Layers/OPFOR_Players/OPFOR_Players.layer',
+          'c176119fe554d308886f33094b3247046c663553')),
+        110, 65,
+    ),
     'Missions/Huska/MortonBay.conf': (
         '349110f369ae52809278847d26ee41539ca02d83',
         (('worlds/Huska/MortonBay/MortonBay_Layers/Players.layer',
@@ -1425,18 +1441,20 @@ def damage_state_flag_placement(block, *, allow_multiple_states=False):
     return lines, flag[1:-1]
 
 
-def spawned_damage_objective(block, stock, local_resources):
+def spawned_damage_objective(block, stock, local_resources, workshop_targets):
     parent = REF.search(block[0])
     if not parent or not block[0].startswith('GenericEntity : '):
         raise ValueError('unsupported spawned damage owner')
     ref = (parent[1].upper(), parent[2])
-    if ref not in SPAWN_DAMAGE_TARGETS or ref[0] in local_resources or not stock or not stock.contains(*ref):
+    registered_stock = ref in SPAWN_DAMAGE_TARGETS and stock and stock.contains(*ref)
+    registered_workshop = ref in GMFX_AMMO_TARGETS and ref in workshop_targets
+    if ref[0] in local_resources or not (registered_stock or registered_workshop):
         raise ValueError('unverified spawned damage prefab')
     lines, flag = damage_state_flag_placement(block)
     return '\n'.join(lines) + '\n', flag
 
 
-def spawned_objectives(source, dev, world, stock, local_resources):
+def spawned_objectives(source, dev, world, stock, local_resources, workshop_targets=()):
     """Identify mission-owned interaction prefabs referenced by a standard spawn."""
     reviewed = {}
     placements = Counter()
@@ -1460,7 +1478,7 @@ def spawned_objectives(source, dev, world, stock, local_resources):
                     continue
                 (_, block), = blocks(text)
                 if 'TILW_Flag_EntityDamage' in text:
-                    native, flag = spawned_damage_objective(block, stock, local_resources)
+                    native, flag = spawned_damage_objective(block, stock, local_resources, workshop_targets)
                     kind = {'destroyed': True}
                 else:
                     native, objectives = convert_interaction_block(block, path, stock, local_resources)

@@ -464,7 +464,7 @@ def main():
             except ValueError as exc:
                 row['aiObjectiveGap'] = str(exc)
         if args.batch and row['serializedTypes'].get('TILW_SpawnPrefabInstruction'):
-            spawned = batch.spawned_objectives(source, dev, world, stock, locally_owned)
+            spawned = batch.spawned_objectives(source, dev, world, stock, locally_owned, workshop_damage_resources)
             if spawned:
                 asset_flags = [item['flag'] for item in spawned.values()]
                 if (len(asset_flags) != len(set(asset_flags)) or set(asset_flags) & set(objective_flags)
