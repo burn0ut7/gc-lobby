@@ -129,6 +129,10 @@ Five headers have outdated paths and Operation Steel has a case difference. Topd
 
 ## Remaining behavior work
 
+The published GC Lobby description prefab supplies `Description title` and `Description text`. The GC Core overlay sets the layout. The converter uses the inherited values for placements with that exact prefab reference and retains explicitly empty strings. The Local Files keeps its authored title, inherited body and hidden audience. Its custom extraction and reinforcement placements still require review. Bangalorious contains two repeated `m_sTextData` tokens on continuation lines in the pinned source and published world. Its briefing stays in review until the legacy engine's interpretation is confirmed.
+
+Owl's Prey, The Adjacent Wave and Zarichne Front use the TilW static soldier behavior tree. The published tree stays at the assigned position, selects and attacks targets, changes its aim while idle, and can self-bandage. Its attack branch references a separate TilW tree. Recovery requires a supported native behavior with verified equivalent behavior or an independent implementation. The current file audit holds those placements.
+
 | Source behavior | GC Lobby comparison and pending work |
 | --- | --- |
 | Phase and mode ownership | Replace the legacy root once per world, preserving terrain AI, perception, faction overrides, weather, chat and radio ownership. Check lobby/roles → briefing → match → after-action report on authority and clients. |
