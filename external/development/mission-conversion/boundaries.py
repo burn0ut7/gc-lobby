@@ -1,4 +1,4 @@
-"""Translate standalone instances of the common legacy AO prefab."""
+"""Translate authored instances of the common legacy AO and map shape prefabs."""
 import math
 import re
 from struct import pack, unpack
@@ -171,7 +171,7 @@ def render_cover(coords, vertices, yaw, cover, pitch=0, roll=0):
 
 
 def convert_instance(lines, name, passive_only=False, allow_public_faction_color=False, split_fill=True,
-                     extended_shapes=False, standalone=False):
+                     extended_shapes=False, standalone=False, parent_origin=(0, 0, 0)):
     values, overlay, cover = {}, {}, {}
     placement = []
     vertices = []
@@ -237,7 +237,8 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     if scale is not None:
         vertices = [tuple(axis * scale for axis in point) for point in vertices]
     if closed is not False:
-        validate_polygon(vertices, origin, yaw, pitch, roll)
+        world_origin = tuple(local + parent for local, parent in zip(origin, parent_origin))
+        validate_polygon(vertices, world_origin, yaw, pitch, roll)
     elif not 2 <= len(vertices) <= 128 or overlay.get('m_drawArea', '1') != '0':
         raise ValueError('open map shape requires 2 to 128 points and no fill')
     if standalone:
@@ -315,6 +316,48 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     return cover_shape + passive_fill + '\n'.join([*lines,*placement,'}']), len(vertices)
 
 
+def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0):
+    child_start = next((i for i, line in enumerate(lines) if line.strip() == '{'), None)
+    # Only a brace at the root-property indent opens the entity's child list.
+    if child_start is not None:
+        indent = min(len(line) - len(line.lstrip()) for line in lines if line.strip())
+        child_start = next((i for i, line in enumerate(lines) if line == ' ' * indent + '{'), None)
+    if child_start is None or not options['extended_shapes']:
+        return convert_instance(lines, name, parent_origin=parent_origin, **options)
+    if (depth >= 16 or options['standalone'] or child_start == len(lines) - 2
+            or block_end(lines, child_start) != len(lines) - 1):
+        raise ValueError('unsupported boundary child list')
+    fields = [line.strip() for line in lines[:child_start] if line.startswith(' ' * indent)
+              and not line.startswith(' ' * (indent + 1))]
+    if any(field.startswith(('angle', 'scale ')) for field in fields):
+        raise ValueError('nested boundary requires an unrotated, unscaled parent')
+    position = [floats(field[7:], 3) for field in fields if field.startswith('coords ')]
+    if len(position) != 1:
+        raise ValueError('nested boundary requires one explicit parent origin')
+    origin = tuple(local + parent for local, parent in zip(position[0], parent_origin))
+    body, count = convert_instance(lines[:child_start], name, parent_origin=parent_origin, **options)
+    if not re.search(r'^GC_AOLimitEntity\b', body, re.M):
+        raise ValueError('nested boundary needs an active parent AO')
+    children = []
+    index = child_start + 1
+    while index < len(lines) - 1:
+        header = lines[index][indent + 1:]
+        standalone = STANDALONE_SHAPE.fullmatch(header)
+        match = standalone or ROOT.fullmatch(header)
+        if not match or match['group'] or lines[index][:indent + 1] != ' ' * (indent + 1):
+            raise ValueError('unrecognized nested boundary entity')
+        stop = block_end(lines, index)
+        if stop >= len(lines) - 1:
+            raise ValueError('nested entity lies outside boundary child list')
+        child_name = ' ' + match['name'] if match['name'] else ''
+        child, vertices = convert_hierarchy(lines[index + 1:stop], child_name,
+                                            {**options, 'standalone': bool(standalone)}, origin, depth + 1)
+        children.extend('  ' + line for line in child.splitlines())
+        count += vertices
+        index = stop + 1
+    return '\n'.join([body.rsplit('\n', 1)[0], ' {', *children, ' }', '}']), count
+
+
 def convert_boundaries(text, allow_public_faction_color=False, split_fill=True, *, extended_shapes=False):
     lines = text.splitlines()
     emitted, review = [], {}
@@ -339,10 +382,10 @@ def convert_boundaries(text, allow_public_faction_color=False, split_fill=True, 
             instances.append((i,end,root['name']))
         for start, stop, name in instances:
             try:
-                body,count = convert_instance(lines[start+1:stop], ' '+name if name else '',
-                                              allow_public_faction_color=allow_public_faction_color,
-                                              split_fill=split_fill, extended_shapes=extended_shapes,
-                                              standalone=bool(standalone))
+                body,count = convert_hierarchy(lines[start+1:stop], ' '+name if name else '',
+                                               {'allow_public_faction_color': allow_public_faction_color,
+                                                'split_fill': split_fill, 'extended_shapes': extended_shapes,
+                                                'standalone': bool(standalone)})
                 emitted.append(body)
                 review[str(start+1)] = {'vertices':count,'name':name,'lastLine':stop+1}
             except (ArithmeticError, ValueError) as error:

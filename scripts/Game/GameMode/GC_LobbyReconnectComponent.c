@@ -46,7 +46,7 @@ class GC_LobbyReconnectComponent : SCR_ReconnectComponent
 		m_iReconnectTime = manager.GetSlotReservationTimeoutSeconds();
 		if (m_iReconnectTime > 0)
 			data.m_ValidUntil = GetGame().GetWorld().GetTimestamp().PlusSeconds(m_iReconnectTime);
-		else
+		else if (m_iReconnectTime == 0)
 		{
 			// The native game mode calls us before the manager disconnect callback.
 			// That callback releases a zero-timeout claim after marking it offline.

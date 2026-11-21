@@ -64,6 +64,9 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 	[Attribute("120", UIWidgets.EditBox, "Reconnect grace period in seconds (0 releases immediately)")]
 	protected int m_iSlotReservationTimeoutSeconds;
 
+	[Attribute("-2", UIWidgets.EditBox, "Match reconnect grace in seconds. -2 uses the same policy in every phase. -1 keeps the slot indefinitely.")]
+	protected int m_iMatchSlotReservationTimeoutSeconds;
+
 	[Attribute("1", UIWidgets.CheckBox, "Start lobby slots locked. Admins can unlock all slots with the padlock in Lobby.")]
 	protected bool m_bSlotsStartLocked;
 
@@ -499,6 +502,13 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 
 	int GetSlotReservationTimeoutSeconds()
 	{
+		if (m_iMatchSlotReservationTimeoutSeconds >= -1)
+		{
+			SCR_EGameModeState phase = GetLobbyPhase();
+			if (phase == SCR_EGameModeState.GAME || phase == SCR_EGameModeState.POSTGAME)
+				return m_iMatchSlotReservationTimeoutSeconds;
+			return Math.Max(-1, m_iSlotReservationTimeoutSeconds);
+		}
 		return Math.Max(0, m_iSlotReservationTimeoutSeconds);
 	}
 

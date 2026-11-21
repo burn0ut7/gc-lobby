@@ -1276,6 +1276,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     construction = {}
     jip = {}
     mode_components_seen = False
+    reconnect = {}
     respawn_table_seen = False
     respawn_fields = ''
     safe_start_seen = False
@@ -1327,6 +1328,14 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             if field in jip:
                 raise ValueError('duplicate legacy JIP setting ' + field)
             jip[field] = value
+        elif line.startswith((' m_iReconnectTime ', ' m_iReconnectTimeAfterBriefing ')):
+            field, value = line.strip().split(' ', 1)
+            if field in reconnect or not re.fullmatch(r'-?\d+', value) or not -1 <= int(value) <= 2147483647:
+                raise ValueError('invalid legacy reconnect duration')
+            milliseconds = int(value)
+            if milliseconds > 0 and milliseconds % 1000:
+                raise ValueError('legacy reconnect duration requires whole seconds')
+            reconnect[field] = milliseconds // 1000 if milliseconds > 0 else -1
         elif re.fullmatch(r' m_safeStartTime -?\d+', line) and not safe_start_seen:
             # The published Core character controller never calls its safe-start handler.
             if not -2147483648 <= int(line.split()[-1]) <= 2147483647:
@@ -1423,7 +1432,13 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
      }}
     }}
 '''
-    if additional_rules or objective_flags or respawn_fields:
+    reconnect_fields = ''
+    if reconnect:
+        pregame = reconnect.get('m_iReconnectTime', 120)
+        match = reconnect.get('m_iReconnectTimeAfterBriefing', -1)
+        reconnect_fields = (f'   m_iSlotReservationTimeoutSeconds {pregame}\n'
+                            f'   m_iMatchSlotReservationTimeoutSeconds {match}\n')
+    if additional_rules or objective_flags or respawn_fields or reconnect_fields:
         flags = ''
         if objective_flags:
             flag_lines = []
@@ -1440,7 +1455,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         events = f'   m_aMissionEvents + {{\n{additional_rules}   }}\n' if additional_rules else ''
         settings += f'''
   GC_LobbyManager "{{6A137A39106A4973}}" {{
-{flags}{events}{respawn_fields}  }}
+{flags}{events}{respawn_fields}{reconnect_fields}  }}
 '''
     return f'''GC_LobbyGameMode GC_MigratedMission : "{{{resource}}}{preset}" {{
  components {{
@@ -1787,6 +1802,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare damage notification timing in Match and confirm no objective damage during staging.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Compare framing and zoom against the legacy cover.')
+    if mode and any(line.startswith((' m_iReconnectTime ', ' m_iReconnectTimeAfterBriefing ')) for line in mode):
+        remaining.append('Compare reconnect reservations before and after entering Match.')
+    if any(path.endswith('.layer') and isinstance(body, str) and 'GC_AOLimitEntity' in body
+           and ('\n  GC_AOLimitEntity ' in body or '\n  PolylineShapeEntity ' in body)
+           for path, body in draft.items()):
+        remaining.append('Compare nested boundary positions, faction outlines and enforcement.')
     if any(spawn['startupChoice'] for spawn in prefab_spawns):
         remaining.append('Compare pregame selection, spawn timing and faction-specific briefing and map updates.')
     if any(not spawn['startupChoice'] for spawn in prefab_spawns):
