@@ -5,7 +5,7 @@ import re
 
 BASE_GAME = '58D0FB3206B6F859'
 GUID = re.compile(r'^ GUID "([0-9A-Fa-f]{16})"\s*$', re.M)
-DEPENDENCIES = re.compile(r'^ Dependencies \{([^{}]*)\}', re.M)
+DEPENDENCIES = re.compile(r'^[ \t]+Dependencies[ \t]*\{([^{}]*)\}', re.M)
 REF = re.compile(r'"([0-9A-Fa-f]{16})"')
 
 
@@ -16,7 +16,7 @@ def read_project(content, origin):
         raise ValueError(f'cannot read addon GUID from {origin}')
     declarations = DEPENDENCIES.search(text)
     if not declarations:
-        if re.search(r'^ Dependencies\b', text, re.M):
+        if re.search(r'^[ \t]+Dependencies\b', text, re.M):
             raise ValueError(f'cannot read dependencies from {origin}')
         return guid[1].upper(), ()
     if REF.sub('', declarations[1]).strip():

@@ -143,6 +143,12 @@ RHS_DAMAGE_OVERRIDES = {
     'BA824F5F67636A44': '615db277a484e78ea645f1bca85b5a9fe01df4b3a19a60768051f7a696624fb5',
     'D8136D90BE12445F': '19ac6eea43f0794f1e347e142330c6eaf31ad37df5153ddcd62bca337514cba8',
 }
+UNITS_DAMAGE_TARGETS = {
+    ('AAB3119124C9167A', 'Prefabs/Vehicles/Wheeled/BTR70/USSR/BTR70_USSR.et'): (
+        '3724095bc0b5a778965bfe0b7cc5ad98fec11aee',
+        ('C012BB3488BEA0C2', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70.et'),
+    ),
+}
 REVIEWED_HIT_ZONES = {
     ('5CFD8CB5C3E55A4E', 'Prefabs/Vehicles/Tracked/BFV/M2A2_MERDC.et', '"Engine_01"'),
 }
@@ -160,6 +166,14 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/Blue/SimonsAbatis.conf': (
+        'fb882b62a84b29bb8933e27e00761cd8936bceb0',
+        (('worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/BLUFOR/BLUFORPlayer.layer',
+          '61142fcae0f9291cce53a0c846e51e60e1cf0c19'),
+         ('worlds/Blue/SimonsAbatis/SimonsAbatis_Layers/OPFOR/OPFORPlayer.layer',
+          'dc4e0bb8e2326faba6319e7419f0fb8a27ba7e0b')),
+        69, 68,
+    ),
     'Missions/HitTheMan/Ruinous Defence/RuinousDefence.conf': (
         '12c18581f4294fceffa122fb22f2706091352f33',
         (('worlds/HitTheMan/Ruinous Defence/RuinousDefence_Layers/BLUFOR_Players/BLUFOR_Players.layer',
@@ -513,6 +527,8 @@ AI_WORLD_ALIASES = {
                          'Prefabs/AI/SCR_AIWorld_Eden.et'),
 }
 STOCK_RESOURCE_ALIASES = {
+    ('2D556E41F306336C', 'Configs/Destruction/MultiphaseDestruction/FX_Debris/FX_Debris_Snadbags_Plastic.conf'):
+        'Configs/Destruction/MultiphaseDestruction/FX_Debris/FX_Debris_Sandbags_Plastic.conf',
     ('0CA0547EB03759E1', 'Prefabs/Vegetation/Bush/b_rubus_idaeus_1s_collision.et'):
         'Prefabs/Vegetation/Bush/b_rubus_idaeus_1s.et',
     ('124518D13290A687', 'Prefabs/Vegetation/Bush/b_salix_cinerea_0_collision.et'):
@@ -776,6 +792,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/FSM/Prefabs/Props/Military/Sandbags/FSM_Sandbag_Wall_Round_Low.et':
+        '32c230dad35e78b1da7b8b93351f4c3e7a4962b0918299be45e16c1a5b4d8cbc',
     'worlds/TheLocalPub/LamentinLosers/Prefabs/Weapons/Explosives/Mine_TM62M/Mine_TM62M_LamentinLosers.et':
         '168f1b77cfe825a1a980903dcacc10461131b8f9b56463e228dae8931f25bc58',
     'worlds/anteante101/Prefabs/group/Group_GC_ION_Uniformed_CAT_WL_AA101.et':
@@ -1256,6 +1274,14 @@ def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs, 
     registered = ((stock and DAMAGE_TARGETS.get(resource) == path and stock.contains(resource, path))
                   or (resource, path) in workshop_targets)
     verified_target = registered and resource not in source_units.resources and resource not in dev_units.resources
+    reviewed_units = UNITS_DAMAGE_TARGETS.get((resource, path))
+    if not verified_target and reviewed_units and stock:
+        blob, parent = reviewed_units
+        verified_target = (parent[0] not in owned and stock.contains(*parent)
+                           and all(units.resources.get(resource) == [path]
+                                   and units.files.get(path) == blob
+                                   and parent[0] not in units.resources
+                                   for units in (source_units, dev_units)))
     if (is_character != path.startswith('Prefabs/Characters/')
             or not (verified_target or not is_character and verified_rhs_damage(resource, path, source_units, dev_units, rhs))):
         raise ValueError('unverified grouped damage objective prefab')
