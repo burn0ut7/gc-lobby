@@ -689,6 +689,27 @@ WORKSHOP_RESOURCE_ALIASES = {
         'Assets/Weapons/Launchers/9K38_IGLA/9K38_IGLA.xob'),
     ('1DC01AAACFFA8B63', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_base.et'): (
         'WCS_BMP-1_5E524E4FEECCA92B', '1DC01AAACFFA8B63', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_Base.et'),
+    ('9FD84A316EC55517', 'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_IFV_BMP1_Wheel_Drive_Desert.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '9FD84A316EC55517',
+        'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_BMP1_Wheel_Drive_Desert.et'),
+    ('F40657D66B658694', 'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_IFV_BMP1_Wheel_Idler_Desert.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', 'F40657D66B658694',
+        'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_BMP1_Wheel_Idler_Desert.et'),
+    ('D4CDA97B64620EAA', 'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_IFV_BMP1_Wheel_Return_Desert.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', 'D4CDA97B64620EAA',
+        'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_BMP1_Wheel_Return_Desert.et'),
+    ('738645F98C2D1E87', 'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_IFV_BMP1_Wheel_Road_Desert.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '738645F98C2D1E87',
+        'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_BMP1_Wheel_Road_Desert.et'),
+    ('47A596669B0676E1', 'Assets/Vehicles/Tracked/BMP1/Data/Desert/bmp_wheels_desert.emat'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '47A596669B0676E1',
+        'Assets/Vehicles/Tracked/BMP1/Data/Desert/BMP1_Wheels_Desert.emat'),
+    ('CE1E9AA5FEAC34C5', 'Assets/Vehicles/Tracked/BMP1/Data/Desert/bmp1_hull_desert.emat'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', 'CE1E9AA5FEAC34C5',
+        'Assets/Vehicles/Tracked/BMP1/Data/Desert/BMP1_Hull_Desert.emat'),
+    ('23979C5C696D0EB5', 'Prefabs/Vehicles/Tracked/BMP1/VehParts/CommanderTurret/BMP1_Commander_Turret_Desert.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '23979C5C696D0EB5',
+        'Prefabs/Vehicles/Tracked/BMP1/VehParts/Turret/Commander/BMP1_Commander_Turret_Desert.et'),
     ('023236B2A390BA5B', 'Prefabs/Weapons/Tripods/BGM71_TOW/Tripod_BGM-71_TOW.et'): (
         'WCS_Armaments_629B2BA37EFFD577', '023236B2A390BA5B',
         'Prefabs/Weapons/Tripods/BGM71_TOW/Tripod_BGM71_TOW.et'),
@@ -718,9 +739,6 @@ WORKSHOP_RESOURCE_ALIASES = {
     ('823CA4130CE90077', 'Prefabs/Vehicles/Helicopters/AH6M/AH6M_RKT.et'): (
         'WCS_AH-6M_6273146ADFE8241D', '823CA4130CE90077',
         'Prefabs/Vehicles/Helicopters/AH6M/AH6M_M134_M260_X2.et'),
-    ('1DC01AAACFFA8B63', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_base.et'): (
-        'WCS_BMP-1_5E524E4FEECCA92B', '1DC01AAACFFA8B63',
-        'Prefabs/Vehicles/Tracked/BMP1/BMP1_Base.et'),
     ('24223D0679CDD612', 'Prefabs/Vehicles/Tracked/BFV/M2A2_OD.et'): (
         'WCS_M2A2_63120AE07E6C0966', '24223D0679CDD612',
         'Prefabs/Vehicles/Tracked/M2A2/M2A2_OD.et'),
@@ -848,6 +866,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/HitTheMan/Prefabs/Vehicles/BMP1_Desert_ZU_HTM.et':
+        '0ae50a7102b52545fd8413762cc3bb141a06d12a29bae7f8387c354d2621676f',
     'worlds/Aurelas/Spearhead Air Support/Prefabs/HQ_USSR_Simple.et':
         'f2a2d8a7f3d24e45c7d2773920168bf272e9bee1158faab7dcc1b78fa43a0777',
     'worlds/Blue/Bangalorious/Data/M252PIT_NOARSENAL.et':
@@ -2081,7 +2101,14 @@ def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, obje
     return path if (guid, path) in workshop_resources or stock.contains(guid, path) else None
 
 
-def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *,
+def reviewed_spawn_vehicle(source, resource, path):
+    if source.resources.get(resource) != [path] or path not in REVIEWED_NATIVE_ASSETS:
+        return False
+    body = passive_asset(source, path)
+    return body.startswith(('Vehicle : ', 'Tank : ', 'RHS_Tank : '))
+
+
+def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
                  resolve_crew_config=None, shadowed_names=(), missing_waypoint=None):
     root = PLACED_SPAWNER.fullmatch(block[0])
     if not root:
@@ -2131,7 +2158,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             waypoints = [point for point in waypoints if point != absent]
         else:
             absent = None
-        if config is not None and (not ref or not ref[2].startswith('Prefabs/Vehicles/')):
+        if config is not None and (not ref or (not ref[2].startswith('Prefabs/Vehicles/')
+                                               and not reviewed_spawn_vehicle(source, ref[1].upper(), ref[2]))):
             raise ValueError('crewed spawner needs a verified vehicle')
         if waypoints and not group and config is None:
             raise ValueError('spawner waypoints need a verified AI group')
@@ -2234,7 +2262,8 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                 try:
                     native, scheduled, info = placed_spawn(
                         block, f'{layer}:{line}', resolve_spawn, captures, flags, used_flags, resolve_crew,
-                        resolve_crew_config=resolve_crew_config, shadowed_names=shadowed, missing_waypoint=missing_waypoint)
+                        source=source, resolve_crew_config=resolve_crew_config, shadowed_names=shadowed,
+                        missing_waypoint=missing_waypoint)
                 except ValueError as exc:
                     blockers.append({'rule': 'TILW_PrefabSpawnerEntity', 'file': layer, 'line': line,
                                      'detail': str(exc)})

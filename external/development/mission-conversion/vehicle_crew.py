@@ -28,6 +28,8 @@ WORKSHOP_VEHICLES = {
     '9AEDF323A812F9ED': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2_AFRF.et'),
     '18378FFFC82F30BF': ('M113APC_5E5C154FEE1094BB', 'Prefabs/Vehicles/Tracked/M113/M113_APC.et'),
     '2B9DB09AC8BEA673': ('WCS_T-72_5E0AB16BEB16D6A4', 'Prefabs/Vehicles/Tracked/T72A/T72A_FIA.et'),
+    '29CBE6F602148A03': ('RHS-StatusQuo_595F2BF2F44836FB',
+                         'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ammo_tan.et'),
     '31F0866273C46D76': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/K17/APC_K17_Berezok.et'),
     '3312ADBF53A16DD8': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/LAV25/LAV25_RHS.et'),
     '3868E03D9A4AF186': ('WCS_BMP-1_5E524E4FEECCA92B', 'Prefabs/Vehicles/Tracked/BMP1/BMP1P_Base.et'),
