@@ -15,7 +15,8 @@ VEHICLE = re.compile(
     r'(?P<group>\$grp )?(?:Vehicle|Tank|Turret)(?: (?P<name>[\w.-]+))? : '
     r'"\{(?P<guid>[\da-fA-F]{16})\}(?P<path>Prefabs/(?:Vehicles|Weapons/Tripods)/[^"]+\.et)" \{')
 COMPOSITION = re.compile(r'(?P<group>\$grp )?GenericEntity(?: (?P<name>[\w.-]+))? : "[^"]+" \{')
-PLACED_CHILD = re.compile(r'(GenericEntity|Turret)(?: [\w.-]+)? \{')
+PLACED_CHILD = re.compile(r'(GenericEntity|GameEntity|Turret)(?: [\w.-]+)?'
+                          r'(?: : ' + REF.pattern + r')? \{')
 COMPONENT = re.compile(r'  TILW_VehicleCrewComponent (?P<id>"\{[\da-fA-F]{16}\}") \{')
 SERIALIZED_ID = r'"\{[\da-fA-F]{16}\}"'
 SEAT_TYPES = ('Pilot', 'Turret', 'Cargo')
@@ -45,9 +46,40 @@ WORKSHOP_VEHICLES = {
     'AF1C02364D45CC5B': ('WCS_T-72_5E0AB16BEB16D6A4', 'Prefabs/Vehicles/Tracked/T72A/T72A_Desert.et'),
     'FD109F3702AAB392': ('ZU-23_5C9AD9EF76F6B5EA', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ZU23.et'),
 }
+for provider, directory, variants in (
+    ('BritishForces_5AE50EC5B8D6F4AE', 'Prefabs/Vehicles/Wheeled/LR_3Series', {
+        '46C8F837F47D036E': '3Series_LWB_Recce_M2HB_Variant_3',
+        '57FE9BCA625CA0E3': '3Series_LWB_Recce_M2HB',
+        '9B8FC88897DB630F': '3Series_LWB_Recce_Variant_2',
+        'A354B4CEF8989405': '3Series_LWB_Recce_M2HB_Variant_2',
+    }),
+    ('WCS_BMP-1_5E524E4FEECCA92B', 'Prefabs/Vehicles/Tracked/BMP1', {
+        '68A65EFA9B616798': 'BMP1_Desert',
+        '828E8711567C3242': 'BMP1P_FIA_Desert',
+        'C334AD811A3BFFFC': 'BMP1P_Desert',
+    }),
+    ('WCS_Stryker_5B02128D896F7DE8', 'Prefabs/Vehicles/Wheeled/Stryker', {
+        '094A1ECBEE1D9AD1': 'M1126/CROWS/Stryker_CROWS_Cage_MERDC',
+        '44E2468321E19451': 'M1296/Stryker_Dragoon_Cage',
+        '5F17F054025E8B30': 'M1126/CROWS/Stryker_CROWS_Cage',
+        'A76DCC7AD6494682': 'M1128/Stryker_MGS_MERDC',
+    }),
+    ('WCS_T-72_5E0AB16BEB16D6A4', 'Prefabs/Vehicles/Tracked/T72B', {
+        '0154275FD6AE2370': 'T72B_Desert',
+    }),
+    ('TacticalFlava-TIGR_DEADC0DE00000003', 'Prefabs/Vehicles/Wheeled/TIGR', {
+        '7A21F47E09038E58': 'ArbaletDM/GAZ_TIGR_v2_Arbalet_KORD',
+        'CD4737303AA14C6D': 'KORD/GAZ_TIGR_v2_KORD_SPP',
+        'ED23D3FD79C7DECF': 'GAZ_TIGR_v2_Base',
+    }),
+):
+    WORKSHOP_VEHICLES.update({guid: (provider, f'{directory}/{name}.et') for guid, name in variants.items()})
+
 PKM = ('723870DBB19D30B0', 'Prefabs/Weapons/Tripods/Tripod_6T5_PKM.et')
+NSV = ('29F0CC704A582154', 'Prefabs/Weapons/Tripods/6T7/Tripod_6T7_NSV.et')
+NSV_SPP = ('3EA26CFD7A202636', 'Prefabs/Weapons/Tripods/6T7/Tripod_6T7_NSV_SPP.et')
 SINGLE_SEAT_TURRETS = {
-    PKM,
+    PKM, NSV, NSV_SPP,
     ('73530808E4B455BA', 'Prefabs/Weapons/Tripods/Tripod_M3_M2HB.et'),
     ('887DB60486A18575', 'Prefabs/Weapons/Tripods/Tripod_M122_MG_M60.et'),
 }
@@ -60,7 +92,25 @@ COMPOSITION_TURRETS = {
         {('5CCCBEDC9EB8023A', '5CC6B4BEF18D0296'): PKM},
     ('114DE81321786CD9', 'Prefabs/Compositions/Slotted/SlotFlatSmall/MachineGunNest_S_USSR_01_PKM.et'):
         {('5CCCBEDC9EB8023A', '5CC6B4BEF18D0296'): PKM},
+    ('9751583B234C4202', 'Prefabs/Compositions/Misc/SubCompositions/Sandbag_MG_USSR_02_PKM.et'):
+        {('5C5AC612652E574F', '59A297CB53D15C0E'): PKM},
+    ('6AE7F9D91B93CCAF', 'Prefabs/Compositions/Misc/FreeRoamBuilding/Emplacement_MG_USSR_01_NSV.et'):
+        {('64F282420DD8DFE9',): NSV},
+    ('EDB539C08A95005B', 'Prefabs/Compositions/Misc/FreeRoamBuilding/Emplacement_MG_USSR_01_PKM.et'):
+        {('64F2824E966DA442',): PKM},
+    ('B2173CED8D50CB40', 'PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_Emplacement_MG_USSR_01_PKM.et'):
+        {('64F2824E966DA442',): PKM},
+    ('4E288C9E06A3A2B8', 'Prefabs/Compositions/Misc/SubCompositions/Fortifications/Sandbag_MG_USSR_01_NSV_SPP.et'):
+        {('605ECD8C01B355D2',): NSV_SPP},
+    ('F671303E925C437A', 'PrefabsEditable/Auto/Compositions/Misc/SubCompositions/Fortifications/E_Sandbag_MG_USSR_01_NSV_SPP.et'):
+        {('605ECD8C01B355D2',): NSV_SPP},
 }
+INLINE_TURRET_HOSTS = {
+    ('7AF4B627D5C90235', 'Prefabs/Props/Military/Sandbags/Sandbag_01_round_high_burlap.et'),
+    ('CFFEB23FBEA00322', 'Prefabs/Props/Military/Sandbags/Sandbag_01_short_burlap.et'),
+    ('8E1DF47DD56E69E6', 'Prefabs/Compositions/Slotted/SlotFlatSmall/SandbagPosition_S_USSR_01.et'),
+}
+INLINE_TURRET_CHAINS = {('8E1DF47DD56E69E6', '5CD2AC4DBFADB874')}
 # The Units override only alters three scenery model flags, leaving the turret inherited.
 COMPOSITION_OVERRIDES = {'7A40BF128BB47EFD': '46f28ca4f00646d4223fc72a3e03c28331c99c1e1fae3a42dda45e268b67a45a'}
 # The smoke-only ancestor moved from published Core to Units Dev.
@@ -307,8 +357,8 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
     if not ref or not (vehicle or composition):
         raise ValueError('crew needs a registered vehicle or composition')
     guid, path = ref[1].upper(), ref[2]
-    inherited_turrets = COMPOSITION_TURRETS.get((guid, path)) if composition else None
-    if composition and not inherited_turrets:
+    inherited_turrets = COMPOSITION_TURRETS.get((guid, path), {}) if composition else {}
+    if composition and not (inherited_turrets or (guid, path) in INLINE_TURRET_HOSTS):
         raise ValueError('crew needs a reviewed composition turret identity')
     external_vehicle = external_vehicles and external_vehicles.get(guid) == path
     units_owned = guid in source_units.resources or guid in dev_units.resources
@@ -342,7 +392,7 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
             single_turret, lambda guid, path: verified_crew_config(source_units, guid, path, owned))
         return [*lines[:index], *replacement, *lines[end + 1:]]
 
-    def convert_inherited(lines, parents=()):
+    def convert_children(lines, parents=()):
         start = next((i for i, line in enumerate(lines) if line == ' {'), None)
         if start is None or block_end(lines, start) != len(lines) - 1:
             raise ValueError('unsupported crew composition child list')
@@ -355,14 +405,25 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
                 header = PLACED_CHILD.fullmatch(child[0].strip())
                 ids = [match[1].upper() for item in child[1:-1]
                        if (match := re.fullmatch(r'   ID "([\dA-Fa-f]{16})"', item))]
-                if not header or len(ids) != 1:
+                if not header or len(ids) > 1:
                     raise ValueError('crew composition child lacks a verified identity')
-                key = (*parents, ids[0])
+                child_prefab = (header[2].upper(), header[3]) if header[2] else None
+                if bool(ids) == bool(child_prefab):
+                    raise ValueError('crew composition child needs one prefab or inherited ID')
+                key = (*parents, *ids)
                 body = [line[2:] for line in child[1:-1]]
+                if child_prefab and (child_prefab[0] in owned or child_prefab[0] in source_units.resources
+                                     or child_prefab[0] in dev_units.resources or not stock.contains(*child_prefab)):
+                    raise ValueError('unverified explicit crew composition child ' + child_prefab[0])
                 if header[1] == 'GenericEntity':
-                    converted = convert_inherited(body, key)
+                    if child_prefab and child_prefab not in INLINE_TURRET_HOSTS:
+                        raise ValueError('unverified parent of an inline turret')
+                    converted = convert_children(body, key)
                 else:
-                    turret = inherited_turrets.get(key)
+                    turret = inherited_turrets.get(key) if ids else None
+                    if (child_prefab in SINGLE_SEAT_TURRETS and header[1] == 'Turret'
+                            and (not parents or (guid, *parents) in INLINE_TURRET_CHAINS)):
+                        turret = child_prefab
                     if (not turret or turret[0] in owned or turret[0] in source_units.resources
                             or turret[0] in dev_units.resources or not stock.contains(*turret)):
                         raise ValueError('unverified inherited turret ' + '/'.join(key))
@@ -375,8 +436,8 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
     def instance(lines):
         if not any('TILW_VehicleCrewComponent' in line for line in lines):
             return lines
-        if inherited_turrets:
-            return convert_inherited(lines)
+        if composition:
+            return convert_children(lines)
         return replace_crew(lines, (guid, path) in SINGLE_SEAT_TURRETS)
 
     root = vehicle or composition
