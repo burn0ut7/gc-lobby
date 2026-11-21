@@ -1,9 +1,16 @@
 """Render a faction's in-area share of all living players in the mission."""
 from briefings import guid
 
+STATUS_FIELDS = ('m_sCaptured', 'm_sCapturing', 'm_sCaptureInterrupted', 'm_sLost', 'm_sLosing',
+                 'm_sLossInterrupted')
+DEFAULT_STATUS = ('"The %1 has extracted to %2."', '"The %1 is extracting to %2."',
+                  '"The %1 is no longer extracting to %2."', '"The %1 has stopped extraction to %2."',
+                  '"The %1 is stopping extraction to %2."', '"The %1 is no longer stopping extraction to %2."')
+MISSING_STATUS = '"ERROR: Trigger Status Messages are not configured properly, there should be exactly 6 elements."'
+
 
 def condition(world, name, area, faction, ratio, seconds=None, *, skip_discovery=False, latch=True, location=None,
-              players_only=True, at_most=False, whole_number_quotient=False):
+              players_only=True, at_most=False, whole_number_quotient=False, status=DEFAULT_STATUS, recipients=()):
     key = world + '/' + name
     hold = ''
     if seconds:
@@ -11,16 +18,11 @@ def condition(world, name, area, faction, ratio, seconds=None, *, skip_discovery
         if skip_discovery:
             options += '  m_bSkipDiscovery 1\n'
         if location:
-            options += f'''  m_Messages GC_CaptureMessages "{{{guid(key + '/messages')}}}" {{
-   m_sLocation {location}
-   m_sCaptured "The %1 has extracted to %2."
-   m_sCapturing "The %1 is extracting to %2."
-   m_sCaptureInterrupted "The %1 is no longer extracting to %2."
-   m_sLost "The %1 has stopped extraction to %2."
-   m_sLosing "The %1 is stopping extraction to %2."
-   m_sLossInterrupted "The %1 is no longer stopping extraction to %2."
-  }}
-'''
+            options += f'  m_Messages GC_CaptureMessages "{{{guid(key + "/messages")}}}" {{\n   m_sLocation {location}\n'
+            if recipients:
+                options += '   m_aFactions {\n    ' + ' '.join(recipients) + '\n   }\n'
+            options += ''.join(f'   {field} {text}\n' for field, text in zip(STATUS_FIELDS, status))
+            options += '  }\n'
         hold = f''' m_Capture GC_AreaCaptureOptions "{{{guid(key + '/hold')}}}" {{
   m_fSeconds {seconds}
   m_bUseElapsedTime 1

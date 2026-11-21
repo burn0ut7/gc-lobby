@@ -11,6 +11,8 @@ class GC_LobbyFreezeComponent : ScriptComponent
 	protected ref array<ref GC_LobbyStagingArea> m_aAreas;
 	[Attribute("0", UIWidgets.SpinBox, "Optional match-start staging countdown in seconds. This displays time without enforcing staging boundaries.", "0 3600 1")]
 	protected int m_iAuthoredCountdownSeconds;
+	[Attribute("0", UIWidgets.SpinBox, "Optional authored countdown with fractional seconds. Positive values take precedence over the whole-second countdown.", "0 3600 0.001")]
+	protected float m_fAuthoredCountdownSeconds;
 	[RplProp(onRplName: "OnStateChanged")]
 	protected int m_iConfiguredSeconds;
 	[RplProp(onRplName: "OnStateChanged")]
@@ -331,15 +333,18 @@ class GC_LobbyFreezeComponent : ScriptComponent
 	{
 		if (AffectsPlayer(playerId))
 			return m_iRemainingSeconds;
-		if (m_iAuthoredCountdownSeconds <= 0 || GetInstance() != this)
+		if ((m_iAuthoredCountdownSeconds <= 0 && m_fAuthoredCountdownSeconds <= 0) || GetInstance() != this)
 			return 0;
 		GC_LobbyManager manager = GC_LobbyManager.GetManager();
 		if (!manager || manager.GetLobbyPhase() != SCR_EGameModeState.GAME)
 			return 0;
-		int elapsed = manager.GetPhaseElapsedSeconds();
+		float elapsed = manager.GetPhaseElapsedTime();
 		if (elapsed < 0)
 			return 0;
-		return Math.Max(0, Math.Min(3600, m_iAuthoredCountdownSeconds) - elapsed);
+		float duration = m_fAuthoredCountdownSeconds;
+		if (duration <= 0)
+			duration = m_iAuthoredCountdownSeconds;
+		return Math.Max(0, Math.Ceil(Math.Min(3600, duration) - elapsed));
 	}
 
 	//------------------------------------------------------------------------------------------------

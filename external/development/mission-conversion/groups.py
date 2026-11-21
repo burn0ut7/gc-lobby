@@ -23,10 +23,14 @@ FORMATION = re.compile(r'AIFormationComponent "\{[\da-fA-F]{16}\}" \{')
 MOVEMENT = 'SCR_AIGroupMovementComponent "{6126A0E02097C7FF}" {'
 MOVEMENT_FIELD = re.compile(r'Enabled [01]|"(?:Min|Max) Speed" \d+(?:\.\d+)?|DefaultFormation "[A-Z_]+"')
 AI_CONFIG = 'SCR_AIConfigComponent "{512CC1759AE69D6D}" {'
-AI_CONFIG_FIELD = re.compile(r'Enabled [01]|m_Skill (?:0(?:\.\d+)?|1(?:\.0+)?)')
+AI_CONFIG_FIELD = re.compile(r'(?:Enabled|m_Enable(?:Movement|DangerEvents|Perception|Attack|TakeCover|Looking|'
+                            r'Communication)) [01]|m_Skill (?:0(?:\.\d+)?|1(?:\.0+)?)')
 EDITABLE_GROUP = 'SCR_EditableGroupComponent "{50D291F6C83FA532}" {'
 EDITABLE_UI = 'm_UIInfo SCR_EditableGroupUIInfo "{5298E609432D192D}" {'
 EDITABLE_UI_FIELD = re.compile(r'(?:Name|Description) "[^"\n]*"|m_sFaction "[\w.-]+"|m_Image ' + REF.pattern)
+GROUP_IDENTITY = 'SCR_GroupIdentityComponent "{56366C5C50AD3CF2}" {'
+MILITARY_SYMBOL = re.compile(r'm_MilitarySymbol SCR_MilitarySymbol "\{[\dA-Fa-f]{16}\}" \{')
+MILITARY_IDENTITY = re.compile(r'm_Identity (BLUFOR|OPFOR|INDFOR|CIVILIAN)')
 WRAPPERS = json.loads(Path(__file__).with_name('stock_wrappers.json').read_text(encoding='utf-8'))
 STOCK_AI_GROUPS = json.loads(Path(__file__).with_name('stock_ai_groups.json').read_text(encoding='utf-8'))
 BASE_CHARACTER = ('37578B1666981FCE', 'Prefabs/Characters/Core/Character_Base.et')
@@ -267,12 +271,16 @@ def native_group_field_end(lines, index):
         return index
     if field in STATIC_LINK_FIELDS:
         end = block_end(lines, index)
-        # An empty vehicle name is a serialized placeholder. All nonempty names remain in order.
-        name = r'[\w.-]*' if field == 'm_aStaticVehicles {' else r'[\w.-]+'
-        if any(not re.fullmatch(rf'\s*(?:"{name}"\s*)+', entry) for entry in lines[index + 1:end]):
+        # An empty name is a serialized placeholder. All nonempty names remain in order.
+        if any(not re.fullmatch(r'\s*(?:"[\w.-]*"\s*)+', entry) for entry in lines[index + 1:end]):
             raise ValueError('unsupported static group link')
         return end
     return None
+
+
+def native_group_symbol(lines, start, end):
+    return (end == start + 2 and MILITARY_SYMBOL.fullmatch(lines[start].strip())
+            and MILITARY_IDENTITY.fullmatch(lines[start + 1].strip()))
 
 
 def native_group_component(lines, start, end):
@@ -283,10 +291,35 @@ def native_group_component(lines, start, end):
         return all(MOVEMENT_FIELD.fullmatch(line.strip()) for line in lines[start + 1:end])
     if header == AI_CONFIG:
         return all(AI_CONFIG_FIELD.fullmatch(line.strip()) for line in lines[start + 1:end])
+    if header == GROUP_IDENTITY:
+        return native_group_symbol(lines, start + 1, end - 1)
     if header != EDITABLE_GROUP or end < start + 3 or lines[start + 1].strip() != EDITABLE_UI:
         return False
-    return (block_end(lines, start + 1) == end - 1
-            and all(EDITABLE_UI_FIELD.fullmatch(line.strip()) for line in lines[start + 2:end - 1]))
+    if block_end(lines, start + 1) != end - 1:
+        return False
+    index = start + 2
+    found_labels = found_symbol = False
+    while index < end - 1:
+        token = lines[index].strip()
+        if token == 'm_aAuthoredLabels {' and not found_labels:
+            stop = block_end(lines, index)
+            labels = ' '.join(line.strip() for line in lines[index + 1:stop]).split()
+            if stop >= end - 1 or any(not re.fullmatch(r'ENTITYTYPE_GROUP|FACTION_[A-Z0-9_]+', label)
+                                      for label in labels):
+                return False
+            found_labels = True
+            index = stop + 1
+        elif EDITABLE_UI_FIELD.fullmatch(token):
+            index += 1
+        elif MILITARY_SYMBOL.fullmatch(token) and not found_symbol:
+            stop = block_end(lines, index)
+            if stop >= end - 1 or not native_group_symbol(lines, index, stop):
+                return False
+            found_symbol = True
+            index = stop + 1
+        else:
+            return False
+    return True
 
 
 def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai, stock_group=None,

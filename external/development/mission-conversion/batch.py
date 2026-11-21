@@ -7,14 +7,14 @@ from pathlib import PurePosixPath
 import re
 
 from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURRENT_PARENT,
-                         LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, faction_keys)
+                         LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, capture_status_texts, faction_keys)
 from boundaries import STANDALONE_SHAPE, convert_boundaries
 from briefings import QUOTED, block_end, guid, properties
 from catalog import REF, SOURCE_TEXT
 from event_actions import (NUMBER, SPAWN, SPAWN_FIELDS, render_crew_config, render_spawn, spawn_details,
                            split_crew_block, target_names)
 from events import LEGACY_FLAG, peak_flags
-from extraction import condition as extraction_condition
+from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, MISSING_STATUS, condition as extraction_condition
 from groups import inheritance
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
@@ -88,6 +88,14 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/Reapzr/Deadlock.conf': (
+        'ceaac59d93946de86c2f59625d0adda978d92a98',
+        (('worlds/Reapzr/Deadlock/Deadlock_Layers/Groups/Attackers.layer',
+          '462687e5a7657b378d7d1a807c24a0726f836d73'),
+         ('worlds/Reapzr/Deadlock/Deadlock_Layers/Groups/Defenders.layer',
+          '45637a514cbd9e37136052c833b33832e9187fd5')),
+        60, 66,
+    ),
     'Missions/arc/PatrolTroubles.conf': (
         '3e3558ba1284691a71fd64781266612bc881b5df',
         (('worlds/arc/PatrolTroubles/PatrolTroubles_Layers/players.layer',
@@ -197,6 +205,16 @@ REVIEWED_CAPACITY = {
         75, 47,
     ),
 }
+REVIEWED_MISSING_WAYPOINTS = {
+    'worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Insurgents/Insurgent_AI.layer':
+        ('899263002cdc221867c535cfca930b39e55867d9', {'Defend'}),
+    'worlds/Reapzr/Deadlock/Deadlock_Layers/Groups/AI.layer':
+        ('f539728c37d0fa180a89e171dde57baa0dd4c147', {
+            'AIWaypoint_Defend_1', 'AIWaypoint_Patrol_1', 'AIWaypoint_Patrol_2',
+            'AIWaypoint_Scout_1', 'AIWaypoint_Scout_2',
+            'AIWaypoint_SearchandDestroy_1', 'AIWaypoint_SearchandDestroy_2',
+        }),
+}
 MATERIAL_OVERRIDE = re.compile(
     rf'SCR_DestructibleBuildingEntity : "\{{[\da-fA-F]{{16}}\}}Prefabs/Structures/[^"\n]+\.et" \{{\n'
     rf' ID "[\da-fA-F]{{16}}"\n components \{{\n  MeshObject {SERIALIZED_ID} \{{\n   Materials \{{\n'
@@ -225,6 +243,8 @@ AI_WORLD_ALIASES = {
     '33A5B976E41B0A4C': ('Prefabs/AI/SCR_AIWorld_BadOrb.et', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et'),
 }
 STOCK_RESOURCE_ALIASES = {
+    ('BA785041AC632123', 'Prefabs/Vegetation/Bush/b_salix_cinerea_1_collision.et'):
+        'Prefabs/Vegetation/Bush/b_salix_cinerea_1.et',
     ('B3E8911E396DE447', 'Prefabs/Props/Services/FireExtinguisherBox_01_Shovel.et'):
         'Prefabs/Props/Services/Fire/FireExtinguisherBox_01_Shovel.et',
     ('4CC2C69DE1AEF103', 'Prefabs/Props/Core/Destructible_Props_Base.et'):
@@ -257,12 +277,20 @@ STOCK_RESOURCE_ALIASES = {
         'PrefabLibrary/DefaultLibrary/Props/Military/ObstacleRamp_01_start.et',
     ('CAFF4B51059A0F81', 'PrefabLibrary/Walls/Concrete/ConcreteWall_01_3m.et'):
         'PrefabLibrary/DefaultLibrary/Walls/Concrete/ConcreteWall_01_3m.et',
+    ('BFDAD14EBBE6D7FF', 'PrefabLibrary/Walls/Concrete/ConcreteRetainingWall_01_8m.et'):
+        'PrefabLibrary/DefaultLibrary/Walls/Concrete/ConcreteRetainingWall_01_8m.et',
     ('C98A6C1C2372354E', 'Prefabs/Vegetation/Bush/b_corylus_avellana_1_collision.et'):
         'Prefabs/Vegetation/Bush/b_corylus_avellana_1.et',
     ('DCAF0585D17B917A', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_ranomized.et'):
         'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_randomized.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('9FF4AA98784BDF8B', 'Prefabs/Vehicles/Helicopters/AH6M/OPFOR/AH6M_OPFOR_base.et'): (
+        'WCS_AH-6M_6273146ADFE8241D', '9FF4AA98784BDF8B',
+        'Prefabs/Vehicles/Helicopters/AH6M/OPFOR/AH6M_OPFOR_Base.et'),
+    ('72018C87FBDC9F8C', 'Prefabs/Vehicles/Tracked/BFV/M2A2_Desert.et'): (
+        'WCS_M2A2_63120AE07E6C0966', '72018C87FBDC9F8C',
+        'Prefabs/Vehicles/Tracked/M2A2/M2A2_Desert.et'),
     ('72C04A6EABC12143', 'Prefabs/Vehicles/Helicopters/AH6M/AH6M_M134.et'): (
         'WCS_AH-6M_6273146ADFE8241D', '72C04A6EABC12143',
         'Prefabs/Vehicles/Helicopters/AH6M/AH6M_M134_X2.et'),
@@ -1391,15 +1419,18 @@ def extraction_rule(world, area_name, flag, fields, *, polygon=False):
     data = properties(fields, {'m_queryRadius', 'm_captureTime', 'm_flagName', 'm_stopAfterFirstChange',
                                'm_factionKey', 'm_ratioThreshold', 'm_playersOnly', 'm_comparisonMode',
                                'm_skipFirstQuery', 'm_eventsOnlyDuringGame', 'm_locationName',
-                               'm_sendStatusMessages'} | CAPTURE_TRANSFORM | CAPTURE_EDITOR_FIELDS)
+                               'm_sendStatusMessages', 'm_statusMessages', 'm_displayTo'} |
+                      CAPTURE_TRANSFORM | CAPTURE_EDITOR_FIELDS)
     players = data.get('m_playersOnly', '1')
     stops = data.get('m_stopAfterFirstChange', '0')
     discovery = data.get('m_skipFirstQuery', '0')
     mode = data.get('m_comparisonMode', 'EQUAL_OR_MORE')
-    if (any(value not in ('0', '1') for value in (players, stops, discovery))
+    enabled = data.get('m_sendStatusMessages', '0')
+    location = data.get('m_locationName', '"the location"')
+    if (any(value not in ('0', '1') for value in (players, stops, discovery, enabled))
             or mode not in ('0', '1', 'EQUAL_OR_LESS', 'EQUAL_OR_MORE')
-            or not re.fullmatch(QUOTED, data.get('m_locationName', '""'))
-            or data.get('m_sendStatusMessages', '0') != '0'
+            or not re.fullmatch(QUOTED, location)
+            or (enabled == '1' and (len(location.encode()) - 2 > 80 or '<' in location or '>' in location))
             or data.get('m_eventsOnlyDuringGame', '1') != '1'):
         raise ValueError('unsupported extraction settings')
     faction = data['m_factionKey']
@@ -1413,9 +1444,12 @@ def extraction_rule(world, area_name, flag, fields, *, polygon=False):
             or any(not FIELD.fullmatch(f'{key} {value}') for key, value in transform.items())):
         raise ValueError('invalid extraction settings')
     at_most = mode in ('0', 'EQUAL_OR_LESS')
+    notices = capture_status_texts(data, EXTRACTION_STATUS, missing_text=MISSING_STATUS) if enabled == '1' else ()
+    recipients = faction_keys(data.get('m_displayTo', '')) if notices else ()
     check = extraction_condition(world, flag[1:-1], area_name, faction, ratio, hold,
                                  skip_discovery=discovery == '1', latch=stops == '1', players_only=players == '1',
-                                 at_most=at_most, whole_number_quotient=True)
+                                   at_most=at_most, whole_number_quotient=True,
+                                   location=location if notices else None, status=notices, recipients=recipients)
     position = ''.join(f' {field} {value}\n' for field, value in transform.items())
     area = '' if polygon else f'''GC_RadiusAreaEntity {area_name} : "{{2C4447C53A1E450B}}Prefabs/Logic/Mission/RadiusArea.et" {{
 {position} m_fRadius {radius}
@@ -1426,6 +1460,7 @@ def extraction_rule(world, area_name, flag, fields, *, polygon=False):
         'faction': faction[1:-1], 'seconds': float(hold), 'ratio': float(ratio),
         'comparison': 'at most' if at_most else 'at least', 'quotient': 'whole number',
         'stopsAfterFirstChange': stops == '1', 'skipDiscovery': discovery == '1',
+        **({'statusMessages': True, 'statusRecipients': [key[1:-1] for key in recipients]} if notices else {}),
         **({} if polygon else {'radiusMeters': float(radius)}),
     }
 
@@ -1560,9 +1595,10 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
                 raise ValueError('duplicate game mode transform ' + field)
             transform[field] = value
         elif re.fullmatch(r' m_iFreezeTime \d+', line):
-            freeze, fraction = divmod(int(line.split()[-1]), 1000)
-            if fraction and freeze:
-                raise ValueError('nonintegral staging seconds')
+            milliseconds = int(line.split()[-1])
+            freeze, fraction = divmod(milliseconds, 1000)
+            if fraction:
+                freeze = Decimal(milliseconds) / 1000
             immediate_release = not freeze
         elif line == ' m_aFactionRespawnCount {' and not respawn_table_seen:
             end = block_end(root, index)
@@ -1656,15 +1692,16 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
   }}
 '''
     if freeze:
+        authored = ('m_fAuthoredCountdownSeconds' if isinstance(freeze, Decimal) else 'm_iAuthoredCountdownSeconds')
         settings += f'''  GC_LobbyFreezeComponent "{{E81E75BC287148D0}}" {{
-   m_iAuthoredCountdownSeconds {freeze}
+   {authored} {freeze:f}
   }}
 '''
     if zones:
         names = '\n'.join(f'        "{name}"' for name in zones)
         timer = f'''     m_aConditions {{
       GC_TimerCondition "{{{guid(key + '/timer')}}}" {{
-       m_fSeconds {freeze}
+       m_fSeconds {freeze:f}
       }}
      }}
 ''' if freeze else ''
@@ -1968,6 +2005,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 or any(flag_uses[flag[1:-1]] != 1 for flag in delayed.conditions)):
             blockers.append({'rule': 'delayed extraction', 'file': world,
                              'detail': 'extraction needs all spawns and one positive consumer per flag'})
+    missing_waypoints = []
     if not blockers and (assignments or marker_edits or prefab_spawns or extraction_spawns or area_names or teleport_targets
                          or damage_flags
                          or any('m_aStatic' in body for body in draft.values())):
@@ -2016,6 +2054,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         for gap in waypoint_gaps(named, assignments):
             blockers.append({'rule': 'waypoint assignments', 'file': world, 'detail': gap})
         for layer, field, target in static_link_gaps(draft, named):
+            reviewed_blob, reviewed_targets = REVIEWED_MISSING_WAYPOINTS.get(layer, (None, ()))
+            if (field == 'm_aStaticWaypoints' and target in reviewed_targets
+                    and source.files.get(layer) == reviewed_blob
+                    and target not in named and target not in spawned_names and f'"{target}"' not in script_text(source)):
+                missing_waypoints.append(target)
+                continue
             blockers.append({'rule': 'static group links', 'file': layer,
                              'detail': f'{field} requires a unique placed target named {target}'})
         for gap in marker_edit_gaps(named, marker_edits):
@@ -2078,6 +2122,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         if count:
             advertised[header] = int(count[1])
     remaining = []
+    for target in sorted(set(missing_waypoints)):
+        remaining.append(f'The original static waypoint link to {target} has no authored target.')
+    if any(record.get('statusMessages') for trigger in row.get('captureCandidate', {}).values()
+           for record in trigger.values() if isinstance(record, dict)):
+        remaining.append('Compare extraction progress and status recipients during Match.')
+    if any('m_fAuthoredCountdownSeconds ' in text for text in draft.values() if isinstance(text, str)):
+        remaining.append('Compare the authored fractional staging release and displayed countdown.')
     if migrated_longmoor:
         remaining.append('Compare the authored locations against the historical Longmoor terrain.')
     capacity_notes = {}

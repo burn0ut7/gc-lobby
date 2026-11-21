@@ -102,7 +102,8 @@ def crew_station(lines, resolve_character, allow_empty=False):
 
 
 def render_component(component, lines, resolve_character, single_turret):
-    if not lines or not lines[0].strip().startswith('m_crewConfig '):
+    configs = [i for i, line in enumerate(lines) if line.strip().startswith('m_crewConfig ')]
+    if not configs:
         data = properties(lines, {'m_customCrew', 'm_noTurretDismount', 'm_idleGroup', 'm_pregameSpawn',
                                   *('m_spawn' + seat for seat in SEAT_TYPES)})
         flags = {seat: data.get('m_spawn' + seat, '0') for seat in SEAT_TYPES}
@@ -115,7 +116,15 @@ def render_component(component, lines, resolve_character, single_turret):
                 or (idle == '1' and not (single_turret and flags['Turret'] == '1' and len(roles) == 1))):
             raise ValueError('legacy crew timing or separate gunner group needs review')
         return crew_fields(component, flags, seated, roles)
-    config = contents(lines, r'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID)
+    if len(configs) != 1:
+        raise ValueError('ambiguous placed crew configuration')
+    index, = configs
+    close = block_end(lines, index)
+    outer = properties(lines[:index] + lines[close + 1:], {'m_noTurretDismount', 'm_pregameSpawn'})
+    if outer.get('m_pregameSpawn', '0') != '0' or outer.get('m_noTurretDismount', '0') not in ('0', '1'):
+        raise ValueError('unsupported placed crew timing or deprecated dismount field')
+    # The legacy configured-crew path never reads the component's deprecated dismount field.
+    config = contents(lines[index:close + 1], r'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID)
     groups = [i for i, line in enumerate(config) if line.strip() == 'm_crewGroups {']
     if len(groups) != 1:
         raise ValueError('crew authoring needs one m_crewGroups')

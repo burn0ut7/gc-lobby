@@ -5008,10 +5008,17 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 	//! Hide stale timing while the phase and timestamp streams converge.
 	int GetPhaseElapsedSeconds()
 	{
+		float elapsed = GetPhaseElapsedTime();
+		return Math.Floor(elapsed);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	float GetPhaseElapsedTime()
+	{
 		if (GetManager() != this || m_bShutdown || !GC_LobbyPhase.IsValid(m_ClockPhase) || GetLobbyPhase() != m_ClockPhase)
 			return -1;
 		ChimeraWorld world = GetGame().GetWorld();
-		return Math.Max(0, Math.Floor(world.GetServerTimestamp().DiffSeconds(m_PhaseStartedAt)));
+		return Math.Max(0, world.GetServerTimestamp().DiffSeconds(m_PhaseStartedAt));
 	}
 
 	//------------------------------------------------------------------------------------------------

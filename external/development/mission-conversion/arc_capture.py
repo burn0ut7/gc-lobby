@@ -174,16 +174,23 @@ def faction_keys(value):
     return keys
 
 
-def capture_messages(key, data, location, recipients, defaults):
-    if data.get('m_sendStatusMessages', '0') == '0':
-        return ''
+def capture_status_texts(data, defaults, *, missing_text=None):
     texts = defaults
     if 'm_statusMessages' in data:
         value = data['m_statusMessages']
         texts = re.findall(QUOTED, value)
-        if (len(texts) != 6 or not re.fullmatch(rf'(?:{QUOTED}\s*)+', value)
+        if (len(texts) > 6 or (len(texts) < 6 and missing_text is None)
+                or not re.fullmatch(rf'(?:{QUOTED}\s*)*', value)
                 or any(len(text.encode()) - 2 > 256 or '<' in text or '>' in text for text in texts)):
             raise ValueError('unsupported custom capture status messages')
+        texts.extend([missing_text] * (6 - len(texts)))
+    return texts
+
+
+def capture_messages(key, data, location, recipients, defaults):
+    if data.get('m_sendStatusMessages', '0') == '0':
+        return ''
+    texts = capture_status_texts(data, defaults)
     fields = ''.join(f'         {field} {text}\n' for field, text in zip(CAPTURE_TEXT, texts))
     audience = '         m_aFactions {\n          ' + ' '.join(recipients) + '\n         }\n' if recipients else ''
     return f'''        m_Messages GC_CaptureMessages "{{{guid(key + '/messages')}}}" {{
