@@ -468,7 +468,10 @@ def main():
                     resolve_crew=resolve_crew if args.batch else None, hidden_briefings=hidden_briefings,
                     derived_audit=derived_audit, startup_samples_audit=startup_samples_audit,
                     match_only_flags=damage_flags_before_match |
-                    {asset['flag'] for asset in objectives.values() if asset.get('destroyed')})
+                    {asset['flag'] for asset in objectives.values() if asset.get('destroyed')},
+                    flag_reads=Counter(flag for placement in row.get('interactionCandidate', {}).values()
+                                       if isinstance(placement, dict)
+                                       for flag in placement.get('teleportRequiredFlags', [])))
                 outcome = {'events': outcome_audit}
                 if derived_audit:
                     outcome['derivedFlags'] = derived_audit

@@ -325,6 +325,10 @@ AI_WORLD_ALIASES = {
     '33A5B976E41B0A4C': ('Prefabs/AI/SCR_AIWorld_BadOrb.et', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et'),
 }
 STOCK_RESOURCE_ALIASES = {
+    ('35D7F1189BE00E94', 'Prefabs/Items/Equipment/BalisticTable/BalisticTable.et'):
+        'Prefabs/Items/Equipment/BallisticTable/BallisticTable_base.et',
+    ('9668B6C528DCECBD', 'Prefabs/Props/Wrecks/Mi8MT_wreck_static.et'):
+        'Prefabs/Props/Wrecks/Mi8MT_wreck/Mi8MT_wreck_static.et',
     ('BA785041AC632123', 'Prefabs/Vegetation/Bush/b_salix_cinerea_1_collision.et'):
         'Prefabs/Vegetation/Bush/b_salix_cinerea_1.et',
     ('B3E8911E396DE447', 'Prefabs/Props/Services/FireExtinguisherBox_01_Shovel.et'):
@@ -458,6 +462,9 @@ WORKSHOP_RESOURCE_ALIASES = {
         'Prefabs/Structures/Bulding/Military/fort_rampart_ep1.et'),
 }
 UNITS_PREFAB_ALIASES = {
+    ('BC07885176C7FF8A', 'GitHub/gc-reforger-units/Prefabs/Vehicles/Tracked/T-72A/T72A_base.et'): (
+        'BC07885176C7FF8A', 'Prefabs/Vehicles/Tracked/T-72A/T72A_base.et',
+        '2ec90305fa151423829093e490029d2a994c655b6b70b47ef1291b2b1207674d'),
     ('26BBC4FA9CE02F61', 'Prefabs/Characters/Backpacks/Radio/Kombat_Radio_Pack_MTP.et'): (
         '26BBC4FA9CE02F61', 'Prefabs/Items/Equipment/Radios/UK/Kombat_Radio_Pack_MTP.et',
         '7803e7446801c2bed2905beb134571e78b0b5f6b4b88e34a06c4c3a2a06a0d8a'),
@@ -623,11 +630,14 @@ def interaction_rules(source, world, stock, local_resources):
             location = f'{path}:{line}'
             try:
                 if has_teleport:
-                    native, destinations = teleports.convert(block, location, stock, local_resources)
+                    native, routes = teleports.convert(block, location, stock, local_resources)
                     if LEGACY.search(native):
                         raise ValueError('unconverted teleport component or side effect')
                     placements[(path, line)] = native
-                    audit[location] = {'teleportDestinations': destinations}
+                    audit[location] = {'teleportDestinations': [route['destination'] for route in routes]}
+                    flags_read = [route['requiredFlag'] for route in routes if route['requiredFlag']]
+                    if flags_read:
+                        audit[location]['teleportRequiredFlags'] = flags_read
                     continue
                 native, details = convert_interaction_block(block, location, stock, local_resources)
                 if not details or LEGACY.search(native):
@@ -2040,6 +2050,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         for target in record.get('teleportDestinations', [])}
     event_flags = {action['setsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
                    if 'setsFlag' in action}
+    required_teleport_flags = {flag for record in row.get('interactionCandidate', {}).values()
+                               if isinstance(record, dict)
+                               for flag in record.get('teleportRequiredFlags', [])}
+    if missing_flags := required_teleport_flags - event_flags:
+        blockers.append({'rule': 'teleport', 'file': world,
+                         'detail': {'missingConvertedMatchFlagProducers': sorted(missing_flags)}})
     event_flags.update(flag for sample in outcome.get('startupSamples', []) for flag in sample['flags'])
     cleared_event_flags = {action['clearsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
                            if 'clearsFlag' in action}
@@ -2405,6 +2421,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare initial hit zone health and subsequent repairs.')
     if teleport_targets:
         remaining.append('Compare authored teleport choices, reach, faction visibility and destinations in Match.')
+    if required_teleport_flags:
+        remaining.append('Compare teleport availability as the required Match flag is set or cleared.')
     if any(path.endswith('.layer') and 'GC_VehicleCrewComponent' in body
            for path, body in draft.items() if isinstance(body, str)):
         remaining.append('Compare placed crew arrival at Match start, compartment order and gunner dismount policy.')
@@ -2412,6 +2430,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare placed crew waypoint order, delay and separate idle turret grouping.')
     if any(isinstance(body, str) and '{823CA4130CE90077}' in body for body in draft.values()):
         remaining.append('Compare the AH-6 gun and rocket loadout against the legacy scenario.')
+    if any(path.endswith('.layer') and isinstance(body, str) and '{BC07885176C7FF8A}' in body
+           for path, body in draft.items()):
+        remaining.append('Compare T-72A compartments, storage and appearance against the published addon stack.')
     if any('m_bShareIdleGunnerGroup 1' in body for body in draft.values() if isinstance(body, str)):
         remaining.append('Compare boarding, idle turret grouping and delayed waypoints for spawned vehicle crews.')
     if any(item['trigger'] == 'peak player loss' and item.get('inverted')

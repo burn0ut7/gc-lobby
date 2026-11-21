@@ -35,8 +35,8 @@ DORMANT_NOTICES = {
 }
 
 
-def instruction_flags(source, world, framework_path, lines, scripts):
-    """Find flags whose complete authored use stays inside event rules."""
+def instruction_flags(source, world, framework_path, lines, scripts, flag_reads):
+    """Find flags whose complete authored use is covered by conversion rules."""
     flags = set()
     known_uses = defaultdict(int)
     for start, line in enumerate(lines):
@@ -62,7 +62,8 @@ def instruction_flags(source, world, framework_path, lines, scripts):
                        for path in sorted(source.closure(world))
                        if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
     return tuple(sorted(flag[1:-1] for flag in flags
-                        if flag[1:-1] not in scripts and corpus.count(flag) == known_uses[flag]))
+                        if flag[1:-1] not in scripts
+                        and corpus.count(flag) == known_uses[flag] + flag_reads.get(flag[1:-1], 0)))
 
 
 def derived_flags(source, world, framework_path, body, scripts):
@@ -619,7 +620,7 @@ def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
 
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
                      extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None,
-                     derived_audit=None, match_only_flags=(), startup_samples_audit=None):
+                     derived_audit=None, match_only_flags=(), startup_samples_audit=None, flag_reads=None):
     captures = captures or {}
     notification_audit = notification_audit or {}
     extraction_spawns = extraction_spawns or {}
@@ -646,7 +647,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         return [], {}, 'ambiguous AI casualty faction tracking'
     if set(objective_flags) & {key[1:-1] for key in (*flags, *ai, *captures)}:
         return [], {}, 'ambiguous interaction flag producer'
-    event_flags = instruction_flags(source, world, path, body, scripts) if scripts is not None else ()
+    event_flags = instruction_flags(source, world, path, body, scripts, flag_reads or {}) if scripts is not None else ()
     derived, derived_gap = {}, None
     if compound:
         try:

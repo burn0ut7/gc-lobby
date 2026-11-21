@@ -74,29 +74,32 @@ def convert_instance(lines, key, inherited, standalone):
         target = data.get('m_locationName', '')
         label = data.get('m_actionName', '"Teleport: Location"')
         factions = data.get('m_factionKeys', '').split()
+        required = data.get('m_conditionFlag', '""')
         if (not re.fullmatch(KEY, target) or not re.fullmatch(QUOTED, label) or label == '""'
                 or not all(re.fullmatch(KEY, value) for value in factions)
-                or data.get('m_conditionFlag', '""') != '""'):
+                or (required != '""' and not re.fullmatch(KEY, required))):
             raise ValueError('teleport destination, audience or required flag needs review')
-        routes.append((index, last, match[1], target, label, factions, native))
+        routes.append((index, last, match[1], target, label, factions, required, native))
     keyed = len(routes) > 1
     if len({route[2] for route in routes}) != len(routes):
         raise ValueError('duplicate teleport action identity')
     if standalone and routes and not any(route[2] == PREFAB_ACTION for route in routes):
         raise ValueError('standalone teleport does not configure its inherited action')
-    components, destinations = [], []
-    for index, last, identity, target, label, factions, native in routes:
+    components, interactions = [], []
+    for index, last, identity, target, label, factions, required, native in routes:
         component_id = 'B3632A2C9CA24FDF' if standalone and identity == PREFAB_ACTION else guid(
             key + '/' + identity if keyed else key)
         component = [f'  GC_TeleportInteractionComponent "{{{component_id}}}" {{',
                      '   m_sActionName ' + label, '   m_sDestinationName ' + target]
         if factions:
             component.extend(['   m_aFactions {', *('    ' + faction for faction in factions), '   }'])
+        if required != '""':
+            component.append('   m_sRequiredFlag ' + required)
         if keyed:
             component.append(f'   m_sInteractionKey "{identity}"')
             native.append(f'     m_sInteractionKey "{identity}"')
         components.extend([*component, '  }'])
-        destinations.append(target[1:-1])
+        interactions.append({'destination': target[1:-1], 'requiredFlag': required[1:-1]})
         replacements[index] = last, [lines[index].replace('TILW_TeleportInteraction', 'GC_MissionInteractionAction', 1),
                                       *native, lines[last]]
     output = []
@@ -110,7 +113,7 @@ def convert_instance(lines, key, inherited, standalone):
             output.append(lines[index])
             index += 1
     output[start + 1:start + 1] = components
-    return output, destinations
+    return output, interactions
 
 
 def convert_children(lines, key, stock, local_resources):
@@ -120,7 +123,7 @@ def convert_children(lines, key, stock, local_resources):
     end = block_end(lines, start)
     if end != len(lines) - 1:
         raise ValueError('teleport children must follow the parent fields')
-    children, destinations = [lines[start]], []
+    children, interactions = [lines[start]], []
     cursor = start + 1
     while cursor < end:
         if not lines[cursor].startswith('  ') or not lines[cursor].endswith(' {'):
@@ -132,10 +135,10 @@ def convert_children(lines, key, stock, local_resources):
         if any(is_teleport(line) for line in child):
             converted, routes = convert([line[2:] for line in child], f'{key}/child/{cursor}', stock, local_resources)
             child = ['  ' + line for line in converted.splitlines()]
-            destinations.extend(routes)
+            interactions.extend(routes)
         children.extend(child)
         cursor = stop + 1
-    return lines[:start], [*children, lines[end]], destinations
+    return lines[:start], [*children, lines[end]], interactions
 
 
 def convert(block, key, stock, local_resources):
@@ -150,7 +153,7 @@ def convert(block, key, stock, local_resources):
     inherited = (standalone or (stock and parent == STOCK_FLAGPOLE and parent[0] not in local_resources
                                 and stock.contains(*parent)))
     output = [REF.sub(lambda _: f'"{NATIVE_PREFAB}"', block[0], count=1) if standalone else block[0]]
-    destinations = []
+    interactions = []
     for index, (name, fields) in enumerate(members(block, root['group'], root['name'])):
         placement = f'{key}/teleport/{index}'
         fields, children, nested = convert_children(fields, placement, stock, local_resources)
@@ -166,11 +169,11 @@ def convert(block, key, stock, local_resources):
                       if line.strip() in ('ContextName "Interact_A"', '"Interact_A"') else line for line in fields]
         converted, routes = convert_instance(fields, placement, inherited, standalone)
         converted.extend(children)
-        destinations.extend([*routes, *nested])
+        interactions.extend([*routes, *nested])
         if root['group']:
             output.append(f' {name} {{' if name else ' {')
             output.extend(' ' + line for line in converted)
             output.append(' }')
         else:
             output.extend(converted)
-    return '\n'.join([*output, block[-1]]) + '\n', destinations
+    return '\n'.join([*output, block[-1]]) + '\n', interactions
