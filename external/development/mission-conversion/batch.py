@@ -39,8 +39,15 @@ CONSTRUCTION_FIELDS = {
 LEGACY_JIP_MODES = {'Deny': 'DISABLED', 'Auto': 'AUTO', 'Manual': 'MANUAL',
                     '0': 'DISABLED', '1': 'AUTO', '2': 'MANUAL'}
 NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|RHS_Tank|Turret|SCR_AIWorld|GameEntity|GenericEntity|GenericTerrainEntity|GenericWorldFogEntity|StaticModelEntity|Tree|'
-                    r'DecalEntity|SCR_DestructibleEntity|SCR_DestructibleTreeV2|SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
+                    r'DecalEntity|SCR_DestructibleEntity|SCR_DestructibleTreeV2|SCR_TreeDebrisSmallEntity|'
+                    r'SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
                     r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity|LightEntity|Projectile|CommentEntity)\b')
+INACTIVE_DOOR_LAYER = 'worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/PROPS/TrainArea.layer'
+INACTIVE_DOOR = [
+    'GenericEntity : "{212D8A2CE34F802E}Prefabs/Utils/Other/TILW_DoorOpenerEntity.et" {',
+    ' coords 6430.397 59.368 6007.69',
+    '}',
+]
 WEATHER = re.compile(r'  SCR_TimeAndWeatherHandlerComponent "\{5EE3229927D4D2F5\}" \{')
 INIT_WEATHER = '  SCR_InitWeatherComponent "{61B68227C35BFE9A}" {'
 INIT_WEATHER_FIELD = re.compile(
@@ -567,6 +574,8 @@ AI_WORLD_ALIASES = {
                          'Prefabs/AI/SCR_AIWorld_Eden.et'),
 }
 STOCK_RESOURCE_ALIASES = {
+    ('AED5759B653DF6D0', 'Prefabs/Vegetation/Bush/b_rosa_canina_1s_collision.et'):
+        'Prefabs/Vegetation/Bush/b_rosa_canina_1s.et',
     ('2D556E41F306336C', 'Configs/Destruction/MultiphaseDestruction/FX_Debris/FX_Debris_Snadbags_Plastic.conf'):
         'Configs/Destruction/MultiphaseDestruction/FX_Debris/FX_Debris_Sandbags_Plastic.conf',
     ('2B24356C351A2538', 'Prefabs/Props/Wrecks/M113_wreck.et'):
@@ -866,6 +875,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/TheLocalPub/RailroadReactions/Prefabs/AI/Groups/MSV_Flora_RifleSquad.et':
+        '0a5ac894b9d00d95a61ab7bff77bbda73bc0a1adf45e26b8a630587850f3ea09',
     'worlds/HitTheMan/Prefabs/Vehicles/BMP1_Desert_ZU_HTM.et':
         '0ae50a7102b52545fd8413762cc3bb141a06d12a29bae7f8387c354d2621676f',
     'worlds/Aurelas/Spearhead Air Support/Prefabs/HQ_USSR_Simple.et':
@@ -1757,7 +1768,7 @@ def passive_asset(source, path):
     raise ValueError('requires a resource conversion rule')
 
 
-def verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path):
+def verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path, external_ai):
     if (not stock or path not in REVIEWED_NATIVE_ASSETS or source.resources.get(resource) != [path]
             or dev.resources.get(resource) not in (None, [path])
             or resource in source_units.resources or resource in dev_units.resources):
@@ -1769,7 +1780,7 @@ def verified_local_ai_group(source, dev, source_units, dev_units, stock, resourc
         return False
     refs = set(REF.findall(body))
     refs.add(('000CD338713F2B5A', 'Prefabs/AI/Groups/Group_Base.et'))
-    return all(stock.contains(guid, asset)
+    return all((stock.contains(guid, asset) or external_ai.get(guid) == asset)
                and all(guid not in snapshot.resources for snapshot in (source, dev, source_units, dev_units))
                for guid, asset in refs)
 
@@ -2101,11 +2112,11 @@ def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, obje
     return path if (guid, path) in workshop_resources or stock.contains(guid, path) else None
 
 
-def reviewed_spawn_vehicle(source, resource, path):
+def reviewed_spawn_type(source, resource, path, types):
     if source.resources.get(resource) != [path] or path not in REVIEWED_NATIVE_ASSETS:
         return False
     body = passive_asset(source, path)
-    return body.startswith(('Vehicle : ', 'Tank : ', 'RHS_Tank : '))
+    return body.startswith(types)
 
 
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
@@ -2152,14 +2163,16 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             raise ValueError('multiple spawns have success-dependent entity naming')
         waypoints = target_names(data['m_waypointNames'], skip_blank=True) if data.get('m_waypointNames') else []
         ref = REF.fullmatch(data.get('m_prefab', ''))
-        group = bool(ref and ref[2].startswith('Prefabs/Groups/'))
+        group = bool(ref and (ref[2].startswith('Prefabs/Groups/') or
+                              reviewed_spawn_type(source, ref[1].upper(), ref[2], 'SCR_AIGroup : ')))
         absent = f'"{missing_waypoint}"' if missing_waypoint else None
         if group and absent in waypoints:
             waypoints = [point for point in waypoints if point != absent]
         else:
             absent = None
-        if config is not None and (not ref or (not ref[2].startswith('Prefabs/Vehicles/')
-                                               and not reviewed_spawn_vehicle(source, ref[1].upper(), ref[2]))):
+        if config is not None and (not ref or (not ref[2].startswith('Prefabs/Vehicles/') and
+                                               not reviewed_spawn_type(source, ref[1].upper(), ref[2],
+                                                                       ('Vehicle : ', 'Tank : ', 'RHS_Tank : ')))):
             raise ValueError('crewed spawner needs a verified vehicle')
         if waypoints and not group and config is None:
             raise ValueError('spawner waypoints need a verified AI group')
@@ -3104,6 +3117,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     converted_passive_cover = False
     converted_bare_map = False
     converted_scenery_map = False
+    inactive_placements = []
     reused_layers = set()
     group_blocks = []
     area_names = []
@@ -3164,6 +3178,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append('')
                 elif kind == 'PS_MissionDescription' and preset and not row['briefingGaps']:
                     continue
+                elif (layer == INACTIVE_DOOR_LAYER and source.files[layer] == 'b21a4cb26d47b0c4e0cdd9fc04786a90adc2c5cd'
+                      and block == INACTIVE_DOOR and 'TILW_DoorOpenerComponent' not in script_text(source)):
+                    # The released TilW prefab still names the component removed in c47df35.
+                    inactive_placements.append('The original TrainArea door opener has no runtime component in the published legacy addon.')
                 elif FRAMEWORK.fullmatch(head) and framework_supported and (represented or outcome.get('startupSamples')):
                     root_fields = [field.strip() for field in block[1:-1]
                                    if field.startswith(' ') and not field.startswith('  ') and field.strip() != '}']
@@ -3547,7 +3565,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         count = re.search(r'^\s*m_iPlayerCount (\d+)\s*$', source.read(header), re.M)
         if count:
             advertised[header] = int(count[1])
-    remaining = []
+    remaining = inactive_placements
     for target in sorted({spawn['missingGroupWaypoint'] for spawn in prefab_spawns if 'missingGroupWaypoint' in spawn}):
         remaining.append(f'The original reinforcement waypoint {target} has no authored target.')
     for target in sorted(missing_spawn_anchors):

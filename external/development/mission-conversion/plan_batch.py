@@ -103,6 +103,7 @@ def authored_file_note(note):
         r'|waypoint assignment for .+ has no authored group and does not run'
         r'|static vehicle link to .+ has no mission-layer target'
         r'|spawn at .+ has no authored anchor and does not run'
+        r'|TrainArea door opener has no runtime component in the published legacy addon'
         r'|event .+ has no authored condition and does not run)\.', note
     ) is not None
 

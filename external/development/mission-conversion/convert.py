@@ -218,7 +218,7 @@ def main():
             owners = (locally_owned, source_units.resources, dev_units.resources)
             if verified_stock_ai_group(resource, path, stock, locally_owned, source_units, dev_units, rhs_database):
                 return path
-            if batch.verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path):
+            if batch.verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path, external_ai):
                 return path
             if (alias := asset_aliases.get((resource, path))) and alias[0] == resource:
                 path = alias[1]

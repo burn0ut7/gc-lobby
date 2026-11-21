@@ -179,6 +179,12 @@ def rhs_ai_characters(workshop):
     characters = {guid: root + f'RandomSoldiers/Character_RHS_RF_MSV_VKPO_DS_{role}_Random.et'
                   for guid, role in RHS_AI_ROLES.items()}
     characters['0848BAB1B94FCBBA'] = root + 'Character_RHS_RF_MSV_VKPO_DS_Crew.et'
+    flora = 'Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/Flora/'
+    characters['2B97973CD921E6AC'] = flora + 'Character_RHS_AFRF_MSV_Flora_Crew.et'
+    for guid, role in {'B3C496CCFA72D25E': 'SL', 'DE4C67D3C8F6704D': 'AR', '06E40E12B17F6E11': 'AT',
+                       '4375F8D9CF5FCB47': 'AAT', '9E5162BC890ADFCF': 'SR',
+                       'D39919F23F411967': 'GL', '7CCAB195F5A1D9CA': 'Rifleman'}.items():
+        characters[guid] = flora + f'Character_RHS_RF_MSV_Flora_{role}.et'
     characters['A0CAC00219D7EF55'] = ('Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Summer/'
                                       'Character_RHS_RF_MSV_VKPO_S_Rifleman.et')
     for guid, role in {'47E5851C66B52637': 'SR_GL', 'B4474D20DB777AB6': 'AR',
