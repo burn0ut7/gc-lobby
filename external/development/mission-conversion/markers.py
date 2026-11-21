@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 from briefings import block_end, guid, properties
 from launchers import META_NAME
-from scenery import FIELD
+from scenery import FIELD, NUMBER
 
 BASE = 'CD85ADE9E0F54679'
 LEGACY = re.compile(r'^(?P<group>\$grp )?PS_ManualMarker(?: (?P<name>[\w.\-]+))?'
@@ -55,6 +55,18 @@ BAKED_MARKER_GENERATOR = re.compile(
     r'   m_fDistance [\d.]+\n   \{\n    \$grp PS_ManualMarker : (?P=reference) \{\n'
     r'(?P<members>.*?)\n    \}\n   \}\n  \}\n \}\n\}', re.S)
 BAKED_MARKER_MEMBER = re.compile(r'     \{\n      coords ([^\n]+)\n      angles ([^\n]+)\n     \}')
+WALL_MARKER_SHAPE = re.compile(
+    rf'PolylineShapeEntity \{{\n coords (?P<origin>{NUMBER} {NUMBER} {NUMBER})\n Points \{{\n'
+    rf'(?:  ShapePoint "\{{[\da-fA-F]{{16}}\}}" \{{\n   Position {NUMBER} {NUMBER} {NUMBER}\n  \}}\n)+'
+    rf' \}}\n \{{\n  WallGeneratorEntity \{{\n   Flags 0x100003 0\n   m_iSeed \d+\n'
+    rf'   PrePadding {NUMBER}\n   PostPadding {NUMBER}\n(?:   m_fOvershoot {NUMBER}\n)?'
+    r'   m_aWallGroups \{\n    WallLengthGroup "\{[\da-fA-F]{16}\}" \{\n     m_aWallPrefabs \{\n'
+    r'      WallWeightPair "\{[\da-fA-F]{16}\}" \{\n'
+    r'       m_sWallAsset (?P<reference>"\{(?P<guid>[\da-fA-F]{16})\}(?P<path>[^"\n]+\.et)")\n'
+    rf'       m_fPrePadding {NUMBER}\n       m_fPostPadding {NUMBER}\n'
+    r'      \}\n     \}\n    \}\n   \}\n(?:   UseXAsForward [01]\n)?'
+    r'   \{\n    \$grp PS_ManualMarker : (?P=reference) \{\n(?P<members>.*?)\n    \}\n   \}\n  \}\n \}\n\}', re.S)
+WALL_MARKER_MEMBER = re.compile(r'     \{\n      coords ([^\n]+)(?:\n      angles ([^\n]+))?\n     \}')
 BAKED_OPFOR_LIMIT = re.compile(
     r'PolylineShapeEntity FLET \{\n coords (?P<origin>[^\n]+)\n Points \{\n'
     r'(?:  ShapePoint "\{[\da-fA-F]{16}\}" \{\n   Position [^\n]+\n  \}\n)+'
@@ -77,19 +89,51 @@ def convert_baked_marker_generator(block, source, dev):
         if limit:
             return render_baked_markers(limit, BAKED_OPFOR_LIMIT_MEMBER, 'm_sDescription', OPFOR_LIMIT_FIELDS, dev)
         raise ValueError('unverified baked marker generator')
-    if source.resources.get(match['guid'].upper()) != [match['path']]:
-        raise ValueError('unverified baked marker generator')
-    template = source.read(match['path']).splitlines()
+    inherited = local_marker_fields(source, match['guid'].upper(), match['path'])
+    if TRANSFORM.intersection(inherited) != {'coords', 'angles'}:
+        raise ValueError('baked marker template has additional transforms')
+    return render_baked_markers(match, BAKED_MARKER_MEMBER, 'angles', inherited, dev)
+
+
+def local_marker_fields(source, identity, path):
+    if source.resources.get(identity) != [path]:
+        raise ValueError('unverified local marker template')
+    template = source.read(path).splitlines()
     if len(template) < 3:
         raise ValueError('baked marker template has no authored fields')
     root = LEGACY.fullmatch(template[0])
     if (not root or root['guid'].upper() != BASE or root['group'] or root['name'] or template[-1] != '}'
             or not re.fullmatch(r' ID "[\da-fA-F]{16}"', template[1])):
         raise ValueError('unsupported baked marker template')
-    inherited = properties(template[2:-1], ALLOWED)
-    if TRANSFORM.intersection(inherited) != {'coords', 'angles'}:
-        raise ValueError('baked marker template has additional transforms')
-    return render_baked_markers(match, BAKED_MARKER_MEMBER, 'angles', inherited, dev)
+    return properties(template[2:-1], ALLOWED)
+
+
+def convert_wall_markers(block, source, dev):
+    shapes = []
+    if block[0] == '$grp PolylineShapeEntity {':
+        start = 1
+        while start < len(block) - 1:
+            if block[start] != ' {':
+                raise ValueError('unsupported wall marker shape member')
+            stop = block_end(block, start)
+            if stop >= len(block) - 1 or not all(line.startswith(' ') for line in block[start + 1:stop]):
+                raise ValueError('invalid wall marker shape member')
+            shapes.append('\n'.join(['PolylineShapeEntity {', *(line[1:] for line in block[start + 1:stop]), '}']))
+            start = stop + 1
+    else:
+        shapes.append('\n'.join(block))
+    if not shapes:
+        raise ValueError('wall marker generator has no shapes')
+    result = []
+    for shape in shapes:
+        match = WALL_MARKER_SHAPE.fullmatch(shape)
+        if not match:
+            raise ValueError('unsupported wall marker generator')
+        inherited = local_marker_fields(source, match['guid'].upper(), match['path'])
+        if TRANSFORM.intersection(inherited) - {'coords', 'angles'}:
+            raise ValueError('wall marker template has additional transforms')
+        result.append(render_baked_markers(match, WALL_MARKER_MEMBER, 'angles', inherited, dev))
+    return ''.join(result)
 
 
 def render_baked_markers(match, pattern, member_field, inherited, dev):
@@ -99,11 +143,15 @@ def render_baked_markers(match, pattern, member_field, inherited, dev):
         raise ValueError('invalid saved marker transforms')
     output = []
     for coords, value in pattern.findall(members):
-        if not FIELD.fullmatch('coords ' + coords) or (member_field == 'angles' and not FIELD.fullmatch('angles ' + value)):
+        if not FIELD.fullmatch('coords ' + coords) or (value and member_field == 'angles'
+                                                       and not FIELD.fullmatch('angles ' + value)):
             raise ValueError('invalid saved marker transforms')
         absolute = ' '.join(format(Decimal(parent) + Decimal(child), 'f')
                             for parent, child in zip(origin.split(), coords.split()))
-        output.append(instance([' coords ' + absolute, f' {member_field} {value}'], '', inherited, draw_order=True))
+        placement = [' coords ' + absolute]
+        if value:
+            placement.append(f' {member_field} {value}')
+        output.append(instance(placement, '', inherited, draw_order=True))
     if not output:
         raise ValueError('baked marker generator has no saved markers')
     return relocate_images('\n'.join(output) + '\n', dev)
@@ -228,11 +276,13 @@ def relocate_images(text, dev):
     return pattern.sub(resolve, text)
 
 
-def marker_fields(match):
+def marker_fields(match, source=None):
     guid = match['guid'].upper()
     if guid == BASE:
         return None
     preset = PRESETS.get(guid)
+    if not preset and source and source.resources.get(guid) == [match['path']]:
+        return local_marker_fields(source, guid, match['path'])
     if not preset or preset['path'] != match['path']:
         raise ValueError(f'inherited marker preset {guid}')
     return preset['fields']
@@ -268,8 +318,8 @@ def convert_instance(lines, name, inherited, draw_order, depth=0):
     return '\n'.join([*marker[:-1], ' {', *children, ' }', marker[-1]]), count
 
 
-def convert_placement(lines, start, stop, match, draw_order, depth=0):
-    inherited = marker_fields(match)
+def convert_placement(lines, start, stop, match, draw_order, depth=0, *, source=None):
+    inherited = marker_fields(match, source)
     if not match['group']:
         name = ' ' + match['name'] if match['name'] else ''
         return convert_instance(lines[start + 1:stop], name, inherited, draw_order, depth)
@@ -295,7 +345,7 @@ def convert_placement(lines, start, stop, match, draw_order, depth=0):
     return '\n'.join(result), count
 
 
-def convert_layer(text, dev=None, *, draw_order=False):
+def convert_layer(text, dev=None, *, draw_order=False, source=None):
     """Process complete icon-only layers. Mixed layers keep their original ordering for review."""
     if not re.search(r'^(?:\$grp )?PS_ManualMarker\b', text, re.M):
         return None
@@ -312,7 +362,7 @@ def convert_layer(text, dev=None, *, draw_order=False):
             raise ValueError(f'line {i + 1} mixed or custom placement')
         stop = block_end(lines, i)
         try:
-            rendered, converted = convert_placement(lines, i, stop, match, draw_order)
+            rendered, converted = convert_placement(lines, i, stop, match, draw_order, source=source)
         except ValueError as exc:
             raise ValueError(f'line {i + 1} {exc}') from exc
         result.append(rendered)

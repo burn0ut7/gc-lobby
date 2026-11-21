@@ -23,7 +23,8 @@ from groups import (COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, SLOTS, inheritance, 
 from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_prefab
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
-from markers import DEST as MAP_MARKER_PREFAB, convert_baked_marker_generator, convert_hover_camera, convert_layer
+from markers import (DEST as MAP_MARKER_PREFAB, convert_baked_marker_generator, convert_hover_camera,
+                     convert_layer, convert_wall_markers)
 from outcomes import FRAMEWORK, SCRIPT_FLAG_APIS, leaves, render as render_outcome, render_capture_trackers
 import polygon_capture
 from respawns import authored_respawn_fields, read_respawns
@@ -3852,11 +3853,14 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 elif (layer, line) in spawners:
                     result.append(spawners[(layer, line)])
                 elif kind == 'PS_ManualMarker':
-                    result.append(convert_layer(body, dev, draw_order=True)[0])
+                    result.append(convert_layer(body, dev, draw_order=True, source=source)[0])
                 elif kind == 'PS_ManuaMarkerRender':
                     result.append(convert_hover_camera(block, f'{layer}:{line}'))
                 elif BARE_SHAPE.fullmatch(head) and 'Prefabs/WEGenerators/Markers/PG_MarkerGenerator_' in body:
                     result.append(convert_baked_marker_generator(block, source, dev))
+                    converted_scenery_map = True
+                elif BARE_SHAPE.fullmatch(head) and 'WallGeneratorEntity {' in body and 'PS_ManualMarker :' in body:
+                    result.append(convert_wall_markers(block, source, dev))
                     converted_scenery_map = True
                 elif ('TILW_AOLimit.et' in head or 'TILW_MapShape.et' in head or PASSIVE_COVER.fullmatch(head)
                         or (BARE_SHAPE.fullmatch(head) and 'TILW_MapShapeComponent' in body)):
