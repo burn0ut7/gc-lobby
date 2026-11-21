@@ -205,7 +205,7 @@ def main():
     def resolve_spawn(objectives, resource, path, *, group=False):
         if group:
             owners = (locally_owned, source_units.resources, dev_units.resources)
-            if verified_stock_ai_group(resource, path, stock, owners, rhs_database):
+            if verified_stock_ai_group(resource, path, stock, locally_owned, source_units, dev_units, rhs_database):
                 return path
             if batch.verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path):
                 return path

@@ -135,6 +135,14 @@ PLACED_SPAWNER = re.compile(
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 REVIEWED_CAPACITY = {
+    'Missions/Woody/COTVTXX_Kassel_Crashers.conf': (
+        '4941956ada2db5d66db4dacb029d9037e252e032',
+        (('worlds/Woody/COTVTXX_Kassel_Crashers/COTVTXX_Kassel_Crashers_Layers/playergroups.layer',
+          'ae5cdb834e5ae627e051767e3de9b813607b350f'),
+         ('worlds/Woody/COTVTXX_Kassel_Crashers/COTVTXX_Kassel_Crashers_Layers/aigroups.layer',
+          '698ea5a6253ae5282ea9967ce112d4ce7869b75f')),
+        69, 67,
+    ),
     'Missions/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky.conf': (
         '68347cf26401cd0d1ebd780e568a9b4cc163363d',
         (('worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/OPFOR_Players/OPFOR_Players.layer',

@@ -155,20 +155,27 @@ def rhs_ai_characters(workshop):
     return {guid: path for guid, path in characters.items() if registry.contains(guid, path)}, registry
 
 
-def verified_stock_ai_group(guid, path, stock, owned_resources, rhs=None, *, inherited_slots=True):
+def verified_stock_ai_group(guid, path, stock, locally_owned, source_units, dev_units, rhs=None, *,
+                            inherited_slots=True):
     rhs_spec = RHS_AI_GROUPS.get(guid)
     spec = rhs_spec or STOCK_AI_GROUPS.get(guid)
     provider = rhs if rhs_spec else stock
     if not spec or not provider or path != spec['path'] or not provider.contains(guid, path):
         return None
-    def registered(reference):
+    def registered(reference, *, slot=False):
         resource, registered_path = reference
-        return ((provider.contains(resource, registered_path) or (stock and stock.contains(resource, registered_path)))
-                and not any(resource in owned for owned in owned_resources))
+        if resource in locally_owned or not (
+                provider.contains(resource, registered_path) or (stock and stock.contains(resource, registered_path))):
+            return False
+        if resource not in source_units.resources and resource not in dev_units.resources:
+            return True
+        # A same-ID Units overlay is safe for an inherited stock slot only when unchanged.
+        return (slot and not rhs_spec and
+                unchanged_deprecated_stock_override(source_units, dev_units, resource, registered_path))
 
     if not all(registered(ref) for ref in [(guid, path), *spec['inheritedGroups']]):
         return None
-    unverified_slots = {slot[0] for slot in spec['slots'] if not registered(slot)}
+    unverified_slots = {slot[0] for slot in spec['slots'] if not registered(slot, slot=True)}
     if not unverified_slots:
         return spec
     if inherited_slots:
@@ -480,7 +487,7 @@ def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, ext
         token = line.strip()
         if re.fullmatch(r'm_aUnitPrefabSlots (?:\+ ?)?\{', token):
             end = block_end(lines, index)
-            if any(REF.sub('', entry).strip() for entry in lines[index + 1:end]):
+            if any(entry.strip() != '""' and REF.sub('', entry).strip() for entry in lines[index + 1:end]):
                 raise ValueError('unsupported AI slot list')
             result.extend([line, *(REF.sub(member, entry) for entry in lines[index + 1:end]), lines[end]])
             index = end
@@ -889,8 +896,8 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
         stock_group = None
         if native_group and guid not in source_units.resources and guid not in dev_units.resources:
             path = REF.search(lines[i])[2]
-            owned = (locally_owned, source_units.resources, dev_units.resources)
-            stock_group = verified_stock_ai_group(guid, path, stock, owned, rhs, inherited_slots=False)
+            stock_group = verified_stock_ai_group(guid, path, stock, locally_owned, source_units, dev_units,
+                                                  rhs, inherited_slots=False)
             if not stock_group:
                 raise ValueError('unverified native AI group ancestry ' + guid)
         if spec:
