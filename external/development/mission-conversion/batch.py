@@ -41,6 +41,10 @@ LIGHT_FIELDS = {'ID', 'coords', 'Color', 'LV', 'ClipEV', 'Radius', 'NearPlane', 
                 'SpotAngleAttenuation', 'DistanceAttenuation', 'LensFlareType', 'LensFlareScale'}
 SERIALIZED_ID = '"\\{[0-9a-fA-F]{16}\\}"'
 NAVMESH_COMPONENT = re.compile(rf' +TILW_NavmeshRegenComponent {SERIALIZED_ID} \{{')
+DAMAGE_COMPONENT = re.compile(rf'  TILW_Flag_EntityDamage {SERIALIZED_ID} \{{')
+DAMAGE_TARGETS = {
+    '78CCABFAE4DC21EF': 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/Dst/CrateStack_01_Dst_2_dark.et',
+}
 MATERIAL_OVERRIDE = re.compile(
     rf'SCR_DestructibleBuildingEntity : "\{{[\da-fA-F]{{16}}\}}Prefabs/Structures/[^"\n]+\.et" \{{\n'
     rf' ID "[\da-fA-F]{{16}}"\n components \{{\n  MeshObject {SERIALIZED_ID} \{{\n   Materials \{{\n'
@@ -191,6 +195,68 @@ def interaction_rules(source, world, stock, local_resources):
 def script_text(source):
     return '\n'.join(source.read_raw(path).decode('utf-8-sig')
                      for path in source.files if path.lower().endswith('.c'))
+
+
+def damage_flag_rules(source, world, stock, local_resources):
+    placements, audit, candidates = {}, {}, defaultdict(list)
+    for path in source.layers[world.lower()]:
+        text = source.read(path)
+        if 'TILW_Flag_EntityDamage' not in text:
+            continue
+        for line, block in blocks(text):
+            components = [i for i, part in enumerate(block) if DAMAGE_COMPONENT.fullmatch(part)]
+            if not components:
+                continue
+            location = f'{path}:{line}'
+            try:
+                ref = REF.search(block[0])
+                if (len(components) != 1 or not ref or not stock or ref[1].upper() in local_resources
+                        or DAMAGE_TARGETS.get(ref[1].upper()) != ref[2] or not stock.contains(*ref.groups())):
+                    raise ValueError('unverified damage objective prefab or component placement')
+                head = re.fullmatch(r'(GenericEntity)(?: ([\w.-]+))?( : .+)', block[0])
+                if not head:
+                    raise ValueError('damage objective needs an individual placed entity')
+                start = components[0]
+                stop = block_end(block, start)
+                parent = block.index(' components {')
+                if not parent < start < stop < block_end(block, parent):
+                    raise ValueError('damage flag is outside root components')
+                data = properties(block[start + 1:stop],
+                                  {'m_flagName', 'm_targetState', 'm_targetZone', 'm_continuous', 'm_initialHealth'})
+                flag = data.get('m_flagName', '')
+                if (not re.fullmatch(r'"[\w.-]+"', flag) or len(flag.encode()) > 130
+                        or data.get('m_targetState', '2') not in ('2', 'DESTROYED')
+                        or data.get('m_targetZone', '""') != '""' or data.get('m_continuous', '0') != '0'
+                        or not re.fullmatch(r'1(?:\.0+)?', data.get('m_initialHealth', '1'))):
+                    raise ValueError('unsupported damage flag condition')
+                name = head[2] or 'GC_Damage_' + guid(location)
+                if len(name.encode()) > 128:
+                    raise ValueError('damage objective name exceeds the native limit')
+                converted = [head[1] + ' ' + name + head[3], *block[1:start], *block[stop + 1:]]
+                native = native_placement(converted)
+                if not native:
+                    raise ValueError('damage objective has another legacy component')
+                candidates[flag[1:-1]].append((path, line, name, native))
+            except ValueError as exc:
+                audit[location] = {'gap': str(exc)}
+    flags = {}
+    if not candidates:
+        return flags, placements, audit
+    references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                           if path.lower().endswith(('.layer', '.ent', '.et')))
+    for flag, entries in candidates.items():
+        # Every use must be this producer or the immediate field of a literal condition.
+        count = len(re.findall(r'(?m)^ +(?:m_condition )?TILW_LiteralTerm [^\n]+\n +m_flagName "'
+                               + re.escape(flag) + r'"$', references))
+        if len(entries) != 1 or references.count(f'"{flag}"') != count + 1 or flag in script_text(source):
+            for path, line, _, _ in entries:
+                audit[f'{path}:{line}'] = {'gap': 'damage flag has another producer or unsupported use'}
+            continue
+        path, line, name, native = entries[0]
+        placements[(path, line)] = native
+        flags[flag] = name
+        audit[f'{path}:{line}'] = {'flag': flag, 'entity': name, 'condition': 'default damage area destroyed'}
+    return flags, placements, audit
 
 
 def unused_flag_sampling(source, world, path, line, framework):
@@ -595,7 +661,7 @@ def faction_overrides(lines):
 '''
 
 
-def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=()):
+def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, environment, coords, freeze, children = '', '', ' coords 0 0 0', 0, ''
@@ -705,7 +771,13 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             flag_lines = []
             for flag in sorted(objective_flags):
                 identity = guid(world + '/interaction flag/' + flag)
-                flag_lines.extend([f'    GC_MissionFlag "{{{identity}}}" {{', f'     m_sName "{flag}"', '    }'])
+                flag_lines.extend([f'    GC_MissionFlag "{{{identity}}}" {{', f'     m_sName "{flag}"'])
+                if damage_flags and flag in damage_flags:
+                    target = damage_flags[flag]
+                    condition = guid(world + '/damage flag condition/' + flag)
+                    flag_lines.extend(['     m_aConditions {', f'      GC_EntityDamageCondition "{{{condition}}}" {{',
+                                       f'       m_sEntityName "{target}"', '      }', '     }'])
+                flag_lines.append('    }')
             flags = '   m_aMissionFlags + {\n' + '\n'.join(flag_lines) + '\n   }\n'
         events = f'   m_aMissionEvents + {{\n{additional_rules}   }}\n' if additional_rules else ''
         settings += f'''
@@ -760,6 +832,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     group_blocks = []
     area_names = []
     objective_flags, interaction_placements = interactions
+    damage_flags = {record['flag']: record['entity'] for record in row.get('damageFlagCandidates', {}).values()
+                    if 'flag' in record and record['flag'] in objective_flags}
     teleport_targets = {target for record in row.get('interactionCandidate', {}).values() if isinstance(record, dict)
                         for target in record.get('teleportDestinations', [])}
     event_flags = {action['setsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
@@ -857,7 +931,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         try:
             layer, index = mode_index
             rendered = render_mode(world, mode, preset or '', rule_text, zones, ai_faction,
-                                   set(objective_flags) | event_flags)
+                                   set(objective_flags) | event_flags, damage_flags)
             if preset:
                 parts[layer][index] = rendered
         except ValueError as exc:
@@ -887,8 +961,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'delayed extraction', 'file': world,
                              'detail': 'extraction needs all spawns and one positive consumer per flag'})
     if not blockers and (assignments or marker_edits or prefab_spawns or extraction_spawns or area_names or teleport_targets
+                         or damage_flags
                          or any('m_aStatic' in body for body in draft.values())):
         named = named_placements(draft.values())
+        for target in sorted(damage_flags.values()):
+            if len(named.get(target, [])) != 1:
+                blockers.append({'rule': 'damage flag target', 'file': world,
+                                 'detail': 'expected one placed entity named ' + target})
         for target in sorted(teleport_targets):
             if len(named.get(target, [])) != 1:
                 blockers.append({'rule': 'teleport destination', 'file': world,
@@ -984,6 +1063,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare delayed extraction polling and status messages in multiplayer.')
     if event_flags:
         remaining.append('Compare timing of simultaneous flag changes and their dependent event chains.')
+    if damage_flags:
+        remaining.append('Compare damage notification timing in Match and confirm no objective damage during staging.')
     if converted_cover:
         remaining.append('Native cover framing follows map opens. Auxiliary outlines use screen width instead of metres.')
     if any(spawn['startupChoice'] for spawn in prefab_spawns):

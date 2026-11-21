@@ -56,6 +56,10 @@ The Motor Rifle recovery stages the Deputy Platoon Leader and Medic from GC Unit
 
 Units Dev commit `8549aa91` supplies the restored roles. Missions Dev commit `7d4eb062` carries the 74-slot James mission. The file comparison preserved the order of its 47 explicit roster entries and the shared converter verified 27 inherited entries. The two vehicle paths and two vegetation paths changed to their current registered locations with the original GUIDs. The draft, registry check and committed files matched. Live slot selection and inherited stock equipment remain unverified.
 
+The damage flag rule replaces supported placed legacy damage callbacks with one-shot GC mission flags conditioned on destruction of the main damage area. It verifies the native prefab identity, retains the original placements and health settings, and assigns a stable name to each unnamed target. Additional producers, script consumers, custom initial health, named damage areas and continuous state changes remain in review. The reference behavior comes from the published TilW damage flag component and the base-game destructible crate ancestry.
+
+Makeup is committed to Missions Dev as `4727175e`. The draft preserved all 82 roster slots, both caches and all authored health and placement values. Both individual cache notices, the combined cache notice and the two casualty notices retain the source five-second delay. Resource checks passed against the Dev dependency graph. Live damage timing and staging behavior still need verification. Map cover framing follows native map opens, and the auxiliary outline uses screen width.
+
 Desert Heat is the first installed batch draft in Missions Dev commit a07bcbdb. The installer verified every referenced GUID and path against the draft files, current addon checkouts and installed resource databases. Its existing boundary was reused and only the missing boundary was added. Two runs with different Python hash seeds reproduced the draft and inventory byte-for-byte. File review covers the full 277-launcher catalog.
 
 ## Coverage

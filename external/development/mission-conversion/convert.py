@@ -289,6 +289,17 @@ def main():
                 row['interactionCandidate'] = audit
             except ValueError as exc:
                 row['interactionCandidate'] = {'gap': str(exc)}
+        if args.batch and row['serializedTypes'].get('TILW_Flag_EntityDamage'):
+            try:
+                damage_flags, damage, audit = batch.damage_flag_rules(source, world, stock, locally_owned)
+                if set(damage_flags) & set(objective_flags) or damage.keys() & interaction_placements.keys():
+                    raise ValueError('damage flag or target also has an interaction')
+                objective_flags = set(objective_flags) | set(damage_flags)
+                interaction_placements.update(damage)
+                batch_interactions[world] = (objective_flags, interaction_placements)
+                row['damageFlagCandidates'] = audit
+            except ValueError as exc:
+                row['damageFlagCandidates'] = {'review': {'gap': str(exc)}}
         has_outcomes = row['serializedTypes'].get('TILW_EndGameInstruction')
         delayed = None
         objectives = {}
