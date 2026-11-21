@@ -1,16 +1,17 @@
 """Prepare Roulette's shared authored data and native static briefings."""
 import argparse
+from hashlib import sha256
 import json
 from pathlib import Path
 import re
 
 from briefings import ALLOWED, STANDARD_DESCRIPTION, block_end, guid, page, properties, render
 from boundaries import DEST as AO_PREFAB
-from catalog import REF, Snapshot
+from catalog import REF, SOURCE_TEXT, Snapshot
 from dependencies import dependency_resources
 from groups import inheritance, scalar
 from install_batch import resource_databases, unregistered_references
-from launchers import registered_identity
+from launchers import META_NAME, launcher, registered_identity
 
 
 PREFIX = 'worlds/Burn0ut7/Roulette/'
@@ -44,6 +45,17 @@ TYPES = {
     'GC_R_Platoon': 'GC_RoulettePlatoon',
     'GC_R_Squad': 'GC_RouletteSquad',
     'GC_R_Briefing': 'GC_RouletteBriefing',
+}
+AI_WORLD = PREFABS + 'GC_R_SCR_AIWorld.et'
+AI_WORLD_ID = 'A6A16AFECB6003EC'
+REVIEWED_MODE_LAYERS = {
+    '6d631607a4595549b3a2b68a7c942a79ac3ea8fa',  # Anizay
+    '9b8d379046a7e7f403ec156d45004df491055cbd',  # Arland
+    '4397d55d48195cec2137a2935ea9d33b5e74fa98',  # Four unmodified shared modes
+    '8f718113a53db66baa12db9513b4f396e5c2d911',  # Bystrany
+    'bbd8bbcef05ddde65f21f61cd32646a9423baa8e',  # Everon
+    'cb056d8de369f37b1ce2e276bf370488f1f1ba55',  # Kunar
+    '300e9aeb61335771df7db7579408e1881385e84b',  # Zarichne
 }
 
 
@@ -214,14 +226,7 @@ def native_configuration(report, units):
     def add_resource(path, lines, kind='ResourceClass'):
         identity = guid('roulette/config/' + path)
         files[path] = '\n'.join([*lines, '']).encode()
-        files[path + '.meta'] = (
-            'MetaFileClass {\n'
-            f' Name "{{{identity}}}{path}"\n'
-            ' Configurations { ' + ' '.join(
-                f'{kind} {platform} {{}}' for platform in
-                ('PC', 'XBOX_ONE : PC', 'XBOX_SERIES : PC', 'PS4 : PC', 'PS5 : PC', 'HEADLESS : PC'))
-            + ' }\n'
-            '}\n').encode()
+        files[path + '.meta'] = resource_metadata(path, identity, kind)
         return f'{{{identity}}}{path}'
 
     catalogue = ['GC_RouletteCatalogue {', ' m_aScenarios {']
@@ -266,6 +271,16 @@ def native_configuration(report, units):
     return files
 
 
+def resource_metadata(path, identity, kind):
+    return ('MetaFileClass {\n'
+            f' Name "{{{identity}}}{path}"\n'
+            ' Configurations { ' + ' '.join(
+                f'{kind} {platform} {{}}' for platform in
+                ('PC', 'XBOX_ONE : PC', 'XBOX_SERIES : PC', 'PS4 : PC', 'PS5 : PC', 'HEADLESS : PC'))
+            + ' }\n'
+            '}\n').encode()
+
+
 def attach_startup_components(report, files):
     suffix = b' }\n}\n'
     for mission in report['missions']:
@@ -277,6 +292,7 @@ def attach_startup_components(report, files):
         if files[path].count(command_order) != 1:
             raise ValueError('expected one authored command page: ' + path)
         settings = files[path].replace(command_order, b'     m_iOrder 31\n')
+        settings = settings.replace(b'"/rreoll - ', b'"/reroll - ')
         component_id = guid(world + '/roulette/setup')
         observer_id = guid(world + '/roulette/casualties')
         component = (f'  GC_RouletteSetupComponent "{{{component_id}}}" {{\n'
@@ -311,6 +327,81 @@ def attach_startup_components(report, files):
         files[path] = settings[:-len(suffix)] + component + suffix
 
 
+def assemble_worlds(report, files, source, dev, checkouts, databases):
+    """Stage reviewed native mode placements alongside the ten authored terrains."""
+    if (source.files.get(MODE) != '96996a911314014ef11384adadc288fc6cafcef7'
+            or source.files.get(AI_WORLD) != 'a98d483ba8a96167441b5de0da76dafbf4bce766'
+            or not registered_identity(source, AI_WORLD_ID, AI_WORLD)):
+        raise ValueError('the shared authored mode or AI formation changed')
+    files[AI_WORLD] = source.read_raw(AI_WORLD)
+    files[AI_WORLD + '.meta'] = source.read_raw(AI_WORLD + '.meta')
+    formation_ref = f'{{{AI_WORLD_ID}}}{AI_WORLD}'
+    legacy_mode = source.read(MODE).splitlines()
+    _, faction_fields = entity(legacy_mode, 'SCR_FactionManager "6886F8AF225DB435"', required=True)
+    faction_fields = ['   ID "6ADC9BB66394BE46"', *(line for line in faction_fields if not line.strip().startswith('ID '))]
+    native_factions = '\n'.join([' {', '  SCR_FactionManager {', *faction_fields, '  }', ' }', ''])
+    for mission in report['missions']:
+        world, identity, header_files = launcher(source, dev, mission['header'])
+        if mission['world'] != f'{{{identity}}}{world}':
+            raise ValueError(f'world registration changed for {world}')
+        layers = [path for path in mission['sourceBlobs'] if path.endswith('.layer')]
+        if len(layers) != 1 or not layers[0].endswith('/default.layer') or source.files[layers[0]] not in REVIEWED_MODE_LAYERS:
+            raise ValueError(f'unreviewed Roulette layer in {world}')
+        layer, = layers
+        original = source.read(layer).splitlines()
+        start = next(index for index, line in enumerate(original) if line.startswith('PS_GameModeCoop '))
+        end = block_end(original, start)
+        root = original[start]
+        name = root.split(' ')[1]
+        settings = world.removesuffix('.ent') + '_GC_Settings.et'
+        settings_id = guid(world + '/resource')
+        files[settings + '.meta'] = resource_metadata(settings, settings_id, 'EntityTemplateResourceClass')
+        body = files[settings].decode().replace('   m_aBriefings {', f'   m_sFormationSource "{formation_ref}"\n   m_aBriefings {{', 1)
+        if MODE_PARENT in root:
+            body = body[:-2] + native_factions + '}\n'
+        files[settings] = body.encode()
+        placed = [f'GC_LobbyGameMode {name} : "{{{settings_id}}}{settings}" {{', '}',
+                  f'SCR_AIWorld : "{formation_ref}" {{', ' coords 0 0 0', '}']
+        rebuilt = '\n'.join([*original[:start], *placed, *original[end + 1:], ''])
+        old_topo = '{BF5F2D022EA8CB36}Worlds/Bystrany/Bystrany_Map_v02.topo'
+        new_topo = '{0C931F860C09AC4C}Worlds/Bystrany/Bystrany.topo'
+        files[layer] = rebuilt.replace(old_topo, new_topo).encode()
+        files[world] = source.read_raw(world)
+        files.update({name: value.encode() for name, value in header_files.items()})
+
+    refs = set()
+    owned = set()
+    for path, contents in files.items():
+        if path.endswith('.meta'):
+            registration = META_NAME.search(contents.decode('utf-8-sig'))
+            if registration and path[:-5] in files and registration[3] == path[:-5]:
+                owned.add((registration[2], registration[3]))
+        elif Path(path).suffix.lower() in SOURCE_TEXT:
+            refs.update(REF.findall(contents.decode('utf-8-sig')))
+    deps, providers, unavailable = dependency_resources(dev, checkouts, databases)
+    missing = unregistered_references({(guid, path) for guid, path in refs - owned if path not in deps.get(guid, ())}, providers)
+    if unavailable or missing:
+        raise ValueError(f'unavailable Dev dependencies {unavailable}, unresolved Roulette assets {sorted(missing)}')
+    report['assembly'] = {'worlds': len(report['missions']), 'validatedReferences': len(refs)}
+    report['target'] = dev.commit
+    report['headers'] = {mission['header']: {'destinationWorld': mission['world']} for mission in report['missions']}
+    common = {path for path in files if path.startswith(PREFABS) or path in (CATALOGUE, CATALOGUE + '.meta')}
+    worlds = {}
+    for mission in report['missions']:
+        world = mission['world'][18:]
+        stem = world.removesuffix('.ent')
+        header = mission['header']
+        local_files = {path for path in files if path.startswith(stem + '_')
+                       or path in (world, world + '.meta', header, header + '.meta')}
+        worlds[world] = {'status': 'generated for file review', 'files': sorted(common | local_files)}
+    if set(files) != {path for item in worlds.values() for path in item['files']}:
+        raise ValueError('Roulette files are missing from the installer manifest')
+    report['batchMigration'] = {
+        'worlds': worlds,
+        'sha256': {path: sha256(contents).hexdigest() for path, contents in sorted(files.items())},
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--missions', type=Path, required=True)
@@ -321,6 +412,7 @@ def main():
     parser.add_argument('--units', type=Path)
     parser.add_argument('--units-source')
     parser.add_argument('--dependency', type=Path, action='append', default=[])
+    parser.add_argument('--assemble', action='store_true', help='stage native worlds and headers for file review')
     args = parser.parse_args()
     output = args.output.resolve()
     if any(output.is_relative_to(root) for root in (args.missions.resolve(), Path(__file__).resolve().parents[3])):
@@ -328,17 +420,22 @@ def main():
     if bool(args.base_database) != bool(args.units and args.units_source) or (
             not args.base_database and (args.units or args.units_source or args.workshop_addons or args.dependency)):
         parser.error('use --base-database, --units and --units-source together for prefab checks')
+    if args.assemble and not args.base_database:
+        parser.error('--assemble requires the Dev dependency graph')
     source = Snapshot(args.missions, args.source)
     report, briefings = prepare(source)
     files = {path: text.encode('utf-8') for path, text in briefings.items()}
     if args.base_database:
         databases = resource_databases(args.base_database, args.workshop_addons)
         units = Snapshot(args.units, 'HEAD')
+        dev = Snapshot(args.missions, 'HEAD')
+        checkouts = [Snapshot(repo, 'HEAD') for repo in args.dependency]
         files.update(resolve_prefabs(
-            report, source, Snapshot(args.missions, 'HEAD'), Snapshot(args.units, args.units_source),
-            units, [Snapshot(repo, 'HEAD') for repo in args.dependency], databases))
+            report, source, dev, Snapshot(args.units, args.units_source), units, checkouts, databases))
         files.update(native_configuration(report, units))
         attach_startup_components(report, files)
+        if args.assemble:
+            assemble_worlds(report, files, source, dev, [units, *checkouts], databases)
     output.mkdir(parents=True, exist_ok=False)
     for name, contents in files.items():
         path = output / name
