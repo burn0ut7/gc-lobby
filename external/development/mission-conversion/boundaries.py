@@ -303,6 +303,13 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     world_scale = parent_scale * (scale if scale is not None else 1)
     if world_scale != 1:
         vertices = [tuple(axis * world_scale for axis in point) for point in vertices]
+    if cover and values.get('Enabled') == '0' and not overlay and not passive_only:
+        if nested or pitch or yaw or roll or world_scale != 1:
+            raise ValueError('cover without AO needs a top-level, unrotated shape at unit scale')
+        if len(vertices) < 3:
+            raise ValueError('cover needs at least three source points')
+        # The source points determine the frame radius. Only the emitted rectangle is rendered.
+        return render_cover(origin, vertices, yaw, cover, name=name, preserve_origin=True), len(vertices)
     passive_overlay = extended_shapes and values.get('Enabled') == '0' and bool(overlay)
     standalone_ao = standalone and values.get('Enabled') == '1'
     visible_standalone = (overlay.get('Enabled') != '0'
@@ -340,10 +347,6 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
             # The legacy AO closes the polygon for containment and joins the last outline point to the first.
             placement[placement.index(' IsClosed 0')] = ' IsClosed 1'
         overlay = {}
-    if cover and values.get('Enabled') == '0' and not overlay and not passive_only:
-        if nested or pitch or yaw or roll or world_scale != 1:
-            raise ValueError('cover without AO needs a top-level, unrotated shape at unit scale')
-        return render_cover(origin, vertices, yaw, cover, name=name, preserve_origin=True), len(vertices)
     cover_shape = render_cover(origin, vertices, yaw, cover, pitch, roll) + '\n' if cover else ''
     if passive_only or (passive_overlay and not standalone_ao):
         if values.get('Enabled') != '0':

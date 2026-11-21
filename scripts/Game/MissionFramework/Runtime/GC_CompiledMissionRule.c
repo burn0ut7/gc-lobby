@@ -76,6 +76,7 @@ class GC_RuleAction
 	ref array<ref GC_MarkerFactionVisibility> m_aMarkerFactions;
 	bool m_bChangeFuel;
 	float m_fFuelRatio;
+	bool m_bRequireRootFuelManager;
 	bool m_bChangeSupplies;
 	bool m_bRepair;
 	bool m_bChangeWeather = true;

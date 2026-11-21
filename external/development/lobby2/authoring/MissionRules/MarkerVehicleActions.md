@@ -19,7 +19,8 @@ Implementation: detached catalog snapshots are validated before upsert. Existing
 ## Vehicle Fuel, Supplies and Repair Action
 
 - **Entities:** exact names of existing vehicles or other entities with the relevant components.
-- **Change Fuel:** set **Fuel Ratio**, using a 0–1 slider: 0 empty, 0.5 half full, 1 full. Includes attached fuel managers and storage tanks, matching TilW's unfiltered fuel operation.
+- **Change Fuel** sets **Fuel Ratio** from 0 for empty to 1 for full. It includes attached fuel managers and storage tanks.
+- **Require Root Fuel Manager** skips the fuel change if the named entity has no fuel manager of its own. The legacy mission converter enables this setting for vehicle service instructions.
 - **Change Supplies:** set **Supplies Amount** as an absolute total. Zero empties the supplies; the engine clamps values to storage capacity. This does not refill weapon magazines.
 - **Repair:** fully repair supported damage through the engine damage manager, including vehicle hit zones and drowned engines. This does not spawn replacements for deleted entities or missing parts.
 

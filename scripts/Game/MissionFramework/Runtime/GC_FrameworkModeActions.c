@@ -71,7 +71,7 @@ modded class GC_LobbyManager
 			if (!entity || visited.Contains(entity))
 				continue;
 			visited.Insert(entity);
-			if (action.m_bChangeFuel)
+			if (action.m_bChangeFuel && (!action.m_bRequireRootFuelManager || entity.FindComponent(SCR_FuelManagerComponent)))
 			{
 				array<SCR_FuelManagerComponent> fuelManagers = {};
 				SCR_FuelManagerComponent.GetAllFuelManagers(entity, fuelManagers);

@@ -7,6 +7,8 @@ class GC_VehicleAction : GC_ActionBase
 	bool m_bChangeFuel;
 	[Attribute("1", UIWidgets.Slider, "Fuel level: 0 is empty, 0.5 is half full, and 1 is full. Includes attached fuel managers and storage tanks. Only used when Change Fuel is checked.", "0 1 0.01")]
 	float m_fFuelRatio;
+	[Attribute("0", UIWidgets.CheckBox, "Skip fuel changes when the named entity has no fuel manager of its own. Attached fuel managers are still included when the target has one.")]
+	bool m_bRequireRootFuelManager;
 	[Attribute("0", UIWidgets.CheckBox, "Set carried supplies to Supplies Amount. Unchecked leaves supplies unchanged. This does not refill weapon magazines.")]
 	bool m_bChangeSupplies;
 	[Attribute("0", UIWidgets.EditBox, "Total supplies to carry, not an amount to add. Zero empties the supply container. The engine limits this to the container's capacity. Only used when Change Supplies is checked.", "0 1000000")]
@@ -26,6 +28,7 @@ class GC_VehicleAction : GC_ActionBase
 			action.m_sTextOrName = action.m_aFlagNames[0];
 		action.m_bChangeFuel = m_bChangeFuel;
 		action.m_fFuelRatio = m_fFuelRatio;
+		action.m_bRequireRootFuelManager = m_bRequireRootFuelManager;
 		action.m_bChangeSupplies = m_bChangeSupplies;
 		action.m_iAmount = m_iSuppliesAmount;
 		action.m_bRepair = m_bRepair;

@@ -39,16 +39,19 @@ def service_vehicles(data, _key):
     fuel, supplies, repair = (data.get(field, '0') for field in ('m_bAdjustFuel', 'm_bAdjustSupplies', 'm_bRepair'))
     if any(value not in ('0', '1') for value in (fuel, supplies, repair)):
         raise ValueError('invalid vehicle servicing options')
-    if fuel == '1':
-        # The legacy code requires a fuel manager on the root before visiting attached tanks.
-        raise ValueError('vehicle fuel requires a verified root fuel manager')
-    if supplies == repair == '0':
+    if fuel == supplies == repair == '0':
         raise ValueError('vehicle service has no enabled operation')
+    ratio = data.get('m_fFuelRatio', '1')
+    if fuel == '1' and (not re.fullmatch(NUMBER, ratio) or Decimal(ratio) > 1):
+        raise ValueError('invalid vehicle fuel ratio')
     amount = data.get('m_iAmountSupplies', '0')
     if supplies == '1' and (not re.fullmatch(r'\d+', amount) or int(amount) > 1000000):
         raise ValueError('invalid vehicle supply amount')
     lines = entity_fields(names)
     details = {'entities': [name[1:-1] for name in names], 'repair': repair == '1'}
+    if fuel == '1':
+        lines.extend(['       m_bChangeFuel 1', f'       m_fFuelRatio {ratio}', '       m_bRequireRootFuelManager 1'])
+        details['fuelRatio'] = ratio
     if supplies == '1':
         lines.extend(['       m_bChangeSupplies 1', f'       m_iSuppliesAmount {amount}'])
         details['supplies'] = int(amount)
