@@ -41,6 +41,14 @@ Stop each Workbench run once its assigned behaviors are verified. Record results
 
 The migration generates Arma launcher and world resource registrations. The resource audit checks against the dependency graph declared by the Dev projects. The metadata table in `plan.md` separately reports GC headers, generated metadata snapshots, catalogue data, explicit per-mission addon IDs and portable launch files. The standard GC launcher requires a generated snapshot or portable export. The conversion files and shared addon dependency audit leave that per-mission metadata generation open. Confirm script-selected content and use the supported exporter for the published build.
 
+Stage author catalogue fields from existing legacy GC metadata after running the file audit.
+
+    python "$tools/author_catalogue.py" --missions $repo --audit "$output/plan.json" --stage $authorStage
+
+This reads the legacy author fields defined in the published GC Core `GC_SCR_MissionHeader.c` and inserts the closest native equivalents for the original era, sides, force types, special assets and mission-group settings. The original author block stays byte for byte, including distinctions such as mortars versus other artillery that the current catalogue groups under one label. The report holds custom header types and unrecognized fields. Existing native catalogue entries take precedence.
+
+The first pass mapped 36 author blocks, retaining the originals and all earlier generated snapshots. Junction Jab retained its era, Artillery tag, faction force descriptions and sides, and mission-group details through a native metadata refresh in Workbench session `logs_2026-11-21_12-15-42`. Its new snapshot and the 36 catalogue blocks are in Missions Dev commit `337e257d`. The Kassel Crashers Modern Redux header remains listed for custom-type handling.
+
 Stage the header type for the native exporter with the same committed Dev revision used by the plan.
 
     python "$tools/launchers.py" --missions $repo --dev HEAD --prepare-metadata "$output/plan.json" --stage $metadataStage
@@ -74,6 +82,8 @@ Workbench session `logs_2026-11-21_11-57-03` verified the scan with inherited fa
 A temporary test added a unique prefab to an explicit faction catalogue in OSI The Airfield Incident. Its passive metadata scan did not identify that reference, so catalogue-only coverage remains unverified. The capture gate holds that mission, The Bear Went Over the Mountain and Top Malo House for separate review of their authored catalogue fields. Of the 158 other headers in the retained graph, 149 still need a capture. Eight additional headers have saved references outside the retained graph. Kassel Crashers still needs handling for its custom header. The committed captures describe the retained graph and full-project launch verification remains open.
 
 The staging preflight follows the base game's declared Engine Core dependency, which registers Breach and Clear's stock particle editor resource. It also accepts the exact path-loaded Longmoor parent for Bug Out, Longmoor Lashings and both Foreign Exchange Students missions, using the same verified Workshop archive and sole-reference check as the file audit. These five worlds passed staging. The next twelve snapshots are in Missions Dev commit `18f13864` and came from the RHIB-excluded graph.
+
+The five recovered worlds all produced native snapshots in Workbench session `logs_2026-11-21_12-15-42`. The migration checked the captured mission files against Dev and installed only the snapshots. The same batch captured ten additional missions in Missions Dev commit `7ddd3809`.
 
 Taking Trenches, North Coast Raid and Privateering directly reference RHIB. Workbench session `logs_2026-11-21_12-11-06` mounted the full, unmodified Dev manifest in a separate fixture with a local, data-only `VehicleDust` class for the installed RHIB 1.0.20 script. Game scripts compiled and the three metadata captures loaded 134, 148 and 32 entities, respectively. Each snapshot recorded RHIB GUID `5994614FB5AD35C2`. The merger verified the original mission files and committed the generated snapshots in `3a752f65`. The fixture's compatibility class was excluded from the commit. The unmodified installation still needs a compatible RHIB update to compile for representative playtesting.
 
