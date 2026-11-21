@@ -295,14 +295,16 @@ def markdown(plan):
             ('gcMissionHeader', 'Native GC mission header'),
             ('generatedSnapshot', 'GC generated mission snapshot'),
             ('catalogueMetadata', 'GC catalogue metadata'),
-            ('explicitRequiredAddons', 'Explicit per-mission addon IDs'),
-            ('portableLaunchMetadata', 'Portable launch metadata file'),
+            ('explicitRequiredAddons', 'Manual catalogue addon IDs'),
+            ('portableLaunchMetadata', 'Portable launch metadata file committed in Dev'),
         ):
             count = sum(row.get(field, False) for row in metadata.values())
             lines.append(f'| {label} | {count} of {len(metadata)} |')
         lines.extend(['', 'The file audit checks resource references against the addon dependency graph. '
                       'The direct GC mission launcher also requires a generated header snapshot or portable metadata. '
-                      'This table checks for those fields and files. The published build still needs its own launch verification.'])
+                      'The launcher resolves addon names in the snapshot to GUIDs and includes any manual catalogue IDs. '
+                      'Portable files exported outside the checkout are counted by the exporter. '
+                      'The published build still needs its own launch verification.'])
     if plan['sharedConversionQueue']:
         lines.extend(['', '## Shared conversion work', '',
                       'Work down this list before taking on mission-specific ports. Each estimate '
