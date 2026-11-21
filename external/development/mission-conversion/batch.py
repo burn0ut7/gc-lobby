@@ -1986,6 +1986,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare initial hit zone health and subsequent repairs.')
     if teleport_targets:
         remaining.append('Compare authored teleport choices, reach, faction visibility and destinations in Match.')
+    if any(path.endswith('.layer') and 'GC_VehicleCrewComponent' in body
+           for path, body in draft.items() if isinstance(body, str)):
+        remaining.append('Compare placed crew arrival at Match start, compartment order and gunner dismount policy.')
     if any(item['trigger'] == 'peak player loss' and item.get('inverted')
            for rule in rules.values() if 'trigger' in rule for item in leaves(rule)):
         remaining.append('Compare victory notices below and at the authored casualty threshold after the first sample.')
