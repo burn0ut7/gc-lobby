@@ -558,6 +558,9 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Scenarios/SP01/SP01_UAZ469_USSR.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('2FA364D8E326CB3C', 'Prefabs/Vehicles/Helicopters/Mi24/Mi24P_armed_9M114.et'): (
+        'WCS_Mi-24V_628933A0D3A0D700', '2FA364D8E326CB3C',
+        'Prefabs/Vehicles/Helicopters/Mi24/Mi24P_Armed_B8V20A_X4.et'),
     ('C8C37964483452EA', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Army.et'): (
         'WCS_AH-1S_64CB39E57377C861', 'C8C37964483452EA',
         'Prefabs/Vehicles/Helicopters/AH1S/Army/AH1S_Army_M261_X4.et'),
@@ -696,6 +699,10 @@ RHIB_LEGACY_MOUNT_LAYERS = {
     '338ce4c121323ef57ed329ee547a1e1b2886c354',  # Oil Rig Rangos
 }
 RHIB_CURRENT_MOUNT_LAYERS = {'10cceaf84b88a05e2c3cad314b005f18334dba38'}  # Taking Trenches
+WIRECUTTER_LAYER_BLOBS = {'7673b673c619b44b0f80cfb54d029b5cdd208350', 'f5c094b3c8f19c596b5f44c2b903f6942e0c0874'}
+WIRECUTTER_PREFAB = ('42232FFE6E7AC415', 'Prefabs/Items/Core/Wirecutters/wirecutters.et')
+LEGACY_WIRECUTTER = re.compile(
+    r'\$grp GenericEntity : "\{8554ED3F088BADA6\}Prefabs/Items/Core/Wirecutters/wirecutters(?:old)?\.et" \{')
 UNITS_PREFAB_ALIASES = {
     ('7A0813F1B65EA589', 'Prefabs/Groups/BLUFOR/US/Army_1985_Rifles/Group_US_Army_1985_RifleSquad.et.et'): (
         '7A0813F1B65EA589', 'Prefabs/Groups/BLUFOR/US/Deprecated/Army_1985_Rifles/Group_US_Army_1985_RifleSquad.et',
@@ -933,6 +940,33 @@ def restore_rhib_mounts(block, aliases, source_blob):
         rebuilt.extend(' ' + field for field in apply(fields))
         rebuilt.append(' }')
     return [*rebuilt, block[-1]]
+
+
+def restore_placed_wirecutters(block, aliases, source_blob):
+    if source_blob not in WIRECUTTER_LAYER_BLOBS or WIRECUTTER_PREFAB not in aliases:
+        raise ValueError('wirecutter placement needs the reviewed source and Workshop archive')
+    guid, path = WIRECUTTER_PREFAB
+    rebuilt = [f'$grp GenericEntity : "{{{guid}}}{path}" {{']
+    members = polygon_capture.members(block, True, None)
+    for name, fields in members:
+        if not fields or not all(FIELD.fullmatch(field.strip()) for field in fields):
+            raise ValueError('wirecutter placement has unsupported overrides')
+        rebuilt.extend([
+            f' {name} {{' if name else ' {',
+            '  components {',
+            '   InventoryItemComponent "{5222EB4D0C73006B}" {',
+            '    Attributes SCR_ItemAttributeCollection "{5222EB4D0A2B466B}" {',
+            '     ItemPhysAttributes ItemPhysicalAttributes "{62F35B4168194640}" : PhysicalAttributes {',
+            '      Weight 0.01',
+            '     }',
+            '     m_SlotType SLOT_LOADOUT_STORAGE',
+            '    }',
+            '   }',
+            '  }',
+            *(' ' + field for field in fields),
+            ' }',
+        ])
+    return '\n'.join([*rebuilt, '}', ''])
 
 
 def native_placement(block, *, reviewed_character=False):
@@ -1962,6 +1996,14 @@ def resource_aliases(workshop, units, stock):
                             and database.contains(mount, RHIB_PATH + f'RHIB_gun_mount_{suffix}.et')
                             and database.contains('FB8ABBE5AF24ED1E', RHIB_PATH + 'RHIB_gun_mount_Mk19_rear.et')):
                         aliases[original] = current
+        directory = workshop / 'Wirecutters2_62F364B35E9B51B0'
+        archive = directory / 'data.pak'
+        registry = directory / 'resourceDatabase.rdb'
+        if archive.is_file() and registry.is_file() and StockPrefabs(registry).contains(*WIRECUTTER_PREFAB):
+            with archive.open('rb') as stream:
+                if file_digest(stream, 'sha256').hexdigest() == (
+                        '32d8df1a5e3a84efa2b132b8a5bc01e71efc3dafe2e9d7e1f3972e711f9335c9'):
+                    aliases[WIRECUTTER_PREFAB] = WIRECUTTER_PREFAB
     for original, (current, path, digest) in UNITS_PREFAB_ALIASES.items():
         old, _ = original
         if ((old == current or old not in units.resources) and units.resources.get(current) == [path]
@@ -2899,6 +2941,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append(converted)
                 elif kind == 'ParticleEffectEntity' and static_particle_placement(block):
                     result.append(body)
+                elif LEGACY_WIRECUTTER.fullmatch(head):
+                    result.append(restore_placed_wirecutters(block, asset_aliases, source.files[layer]))
                 elif kind == 'SplineShapeEntity' and static_spline_placement(block):
                     result.append(body)
                 elif kind == 'SCR_ChimeraCharacter' and 'PK_EntityModifierComponent' in body:
@@ -3259,8 +3303,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare the AH-6 gun and rocket loadout against the legacy scenario.')
     if any(isinstance(body, str) and '{C8C37964483452EA}' in body for body in draft.values()):
         remaining.append('Compare the registered Army Cobra rocket loadout against the legacy scenario.')
+    if any(isinstance(body, str) and '{2FA364D8E326CB3C}' in body for body in draft.values()):
+        remaining.append('Compare the Mi-24P control, pylon selection and turret in the current WCS release.')
     if any(isinstance(body, str) and RHIB_PATH in body for body in draft.values()):
         remaining.append('Compare RHIB boarding, flotation and the authored front and rear mounts.')
+    if any(isinstance(body, str) and '{42232FFE6E7AC415}' in body for body in draft.values()):
+        remaining.append('Compare wirecutter pickup, storage and fence interaction in Match.')
     if any(isinstance(body, str) and '{D17CCBF7FE9AAFEC}' in body for body in draft.values()):
         remaining.append('Compare the woodland CROWS II turret and crew stations against the legacy scenario.')
     if any(path.endswith('.layer') and isinstance(body, str) and '{BC07885176C7FF8A}' in body
