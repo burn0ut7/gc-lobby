@@ -273,8 +273,11 @@ def attach_startup_components(report, files):
         if not files[path].endswith(suffix):
             raise ValueError('unexpected Roulette settings layout: ' + path)
         component_id = guid(world + '/roulette/setup')
+        observer_id = guid(world + '/roulette/casualties')
         component = (f'  GC_RouletteSetupComponent "{{{component_id}}}" {{\n'
                      f'   m_sMapConfig "{mission["nativeConfig"]}"\n'
+                     '  }\n'
+                     f'  GC_PeakFactionPopulationComponent "{{{observer_id}}}" {{\n'
                      '  }\n').encode()
         files[path] = files[path][:-len(suffix)] + component + suffix
 

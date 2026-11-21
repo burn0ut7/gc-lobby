@@ -131,6 +131,8 @@ class GC_EndMissionAction : GC_ActionBase
 
 	[Attribute("0", UIWidgets.CheckBox, "Announce the faction result to all players and leave Match active.")]
 	bool m_bAnnounceOnly;
+	[Attribute("0", UIWidgets.CheckBox, "Finish the match without the default two-minute countdown. Disable Announce Only when using this option.")]
+	bool m_bFinishImmediately;
 
 	//------------------------------------------------------------------------------------------------
 	override GC_RuleAction BuildAction()
@@ -139,6 +141,7 @@ class GC_EndMissionAction : GC_ActionBase
 		action.m_eDo = GC_ERuleAction.END_MISSION;
 		action.m_iOperation = m_iResult;
 		action.m_bAnnounceResultOnly = m_bAnnounceOnly;
+		action.m_bFinishImmediately = m_bFinishImmediately;
 		action.m_sEndMessage = m_sMessage;
 		action.m_sEndMessage.TrimInPlace();
 		action.m_aFlagNames = {};

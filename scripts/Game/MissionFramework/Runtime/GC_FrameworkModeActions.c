@@ -264,7 +264,7 @@ modded class GC_LobbyManager
 			notice.m_sTextOrName = "End conditions have been met:\n" + WidgetManager.Translate(faction.GetFactionName()) + " " + result + ".";
 			return GC_SendMissionMessage(notice);
 		}
-		return EnterPostGame(data, action.m_sEndMessage);
+		return EnterPostGame(data, action.m_sEndMessage, action.m_bFinishImmediately);
 	}
 
 	//------------------------------------------------------------------------------------------------

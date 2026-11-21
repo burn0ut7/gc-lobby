@@ -46,7 +46,7 @@ class GC_BoundaryAdmin
 	}
 
 	//------------------------------------------------------------------------------------------------
-	bool StartMissionEnding(SCR_GameModeEndData data, string message)
+	bool StartMissionEnding(SCR_GameModeEndData data, string message, bool finishImmediately = false)
 	{
 		if (!Replication.IsServer() || !m_Mode || GC_LobbyGameMode.GetGameMode() != m_Mode
 			|| m_Mode.GetState() != SCR_EGameModeState.GAME || m_PendingEndData)
@@ -58,8 +58,13 @@ class GC_BoundaryAdmin
 		m_iEndingRevision++;
 		m_sAnnouncement = "Mission ending in";
 		m_aAnnouncementFactions.Clear();
-		m_fAnnouncementDeadline = GetGame().GetWorld().GetWorldTime() * 0.001 + 120;
-		UpdateAnnouncement();
+		m_fAnnouncementDeadline = GetGame().GetWorld().GetWorldTime() * 0.001;
+		// Immediate rule results finish on the next countdown tick, outside the rule engine stack.
+		if (!finishImmediately)
+		{
+			m_fAnnouncementDeadline += 120;
+			UpdateAnnouncement();
+		}
 		return true;
 	}
 

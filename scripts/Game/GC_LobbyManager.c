@@ -240,20 +240,36 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 	{
 		if (m_bMissionRulesStarted || !m_bMissionEventsEnabled || !HasMissionRuleAuthority())
 			return;
-		m_bMissionRulesStarted = true;
-		m_fMissionRulesStartedAt = GetGame().GetWorld().GetWorldTime();
+
+		GC_LobbySetupGateComponent setup = GC_LobbySetupGateComponent.Cast(GetOwner().FindComponent(GC_LobbySetupGateComponent));
 		if (!m_aMissionEvents)
 			m_aMissionEvents = {};
+		array<ref GC_EventDefinition> definitions = m_aMissionEvents;
+		if (setup && setup.ProvidesMatchEvents())
+		{
+			if (GetLobbyPhase() != SCR_EGameModeState.GAME || !setup.IsLobbySetupReady())
+				return;
+			array<ref GC_EventDefinition> generated = setup.GetMatchEvents();
+			if (!generated || generated.IsEmpty())
+				return;
+			definitions = {};
+			foreach (GC_EventDefinition authored : m_aMissionEvents)
+				definitions.Insert(authored);
+			foreach (GC_EventDefinition definition : generated)
+				definitions.Insert(definition);
+		}
+		m_bMissionRulesStarted = true;
+		m_fMissionRulesStartedAt = GetGame().GetWorld().GetWorldTime();
 		m_MissionRuleEngine = new GC_MissionRuleEngine();
 		m_MissionRuleEngine.m_OnStateChanged.Insert(PublishMissionStateChanged);
 		array<ref GC_CompiledMissionRule> runtimeRules = {};
 		array<string> eventNames = {};
-		foreach (GC_EventDefinition definition : m_aMissionEvents)
+		foreach (GC_EventDefinition definition : definitions)
 		{
 			GC_CompiledMissionRule rule = null;
 			if (definition)
 				definition.CollectEventNames(eventNames);
-			if (definition && m_aMissionEvents.Count() <= 256)
+			if (definition && definitions.Count() <= 256)
 				rule = definition.BuildRule();
 			runtimeRules.Insert(rule);
 		}
@@ -665,12 +681,12 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! Mission logic requests a cancellable two-minute ending; GAME stays active meanwhile.
-	bool EnterPostGame(SCR_GameModeEndData endData, string message = "")
+	bool EnterPostGame(SCR_GameModeEndData endData, string message = "", bool finishImmediately = false)
 	{
 		GC_LobbyGameMode mode = GC_LobbyGameMode.GetGameMode();
 		if (!Replication.IsServer() || GetManager() != this || m_bShutdown || !mode || !mode.GetBoundaryAdmin())
 			return false;
-		return mode.GetBoundaryAdmin().StartMissionEnding(endData, message);
+		return mode.GetBoundaryAdmin().StartMissionEnding(endData, message, finishImmediately);
 	}
 
 	//------------------------------------------------------------------------------------------------

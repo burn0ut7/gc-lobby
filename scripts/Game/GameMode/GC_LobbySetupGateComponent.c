@@ -9,4 +9,14 @@ class GC_LobbySetupGateComponent : SCR_BaseGameModeComponent
 	{
 		return true;
 	}
+
+	bool ProvidesMatchEvents()
+	{
+		return false;
+	}
+
+	array<ref GC_EventDefinition> GetMatchEvents()
+	{
+		return null;
+	}
 }

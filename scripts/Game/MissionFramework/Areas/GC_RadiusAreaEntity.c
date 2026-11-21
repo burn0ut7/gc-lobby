@@ -14,6 +14,14 @@ class GC_RadiusAreaEntity : GenericEntity
 		return m_fRadius;
 	}
 
+	bool SetRadius(float radius)
+	{
+		if (!Replication.IsServer() || !(radius >= 0.1 && radius <= 100000))
+			return false;
+		m_fRadius = radius;
+		return true;
+	}
+
 #ifdef WORKBENCH
 	//------------------------------------------------------------------------------------------------
 	override int _WB_GetAfterWorldUpdateSpecs(IEntitySource src)
