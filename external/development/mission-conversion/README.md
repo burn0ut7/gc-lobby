@@ -424,7 +424,7 @@ File comparison cleared 42 group placement blockers across 29 worlds, 15 omitted
 
 The marker converter keeps visibility for assigned factions independent of visibility for viewers without a faction. The native marker component can use the existing replicated allowlist even when the list is empty. This preserves listed factions plus unassigned viewers, unassigned-only markers and hidden markers. Existing authored markers retain their default audience behavior.
 
-The five entries in `marker_presets.json` come from the installed TilW Mission Framework package `61F0E6AB2D06B1C6`. Each entry records the legacy GUID, path, archive content hash and supported fields. All five inherit the PS Core EditableMarker prefab. Placement fields override the archived defaults. The group imagesets resolve through the game database or the installed Soviet Tactical Graphics provider. The converted placements use the native GC Lobby marker component.
+The entries in `marker_presets.json` come from the installed TilW Mission Framework package `61F0E6AB2D06B1C6`. Each entry records the legacy GUID, path, archive content hash and supported fields. They inherit the PS Core EditableMarker prefab. Placement fields override the archived defaults. The group imagesets resolve through the game database or the installed Soviet Tactical Graphics provider. The converted placements use the native GC Lobby marker component.
 
 The file pass cleared marker-layer blockers in 56 worlds. Standalone staging added 32 layers with 179 icons. No previously staged icons were lost, and the 982 previously staged files reproduced byte for byte. The audience truth table matched all eight combinations of any faction, unassigned visibility and empty or nonempty faction lists. Workbench reloaded the shared Lobby scripts with zero compile errors in session `logs_2026-11-20_16-00-26`. In-world rendering, unusual phase masks and explicitly authored z-order remain open.
 
@@ -658,3 +658,9 @@ The installer and reviewer load the adjacent engine core registry when the insta
 Karachinar Crashout is in local Missions Dev commit `add3b368`. The rampart path and entity class match the newer placements in ChakChakChosen and the active ArmaTerrainCore registry. The alias preserves each original transform, hierarchy and navmesh component conversion. The older prefab itself was unavailable for a byte comparison. The live check should cover rampart collision and AI pathing alongside map cover framing.
 
 The committed audit matched 83 playable slots, three 60-second objectives, both casualty thresholds, and the 15-second delay on each outcome notice. Two catalog scans reproduced 180 report and draft files. The only draft change from the rampart alias was replacing the three stale reference IDs in the set dressing layer.
+
+## Inherited AMP markers
+
+The batch maps the archived TilW `Marker_AMP.et` to the native GC Lobby marker while retaining its base-game AMP imageset, black default tint, quad 3, size 45 and public audience. It applies authored overrides on top of those defaults. The archived prefab hash and each serialized field matched the preset. The base-game resource database resolves the imageset and its texture atlas, and the imageset contains the default quad.
+
+The catalog pass cleared this inherited preset blocker in 13 worlds. Ten standalone layers became readable for review and contain 99 icons including their nested icons. The 159 prior draft files still under review remained byte-identical, and two complete scans reproduced all 164 output files. Other blockers held the affected worlds. The mission-owned Bangalorious barbed-wire marker is also referenced by wall authoring and remains separate from the static preset rule.

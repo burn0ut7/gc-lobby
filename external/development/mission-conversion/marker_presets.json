@@ -55,6 +55,20 @@
       "m_bShowForAnyFaction": "1"
     }
   },
+  "BE928AD6BC4B14CB": {
+    "path": "PrefabsEditable/Markers/Group/Marker_AMP.et",
+    "sha256": "63e7acab322aa920a0c866851d68ca4cec048f27d113eacfeccb924dbd55bb36",
+    "fields": {
+      "coords": "0 0 0",
+      "m_sImageSet": "\"{17F77EFE27CABC03}UI/Imagesets/MilitarySymbol/AMP.imageset\"",
+      "m_sImageSetGlow": "\"\"",
+      "m_MarkerColor": "0 0 0 1",
+      "m_sQuadName": "\"3\"",
+      "m_fWorldSize": "45",
+      "m_bVisibleForEmptyFaction": "1",
+      "m_bShowForAnyFaction": "1"
+    }
+  },
   "BA3177FCACC39F3A": {
     "path": "PrefabsEditable/Markers/Icons/Marker_Objective_Base.et",
     "sha256": "ba25045948e4f0f1eff8a49cab192bfc65ff4d221fbf2c64bd7a998e24cc1499",
