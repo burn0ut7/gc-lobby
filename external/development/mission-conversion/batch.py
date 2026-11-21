@@ -220,6 +220,20 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov.conf': (
+        '81f0da74b2f471ccca064ebce5f9cc5b5c94117a',
+        (('worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov_Layers/BLUFOR_Players/BLUFOR_Players.layer',
+          '637ed0b5f922e8e69944bc3e3f10c2634c66221b'),
+         ('worlds/HitTheMan/Breaking Into Nova Olesov/BreakingIntoNovaOlesov_Layers/OPFOR_Players/OPFOR_Players.layer',
+          '9891383de16948b531ccdca1b638565541245653')),
+        110, 80,
+    ),
+    'Missions/HitTheMan/Urdarnik Assault/UdarnikAssault.conf': (
+        'c52cd1302f8c06030fe43dae2794d8d3c7fcc580',
+        (('worlds/HitTheMan/Urdarnik Assault/UrdarnikAssault_Layers/BLUFOR_Players/BLUFOR_Players.layer',
+          'a9354dbedceae3f73dffac5887121475d7bbc5d4'),),
+        110, 73,
+    ),
     'Missions/Blue/COTVT80_TheBearWentOvertheMountainCH1S6.conf': (
         '177b4cd767a9fb3293ac23be596d2562be42180f',
         (('worlds/Blue/TheBearWentOvertheMountain2/TheBearWentOvertheMountain2_Layers/BLUFOR.layer',
@@ -715,6 +729,75 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Scenarios/SP01/SP01_UAZ469_USSR.et',
 }
 WORKSHOP_RESOURCE_ALIASES = {
+    ('4A30874E3A255689', 'Prefabs/Weapons/HeavyWeapons/2A46/Cannon_2A466_T72A_HE.et'): (
+        'WCS_T-72_5E0AB16BEB16D6A4', '4A30874E3A255689',
+        'Prefabs/Weapons/Cannons/Cannon_2A46/Cannon_2A46_T72A_HE.et'),
+    ('279EDF225600C324', 'Prefabs/Weapons/HeavyWeapons/2A46/Cannon_2A46_T72A.et'): (
+        'WCS_T-72_5E0AB16BEB16D6A4', '279EDF225600C324',
+        'Prefabs/Weapons/Cannons/Cannon_2A46/Cannon_2A46_T72A.et'),
+    ('2E1792971BFB33E2', 'Assets/Vehicles/Tracked/BMP1/workspace/BMP1_vehicle.asi'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '2E1792971BFB33E2',
+        'Assets/Vehicles/Tracked/BMP1/workspaces/BMP1_vehicle.asi'),
+    ('309FB429B1BB6ACC', 'Sounds/Vehicles/Tracked/Vehicles_Track_l.acp'): (
+        'WCS_SpaceCore_5E389BB9F58B79A6', '309FB429B1BB6ACC',
+        'Sounds/Vehicles/_SharedData/Tracks/Vehicles_Tracks_Left.acp'),
+    ('30E1AF152CEB078A', 'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_IFV_BMP1_Wheel_Road.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '30E1AF152CEB078A',
+        'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_BMP1_Wheel_Road.et'),
+    ('433A781E4D407EA7', 'Assets/Vehicles/Tracked/BMP1/workspace/BMP1.agr'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '433A781E4D407EA7',
+        'Assets/Vehicles/Tracked/BMP1/workspaces/BMP1.agr'),
+    ('6B4323202A9E8DB2', 'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_IFV_BMP1_Wheel_Return.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '6B4323202A9E8DB2',
+        'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_BMP1_Wheel_Return.et'),
+    ('8021A4D1ADFCF506', 'Prefabs/Vehicles/Tracked/BMP1/VehParts/Turret/BMP1_Turret.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '8021A4D1ADFCF506',
+        'Prefabs/Vehicles/Tracked/BMP1/VehParts/Turret/BMP1_Turret_Base.et'),
+    ('8251957B1516F33B', 'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_IFV_BMP1_Wheel_Idler.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '8251957B1516F33B',
+        'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_BMP1_Wheel_Idler.et'),
+    ('8B3ABBF37425FFA3', 'Prefabs/Vehicles/Tracked/BMP1/VehParts/BMP1_shadow.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '8B3ABBF37425FFA3',
+        'Prefabs/Vehicles/Tracked/BMP1/VehParts/BMP1_Shadow.et'),
+    ('91B4746C14E47D27', 'Prefabs/Weapons/Core/Configs/WCS_Armament_VehicleCameraAction.conf'): (
+        'WCS_Armaments_629B2BA37EFFD577', '91B4746C14E47D27',
+        'Prefabs/Vehicles/Core/Configs/Actions/WCS_Armament_VehicleCameraAction.conf'),
+    ('966BEF4C4B522398', 'Prefabs/Vehicles/Tracked/BMP1/Configs/BMP1Suspension_Hard.conf'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', '966BEF4C4B522398',
+        'Prefabs/Vehicles/Tracked/BMP1/Configs/VehicleSimulationSuspensionFront_BMP1_WCS.conf'),
+    ('986BBDD66E50B41F', 'Prefabs/Vehicles/Generic/VehParts/TriplexPlaceholder/Triplex_Placeholder.et'): (
+        'WCS_T-72_5E0AB16BEB16D6A4', '986BBDD66E50B41F',
+        'Prefabs/Vehicles/Tracked/T72A/VehParts/Triplex/Triplex_Placeholder.et'),
+    ('B05996E21B24F44F', 'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_IFV_BMP1_Wheel_Drive.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', 'B05996E21B24F44F',
+        'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_BMP1_Wheel_Drive.et'),
+    ('C1948C7DC2E45F20', 'Sounds/Vehicles/Tracked/Vehicles_Track_r.acp'): (
+        'WCS_SpaceCore_5E389BB9F58B79A6', 'C1948C7DC2E45F20',
+        'Sounds/Vehicles/_SharedData/Tracks/Vehicles_Tracks_Right.acp'),
+    ('CB6A2EDCF9FF2AA9', 'Prefabs/Vehicles/Tracked/BMP1/Configs/CargoCompartment_BMP1.conf'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', 'CB6A2EDCF9FF2AA9',
+        'Prefabs/Vehicles/Tracked/BMP1/Configs/BMP1_Cargo_Compartment_Left.conf'),
+    ('D06C222F2BB4A491', 'Prefabs/Vehicles/Tracked/BMP1/Configs/CargoCompartment_BMP1_Right.conf'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', 'D06C222F2BB4A491',
+        'Prefabs/Vehicles/Tracked/BMP1/Configs/BMP1_Cargo_Compartment_Right.conf'),
+    ('D6A5CB323C315D68', 'Prefabs/Vehicles/Tracked/BMP1/Configs/BMP1Wheel.conf'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', 'D6A5CB323C315D68',
+        'Prefabs/Vehicles/Tracked/BMP1/Configs/VehicleSimulationWheelFront_BMP1_WCS.conf'),
+    ('DF59EC98B914811D', 'Assets/Vehicles/Tracked/BMP1/BMP1_BASE.xob'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', 'DF59EC98B914811D',
+        'Assets/Vehicles/Tracked/BMP1/BMP1_Body.xob'),
+    ('E18C63F9FC4D4D56', 'Assets/Vehicles/Tracked/BMP1/workspace/BMP1_player.asi'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', 'E18C63F9FC4D4D56',
+        'Assets/Vehicles/Tracked/BMP1/workspaces/BMP1_player.asi'),
+    ('E83FE945143E9FCC', 'Prefabs/Vehicles/Tracked/BMP1/VehParts/CommanderTurret/BMP1_Commander_Turret.et'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', 'E83FE945143E9FCC',
+        'Prefabs/Vehicles/Tracked/BMP1/VehParts/Turret/Commander/BMP1_Commander_Turret.et'),
+    ('ED3198AD721F851E', 'Prefabs/Vehicles/Tracked/BMP1/Configs/BMP1Suspension.conf'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', 'ED3198AD721F851E',
+        'Prefabs/Vehicles/Tracked/BMP1/Configs/VehicleSimulationSuspensionMiddle_BMP1_WCS.conf'),
+    ('FDF879E8CF62A137', 'Prefabs/Vehicles/Tracked/BMP1/Configs/VehicleSimulationTire_BMP1.conf'): (
+        'WCS_BMP-1_5E524E4FEECCA92B', 'FDF879E8CF62A137',
+        'Prefabs/Vehicles/Tracked/BMP1/Configs/VehicleSimulationTire_BMP1_WCS.conf'),
     ('C0221A073A780540', 'Assets/Vehicles/Tracked/BFV/BFV_Wreck.xob'): (
         'WCS_M2A2_63120AE07E6C0966', 'C0221A073A780540', 'Assets/Vehicles/Tracked/M2A2/M2A2_Wreck.xob'),
     ('C1EAE57BFC75D349', 'Prefabs/Structures/Bulding/HouseK/House_K_8_EP1_full.et'): (
@@ -935,6 +1018,16 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/HitTheMan/Prefabs/Vehicles/Heavy Weapon/Cannon_2A466_T72A_HE_HTM.et':
+        'ed928b9073da5bc06a95ee0230feca72b2cb404502475cbd88093dfa581fdabd',
+    'worlds/HitTheMan/Prefabs/Vehicles/Heavy Weapon/Cannon_2A46_T72A_HTM.et':
+        '947b118bc08f1142bc90add6855cb8c8fe38a6d0ed7ca612175f39712c5d32e6',
+    'worlds/HitTheMan/Prefabs/Vehicles/BMP1_base_HTM.et':
+        '411e80c186456e96276392a2023aa9e5881aae911c51d13fdb471371822cfebb',
+    'worlds/HitTheMan/Prefabs/Vehicles/T72A_Green_AI.et':
+        '391cbad064ac66bd1b1c9b519d0d5736c7102e8c91312b81875a1aa65832bceb',
+    'worlds/HitTheMan/Prefabs/Vehicles/T72_turret_Green_AI.et':
+        'abb9f2523a46e2443e0e3c8d1eddd786ebc0f37b40867fbb4c82d22c5d77ee81',
     'worlds/HitTheMan/VDV Blockade/t_picea_abies_3f_high_HTM.et':
         'cb1cdb2ae1479ec1b3eb4a0c67131fc126ed64a84fee0dd7aebc276f34d5ff12',
     'worlds/FSM/Prefabs/Weapons/Explosives/DemoBlock_M112/FSM_DemoBlock_M112.et':
@@ -1804,6 +1897,15 @@ def waypoint_gaps(named, assignments, spawned_names, scripts, crew_spawns=None):
     return sorted(gaps), sorted(no_ops)
 
 
+def reviewed_spawner_links(source, world):
+    """Recognize authored orders that only ever name a legacy spawner entity."""
+    if world.endswith('/BreakingIntoNovaOlesov.ent'):
+        layer = world.removesuffix('.ent') + '_Layers/OPFOR_Players/OPFOR_AI.layer'
+        if source.files.get(layer) == 'b630da96a8fa2f37cdc72a9eb27c797f6c2bb2ff':
+            return {f'BMPSpawner_{i}' for i in range(1, 8)} | {f'T72Spawner_{i}' for i in range(1, 4)}
+    return set()
+
+
 def static_link_gaps(layers, named):
     fields = {'m_aStaticWaypoints': WAYPOINT_CLASS, 'm_aStaticVehicles': '(?:Vehicle|Tank)'}
     gaps = []
@@ -2284,7 +2386,7 @@ def reviewed_spawn_type(source, resource, path, types):
 
 
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
-                 resolve_crew_config=None, shadowed_names=(), missing_waypoint=None):
+                 resolve_crew_config=None, shadowed_names=(), missing_waypoint=None, self_waypoints=()):
     root = PLACED_SPAWNER.fullmatch(block[0])
     if not root:
         raise ValueError('unverified placed spawner prefab')
@@ -2334,6 +2436,9 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             waypoints = [point for point in waypoints if point != absent]
         else:
             absent = None
+        self_waypoint = group and name in self_waypoints and waypoints == [f'"{name}"']
+        if self_waypoint:
+            waypoints = []
         if config is not None and (not ref or (not ref[2].startswith('Prefabs/Vehicles/') and
                                                not reviewed_spawn_type(source, ref[1].upper(), ref[2],
                                                                        ('Vehicle : ', 'Tank : ', 'RHS_Tank : ')))):
@@ -2384,6 +2489,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                       'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in group_waypoints], **term})
         if absent:
             audit[-1]['missingGroupWaypoint'] = absent[1:-1]
+        if self_waypoint:
+            audit[-1]['selfGroupWaypoint'] = name
         if config is not None:
             audit[-1]['crewWaypoints'] = [point for group in crew_groups for point in group['waypoints']]
             audit[-1]['crewGroups'] = crew_groups
@@ -2437,10 +2544,13 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                 if not re.match(r'^(?:\$grp )?TILW_PrefabSpawnerEntity\b', block[0]):
                     continue
                 try:
+                    self_waypoints = set()
+                    if source.files[layer] == 'b5b00eae008bf41c803dd4469a54a34b93199767':
+                        self_waypoints = {f'AI_Spawn_Sector2_{i}' for i in range(1, 15)}
                     native, scheduled, info = placed_spawn(
                         block, f'{layer}:{line}', resolve_spawn, captures, flags, used_flags, resolve_crew,
                         source=source, resolve_crew_config=resolve_crew_config, shadowed_names=shadowed,
-                        missing_waypoint=missing_waypoint)
+                        missing_waypoint=missing_waypoint, self_waypoints=self_waypoints)
                 except ValueError as exc:
                     blockers.append({'rule': 'TILW_PrefabSpawnerEntity', 'file': layer, 'line': line,
                                      'detail': str(exc)})
@@ -3620,6 +3730,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     group_waypoint_links = []
     missing_spawn_anchors = set()
     self_waypoints = []
+    inert_spawner_orders = set()
     missing_order_groups = set()
     missing_static_vehicles = []
     placed_crew_fields = []
@@ -3695,10 +3806,20 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     rule = 'AI group spawn' if 'groupWaypoints' in spawn else 'crewed vehicle spawn'
                     blockers.append({'rule': rule, 'file': world,
                                      'detail': 'expected one placed AI waypoint named ' + waypoint})
+            if target := spawn.get('selfGroupWaypoint'):
+                entries = named.get(target, [])
+                if (len(entries) != 1 or entries[0][0] != 'GenericEntity' or target in spawned_names
+                        or target in crew_name_counts or target in script_text(source)):
+                    blockers.append({'rule': 'AI group spawn', 'file': world,
+                                     'detail': 'self waypoint also has a runtime target: ' + target})
         layer, blob, absent_groups = REVIEWED_MISSING_ORDER_GROUPS.get(world, (None, None, ()))
         absent_groups = {group for group in absent_groups
                          if source.files.get(layer) == blob and group not in named and group not in spawned_names
                          and group not in crew_name_counts and group not in script_text(source)}
+        reviewed_anchors = reviewed_spawner_links(source, world) & {spawn['spawnAnchor'] for spawn in spawner_audit}
+        inert_anchors = {name for name in reviewed_anchors
+                         if len(named.get(name, ())) == 1 and named[name][0][0] == 'GenericEntity'
+                         and name not in spawned_names and name not in crew_name_counts and name not in script_text(source)}
         for event in rules.values():
             if not event.get('waypointAssignments'):
                 continue
@@ -3709,7 +3830,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                              and not group.get('shadowedByAnchor')}
             orders = event['waypointAssignments']
             missing_order_groups.update(action['group'] for action in orders if action['group'] in absent_groups)
-            active_orders = [action for action in orders if action['group'] not in absent_groups]
+            inert_spawner_orders.update(action['group'] for action in orders if action['group'] in inert_anchors)
+            active_orders = [action for action in orders if action['group'] not in absent_groups | inert_anchors]
             gaps, no_ops = waypoint_gaps(named, active_orders, spawned_names, script_text(source), earlier_crews)
             self_waypoints.extend(no_ops)
             for gap in gaps:
@@ -3824,6 +3946,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append(f'The original static waypoint link to {target} names a group and leaves orders unchanged.')
     for target in sorted(set(self_waypoints)):
         remaining.append(f'The original assignment refers to the waypoint {target} as its group and leaves orders unchanged.')
+    for target in sorted(inert_spawner_orders):
+        remaining.append(f'The original waypoint assignment for {target} names a spawner and does not run.')
+    for target in sorted({spawn['selfGroupWaypoint'] for spawn in prefab_spawns if 'selfGroupWaypoint' in spawn}):
+        remaining.append(f'The original reinforcement waypoint {target} names its spawner and leaves orders unchanged.')
     for target in sorted(missing_order_groups):
         remaining.append(f'The original waypoint assignment for {target} has no authored group and does not run.')
     for target in sorted(set(missing_static_vehicles)):

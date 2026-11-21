@@ -99,9 +99,11 @@ def authored_file_note(note):
     # Carry forward file evidence from older plans that put it in the runtime queue.
     return re.fullmatch(
         r'The original (?:reinforcement waypoint .+ has no authored target'
+        r'|reinforcement waypoint .+ names its spawner and leaves orders unchanged'
         r'|static waypoint link to .+ has no authored target'
         r'|static waypoint link to .+ names a group and leaves orders unchanged'
         r'|waypoint assignment for .+ has no authored group and does not run'
+        r'|waypoint assignment for .+ names a spawner and does not run'
         r'|static vehicle link to .+ has no mission-layer target'
         r'|spawn at .+ has no authored anchor and does not run'
         r'|TrainArea door opener has no runtime component in the published legacy addon'
