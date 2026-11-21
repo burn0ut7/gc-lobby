@@ -1,5 +1,5 @@
 """Stage independently scheduled actions for supported legacy framework events."""
-from collections import defaultdict
+from collections import Counter, defaultdict
 from decimal import Decimal
 from functools import partial
 from graphlib import CycleError, TopologicalSorter
@@ -14,6 +14,8 @@ from events import EVENT, LITERAL, MESSAGE, message, peak_flags
 FRAMEWORK = re.compile(r'^TILW_MissionFrameworkEntity(?: [\w.-]+)? : "\{8F846D0FD5D6EA51\}[^"]+" \{$')
 ENDING = re.compile(r'^    TILW_EndGameInstruction "\{([\da-fA-F]{16})\}" \{$')
 WAYPOINTS = re.compile(r'^    TILW_AssignWaypointsInstruction "\{([\da-fA-F]{16})\}" \{$')
+DEACTIVATE = re.compile(r'^    TILW_DeactivateEventsInstruction "\{([\da-fA-F]{16})\}" \{$')
+EVENT_CONTROL = re.compile(r'\bTILW_(RunEvents|ReactivateEvents|DeactivateEvents)Instruction\b')
 KEY = r'"[\w.-]+"'
 EVENT_LABEL = r'"[^"\\\x00-\x1f]+"'
 RESULT = {'EDITOR_FACTION_VICTORY': 1, 'EDITOR_FACTION_DEFEAT': 2, 'EDITOR_FACTION_DRAW': 3}
@@ -161,6 +163,25 @@ def waypoint_action(lines, key):
     return Decimal(delay), [*body, '      }'], details
 
 
+def deactivate_events(lines, key):
+    data = properties(lines, {'m_eventNames', 'm_executionDelay'})
+    names = data.get('m_eventNames', '')
+    delay = data.get('m_executionDelay', '5')
+    if (not re.fullmatch(rf'{EVENT_LABEL}(?:\s+{EVENT_LABEL})*', names)
+            or not re.fullmatch(r'\d+(?:\.\d+)?', delay) or Decimal(delay) > 86400):
+        raise ValueError('unsupported event deactivation targets or delay')
+    targets = list(dict.fromkeys(re.findall(EVENT_LABEL, names)))
+    if any(name[1:-1] != name[1:-1].strip() for name in targets) or len(targets) > 128:
+        raise ValueError('unsupported event deactivation target names')
+    actions = []
+    for index, target in enumerate(targets):
+        actions.extend([f'      GC_EventControlAction "{{{guid(f"{key}/{index}")}}}" {{',
+                        f'       m_sEventName {target}', '       m_iOperation 1', '      }'])
+    return Decimal(delay), actions, {'instruction': 'TILW_DeactivateEventsInstruction',
+                                    'deactivatesEvents': [target[1:-1] for target in targets],
+                                    'delaySeconds': delay}
+
+
 def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0, *,
               allow_dormant=False, derived=None, negate=False):
     match = TERM.fullmatch(lines[0])
@@ -283,6 +304,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 notify_match = MESSAGE.fullmatch(fields[j])
                 end_match = ENDING.fullmatch(fields[j])
                 waypoint_match = WAYPOINTS.fullmatch(fields[j]) if compound else None
+                deactivate_match = DEACTIVATE.fullmatch(fields[j]) if compound else None
                 action_match = recognized(fields[j]) if compound else None
                 spawn_match = SPAWN.fullmatch(fields[j]) if extraction_spawns or resolve_spawn else None
                 group_match = GROUP_SPAWN.fullmatch(fields[j]) if resolve_spawn else None
@@ -296,6 +318,9 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 elif waypoint_match:
                     delay, body, assignment = waypoint_action(fields[j + 1:last], key + '/' + waypoint_match[1])
                     assignments.append(assignment)
+                elif deactivate_match:
+                    delay, body, details = deactivate_events(fields[j + 1:last], key + '/' + deactivate_match[1])
+                    converted_actions.append(details)
                 elif action_match:
                     delay, body, details = compile_action(action_match, fields[j + 1:last], key, hidden_briefings)
                     flag = details.get('setsFlag') or details.get('clearsFlag')
@@ -646,7 +671,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         return [], {}, 'requires one reviewed framework owner'
     path, text = owners[0]
     local = [p for p in source.closure(world) if p.lower().endswith(('.et', '.layer'))]
-    if any(re.search(r'TILW_(?:RunEvents|ReactivateEvents|DeactivateEvents)Instruction\b', source.read(p)) for p in local):
+    controls = {p: matches for p in local if (matches := EVENT_CONTROL.findall(source.read(p)))}
+    if controls and (not compound or set(controls) != {path}
+                     or set(controls[path]) != {'DeactivateEvents'}):
         return [], {}, 'has legacy event control instructions'
     lines = text.splitlines()
     roots = [i for i, line in enumerate(lines) if FRAMEWORK.fullmatch(line)]
@@ -686,6 +713,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     match_only_flags = {*match_only_flags, *sampled_flags}
     parsed, audit = [], {}
     names = set()
+    source_names = Counter()
     capture_messages = set() if compound else None
     for i, line in enumerate(body):
         event = EVENT.fullmatch(line)
@@ -693,6 +721,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             continue
         fields = body[i + 1:block_end(body, i)]
         loc = f'{path}:{i + base + 2}'
+        label = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
+        if re.fullmatch(EVENT_LABEL, label):
+            source_names[label[1:-1]] += 1
         if 'notificationDelaysSeconds' in notification_audit.get(loc, {}):
             continue
         if compound and len(fields) == 1 and re.fullmatch(r'   m_name "-{3,}"', fields[0]):
@@ -704,12 +735,12 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                     and any(TERM.fullmatch(item) for item in fields))
         if not spawns and not log_only and not any(
                 ENDING.fullmatch(item) or (compound and (
-                    WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item) or recognized(item)
+                    WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item) or recognized(item) or DEACTIVATE.fullmatch(item)
                     or (resolve_spawn and (SPAWN.fullmatch(item) or GROUP_SPAWN.fullmatch(item)))
                     or (resolve_crew and VEHICLE_SPAWN.fullmatch(item))))
                 for item in fields):
             continue
-        name = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
+        name = label
         if not re.fullmatch(EVENT_LABEL if compound else KEY, name):
             name = '"Outcome ' + event[1] + '"'
         name = name[1:-1]
@@ -742,6 +773,25 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 spawns_for_review = review_prefab_spawns(fields, world + '/' + event[1], resolve_spawn, resolve_crew)
                 if spawns_for_review:
                     audit[loc]['prefabSpawnCandidates'] = spawns_for_review
+    if controls:
+        # Disable the condition latch only. The legacy instruction leaves any
+        # already scheduled deliveries in the call queue.
+        trigger_names = {name for _, name, original, term, _ in parsed
+                         if name == original and term['trigger'] not in ('Match start', 'startup choice', 'dormant')}
+        mapped = 0
+        bad_targets = False
+        for event in audit.values():
+            deactivations = [action for action in event.get('convertedActions', ())
+                             if 'deactivatesEvents' in action]
+            mapped += len(deactivations)
+            targets = {target for action in deactivations for target in action['deactivatesEvents']}
+            missing = sorted(target for target in targets
+                             if source_names[target] != 1 or target not in trigger_names)
+            if missing:
+                bad_targets = True
+                event['gap'] = 'event deactivation targets require unique converted triggers: ' + ', '.join(missing)
+        if mapped != len(controls[path]) or bad_targets:
+            return [], audit, 'event deactivation target mapping is incomplete'
     used_choices = [f'"{term["flag"]}"' for _, _, _, term, _ in parsed if term['trigger'] == 'startup choice']
     if used_choices and (len(used_choices) != len(startup) or set(used_choices) != set(startup)):
         return [], audit, 'startup draw does not have one converted event per option'

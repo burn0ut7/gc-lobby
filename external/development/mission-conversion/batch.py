@@ -2611,6 +2611,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare delayed extraction polling and status messages in multiplayer.')
     if event_flags:
         remaining.append('Compare timing of simultaneous flag changes and their dependent event chains.')
+    if any(action.get('deactivatesEvents') for event in rules.values() for action in event.get('convertedActions', ())):
+        remaining.append('Compare event deactivation before a trigger and after it queues delayed actions.')
     if damage_flags:
         remaining.append('Compare damage notification timing in Match and confirm no objective damage during staging.')
     if any(asset.get('destroyed') for asset in spawned_assets.values()):
