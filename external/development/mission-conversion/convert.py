@@ -148,6 +148,7 @@ def main():
     external_vehicles = {}
     rhs_database = None
     workshop_spawn_resources = ()
+    workshop_spawn_groups = ()
     workshop_damage_resources = ()
     external_vehicle_parents = {}
     if args.batch and args.workshop_addons:
@@ -159,6 +160,7 @@ def main():
                 args.workshop_addons, vehicle_crew.WORKSHOP_VEHICLE_PARENTS)
             workshop_spawn_resources = (batch.workshop_resources(args.workshop_addons, batch.WORKSHOP_SPAWN_PREFABS)
                                         | set(external_vehicles.items()))
+            workshop_spawn_groups = batch.workshop_resources(args.workshop_addons, batch.WORKSHOP_SPAWN_GROUPS)
             workshop_damage_resources = batch.workshop_resources(args.workshop_addons, batch.WORKSHOP_DAMAGE_TARGETS)
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
@@ -192,6 +194,7 @@ def main():
             '612F43A4D5AE765F': 'RTO', 'BA010C4C82F3DE92': 'CC', '96C784C502AC37DA': 'MG',
             '9FFEF10757E742EB': 'Crew',
             '5117311FB822FD1F': 'Officer', '976AC400219898FA': 'Sharpshooter',
+            'E9AEEF2D9E41321B': 'AMG', '069118B2D809C9E1': 'Rifleman_Variant_1', 'B31D4E408AEC99A4': 'Ammo',
         }.items()
     })
     stock_ai['145DBC42B19FC4D6'] = (
@@ -230,6 +233,8 @@ def main():
             return path if asset.get('vehicle') and asset['path'] == path else None
         if group:
             owners = (locally_owned, source_units.resources, dev_units.resources)
+            if (resource, path) in workshop_spawn_groups and not any(resource in owner for owner in owners):
+                return path
             if verified_stock_ai_group(resource, path, stock, locally_owned, source_units, dev_units, rhs_database):
                 return path
             if batch.verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path, external_ai):

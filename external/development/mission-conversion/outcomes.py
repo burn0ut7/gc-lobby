@@ -738,7 +738,7 @@ def startup_flags(source, world, owner, body, scripts, identity_flags=()):
 
 
 def startup_samples(source, world, owner, body, scripts, spawner_reads):
-    """Read isolated draws whose flag consumers run during Match."""
+    """Read isolated draws used by Match events or verified placed spawners."""
     roots = [i for i, line in enumerate(body) if line == ' m_randomFlags {']
     if len(roots) != 1 or any(api in scripts for api in SCRIPT_FLAG_APIS):
         return []
@@ -752,11 +752,12 @@ def startup_samples(source, world, owner, body, scripts, spawner_reads):
                 return []
             stop = block_end(body, index)
             data = properties(body[index + 1:stop], {'m_flagNames', 'm_k', 'm_withReplacement'})
-            flags = data.get('m_flagNames', '').split()
+            authored_flags = ' '.join(data.get('m_flagNames', '').splitlines())
+            flags = re.findall(FLAG_NAME, authored_flags)
             draws = data.get('m_k', '1')
             replacement = data.get('m_withReplacement', '0')
             if (not 1 <= len(flags) <= 32 or len(set(flags)) != len(flags) or sampled.intersection(flags)
-                    or any(not re.fullmatch(KEY, flag) for flag in flags)
+                    or not re.fullmatch(rf'{FLAG_NAME}(?:\s+{FLAG_NAME})*', authored_flags)
                     or not re.fullmatch(r'[1-9]\d?', draws) or int(draws) > 32
                     or replacement not in ('0', '1') or (replacement == '0' and int(draws) > len(flags))):
                 return []

@@ -139,9 +139,11 @@ SPAWN_DAMAGE_TARGETS = {
     ('ADA7E056B17AC663',
      'PrefabsEditable/Auto/Props/Military/AmmoBoxes/EquipmentBoxStack/E_EquipmentBoxStack_USSR_01_V2_covered.et'),
 }
+CAMPAIGN_RADIO_TRUCK = ('CA75B7173C19B734', 'Prefabs/MP/Campaign/Assets/CampaignRadioTruckEast.et')
 SPAWN_DAMAGE_VEHICLES = {
     ('0FBF8F010F81A4E5', 'Prefabs/Vehicles/Wheeled/LAV25/LAV25.et'),
     ('48A6D4372444B85A', 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_covered_closed.et'),
+    CAMPAIGN_RADIO_TRUCK,
 }
 GMFX_AMMO_TARGETS = (
     ('8B9AFAD3A1548FCE', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage.et'),
@@ -215,6 +217,12 @@ WORKSHOP_SPAWN_PREFABS = {
          ('30263B4F1FB2A0F2', 'Prefabs/Systems/Artillery/ArtilleryWrapper_WTF.et'),
          ('2D854F52D8D6B31E', 'Prefabs/Systems/Smoke/Wrapper_Smoke_Purple.et'),
          ('6BDBEFF5CE6E2F28', 'Prefabs/Systems/Smoke/Wrapper_Smoke_Green.et'), GMFX_AP_MINE),
+    ),
+}
+WORKSHOP_SPAWN_GROUPS = {
+    '6B5_652CFAA0BB9EFE74': (
+        '601bb470309242c82429bf6956a9eaf8e6b62d84f10c946d36cbbfbe29da6710',
+        (('8A265F54C454DD93', 'Prefabs/Groups/OPFOR/Group_USSR_ManeuverGroup_Late.et'),),
     ),
 }
 RHS_DAMAGE_PATHS = {
@@ -744,6 +752,8 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Props/Wrecks/T62_wreck/T62_wreck.et',
     ('F849217AB3BA88BE', 'Prefabs/Items/Equipment/Maps/PaperMap_01_folded_USSR.et'):
         'Prefabs/Items/Equipment/Maps/Map_Paper_01/PaperMap_01_folded_USSR.et',
+    ('865B9E01D2C0B2D7', 'Prefabs/Items/Equipment/Maps/PaperMap_01_full.et'):
+        'Prefabs/Items/Equipment/Maps/Map_Paper_01/PaperMap_01_full.et',
     ('35D7F1189BE00E94', 'Prefabs/Items/Equipment/BalisticTable/BalisticTable.et'):
         'Prefabs/Items/Equipment/BallisticTable/BallisticTable_base.et',
     ('9668B6C528DCECBD', 'Prefabs/Props/Wrecks/Mi8MT_wreck_static.et'):
@@ -1114,6 +1124,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/ac337/prefab/1980s SF and Partners/SF/Rifle_M16A2_suppressor_M203_A2k.et':
+        '30c03bee49f56c89683434638d6a35dcd859a29971d31db5f37ec22da4fe580b',
     'worlds/FSM/Prefabs/Items/Core/Wirecutters/FSM_wirecutters.et':
         '130d030871b4ba325e17d9314d447a2f3d1366a268868e0159affbeb67381a6a',
     'worlds/RedTheKnown/ChakChakChosen/Prefabs/RebUnits/Custom_Shortmag_BC_PPSh41.et':
@@ -2552,21 +2564,33 @@ def spawned_damage_objective(block, stock, local_resources, workshop_targets, *,
     registered_workshop = not vehicle and ref in GMFX_AMMO_TARGETS and ref in workshop_targets
     if ref[0] in local_resources or not (registered_stock or registered_workshop):
         raise ValueError('unverified spawned damage prefab')
-    if vehicle and (len(block) != 9 or not re.fullmatch(r' ID "[\da-fA-F]{16}"', block[1])
-                    or block[2] != ' components {' or not DAMAGE_COMPONENT.fullmatch(block[3])
-                    or block[6:] != ['  }', ' }', '}']):
-        raise ValueError('spawned damage vehicle has other authored overrides')
+    if vehicle:
+        if (len(block) < 8 or not re.fullmatch(r' ID "[\da-fA-F]{16}"', block[1])
+                or block[2] != ' components {' or not DAMAGE_COMPONENT.fullmatch(block[3])):
+            raise ValueError('spawned damage vehicle has other authored overrides')
+        end = block_end(block, 3)
+        tail = block[end + 1:]
+        if (len(tail) == 3 and ref == CAMPAIGN_RADIO_TRUCK and tail[1].startswith(' coords ')
+                and FIELD.fullmatch(tail[1].strip())):
+            tail = [tail[0], tail[-1]]
+        if tail != [' }', '}']:
+            raise ValueError('spawned damage vehicle has other authored overrides')
     # A replacement vehicle observes its initial state and can clear a flag left by the previous instance.
     lines, flag = damage_state_flag_placement(block, allow_multiple_states=vehicle, clear_on_mismatch=vehicle)
     return '\n'.join(lines) + '\n', flag
 
 
-def spawned_objectives(source, dev, world, stock, local_resources, workshop_targets=()):
-    """Identify mission-owned interaction prefabs referenced by a standard spawn."""
-    reviewed = {}
-    placements = Counter()
+def authored_spawn_references(source, world):
     for layer in source.layers[world.lower()]:
-        lines = source.read(layer).splitlines()
+        source_layer = source.read(layer)
+        lines = source_layer.splitlines()
+        if 'TILW_PrefabSpawnerEntity ' in source_layer:
+            for _, block in blocks(source_layer):
+                if root := PLACED_SPAWNER.fullmatch(block[0]):
+                    for _, fields in polygon_capture.members(block, root['group'], root['name']):
+                        for field in fields:
+                            if field.startswith(' m_prefab ') and (ref := REF.fullmatch(field.removeprefix(' m_prefab '))):
+                                yield ref[1].upper(), ref[2], False
         for index, line in enumerate(lines):
             vehicle = bool(VEHICLE_SPAWN.fullmatch(line))
             if not vehicle and not SPAWN.fullmatch(line):
@@ -2576,35 +2600,43 @@ def spawned_objectives(source, dev, world, stock, local_resources, workshop_targ
                 if vehicle:
                     _, fields = split_crew_block(fields, CREW_CONFIG_FIELD)
                 values = properties(fields, SPAWN_FIELDS)
-                prefab = REF.fullmatch(values.get('m_prefab', ''))
-                if not prefab:
-                    continue
-                resource, path = prefab[1].upper(), prefab[2]
-                placements[resource] += 1
-                if (resource in reviewed or source.resources.get(resource) != [path]
-                        or dev.resources.get(resource) not in (None, [path]) or not path.lower().endswith('.et')):
-                    continue
-                text = source.read(path)
-                if 'TILW_BaseInteraction' not in text and 'TILW_Flag_EntityDamage' not in text:
-                    continue
-                (_, block), = blocks(text)
-                if 'TILW_Flag_EntityDamage' in text:
-                    native, flag = spawned_damage_objective(
-                        block, stock, local_resources, workshop_targets, vehicle=vehicle)
-                    kind = {'destroyed': True, **({'vehicle': True} if vehicle else {})}
-                else:
-                    if vehicle:
-                        continue
-                    native, objectives = convert_interaction_block(block, path, stock, local_resources)
-                    if len(objectives) != 1:
-                        continue
-                    flag = objectives[0]['flag']
-                    kind = {'singleUse': objectives[0]['singleUse']}
-                if LEGACY.search(native) or (path in dev.files and native.strip() != dev.read(path).strip()):
-                    continue
+                if prefab := REF.fullmatch(values.get('m_prefab', '')):
+                    yield prefab[1].upper(), prefab[2], vehicle
             except ValueError:
                 continue
-            reviewed[resource] = {'path': path, 'body': native, 'flag': flag, **kind}
+
+
+def spawned_objectives(source, dev, world, stock, local_resources, workshop_targets=()):
+    """Identify mission-owned objective prefabs referenced by a standard spawn."""
+    reviewed = {}
+    placements = Counter()
+    for resource, path, vehicle in authored_spawn_references(source, world):
+        placements[resource] += 1
+        if (resource in reviewed or source.resources.get(resource) != [path]
+                or dev.resources.get(resource) not in (None, [path]) or not path.lower().endswith('.et')):
+            continue
+        text = source.read(path)
+        if 'TILW_BaseInteraction' not in text and 'TILW_Flag_EntityDamage' not in text:
+            continue
+        try:
+            (_, block), = blocks(text)
+            if 'TILW_Flag_EntityDamage' in text:
+                vehicle = vehicle or block[0].startswith('Vehicle : ')
+                native, flag = spawned_damage_objective(block, stock, local_resources, workshop_targets, vehicle=vehicle)
+                kind = {'destroyed': True, **({'vehicle': True} if vehicle else {})}
+            else:
+                if vehicle:
+                    continue
+                native, objectives = convert_interaction_block(block, path, stock, local_resources)
+                if len(objectives) != 1:
+                    continue
+                flag = objectives[0]['flag']
+                kind = {'singleUse': objectives[0]['singleUse']}
+            if LEGACY.search(native) or (path in dev.files and native.strip() != dev.read(path).strip()):
+                continue
+        except ValueError:
+            continue
+        reviewed[resource] = {'path': path, 'body': native, 'flag': flag, **kind}
     damaged = {resource: asset for resource, asset in reviewed.items() if asset.get('destroyed')}
     if damaged:
         corpus = '\n'.join(source.read(path) for path in sorted(source.closure(world))
@@ -2869,7 +2901,7 @@ def reviewed_spawn_type(source, resource, path, types):
 
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
                  resolve_crew_config=None, shadowed_names=(), missing_waypoint=None, self_waypoints=(),
-                 capture_latches=None):
+                 capture_latches=None, single_draw_flags=()):
     root = PLACED_SPAWNER.fullmatch(block[0])
     if not root:
         raise ValueError('unverified placed spawner prefab')
@@ -2907,7 +2939,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         if pregame not in ('0', '1'):
             raise ValueError('invalid placed spawner phase')
         flag = data.get('m_conditionFlag', '""')
-        if pregame == '1' and flag != '""':
+        if (pregame == '1' and flag != '""'
+                and (not re.fullmatch(FLAG_NAME, flag) or flag[1:-1] not in single_draw_flags)):
             raise ValueError('pregame spawner needs a verified pregame flag producer')
         if 'scale' in data and (not isfinite(scale := float(data['scale'])) or scale <= 0):
             raise ValueError('spawner scale must be positive and finite')
@@ -2948,7 +2981,9 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         term = {'trigger': 'pregame start' if startup_delay else 'Match start'}
         if flag != '""':
             check = captures.get(flag, ())
-            if capture_latches and flag[1:-1] in capture_latches:
+            if startup_delay:
+                term = {'trigger': 'event flag', 'flag': flag[1:-1]}
+            elif capture_latches and flag[1:-1] in capture_latches:
                 term = {'trigger': 'area capture', 'flag': flag[1:-1]}
             elif any(line.strip() == 'm_bStopAfterFirstChange 1' for line in check):
                 term = {'trigger': 'area capture', 'flag': flag[1:-1]}
@@ -2985,6 +3020,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                       'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in group_waypoints], **term})
         if startup_delay:
             audit[-1]['startupInitializationSeconds'] = startup_delay
+        if flag[1:-1] in single_draw_flags:
+            audit[-1]['startupChoice'] = flag[1:-1]
         if 'scale' in data:
             audit[-1]['anchorScale'] = data['scale']
         if absent:
@@ -3025,7 +3062,8 @@ def shadowed_crew_names(source, world, layers):
             and len(re.findall(r'(?<![\w.-])' + re.escape(name) + r'(?![\w.-])', corpus)) == referenced[name] + 1}
 
 
-def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, blockers, resolve_crew, resolve_crew_config):
+def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, blockers, resolve_crew, resolve_crew_config,
+                   single_draw_flags):
     placements, schedules, audit = {}, [], []
     layers = {path: text for path in source.layers[world.lower()]
               if 'TILW_PrefabSpawnerEntity' in (text := source.read(path))}
@@ -3052,7 +3090,7 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                         block, f'{layer}:{line}', resolve_spawn, captures, flags, used_flags, resolve_crew,
                         source=source, resolve_crew_config=resolve_crew_config, shadowed_names=shadowed,
                         missing_waypoint=missing_waypoint, self_waypoints=self_waypoints,
-                        capture_latches=capture_latches)
+                        capture_latches=capture_latches, single_draw_flags=single_draw_flags)
                 except ValueError as exc:
                     blockers.append({'rule': 'TILW_PrefabSpawnerEntity', 'file': layer, 'line': line,
                                      'detail': str(exc)})
@@ -4106,7 +4144,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if missing_flags := (required_teleport_flags | required_interaction_flags) - (event_flags | interaction_writers):
         blockers.append({'rule': 'mission interaction', 'file': world,
                          'detail': {'missingConvertedMatchFlagProducers': sorted(missing_flags)}})
-    event_flags.update(flag for sample in outcome.get('startupSamples', []) for flag in sample['flags'])
+    startup_samples = outcome.get('startupSamples', [])
+    event_flags.update(flag for sample in startup_samples for flag in sample['flags'])
+    single_draw_flags = (set(startup_samples[0]['flags'])
+                         if len(startup_samples) == 1 and startup_samples[0]['drawCount'] == 1 else set())
     cleared_event_flags = {action['clearsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
                            if 'clearsFlag' in action}
     required_event_flags = {term['flag'] for term in terms if term['trigger'] == 'event flag'} | cleared_event_flags
@@ -4120,7 +4161,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         area_placements = {**placed_areas, **area_placements}
         spawners, schedules, spawner_audit = world_spawners(source, world, resolve_spawn, captures,
                                                            set(objective_flags) | event_flags, used_flags, blockers,
-                                                           resolve_crew, resolve_crew_config)
+                                                           resolve_crew, resolve_crew_config, single_draw_flags)
         rule_text += schedules
         used_flags.update(entry['flag'] for entry in spawner_audit if entry['trigger'] == 'area capture')
     unused_flags = []
@@ -4353,8 +4394,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         if count > 1:
             blockers.append({'rule': 'briefing visibility actions', 'file': world,
                              'detail': f'briefing {order} has multiple reveal actions'})
-    prefab_spawns = [{**item, 'startupChoice': event['flag'] if event['trigger'] == 'startup choice' else None}
-                     for event in rules.values() for item in event.get('convertedActions', []) if 'spawnAnchor' in item]
+    prefab_spawns = []
+    for event in rules.values():
+        flag = event.get('flag')
+        selected = (event.get('trigger') == 'startup choice' or
+                    (event.get('trigger') == 'event flag' and not event.get('inverted') and flag in single_draw_flags))
+        prefab_spawns.extend({**item, 'startupChoice': flag if selected else None}
+                             for item in event.get('convertedActions', []) if 'spawnAnchor' in item)
     prefab_spawns.extend(spawner_audit)
     crew_names = defaultdict(set)
     crew_name_counts = Counter()
@@ -4371,8 +4417,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         if asset.get('destroyed'):
             producers = [item for item in prefab_spawns if REF.fullmatch(item['prefab'])[1].upper() == resource]
             choices = {item['startupChoice'] for item in producers}
-            if len(producers) != asset['spawnCount'] or (len(producers) > 1 and (
-                    None in choices or len(choices) != len(producers))):
+            if (len(producers) != asset['spawnCount']
+                    or any(len(item.get('spawnDelaysSeconds', ['0'])) != 1 for item in producers)
+                    or (len(producers) > 1 and (
+                        None in choices or len(choices) != len(producers)))):
                 blockers.append({'rule': 'spawned objective', 'file': asset['path'],
                                  'detail': 'damage objective needs one spawn or mutually exclusive startup choices'})
     extraction_spawns = [item for event in rules.values() for item in event.get('extractionSpawns', [])]
@@ -4799,7 +4847,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(spawn['startupChoice'] for spawn in prefab_spawns):
         remaining.append('Compare pregame selection, spawn timing and faction-specific briefing and map updates.')
     if outcome.get('startupSamples'):
-        remaining.append('Compare startup flag draws and verify selected events activate only in Match.')
+        if any(spawn.get('startupInitializationSeconds') and spawn['startupChoice'] for spawn in prefab_spawns):
+            remaining.append('Compare the single startup draw and verify each selected spawn in its authored phase.')
+        else:
+            remaining.append('Compare startup flag draws and verify selected events activate only in Match.')
     if any(not spawn['startupChoice'] for spawn in prefab_spawns):
         remaining.append('Compare spawn placement and timing in Match, including concurrent actions.')
     if any(spawn.get('crewDefaults') for spawn in prefab_spawns):
