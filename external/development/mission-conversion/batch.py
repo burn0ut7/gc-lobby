@@ -27,7 +27,8 @@ from launchers import META_NAME, launcher, replace_reference
 from local_loadouts import unchanged_units_parent
 from markers import (DEST as MAP_MARKER_PREFAB, convert_baked_marker_generator, convert_hover_camera,
                      convert_layer, convert_wall_markers)
-from outcomes import FRAMEWORK, MATCH_PHASE_VALUE, SCRIPT_FLAG_APIS, leaves, render as render_outcome, render_capture_trackers
+from outcomes import (FRAMEWORK, MATCH_PHASE_VALUE, SCRIPT_FLAG_APIS, SUPPLY_OUTCOME_BLOB, SUPPLY_OUTCOME_LAYER,
+                      leaves, render as render_outcome, render_capture_trackers)
 import polygon_capture
 from respawns import authored_respawn_fields, read_respawns
 import teleports
@@ -4724,6 +4725,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         for target in record.get('teleportDestinations', [])}
     event_flags = {action['setsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
                    if 'setsFlag' in action}
+    script_flags = {flag for event in rules.values() for action in event.get('convertedActions', [])
+                    for flag in action.get('producesFlags', ())}
+    event_flags.update(script_flags)
     supported_interactions = [record for record in row.get('interactionCandidate', {}).values()
                               if isinstance(record, dict)]
     required_teleport_flags = {flag for record in supported_interactions for flag in record.get('teleportRequiredFlags', [])}
@@ -4735,8 +4739,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                          'detail': {'missingConvertedMatchFlagProducers': sorted(missing_flags)}})
     startup_samples = outcome.get('startupSamples', [])
     event_flags.update(flag for sample in startup_samples for flag in sample['flags'])
-    single_draw_flags = (set(startup_samples[0]['flags'])
-                         if len(startup_samples) == 1 and startup_samples[0]['drawCount'] == 1 else set())
+    draw_by_flag = {flag: index for index, sample in enumerate(startup_samples) if sample['drawCount'] == 1
+                    for flag in sample['flags']}
+    single_draw_flags = set(draw_by_flag)
     cleared_event_flags = {action['clearsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
                            if 'clearsFlag' in action}
     required_event_flags = {term['flag'] for term in terms if term['trigger'] == 'event flag'} | cleared_event_flags
@@ -4833,7 +4838,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     # The released TilW prefab still names the component removed in c47df35.
                     inactive_placements.append('The original TrainArea door opener has no runtime component in the published legacy addon.')
                 elif FRAMEWORK.fullmatch(head) and framework_supported and (represented or outcome.get('startupSamples')):
-                    root_fields = [field.strip() for field in block[1:-1]
+                    fields = block[1:-1]
+                    if script_flags and layer == SUPPLY_OUTCOME_LAYER and source.files[layer] == SUPPLY_OUTCOME_BLOB:
+                        # The reviewed script is the only field preceding the event array.
+                        fields = fields[fields.index(' m_missionEvents {'):]
+                    root_fields = [field.strip() for field in fields
                                    if field.startswith(' ') and not field.startswith('  ') and field.strip() != '}']
                     roots = [field.split()[0] for field in root_fields]
                     # The legacy framework uses named placements and flag data, not its own transform.
@@ -5101,8 +5110,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             choices = {item['startupChoice'] for item in producers}
             complete = (len(producers) == asset['spawnCount']
                         and all(len(item.get('spawnDelaysSeconds', ['0'])) == 1 for item in producers))
-            exclusive = len(choices) == len(producers) and None not in choices
+            same_draw = len({draw_by_flag.get(choice) for choice in choices}) == 1
+            exclusive = len(choices) == len(producers) and None not in choices and same_draw
             shared_draw = (complete and not asset.get('vehicle') and choices <= single_draw_flags
+                           and same_draw
                            and len({item['spawnAnchor'] for item in producers}) == len(producers)
                            and all(item.get('spawnDelaysSeconds') == ['0'] for item in producers))
             if not complete or (len(producers) > 1 and not (exclusive or shared_draw)):
@@ -5206,7 +5217,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 missing_spawn_anchors.add(anchor)
                 continue
             choices = spawned_names[name]
-            mutually_exclusive = None not in choices and len(set(choices)) == len(choices)
+            mutually_exclusive = (None not in choices and len(set(choices)) == len(choices)
+                                  and len({draw_by_flag.get(choice) for choice in choices}) == 1)
             if (len(named.get(anchor, [])) != 1
                     or (name and ((len(choices) > 1 and not mutually_exclusive) or name in named))):
                 blockers.append({'rule': 'prefab spawn', 'file': world,
@@ -5356,6 +5368,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                          'Historical damage thresholds and break physics remain unverified.')
     if converted_artillery:
         remaining.append('Compare the call-in menu, radio authorization, salvo timing and the late-join ammunition display.')
+    if script_flags:
+        remaining.append('Compare depot measurement after either authored deadline, including ties, missing depots and one-shot delivery.')
     for target in sorted({spawn['missingGroupWaypoint'] for spawn in prefab_spawns if 'missingGroupWaypoint' in spawn}):
         remaining.append(f'The original reinforcement waypoint {target} has no authored target.')
     for target in sorted(missing_spawn_anchors):

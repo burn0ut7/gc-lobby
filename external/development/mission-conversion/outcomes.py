@@ -17,6 +17,16 @@ ENDING = re.compile(r'^    TILW_EndGameInstruction "\{([\da-fA-F]{16})\}" \{$')
 WAYPOINTS = re.compile(r'^    TILW_AssignWaypointsInstruction "\{([\da-fA-F]{16})\}" \{$')
 EVENT_CONTROL = re.compile(r'\bTILW_(RunEvents|ReactivateEvents|DeactivateEvents)Instruction\b')
 CONTROL_INSTRUCTION = re.compile(r'^    ' + EVENT_CONTROL.pattern + r' "\{([\da-fA-F]{16})\}" \{$')
+SCRIPT_INSTRUCTION = re.compile(r'^    TILW_RunScriptInstruction "\{([\dA-F]{16})\}" \{$')
+SUPPLY_OUTCOME_LAYER = 'worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/default.layer'
+SUPPLY_OUTCOME_BLOB = '01e9a0424825e574bf1439cbc9c1189fe85e226d'
+SUPPLY_COUNT_FLAG = 'GC_MigrationSupplyCountRequested'
+SUPPLY_COUNT_FIELDS = {
+    'm_sFirstDepot': 'BlueforResourceEnity', 'm_sSecondDepot': 'RedforResourceEnity',
+    'm_sFirstFlag': 'Blue Won', 'm_sSecondFlag': 'Red Won', 'm_sErrorFlag': 'Script1 Error',
+}
+SUPPLY_COUNT_FLAGS = [value for field, value in SUPPLY_COUNT_FIELDS.items() if field.endswith('Flag')]
+SUPPLY_SCRIPT_CALLS = {'662C63247E8AB627': '2710', '662C632D1A71B31A': '180'}
 NATIVE_ACTION = re.compile(r'      GC_\w+ "\{[\da-fA-F]{16}\}" \{')
 KEY = r'"[\w.-]+"'
 EVENT_LABEL = r'"[^"\\\x00-\x1f]+"'
@@ -447,7 +457,8 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
                resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None,
                log_only=False, named_events=(), inactive=(), binary_startup=None, missing_term=False, ends_match=False,
-               direct_control=False, empty_hint=None, missing_group_waypoint=None, sampled_pregame_flags=()):
+               direct_control=False, empty_hint=None, missing_group_waypoint=None, sampled_pregame_flags=(),
+               supply_comparison=False):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -496,6 +507,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 waypoint_match = WAYPOINTS.fullmatch(fields[j]) if compound else None
                 control_match = CONTROL_INSTRUCTION.fullmatch(fields[j]) if compound else None
                 action_match = recognized(fields[j]) if compound else None
+                script_match = SCRIPT_INSTRUCTION.fullmatch(fields[j]) if supply_comparison else None
                 spawn_match = SPAWN.fullmatch(fields[j]) if extraction_spawns or resolve_spawn else None
                 group_match = GROUP_SPAWN.fullmatch(fields[j]) if resolve_spawn else None
                 vehicle_match = VEHICLE_SPAWN.fullmatch(fields[j]) if resolve_spawn and resolve_crew else None
@@ -532,6 +544,18 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                     if flag and flag not in event_flags:
                         raise ValueError('flag has another producer or unsupported use: ' + flag)
                     converted_actions.append(details)
+                elif script_match:
+                    identity = script_match[1]
+                    delay_text = SUPPLY_SCRIPT_CALLS.get(identity)
+                    if not delay_text or fields[j + 1:last] != [f'     m_executionDelay {delay_text}']:
+                        raise ValueError('unreviewed inline supply comparison call')
+                    delay = Decimal(delay_text)
+                    body = [f'      GC_FlagAction "{{{guid(key + "/" + identity)}}}" {{',
+                            f'       m_sFlagName "{SUPPLY_COUNT_FLAG}"', '       m_iOperation 1',
+                            '       m_iAmount 1', '      }']
+                    converted_actions.append({'instruction': 'TILW_RunScriptInstruction', 'instructionId': identity,
+                                              'delaySeconds': delay_text,
+                                              'setsFlag': SUPPLY_COUNT_FLAG, 'producesFlags': SUPPLY_COUNT_FLAGS})
                 elif spawn_match and spawn_match[1] in extraction_spawns:
                     for details in extraction_spawns[spawn_match[1]]:
                         identity = key + '/' + spawn_match[1]
@@ -997,6 +1021,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     if len(owners) != 1:
         return [], {}, 'requires one reviewed framework owner'
     path, text = owners[0]
+    supply_comparison = compound and path == SUPPLY_OUTCOME_LAYER and source.files[path] == SUPPLY_OUTCOME_BLOB
     local = [p for p in source.closure(world) if p.lower().endswith(('.et', '.layer'))]
     controls = {p: matches for p in local if (matches := EVENT_CONTROL.findall(source.read(p)))}
     if controls and (not compound or set(controls) != {path}):
@@ -1055,6 +1080,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     sampled_flags = {flag for sample in samples for flag in sample['flags']}
     sampled_pregame_flags = {f'"{flag}"' for sample in samples for flag in sample.get('pregameFlags', ())}
     event_flags = {*event_flags, *sampled_flags}
+    if supply_comparison:
+        event_flags.update(SUPPLY_COUNT_FLAGS)
     inactive = inactive_flags(source, world, path, body, scripts) if compound else ()
     match_only_flags = {*match_only_flags, *sampled_flags}
     derived_spawners = {}
@@ -1125,7 +1152,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 log_only=log_only, named_events=source_names, inactive=inactive, binary_startup=binary_startup,
                 direct_control=direct_control, ends_match=ends_match,
                 empty_hint=reviewed_empty_hint, missing_group_waypoint=missing_group_waypoint,
-                sampled_pregame_flags=sampled_pregame_flags,
+                sampled_pregame_flags=sampled_pregame_flags, supply_comparison=supply_comparison,
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
             if not term.get('pregameSample') and any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
@@ -1217,6 +1244,23 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     compiled = render_startup_selection(world, startup) if used_choices else []
     if samples:
         compiled.extend(render_startup_samples(world, samples))
+    if supply_comparison:
+        calls = {action['instructionId'] for entry in audit.values() for action in entry.get('convertedActions', ())
+                 if action.get('setsFlag') == SUPPLY_COUNT_FLAG}
+        if calls != SUPPLY_SCRIPT_CALLS.keys() or SUPPLY_COUNT_FLAG in names:
+            return [], audit, 'inline comparison requires both reviewed schedules and a unique shared trigger'
+        identity = world + '/shared supply comparison'
+        compiled.extend([
+            f'    GC_Event "{{{guid(identity)}}}" {{', f'     m_sName "{SUPPLY_COUNT_FLAG}"',
+            '     m_aConditions {',
+            *render_check({'trigger': 'event flag', 'flag': SUPPLY_COUNT_FLAG},
+                          identity, captures, capture_messages, tracked_areas),
+            '     }', '     m_aActions {',
+            f'      GC_CustomScriptAction "{{{guid(identity + "/action")}}}" {{',
+            f'       m_Script GC_CompareSuppliesScript "{{{guid(identity + "/script")}}}" {{',
+            *(f'        {field} "{value}"' for field, value in SUPPLY_COUNT_FIELDS.items()),
+            '       }', '      }', '     }', '    }',
+        ])
     compiled.extend(render_capture_trackers(world, tracked_areas, captures, capture_messages))
     for identity, name, display_name, term, actions in parsed:
         if direct_control and term['trigger'] not in ('startup choice', 'pregame start'):
