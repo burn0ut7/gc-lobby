@@ -520,6 +520,16 @@ def main():
         bound_area_flags = set()
         bound_damage_flags = set()
         bound_spawner_reads = Counter()
+        local_files_search = set()
+        if args.batch and world == batch.LOCAL_FILES_ROOT + 'TheLocalFiles.ent':
+            try:
+                objectives.update(batch.local_files_computer_assets(source, dev, stock, locally_owned))
+                local_files_search.add(batch.LOCAL_FILES_SEARCH_FLAG)
+                objective_flags = set(objective_flags) | local_files_search
+                batch_interactions[world] = (objective_flags, interaction_placements)
+                spawned_assets[world] = objectives
+            except ValueError as exc:
+                row['spawnedComputerPrefabs'] = {'gap': str(exc)}
         if (args.batch and batch.CONCRETE_FRAMEWORK[0] in source.layers[world.lower()]
                 and source.files[batch.CONCRETE_FRAMEWORK[0]] == batch.CONCRETE_FRAMEWORK[1]):
             try:
@@ -646,7 +656,7 @@ def main():
                 rules, outcome_audit, gap = compile_outcomes(
                     source, world, captures, compound=args.batch, notification_audit=review,
                     objective_flags=set(objective_flags) | observed_area_flags,
-                    bound_clearable_flags=bound_area_flags | bound_damage_flags,
+                    bound_clearable_flags=bound_area_flags | bound_damage_flags | local_files_search,
                     replacement_flags={asset['replacementEvent']: asset['flag'] for asset in objectives.values()
                                        if 'replacementEvent' in asset},
                     extraction_spawns=delayed.spawns if delayed else None,

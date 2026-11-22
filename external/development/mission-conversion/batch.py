@@ -1734,6 +1734,66 @@ REVIEWED_NATIVE_ASSETS = {
         '2ba0dad4f29f8ea1bcbb855938794e79393231bd904134041919cb190cd936a6',
 }
 ROCKY_CIVILIANS = 'worlds/Burn0ut7/Rocky Road/Prefabs/CiV_Group.et'
+LOCAL_FILES_ROOT = 'worlds/Wade/TheLocalFiles/'
+LOCAL_FILES_DEFAULT = LOCAL_FILES_ROOT + 'TheLocalFiles_Layers/default.layer'
+LOCAL_FILES_DEFAULT_BLOB = 'e2d54ef1a3e35835b00210ccf02942519b34053c'
+LOCAL_FILES_SPAWNER_LAYERS = {
+    f'{LOCAL_FILES_ROOT}TheLocalFiles_Layers/ComputerSpawners/BananaRandom{index}.layer': blob
+    for index, blob in enumerate((
+        'edc4794d6bb744cb8b5af199da6a78e246a88f6f', 'ec0fb9336a4dcf432557087b094eeb64e4693097',
+        '26e6e9e380dd55771185813d9714bff01ccd3feb', '7f61e48e21053f90db6401178dfa8178620c1c3a',
+        'd187bce3647c951415f94ecf12b00c9024469626', '7952d34d82aa185afce2df15438b756586da004b',
+    ), 1)
+}
+LOCAL_FILES_COMPUTER = ('F9516BAAF0D2E496', LOCAL_FILES_ROOT + 'Computer_Secure.et')
+LOCAL_FILES_MARKER = ('7CEE9BACABE39C3E', LOCAL_FILES_ROOT + 'ComputerMarker.et')
+LOCAL_FILES_MARKER_SPAWNER = LOCAL_FILES_ROOT + 'MarkerPrefab.et'
+LOCAL_FILES_SEARCH_FLAG = 'ComputerCaptured'
+
+
+def local_files_computer_assets(source, dev, stock, local_resources):
+    assets = {}
+    for (identity, path), blob in (
+        (LOCAL_FILES_COMPUTER, 'cd006b78e62354ecaffbc8c7c5741455ed0c48cc'),
+        (LOCAL_FILES_MARKER, 'ab22168e7496f604072cd40510179df0315467ff'),
+    ):
+        if (source.files.get(path) != blob or source.resources.get(identity) != [path]
+                or dev.resources.get(identity) not in (None, [path])):
+            raise ValueError('The Local Files computer or map marker identity changed')
+        lines = source.read(path).splitlines()
+        root_id = lines.pop(1)
+        if identity == LOCAL_FILES_COMPUTER[0]:
+            body, actions = convert_interaction_block(lines, path, stock, local_resources)
+            if [action['flag'] for action in actions] != [LOCAL_FILES_SEARCH_FLAG]:
+                raise ValueError('The Local Files computer search action changed')
+        else:
+            body, _ = convert_layer('\n'.join(lines) + '\n', draw_order=True, source=source)
+        head, fields = body.split('\n', 1)
+        native = '\n'.join((head, root_id, fields))
+        if LEGACY.search(native) or (path in dev.files and native.strip() != dev.read(path).strip()):
+            raise ValueError('The Local Files computer or marker has an unconverted field')
+        assets[identity] = {'path': path, 'body': native}
+    return assets
+
+
+def local_files_marker_child(source, child, parent_fields):
+    """Resolve one independently scheduled marker while retaining its relative transform."""
+    template = REF.search(child[0])
+    if (not template or template.groups() != ('24DE47146AB85B95', 'worlds/Wade/BananaHoedown/MarkerPrefab.et')
+            or source.files.get(LOCAL_FILES_MARKER_SPAWNER) != '64ee2b886829a804b535c3c55b6434234df435a3'):
+        raise ValueError('unverified nested marker spawner')
+    values = properties(child[1:-1], {'coords', 'angles', 'm_conditionFlag', 'm_spawnTimings'})
+    # Group 1 keeps the condition flag inherited from the marker-spawner prefab.
+    flag = values.get('m_conditionFlag', '"BananaRandomFlag1"')
+    if (f' m_conditionFlag {flag}' not in parent_fields or values.get('m_spawnTimings') != '300'
+            or not {'coords', 'angles'} <= values.keys()):
+        raise ValueError('nested marker flag or timeline differs from the reviewed schedule')
+    return [
+        'TILW_PrefabSpawnerEntity : "{7F10372CF1CA1175}Prefabs/Utils/TILW_PrefabSpawner.et" {',
+        *(f' {key} {values[key]}' for key in ('coords', 'angles')),
+        f' m_prefab "{{{LOCAL_FILES_MARKER[0]}}}{LOCAL_FILES_MARKER[1]}"',
+        f' m_conditionFlag {flag}', ' m_spawnTimings {', '  300', ' }', '}',
+    ]
 BULGES = 'worlds/TheLocalPub/BattleOfTheBulges'
 LOST_AND_FOUND_DELTA_GROUP = ('worlds/FloridaMan/Prefabs/Groups/BLUFOR/US/Army_2010_DeltaForce/'
                               'Group_Delta_2010_Assault_m_P.et')
@@ -2691,6 +2751,10 @@ def literal_flag_reads(text, flag):
 def placed_spawner_flag_reads(source, layers):
     """Count direct consumers that the placed spawner rule must also convert."""
     flags = Counter()
+    local_files_layers = [path for path in layers if source.files[path] == LOCAL_FILES_SPAWNER_LAYERS.get(path)]
+    if local_files_layers and LOCAL_FILES_MARKER_SPAWNER in source.closure(
+            LOCAL_FILES_ROOT + 'TheLocalFiles.ent'):
+        flags['BananaRandomFlag1'] += 1
     for path in layers:
         text = source.read(path)
         if 'm_conditionFlag ' not in text or 'TILW_PrefabSpawnerEntity ' not in text:
@@ -2704,7 +2768,11 @@ def placed_spawner_flag_reads(source, layers):
             except ValueError:
                 continue
             for _, fields in members:
-                for line in fields:
+                direct = fields
+                if path in local_files_layers and ' {' in fields:
+                    parent, children = trigger_children(fields)
+                    direct = [*parent, *(line for _, child in children for line in child[1:-1])]
+                for line in direct:
                     if flag := re.fullmatch(r' m_conditionFlag (' + FLAG_NAME + ')', line):
                         flags[flag[1][1:-1]] += 1
     return flags
@@ -4362,7 +4430,8 @@ def reviewed_spawn_type(source, resource, path, types):
 
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
                  resolve_crew_config=None, shadowed_names=(), missing_waypoints=(), self_waypoints=(),
-                 capture_latches=None, single_draw_flags=(), derived_conditions=None, dormant_flags=(), allow_bare=False):
+                 capture_latches=None, single_draw_flags=(), derived_conditions=None, dormant_flags=(), allow_bare=False,
+                 local_files_markers=False):
     root = placed_spawner_root(block[0], allow_bare)
     if not root:
         raise ValueError('unverified placed spawner prefab')
@@ -4370,12 +4439,25 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
     transform_fields = SPAWNER_TRANSFORM | {'scale'}
     for index, (name, lines) in enumerate(polygon_capture.members(block, root['group'], root['name'])):
         children = []
+        key = f'{location}/spawner/{index}'
         if ' {' in lines:
             child_start = lines.index(' {')
             if block_end(lines, child_start) != len(lines) - 1:
                 raise ValueError('custom placement after spawner children')
             children = lines[child_start:]
-            for _, child in blocks('\n'.join(line[2:] for line in children[1:-1])):
+            child_blocks = list(blocks('\n'.join(line[2:] for line in children[1:-1])))
+            if local_files_markers:
+                if len(child_blocks) != 1:
+                    raise ValueError('computer spawner needs one authored marker')
+                child = local_files_marker_child(source, child_blocks[0][1], lines[:child_start])
+                native, scheduled, info = placed_spawn(
+                    child, key + '/marker', resolve_resource, captures, flags, used_flags, resolve_crew, source=source,
+                    single_draw_flags=single_draw_flags)
+                children = [' {', *('  ' + line for line in native.splitlines()), ' }']
+                rules.extend(scheduled.splitlines())
+                audit.extend(info)
+                child_blocks = []
+            for _, child in child_blocks:
                 head = PLACED_ENTITY.fullmatch(child[0])
                 if (not head or head['group'] or not head['name'] or not REF.search(child[0])
                         or not re.fullmatch(WAYPOINT_CLASS, head['kind']) or LEGACY.search('\n'.join(child))):
@@ -4397,6 +4479,11 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             'm_prefab', 'm_conditionFlag', 'm_spawnTimings', 'm_setEntityNames', 'm_waypointNames', 'm_pregameSpawn',
             'Flags',
         })
+        if local_files_markers:
+            identity, path = LOCAL_FILES_COMPUTER
+            if not children or data.get('m_prefab') != f'"{{{identity}}}worlds/Wade/BananaHoedown/Computer_Secure.et"':
+                raise ValueError('unverified computer spawner')
+            data['m_prefab'] = f'"{{{identity}}}{path}"'
         transform = [f'{key} {value}' for key, value in data.items() if key in transform_fields]
         if 'coords' not in data or any(not FIELD.fullmatch(line) for line in transform):
             raise ValueError('spawner needs a placed transform')
@@ -4445,7 +4532,6 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             raise ValueError(f'crewed spawner {name or index + 1} needs a verified vehicle: {vehicle}')
         if waypoints and not group and config is None:
             raise ValueError('spawner waypoints need a verified AI group')
-        key = f'{location}/spawner/{index}'
         anchor = name or 'GC_Spawner_' + guid(key)
         if flag in dormant_flags:
             placements.extend([f'GenericEntity {anchor} {{', *(' ' + line for line in transform), *children, '}'])
@@ -4591,6 +4677,7 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                         missing_waypoints=missing_waypoints, self_waypoints=self_waypoints,
                         capture_latches=capture_latches, single_draw_flags=single_draw_flags,
                         derived_conditions=derived_conditions, dormant_flags=dormant,
+                        local_files_markers=source.files[layer] == LOCAL_FILES_SPAWNER_LAYERS.get(layer),
                         allow_bare=(layer, source.files[layer]) in REVIEWED_BARE_SPAWNER_LAYERS)
                 except ValueError as exc:
                     blockers.append({'rule': 'TILW_PrefabSpawnerEntity', 'file': layer, 'line': line,
@@ -5130,6 +5217,8 @@ TEMPLATE_TRIGGER_PATHS = {
 }
 PRESENCE_TRIGGER = re.compile(r'(?P<group>\$grp )?TILW_(?P<kind>Presence)TriggerEntity(?: (?P<name>[\w.-]+))?'
                               r' : "\{826E6F2246328952\}Prefabs/Logic/Triggers/TILW_PresenceTrigger\.et" \{')
+BARE_PRESENCE_TRIGGER = re.compile(r'(?P<group>\$grp )?TILW_(?P<kind>Presence)TriggerEntity'
+                                   r'(?: (?P<name>[\w.-]+))? \{')
 ROUTE_OBSTACLE_LAYER = 'worlds/Til/RouteTremaux/RouteTremaux_Layers/obstacles_removable.layer'
 ROUTE_OBSTACLE_LAYER_BLOB = '06f0036f9a45d0989f462285e56011e0a6fdaee5'
 ROUTE_OBSTACLE_PREFABS = {
@@ -5268,6 +5357,8 @@ def area_rules(source, world, dev=None):
                     audit[f'{layer}:{line}'] = records
                 continue
             match = TRIGGER.fullmatch(block[0]) or PRESENCE_TRIGGER.fullmatch(block[0])
+            if not match and layer == LOCAL_FILES_DEFAULT and source.files[layer] == LOCAL_FILES_DEFAULT_BLOB:
+                match = BARE_PRESENCE_TRIGGER.fullmatch(block[0])
             shape = polygon_capture.SHAPE.fullmatch(block[0])
             if AO_SHAPE.fullmatch(block[0]) or STANDALONE_SHAPE.fullmatch(block[0]):
                 if any(TRIGGER.fullmatch(field.strip()) or PRESENCE_TRIGGER.fullmatch(field.strip())
@@ -6343,7 +6434,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     if ((script_flags and layer == SUPPLY_OUTCOME_LAYER and source.files[layer] == SUPPLY_OUTCOME_BLOB)
                             or (cache_supply_depot and layer == depot_layer)
                             or (phase_entity_capture and layer == RUHA_PHASE_LAYER)
-                            or (concrete_crushers and layer == concrete_layer)):
+                            or (concrete_crushers and layer == concrete_layer)
+                            or (layer == LOCAL_FILES_DEFAULT and source.files[layer] == LOCAL_FILES_DEFAULT_BLOB
+                                and 'TILW_RunScriptInstruction' not in body)):
                         # The reviewed prefix contains the replaced scripts and optional unused coordinates.
                         fields = fields[fields.index(' m_missionEvents {'):]
                     root_fields = [field.strip() for field in fields

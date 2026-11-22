@@ -70,6 +70,10 @@ STOCK_FORCED_CALLSIGNS = {
     '68B49475034AE9C4', '68B49475050A0FED', '68B4947507BD96A1', '68B494750A66A9AD',
     '68B494753290ECAA', '68B494751EAA3C6F', '68B494751D89F7E5', '68B49475189DF08B',
 }
+STOCK_FORCED_CHARACTERS = {
+    resource: f'Prefabs/Characters/Factions/CIV/Dockworker/Character_CIV_Dockworker_{index}.et'
+    for index, resource in enumerate(('C6FAF52907A544AC', '2CDFBF355F3410DD', '2366B9D00B40D3C7'), 1)
+}
 # These overrides were resolved by spawning the source component layouts
 # and looking up the assigner the same way the legacy playable manager does.
 VERIFIED_PLACED_CALLSIGNS = {
@@ -1004,6 +1008,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                         return f'"{{{parent[0]}}}{parent[1]}"'
                     if not stock or not stock.contains(guid, path):
                         raise ValueError('unresolved character prefab ' + guid)
+                    if explicit_force and STOCK_FORCED_CHARACTERS.get(guid.upper()) == path:
+                        approved_external.add(guid.upper())
                 if guid.upper() not in reviewed_members and not path.lower().startswith('prefabs/characters/'):
                     raise ValueError('unexpected slot resource ' + path)
                 return '"{' + guid + '}' + path + '"'
@@ -1141,7 +1147,7 @@ def convert_registered_group(lines, guid, source_units, dev_units, stock, locall
         if len(rosters) != 1:
             raise ValueError('forced playable native group needs a complete authored roster')
         return convert_instance(lines, guid, '', '', source_units, dev_units, stock, locally_owned,
-                                forced_external=forced_external)
+                                forced_external=forced_external, reviewed_members=reviewed_members)
     if not rosters and stock_group.get('normalizeInheritedSlots'):
         if any(line.strip().startswith('m_aUnitPrefabSlots ') for line in lines):
             raise ValueError('native group has an additive override of the reviewed roster')

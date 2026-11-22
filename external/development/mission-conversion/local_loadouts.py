@@ -35,6 +35,9 @@ MOVED_AI_PARENTS = {
         'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/2020/Character_SEP_SL.et',
 }
 REVIEWED_FORCED_CHARACTERS = {
+    # The Local Files explicitly enables both groups and names these roles.
+    'DE94F9CA70A9C23B': '77b727fd2450b84a217b6c3ae6afa47585858caa6726ea77ec316edb745c1c3b',
+    '53C0A621CB97E80D': 'ceb640e2ff498307d8cb1ea6ca1dc51a5a678c7610f61f93be3b221712a0f356',
     # Hephaestus Forge explicitly makes these six pilot groups playable.
     '0BC9FB2D45681163': '5572741758b8e7afafcfa397690e07ba0647b6969a55ecb360183edb351f2c34',
     # Kunar's player squads use these inventory-only wrappers on unchanged USMC roles.
@@ -100,14 +103,14 @@ def migrate_playability(text, *, inherited_playable=False):
 
 
 @lru_cache(maxsize=4096)
-def unchanged_units_parent(source_units, dev_units, resource):
+def unchanged_units_parent(source_units, dev_units, resource, *, force_playable=False):
     try:
         before = inheritance(source_units, resource)
         after = inheritance(dev_units, resource)
         native_before = []
         for text in before:
             parent = REF.search(text.partition('\n')[0])
-            inherited = bool(parent and legacy_member(source_units, parent[1], False))
+            inherited = force_playable or bool(parent and legacy_member(source_units, parent[1], False))
             native_before.append(migrate_playability(text, inherited_playable=inherited)[0])
     except ValueError:
         return False
@@ -170,7 +173,9 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
             body = first.replace(parent[0], f'"{{{historical[0]}}}{historical[1]}"', 1) + body[len(first):]
         elif resource in source_units.resources or resource in dev_units.resources:
             stock_wrapper = stock_wrapper_ancestry_matches(source_units, dev_units, resource, stock, owned)
-            if not stock_wrapper and not unchanged_units_parent(source_units, dev_units, resource):
+            forced_ion_role = verified_forced and guid == '53C0A621CB97E80D'
+            if (not stock_wrapper
+                    and not unchanged_units_parent(source_units, dev_units, resource, force_playable=forced_ion_role)):
                 return None
             unit_parent = REF.search(inheritance(source_units, resource)[0].partition('\n')[0])
             inherits_published_role = bool(published_parent and unit_parent
