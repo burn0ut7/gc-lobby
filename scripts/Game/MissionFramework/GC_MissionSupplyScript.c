@@ -41,14 +41,16 @@ enum GC_EMissionSupplyOperation
 {
 	REMEMBER_DEPOT,
 	FILL_SELECTED_CARGO,
-	CHECK_DEPOT
+	CHECK_DEPOT,
+	CHECK_DEPOT_PHASES
 }
 
 [BaseContainerProps(), BaseContainerCustomStringTitleField("Named vehicle and depot supplies")]
 class GC_MissionSupplyScript : GC_MissionScript
 {
 	[Attribute("0", UIWidgets.ComboBox, enums: {
-		ParamEnum("Remember depot", "0"), ParamEnum("Fill selected cargo", "1"), ParamEnum("Check depot", "2")})]
+		ParamEnum("Remember depot", "0"), ParamEnum("Fill selected cargo", "1"), ParamEnum("Check depot", "2"),
+		ParamEnum("Check depot in two phases", "3")})]
 	GC_EMissionSupplyOperation m_eOperation;
 	[Attribute("", UIWidgets.EditBox)]
 	string m_sDepot;
@@ -60,6 +62,10 @@ class GC_MissionSupplyScript : GC_MissionScript
 	int m_iSupplies;
 	[Attribute("", UIWidgets.EditBox)]
 	string m_sResultFlag;
+	[Attribute("0", UIWidgets.EditBox)]
+	int m_iNextSupplies;
+	[Attribute("", UIWidgets.EditBox)]
+	string m_sNextFlag;
 
 	//------------------------------------------------------------------------------------------------
 	override bool IsValid()
@@ -74,6 +80,9 @@ class GC_MissionSupplyScript : GC_MissionScript
 					&& GC_RuleAction.ValidTargetNames(m_aChoiceFlags) && GC_RuleAction.ValidTargetNames(m_aCargoNames);
 			case GC_EMissionSupplyOperation.CHECK_DEPOT:
 				return m_iSupplies >= 0 && !m_sResultFlag.IsEmpty();
+			case GC_EMissionSupplyOperation.CHECK_DEPOT_PHASES:
+				return m_iSupplies >= 0 && m_iNextSupplies > m_iSupplies && !m_sResultFlag.IsEmpty()
+					&& !m_sNextFlag.IsEmpty() && m_sResultFlag != m_sNextFlag;
 		}
 		return false;
 	}
@@ -96,6 +105,12 @@ class GC_MissionSupplyScript : GC_MissionScript
 		float supplies;
 		if (!depot.Read(supplies))
 			return false;
+		if (m_eOperation == GC_EMissionSupplyOperation.CHECK_DEPOT_PHASES)
+		{
+			if (!manager.GetFlag(m_sResultFlag))
+				return supplies < m_iSupplies || manager.CallFlag(m_sResultFlag);
+			return supplies < m_iNextSupplies || manager.GetFlag(m_sNextFlag) || manager.CallFlag(m_sNextFlag);
+		}
 		if (supplies == m_iSupplies && !manager.GetFlag(m_sResultFlag))
 			return manager.CallFlag(m_sResultFlag);
 		return true;

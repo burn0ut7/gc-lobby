@@ -44,6 +44,21 @@ INTERDICTION_SCRIPT_CALLS = {
                           '        m_sResultFlag "Check Supplies Success Flag"'],
                          ('Check Supplies Success Flag',)),
 }
+FOOD_MARKET_OUTCOME_LAYER = ('worlds/HotMic/StopTheFOODMarketAtKunar/'
+                             'StopTheFOODMarketAtKunar_Layers/default.layer')
+FOOD_MARKET_OUTCOME_BLOB = 'a70410c2f38bc78d3108758ec9e7baa2226d21d1'
+DEPOT_SUPPLY_REVISIONS = {
+    INTERDICTION_OUTCOME_LAYER: (INTERDICTION_OUTCOME_BLOB, INTERDICTION_SCRIPT_CALLS),
+    FOOD_MARKET_OUTCOME_LAYER: (FOOD_MARKET_OUTCOME_BLOB, {
+        '66863C8ED09B03D3': (['     m_executionDelay 0', '     m_iScriptNumber 3'], '0',
+                             ['        m_eOperation 0', '        m_sDepot "Bluefor_Supply_Depot"'], ()),
+        '663E442FB72511EF': (['     m_executionDelay 0', '     m_iScriptNumber 2', '     m_bAllowRerun 1'], '0',
+                             ['        m_eOperation 3', '        m_iSupplies 500',
+                              '        m_sResultFlag "Phase 1 Done Flag"', '        m_iNextSupplies 1000',
+                              '        m_sNextFlag "Phase 2 Done Flag"'],
+                             ('Phase 1 Done Flag', 'Phase 2 Done Flag')),
+    }),
+}
 NATIVE_ACTION = re.compile(r'      GC_\w+ "\{[\da-fA-F]{16}\}" \{')
 KEY = r'"[\w.-]+"'
 EVENT_LABEL = r'"[^"\\\x00-\x1f]+"'
@@ -88,6 +103,7 @@ REVIEWED_EMPTY_HINTS = {
         ('74df0f746d04e31fdd1227c261978d0b01b070ce', '62672C5D0EC091B7'),
 }
 REVIEWED_INACTIVE_FLAGS = {
+    FOOD_MARKET_OUTCOME_LAYER: (FOOD_MARKET_OUTCOME_BLOB, '"Check Supplies Success Flag"', 1),
     'worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/default.layer':
         ('ec2d8e9742da07dccacdb9f37beebfb23449e213', '"Industrial"', 2),
     'worlds/RoseOutTheAshes/FIALeMouleRaid/LeMouleRaid_layers/fw.layer':
@@ -475,7 +491,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None,
                log_only=False, named_events=(), inactive=(), binary_startup=None, missing_term=False, ends_match=False,
                direct_control=False, empty_hint=None, missing_group_waypoint=None, sampled_pregame_flags=(),
-               supply_comparison=False, interdiction_supplies=False):
+               supply_comparison=False, depot_supply_calls=None):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -524,7 +540,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 waypoint_match = WAYPOINTS.fullmatch(fields[j]) if compound else None
                 control_match = CONTROL_INSTRUCTION.fullmatch(fields[j]) if compound else None
                 action_match = recognized(fields[j]) if compound else None
-                script_match = SCRIPT_INSTRUCTION.fullmatch(fields[j]) if supply_comparison or interdiction_supplies else None
+                script_match = SCRIPT_INSTRUCTION.fullmatch(fields[j]) if supply_comparison or depot_supply_calls else None
                 spawn_match = SPAWN.fullmatch(fields[j]) if extraction_spawns or resolve_spawn else None
                 group_match = GROUP_SPAWN.fullmatch(fields[j]) if resolve_spawn else None
                 vehicle_match = VEHICLE_SPAWN.fullmatch(fields[j]) if resolve_spawn and resolve_crew else None
@@ -573,9 +589,9 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                                 '       m_iAmount 1', '      }']
                         details = {'setsFlag': SUPPLY_COUNT_FLAG, 'producesFlags': SUPPLY_COUNT_FLAGS}
                     else:
-                        entry = INTERDICTION_SCRIPT_CALLS.get(identity)
+                        entry = depot_supply_calls.get(identity)
                         if not entry or fields[j + 1:last] != entry[0]:
-                            raise ValueError('unreviewed inline convoy supply call')
+                            raise ValueError('unreviewed inline depot supply call')
                         _, delay_text, settings, flags_written = entry
                         body = [f'      GC_CustomScriptAction "{{{guid(action_key)}}}" {{',
                                 f'       m_Script GC_MissionSupplyScript "{{{guid(action_key + "/script")}}}" {{',
@@ -1050,8 +1066,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         return [], {}, 'requires one reviewed framework owner'
     path, text = owners[0]
     supply_comparison = compound and path == SUPPLY_OUTCOME_LAYER and source.files[path] == SUPPLY_OUTCOME_BLOB
-    interdiction_supplies = (compound and path == INTERDICTION_OUTCOME_LAYER
-                              and source.files[path] == INTERDICTION_OUTCOME_BLOB)
+    depot_blob, depot_supply_calls = DEPOT_SUPPLY_REVISIONS.get(path, (None, {}))
+    if not compound or source.files[path] != depot_blob:
+        depot_supply_calls = {}
     local = [p for p in source.closure(world) if p.lower().endswith(('.et', '.layer'))]
     controls = {p: matches for p in local if (matches := EVENT_CONTROL.findall(source.read(p)))}
     if controls and (not compound or set(controls) != {path}):
@@ -1112,8 +1129,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     event_flags = {*event_flags, *sampled_flags}
     if supply_comparison:
         event_flags.update(SUPPLY_COUNT_FLAGS)
-    if interdiction_supplies:
-        event_flags.update(flag for _, _, _, output in INTERDICTION_SCRIPT_CALLS.values() for flag in output)
+    if depot_supply_calls:
+        event_flags.update(flag for _, _, _, output in depot_supply_calls.values() for flag in output)
     inactive = inactive_flags(source, world, path, body, scripts) if compound else ()
     match_only_flags = {*match_only_flags, *sampled_flags}
     derived_spawners = {}
@@ -1168,7 +1185,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         if not spawns and not log_only and not any(
                 ENDING.fullmatch(item) or (compound and (
                     WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item) or recognized(item) or CONTROL_INSTRUCTION.fullmatch(item)
-                    or ((supply_comparison or interdiction_supplies) and SCRIPT_INSTRUCTION.fullmatch(item))
+                    or ((supply_comparison or depot_supply_calls) and SCRIPT_INSTRUCTION.fullmatch(item))
                     or (resolve_spawn and (SPAWN.fullmatch(item) or GROUP_SPAWN.fullmatch(item)))
                     or (resolve_crew and VEHICLE_SPAWN.fullmatch(item))))
                 for item in fields):
@@ -1186,7 +1203,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 direct_control=direct_control, ends_match=ends_match,
                 empty_hint=reviewed_empty_hint, missing_group_waypoint=missing_group_waypoint,
                 sampled_pregame_flags=sampled_pregame_flags, supply_comparison=supply_comparison,
-                interdiction_supplies=interdiction_supplies,
+                depot_supply_calls=depot_supply_calls,
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
             if not term.get('pregameSample') and any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
@@ -1295,11 +1312,11 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             *(f'        {field} "{value}"' for field, value in SUPPLY_COUNT_FIELDS.items()),
             '       }', '      }', '     }', '    }',
         ])
-    if interdiction_supplies:
+    if depot_supply_calls:
         calls = {action['instructionId'] for entry in audit.values() for action in entry.get('convertedActions', ())
                  if action.get('instruction') == 'TILW_RunScriptInstruction'}
-        if calls != INTERDICTION_SCRIPT_CALLS.keys():
-            return [], audit, 'convoy supply conversion requires all three reviewed calls'
+        if calls != depot_supply_calls.keys():
+            return [], audit, 'depot supply conversion requires all reviewed calls'
     compiled.extend(render_capture_trackers(world, tracked_areas, captures, capture_messages))
     for identity, name, display_name, term, actions in parsed:
         if direct_control and term['trigger'] not in ('startup choice', 'pregame start'):

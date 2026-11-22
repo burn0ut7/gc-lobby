@@ -27,7 +27,7 @@ from launchers import META_NAME, launcher, replace_reference
 from local_loadouts import unchanged_units_parent
 from markers import (DEST as MAP_MARKER_PREFAB, convert_baked_marker_generator, convert_hover_camera,
                      convert_layer, convert_wall_markers)
-from outcomes import (FRAMEWORK, INTERDICTION_OUTCOME_BLOB, INTERDICTION_OUTCOME_LAYER, MATCH_PHASE_VALUE,
+from outcomes import (DEPOT_SUPPLY_REVISIONS, FOOD_MARKET_OUTCOME_LAYER, FRAMEWORK, INTERDICTION_OUTCOME_LAYER, MATCH_PHASE_VALUE,
                       SCRIPT_FLAG_APIS, SUPPLY_OUTCOME_BLOB, SUPPLY_OUTCOME_LAYER,
                       leaves, render as render_outcome, render_capture_trackers)
 import polygon_capture
@@ -4402,7 +4402,8 @@ def mode_children(lines, disable_photo=False, lock_editor=False):
 
 
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None,
-                *, dynamic_respawn_factions=(), area_flag_observers=(), cache_supply_depot=False):
+                *, dynamic_respawn_factions=(), area_flag_observers=(), cache_supply_depot=False,
+                inherited_immediate_release=False):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, environment, freeze = '', '', 0
@@ -4413,7 +4414,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     restrict_staging_combat = None
     briefing_leader_markers = None
     transform = {}
-    immediate_release = False
+    immediate_release = inherited_immediate_release
     construction = {}
     jip = {}
     mode_components_seen = False
@@ -4730,9 +4731,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                    if 'setsFlag' in action}
     script_flags = {flag for event in rules.values() for action in event.get('convertedActions', [])
                     for flag in action.get('producesFlags', ())}
-    cache_supply_depot = (bool(script_flags) and framework_supported
-                          and source.files.get(INTERDICTION_OUTCOME_LAYER) == INTERDICTION_OUTCOME_BLOB
-                          and INTERDICTION_OUTCOME_LAYER in source.layers[world.lower()])
+    depot_layer = next((path for path in source.layers[world.lower()]
+                        if path in DEPOT_SUPPLY_REVISIONS and source.files[path] == DEPOT_SUPPLY_REVISIONS[path][0]), None)
+    cache_supply_depot = bool(script_flags) and framework_supported and depot_layer is not None
     event_flags.update(script_flags)
     supported_interactions = [record for record in row.get('interactionCandidate', {}).values()
                               if isinstance(record, dict)]
@@ -4846,7 +4847,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 elif FRAMEWORK.fullmatch(head) and framework_supported and (represented or outcome.get('startupSamples')):
                     fields = block[1:-1]
                     if ((script_flags and layer == SUPPLY_OUTCOME_LAYER and source.files[layer] == SUPPLY_OUTCOME_BLOB)
-                            or (cache_supply_depot and layer == INTERDICTION_OUTCOME_LAYER)):
+                            or (cache_supply_depot and layer == depot_layer)):
                         # The reviewed prefix contains the replaced scripts and optional unused coordinates.
                         fields = fields[fields.index(' m_missionEvents {'):]
                     root_fields = [field.strip() for field in fields
@@ -5072,6 +5073,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                    set(objective_flags) | event_flags, damage_flags,
                                    dynamic_respawn_factions=edited_factions,
                                    cache_supply_depot=cache_supply_depot,
+                                   inherited_immediate_release=(
+                                       depot_layer == layer == FOOD_MARKET_OUTCOME_LAYER),
                                    area_flag_observers=[line for record in shared_writers
                                                         for line in record['areaFlagObserver']])
             if preset:
@@ -5376,8 +5379,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                          'Historical damage thresholds and break physics remain unverified.')
     if converted_artillery:
         remaining.append('Compare the call-in menu, radio authorization, salvo timing and the late-join ammunition display.')
-    if cache_supply_depot:
+    if cache_supply_depot and depot_layer == INTERDICTION_OUTCOME_LAYER:
         remaining.append('Compare the cargo selection, selected van refill, depot initialization and repeated exact-supply check.')
+    elif cache_supply_depot:
+        remaining.append('Compare the two ordered supply thresholds, including a first reading above both thresholds.')
     elif script_flags:
         remaining.append('Compare depot measurement after either authored deadline, including ties, missing depots and one-shot delivery.')
     for target in sorted({spawn['missingGroupWaypoint'] for spawn in prefab_spawns if 'missingGroupWaypoint' in spawn}):
