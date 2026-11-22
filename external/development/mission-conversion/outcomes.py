@@ -1210,6 +1210,11 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         fields = body[i + 1:block_end(body, i)]
         loc = f'{path}:{i + base + 2}'
         label = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
+        if (compound and not fields and event[1] == '66A9271774862F8E'
+                and path == 'worlds/Perfk/PowerPlay/PowerPlay_Layers/default.layer'
+                and source.files[path] == '327c5cf20c9bbcfdf16a8456e2d0b5aa0812d2eb'):
+            audit[loc] = {'name': '', 'trigger': 'dormant', 'reason': 'trailing event has no condition or instructions'}
+            continue
         if 'notificationDelaysSeconds' in notification_audit.get(loc, {}):
             continue
         if compound and len(fields) == 1 and re.fullmatch(r'   m_name "(?:-{3,}|={3,} [\w ]+ ={3,})"', fields[0]):

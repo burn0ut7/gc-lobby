@@ -222,6 +222,7 @@ WORKSHOP_SPAWN_PREFABS = {
         (('DDDDBEC77B49A995', 'Prefabs/Systems/Explosions/Wrapper_Bomb_Huge.et'),
          ('9016E09E91956B2E', 'Prefabs/Systems/Explosions/Wrapper_Bomb_Medium.et'),
          ('4BE47BA2B7E3877E', 'Prefabs/Systems/Fire/Wrapper_Fire_Large_Damage.et'),
+         ('93FC2145F05A1EEE', 'Prefabs/Systems/Sound/sound_airraidsiren.et'),
          ('30263B4F1FB2A0F2', 'Prefabs/Systems/Artillery/ArtilleryWrapper_WTF.et'),
          ('2D854F52D8D6B31E', 'Prefabs/Systems/Smoke/Wrapper_Smoke_Purple.et'),
          ('6BDBEFF5CE6E2F28', 'Prefabs/Systems/Smoke/Wrapper_Smoke_Green.et'), GMFX_AP_MINE),
@@ -2697,7 +2698,11 @@ def passive_asset(source, path):
             return body
     if suffix == '.nmn' and source.files[path] == OBSOLETE_NAVMESH.get(path):
         tiles = len(source.navmesh_tiles(path))
-        raise ValueError(f'Workbench rejected the compiled navmesh as obsolete. Regeneration needed. Found {tiles} original tiles')
+        detail = f'Workbench rejected the compiled navmesh as obsolete. Found {tiles} original tile files'
+        if region := source.legacy_navmesh_region(path):
+            min_x, max_x, min_y, max_y, count = region
+            detail += f' and {count} populated grid cells at X {min_x}–{max_x}, Y {min_y}–{max_y}'
+        raise ValueError(detail + '. Regeneration needed.')
     if suffix == '.emat':
         body = source.read(path)
         if re.match(r'MatPBR(?:Basic|Decal) \{\n', body) and not LEGACY.search(body):

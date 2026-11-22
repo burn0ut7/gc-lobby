@@ -22,7 +22,7 @@ NATIVE_GROUP_FIELD = re.compile(r'm_faction "[\w.-]+"|m_iGroupRadioFrequency \d+
                                 rf'(?:DangerEventRange|{DYNAMIC_LOD_DISTANCE}) \d+(?:\.\d+)?')
 STATIC_LINK_FIELDS = {'m_aStaticWaypoints {', 'm_aStaticVehicles {'}
 COLOR_TEAM_ARRAY = 'm_aUnitPrefabColorTeams {'
-COLOR_TEAM_VALUES = {'"None"', '"Red"', '"Blue"', '"Yellow"', '"Green"'}
+COLOR_TEAM_VALUES = {'""', '"None"', '"Red"', '"Blue"', '"Yellow"', '"Green"'}
 FORMATION = re.compile(r'AIFormationComponent "\{[\da-fA-F]{16}\}" \{')
 MOVEMENT = 'SCR_AIGroupMovementComponent "{6126A0E02097C7FF}" {'
 MOVEMENT_FIELD = re.compile(r'Enabled [01]|"(?:Min|Max) Speed" \d+(?:\.\d+)?|DefaultFormation "[A-Z_]+"')

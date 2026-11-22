@@ -3,6 +3,7 @@ from collections import Counter, defaultdict
 from functools import cached_property, lru_cache
 from pathlib import PurePosixPath
 import re
+from struct import iter_unpack, unpack_from
 import subprocess
 
 
@@ -69,6 +70,24 @@ class Snapshot:
         resource = PurePosixPath(path)
         prefix = f'{resource.parent}/.NavData/{resource.stem}/'
         return sorted(file for file in self.files if file.startswith(prefix) and file.endswith('.ntile'))
+
+    def legacy_navmesh_region(self, path):
+        """Read the tile bounds from a reviewed obsolete navmesh header."""
+        if OBSOLETE_NAVMESH.get(path) != self.files[path]:
+            return None
+        data = self.read_raw(path)
+        chunk = data.find(b'NAVMTFHE')
+        if chunk < 0 or chunk + 12 > len(data):
+            return None
+        size, = unpack_from('>I', data, chunk + 8)
+        start = chunk + 12
+        if size % 16 or start + size > len(data):
+            return None
+        cells = {(x, y) for x, y, _, _ in iter_unpack('<4I', data[start:start + size]) if x or y}
+        if not cells:
+            return None
+        x, y = zip(*cells)
+        return min(x), max(x), min(y), max(y), len(cells)
 
     @cached_property
     def layers(self):
