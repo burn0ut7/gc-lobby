@@ -44,7 +44,7 @@ WIDE_COVER_FIELDS = {
     'm_bUseWorldScale': '1',
     'm_fWorldSize': '128000',
 }
-EMPTY_CLEANUP_PROTECTION = re.compile(r'\s*PK_EntityProtectorComponent "(\{[A-Fa-f0-9]{16}\})" \{')
+MARKER_COMPONENT = re.compile(r'\s*(\w+) "(\{[A-Fa-f0-9]{16}\})" \{')
 BAKED_MARKER_GENERATOR = re.compile(
     r'PolylineShapeEntity \{\n coords (?P<origin>[^\n]+)\n Points \{\n'
     r'(?:  ShapePoint "\{[\da-fA-F]{16}\}" \{\n   Position [^\n]+\n  \}\n)+'
@@ -175,14 +175,40 @@ def phase_fields(value):
     return ['   m_aHiddenPhases {', *('    ' + phase for phase in PHASES if phase in hidden), '   }']
 
 
+def marker_component(lines):
+    head = MARKER_COMPONENT.fullmatch(lines[0])
+    if not head or block_end(lines, 0) != len(lines) - 1:
+        raise ValueError('unsupported marker component block')
+    kind, identity = head.groups()
+    if kind == 'PK_EntityProtectorComponent':
+        values = properties(lines[1:-1], {'Enabled', 'm_keepEntityAfterDelete'})
+        if any(value not in ('0', '1') for value in values.values()):
+            raise ValueError('unsupported marker cleanup setting')
+        # The legacy deleter checks component presence. It never reads m_keepEntityAfterDelete.
+        out = [f'  GC_StartupCleanupProtectionComponent "{identity}" {{']
+        if 'Enabled' in values:
+            out.append('   Enabled ' + values['Enabled'])
+        return [*out, '  }']
+    if kind == 'SCR_EditableEntityVisibilityChildComponent' and identity == '{5EDF48006635F3CA}':
+        values = properties(lines[1:-1], {'Enabled'})
+        if values == {'Enabled': '0'}:
+            return [f'  {kind} "{identity}" {{', '   Enabled 0', '   m_State 96', '  }']
+    if kind == 'MapDescriptorComponent':
+        expected = {'MainType': 'Unit', 'UnitType': 'Infantry', 'ForceGroupType': 'Aggregate',
+                    'ForceGroupScale': '2'}
+        if properties(lines[1:-1], expected.keys()) == expected:
+            return [f'  {kind} "{identity}" {{', *(f'   {line.strip()}' for line in lines[1:-1]), '  }']
+    raise ValueError('custom or duplicate field components')
+
+
 def instance(lines, name, inherited=None, *, draw_order=False):
-    protection = []
+    components = []
     authored_components = [index for index, line in enumerate(lines) if line.strip() == 'components {']
     if len(authored_components) == 1:
         start, = authored_components
         stop = block_end(lines, start)
-        if stop == start + 3 and (component := EMPTY_CLEANUP_PROTECTION.fullmatch(lines[start + 1])):
-            protection = [f'  GC_StartupCleanupProtectionComponent "{component[1]}" {{', '  }']
+        if stop > start + 1:
+            components = marker_component(lines[start + 1:stop])
             lines = [*lines[:start], *lines[stop + 1:]]
     placed = properties(lines, ALLOWED | {'m_iZOrder'} if draw_order else ALLOWED)
     values = {**(inherited or {}), **placed}
@@ -233,7 +259,7 @@ def instance(lines, name, inherited=None, *, draw_order=False):
     if unassigned == '0' and (any_side == '1' or explicit_list):
         output.append('   m_bHideWithoutFaction 1')
     output.extend(phase)
-    output.extend(['  }', *protection, ' }'])
+    output.extend(['  }', *components, ' }'])
     output.extend(f' {k} {v}' for k, v in merged.items() if k in TRANSFORM)
     return '\n'.join(output + ['}'])
 
