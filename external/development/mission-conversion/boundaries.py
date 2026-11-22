@@ -58,7 +58,8 @@ def rotate_point(point, yaw, pitch, roll):
     return x * math.cos(yaw) + z * math.sin(yaw), y, -x * math.sin(yaw) + z * math.cos(yaw)
 
 
-def validate_polygon(vertices, origin, yaw=0, pitch=0, roll=0, *, allow_crossings=False):
+def validate_polygon(vertices, origin, yaw=0, pitch=0, roll=0, *, allow_crossings=False,
+                     allow_proper_crossings=False):
     if not 3 <= len(vertices) <= 128:
         raise ValueError('native polygon requires 3 to 128 points')
     if pitch or roll:
@@ -82,7 +83,7 @@ def validate_polygon(vertices, origin, yaw=0, pitch=0, roll=0, *, allow_crossing
             if i == 0 and j == len(ring)-1:
                 continue
             c, d = edges[j]
-            if ((cross(a,b,c)*cross(a,b,d) < 0 and cross(c,d,a)*cross(c,d,b) < 0)
+            if ((not allow_proper_crossings and cross(a,b,c)*cross(a,b,d) < 0 and cross(c,d,a)*cross(c,d,b) < 0)
                     or on_edge(a,b,c) or on_edge(a,b,d) or on_edge(c,d,a) or on_edge(c,d,b)):
                 raise ValueError('crossing or touching polygon edges')
 
@@ -238,7 +239,8 @@ def render_cover(coords, vertices, yaw, cover, pitch=0, roll=0, *, name='', pres
 
 def convert_instance(lines, name, passive_only=False, allow_public_faction_color=False, split_fill=True,
                      extended_shapes=False, standalone=False, parent_origin=(0, 0, 0), parent_yaw=0,
-                     parent_scale=1, passive_cover=False, bare=False, nested=False, reviewed_map_drawing=False):
+                     parent_scale=1, passive_cover=False, bare=False, nested=False, reviewed_map_drawing=False,
+                     reviewed_crossing_ao=False):
     values, overlay, cover = {}, {}, {}
     navmesh = []
     placement = []
@@ -344,7 +346,7 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
             relative = rotate_point(relative, parent_yaw, 0, 0)
         world_origin = tuple(local + parent for local, parent in zip(relative, parent_origin))
         validate_polygon(vertices, world_origin, yaw + parent_yaw, pitch, roll,
-                         allow_crossings=allow_crossings)
+                         allow_crossings=allow_crossings, allow_proper_crossings=reviewed_crossing_ao)
     if (closed is False and not open_fill and not (standalone_ao and not visible_standalone)
             and (not (standalone or passive_overlay) or cover
                  or not 2 <= len(vertices) <= 128 or overlay.get('m_drawArea', '1') != '0')):
@@ -428,6 +430,8 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
         first_key = re.search(r'"[\w.-]+"', keys)[0]
         lines.extend(['   m_bFactionColor 1', '   m_sOutlineFactionKey ' + first_key])
     lines.extend(['  }', *navmesh, ' }',' m_eBehavior SOFT_KILL',' m_fGraceSeconds '+grace])
+    if reviewed_crossing_ao:
+        lines.append(' m_bAllowAuthoredCrossings 1')
     if keys:
         lines.extend([' m_aFactionKeys {','  '+keys,' }'])
     if vehicles:

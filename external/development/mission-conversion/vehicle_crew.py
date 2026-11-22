@@ -410,7 +410,7 @@ def split_crew_block(lines, field):
 
 
 def render_crew_config(config, key, resolve_character, *, shadowed_names=(), placed=False,
-                       allow_default_crew=False, placed_names=()):
+                       allow_default_crew=False, placed_names=(), missing_waypoints=()):
     groups, fields = split_crew_block(config, 'm_crewGroups')
     settings = properties(fields, {'m_noTurretDismount', 'm_useIdleGroups'})
     seated = settings.get('m_noTurretDismount', '0')
@@ -428,6 +428,9 @@ def render_crew_config(config, key, resolve_character, *, shadowed_names=(), pla
         options = properties(fields, {'m_waypointNames', 'm_waypointDelay', 'm_entityName'})
         authored_route = options.get('m_waypointNames')
         route = target_names(authored_route, skip_blank=True) if authored_route else []
+        missing = [point[1:-1] for point in route if point[1:-1] in missing_waypoints]
+        if missing:
+            route = [point for point in route if point[1:-1] not in missing_waypoints]
         if authored_route and not route and idle == '1':
             raise ValueError('blank crew route may change idle gunner grouping')
         name = options.get('m_entityName', '""')
@@ -472,6 +475,8 @@ def render_crew_config(config, key, resolve_character, *, shadowed_names=(), pla
                            *('           ' + point for point in route), '          }'])
         crew.append({'stations': characters, 'waypoints': [point[1:-1] for point in route],
                      'waypointDelaySeconds': delay if route else '0'})
+        if missing:
+            crew[-1]['missingWaypoints'] = missing
         if name != '""':
             crew[-1]['groupName'] = name[1:-1]
         if shadowed:

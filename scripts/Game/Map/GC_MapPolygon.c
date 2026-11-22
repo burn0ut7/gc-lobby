@@ -25,7 +25,7 @@ class GC_MapPolygon
 			&& point[2] >= Math.Min(a[2], b[2]) && point[2] <= Math.Max(a[2], b[2]);
 	}
 
-	static bool IsValid(array<vector> points)
+	static bool IsValid(array<vector> points, bool allowProperCrossings = false)
 	{
 		if (!points || points.Count() < 3 || points.Count() > 128)
 			return false;
@@ -55,13 +55,45 @@ class GC_MapPolygon
 				float abD = Cross(a, b, d);
 				float cdA = Cross(c, d, a);
 				float cdB = Cross(c, d, b);
-				if (((abC > 0 && abD < 0) || (abC < 0 && abD > 0))
-					&& ((cdA > 0 && cdB < 0) || (cdA < 0 && cdB > 0)))
+				if (!allowProperCrossings && OppositeSides(abC, abD) && OppositeSides(cdA, cdB))
 					return false;
 				if (OnSegment(a, b, c) || OnSegment(a, b, d) || OnSegment(c, d, a) || OnSegment(c, d, b))
 					return false;
 			}
 		}
 		return Math.AbsFloat(area) > 0.01;
+	}
+
+	protected static bool OppositeSides(float first, float second)
+	{
+		return (first > 0 && second < 0) || (first < 0 && second > 0);
+	}
+
+	//! Add sweep boundaries for the inverted map fill. The AO keeps its original points.
+	static bool SplitCrossingEdges(array<vector> points, array<vector> splitPoints)
+	{
+		int count = points.Count();
+		for (int edge = 0; edge < count; edge++)
+		{
+			vector a = points[edge];
+			vector b = points[(edge + 1) % count];
+			splitPoints.Insert(a);
+			array<float> fractions = {};
+			for (int other = 0; other < count; other++)
+			{
+				vector c = points[other];
+				vector d = points[(other + 1) % count];
+				float first = Cross(c, d, a);
+				float second = Cross(c, d, b);
+				if (OppositeSides(first, second) && OppositeSides(Cross(a, b, c), Cross(a, b, d)))
+					fractions.Insert(first / (first - second));
+			}
+			if (splitPoints.Count() + fractions.Count() > 128)
+				return false;
+			fractions.Sort();
+			foreach (float fraction : fractions)
+				splitPoints.Insert(a + (b - a) * fraction);
+		}
+		return true;
 	}
 }

@@ -12,7 +12,8 @@ from subprocess import CalledProcessError, check_output
 from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURRENT_PARENT,
                          LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, capture_status_texts, faction_keys)
 from boundaries import (ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE,
-                        convert_boundaries, group_members, passive_shape_component)
+                        convert_boundaries, convert_instance as convert_boundary_instance, group_members,
+                        passive_shape_component)
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import OBSOLETE_NAVMESH, REF, SOURCE_TEXT
 from event_actions import (FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, VEHICLE_SPAWN,
@@ -316,6 +317,14 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/Air Assault Onto Skalisty/AirAssaultOntoSkalisty.conf': (
+        '72af1b267a4138d2d5dd82595b69a6dc81c5a0d0',
+        (('worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/BLUFOR_Players/BLUFOR_Players.layer',
+          '1891597489728b5a2bc4f2dd101468445571d0ea'),
+         ('worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/OPFOR_Players/OPFOR_Players.layer',
+          'fc23379018f367731dde8cd1214c4b800c72f0e5')),
+        79, 60,
+    ),
     'Missions/HitTheMan/Battle For Zarichne/BattleForZarichne.conf': (
         'ea65ffeca620e32bfc7abdc15a9fa252f50b2ace',
         (('worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/NVA_Players/NVA_Players.layer',
@@ -751,7 +760,11 @@ REVIEWED_MISSING_ORDER_GROUPS = {
     ),
 }
 BREAK_THE_LINE_MISSING_WAYPOINTS = {f'def_wp_Mid_CAF_{i}' for i in (*range(8, 25), 28)}
+SKALISTY_NORTH_LAYER = ('worlds/HitTheMan/Air Assault Onto Skalisty/'
+                        'AirAssaultOnSkalisty_Layers/AI_Defenders/AI_Defenders_North.layer')
+SKALISTY_NORTH_BLOB = '3f995e58fda7c5b32500dad62ff5b7b6c599eacd'
 REVIEWED_MISSING_WAYPOINTS = {
+    SKALISTY_NORTH_LAYER: (SKALISTY_NORTH_BLOB, {'DefInside_WPNorth_US_10'}),
     'worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_Layers/BLUFOR/BLU_AI_Town_Defene_60xAI.layer':
         ('1eb75b271a2d5a51e0e2982674a6a5f0bfdb4f32', BREAK_THE_LINE_MISSING_WAYPOINTS),
     'worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/BLUFOR/BLU_AI_Town_Defene_60xAI.layer':
@@ -780,6 +793,7 @@ REVIEWED_MISSING_WAYPOINTS = {
 KHANDAR_AI_LAYER = 'worlds/James/KhandarClearance/KhandarClearance_Layers/ai.layer'
 KHANDAR_AI_BLOB = 'dc18ed6e0e49d9af717bd183b8781dab0bc3af89'
 REVIEWED_MISSING_SPAWN_WAYPOINTS = {
+    SKALISTY_NORTH_LAYER: (SKALISTY_NORTH_BLOB, {'RecaptureBadOrb': 1}),
     'worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/AI_Defenders/AI_Defenders_South.layer':
         ('93dda27768ebdc5519b0ee2ef9ef57304cb44b1e', {'Def_WPMain_US_10': 1}),
     KHANDAR_AI_LAYER: (KHANDAR_AI_BLOB, {'defnorth': 1, 'top': 4}),
@@ -2850,6 +2864,27 @@ REVIEWED_LOCKED_M113 = {
 }
 
 
+SKALISTY_FALLBACK_AO = 'worlds/HitTheMan/Air Assault Onto Skalisty/Prefab/AO_Limit_BLU_Main.et'
+
+
+def skalisty_fallback_ao(text):
+    if sha256(text.strip().encode()).hexdigest() != 'fd6e51bd43e320f3320b6f836e59a8b6d1e9d8daf124a729753f5ea250d22d1e':
+        raise ValueError('fallback AO changed since review')
+    legacy = text.splitlines()
+    rendered, vertices = convert_boundary_instance(legacy[2:-1], '', extended_shapes=True, reviewed_crossing_ao=True)
+    parts = [block for _, block in blocks(rendered)]
+    if vertices != 24 or len(parts) != 2 or not parts[1][0].startswith('GC_AOLimitEntity '):
+        raise ValueError('expected a fallback limit with a separate public map fill')
+    fill, limit = parts
+    fill_component = fill[2:block_end(fill, 1)]
+    if not fill_component or '   m_bInvertFill 1' not in fill_component:
+        raise ValueError('expected a public inverted fallback fill')
+    # Both map components read the same points and follow the same spawned entity lifetime.
+    limit[2:2] = fill_component
+    limit.insert(1, legacy[1])
+    return '\n'.join(limit) + '\n'
+
+
 def passive_asset(source, path):
     suffix = PurePosixPath(path).suffix.lower()
     if suffix == '.edds':
@@ -2877,6 +2912,8 @@ def passive_asset(source, path):
             return body
     if suffix == '.et':
         body = source.read(path)
+        if path == SKALISTY_FALLBACK_AO:
+            return skalisty_fallback_ao(body)
         if path in REVIEWED_SPAWNED_MARKERS:
             if sha256(body.strip().encode()).hexdigest() != REVIEWED_SPAWNED_MARKERS[path]:
                 raise ValueError('spawned marker needs review')
@@ -3689,6 +3726,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             if config is not None:
                 fields, crew_groups = render_crew_config(config, spawn_key, resolve_crew,
                                                          shadowed_names=shadowed_names,
+                                                         missing_waypoints=missing_waypoints,
                                                          allow_default_crew=(reserve_next_seat or
                                                                              (ref[1].upper(), ref[2]) in VERIFIED_DEFAULT_CREW))
                 if reserve_next_seat:
@@ -5692,11 +5730,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         anchor_source, anchor_blob, missing_anchors = REVIEWED_MISSING_SPAWN_ANCHORS.get(world, (None, None, ()))
         for spawn in prefab_spawns:
             anchor, name = spawn['spawnAnchor'], spawn['spawnName']
-            missing_route = spawn.get('missingGroupWaypoint')
-            if missing_route and (missing_route in named or missing_route in spawned_names
-                                  or missing_route in crew_names):
-                blockers.append({'rule': 'AI group spawn', 'file': world,
-                                 'detail': 'reviewed missing waypoint now resolves: ' + missing_route})
+            missing_routes = [route for group in spawn.get('crewGroups', ()) for route in group.get('missingWaypoints', ())]
+            if missing_route := spawn.get('missingGroupWaypoint'):
+                missing_routes.append(missing_route)
+            for target in missing_routes:
+                if target in named or target in spawned_names or target in crew_names:
+                    blockers.append({'rule': 'spawn waypoint', 'file': world,
+                                     'detail': 'reviewed missing waypoint now resolves: ' + target})
             if ((spawn.get('instructionId'), anchor) in missing_anchors
                     and source.files.get(anchor_source) == anchor_blob and not named.get(anchor) and not name
                     and anchor not in spawned_names and anchor not in crew_names
@@ -5871,6 +5911,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     elif script_flags:
         remaining.append('Compare depot measurement after either authored deadline, including ties, missing depots and one-shot delivery.')
     for target in sorted({spawn['missingGroupWaypoint'] for spawn in prefab_spawns if 'missingGroupWaypoint' in spawn}):
+        remaining.append(f'The original reinforcement waypoint {target} has no authored target.')
+    for target in sorted({route for spawn in prefab_spawns for group in spawn.get('crewGroups', ())
+                          for route in group.get('missingWaypoints', ())}):
         remaining.append(f'The original reinforcement waypoint {target} has no authored target.')
     for target in sorted(missing_spawn_anchors):
         remaining.append(f'The original spawn at {target} has no authored anchor and does not run.')
@@ -6083,6 +6126,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(instance.get('bridgeMetres') for layer in row.get('boundaryLayers', {}).values()
            for instance in layer.get('instances', {}).values()):
         remaining.append('Compare boundary containment and the map outline at the repaired crossing.')
+    if SKALISTY_FALLBACK_AO in draft:
+        remaining.append('Compare the fallback boundary transition, containment at all three crossings, and public shading.')
     if any(spawn['startupChoice'] for spawn in prefab_spawns):
         remaining.append('Compare pregame selection, spawn timing and faction-specific briefing and map updates.')
     if outcome.get('startupSamples'):

@@ -168,9 +168,17 @@ class GC_MapShapeComponent : ScriptComponent
 		// Reviewed decorative fills pass their exact point order to the canvas polygon command.
 		bool authoredCrossings = m_bAllowAuthoredCrossings && closed && m_bFillEnabled && !m_bInvertFill
 			&& !m_bAutoFrameMap && !m_AO && !m_aRuntimePoints && PolylineShapeEntity.Cast(m_Shape);
+		bool aoCrossings = m_AO && m_AO.AllowsAuthoredCrossings();
 		if (polygon.Count() < 2 || (authoredCrossings && polygon.Count() < 3)
-			|| ((closed || m_bFillEnabled) && !splineOutline && !authoredCrossings && !ValidPolygon(polygon)))
+			|| ((closed || m_bFillEnabled) && !splineOutline && !authoredCrossings && !aoCrossings && !ValidPolygon(polygon)))
 			return;
+		if (aoCrossings && m_bFillEnabled && m_bInvertFill)
+		{
+			array<vector> splitPoints = {};
+			if (!GC_MapPolygon.SplitCrossingEdges(polygon, splitPoints))
+				return;
+			polygon = splitPoints;
+		}
 		if (m_bAutoFrameMap && frameBounds)
 		{
 			if (frameBounds.IsEmpty())

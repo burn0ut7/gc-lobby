@@ -62,6 +62,8 @@ class GC_AOLimitEntity : PolylineShapeEntity
 	protected GC_EAOItemCondition m_eItemCondition;
 	[Attribute("", UIWidgets.Auto, "Item prefabs (including derived prefabs). Required when item condition is enabled.", params: "et", category: "Eligibility")]
 	protected ref array<ResourceName> m_aItemPrefabs;
+	[Attribute("0", UIWidgets.Hidden)]
+	protected bool m_bAllowAuthoredCrossings;
 	protected ref array<vector> m_aPolygon = {};
 	protected GC_AOLimitSystem m_System;
 	protected bool m_bValid;
@@ -291,6 +293,11 @@ class GC_AOLimitEntity : PolylineShapeEntity
 			points.Copy(m_aPolygon);
 	}
 
+	bool AllowsAuthoredCrossings()
+	{
+		return m_bAllowAuthoredCrossings;
+	}
+
 	//------------------------------------------------------------------------------------------------
 	//! Native player affiliation and current possession are queried on each evaluation.
 	bool AppliesTo(int playerId, IEntity character, IEntity vehicle)
@@ -365,7 +372,7 @@ class GC_AOLimitEntity : PolylineShapeEntity
 		GetPointsPositions(m_aPolygon);
 		for (int i; i < m_aPolygon.Count(); i++)
 			m_aPolygon[i] = CoordToParent(m_aPolygon[i]);
-		m_bValid = IsClosed() && ValidatePolygon(m_aPolygon) && ValidateSettings();
+		m_bValid = IsClosed() && GC_MapPolygon.IsValid(m_aPolygon, m_bAllowAuthoredCrossings) && ValidateSettings();
 		if (!m_bValid || !m_System || !m_System.Register(this))
 		{
 			m_bValid = false;
