@@ -10,6 +10,9 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 	[Attribute("", UIWidgets.Object, "Optional mission memory. Each flag remembers accepted calls. Set Repeatable and Conditions to control future calls; Call Flag notifies dependent events and flags.", category: "GC Lobby")]
 	protected ref array<ref GC_MissionFlag> m_aMissionFlags;
 
+	[Attribute("", UIWidgets.Object, "Optional ordered area observers that publish flag changes during staging and Match.", category: "GC Lobby")]
+	protected ref array<ref GC_AreaFlagObserver> m_aAreaFlagObservers;
+
 	[Attribute("", UIWidgets.Object, "Server-authoritative briefing definitions", category: "GC Lobby")]
 	protected ref array<ref GC_Briefing> m_aBriefings;
 
@@ -277,7 +280,7 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 		GC_CasualtySnapshot casualties;
 		if (m_MissionCasualties)
 			casualties = m_MissionCasualties.GetSnapshot();
-		m_MissionRuleEngine.Start(runtimeRules, m_aMissionFlags, GetLobbyPhase(), eventNames, casualties, GetGame().GetWorld(), this);
+		m_MissionRuleEngine.Start(runtimeRules, m_aMissionFlags, GetLobbyPhase(), eventNames, casualties, GetGame().GetWorld(), this, m_aAreaFlagObservers);
 		if (m_MissionRuleEngine.IsRunning())
 			GetGame().GetCallqueue().CallLater(TickMissionRules, 100, true);
 	}

@@ -269,6 +269,12 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/Screening The Orb/ScreeningTheOrb.conf': (
+        '518b91880a094abbdcbafdc5ea04246fdb386f8e',
+        (('worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/OPFOR/OPF_Players.layer',
+          '1dcf3a3855fe0d3c30702eea18cb2e8570f89b40'),),
+        79, 69,
+    ),
     'Missions/TemplateHeader.conf': (
         'dd0c95da8fe67c84206139b954d9a86006c19735',
         tuple((f'worlds/TemplateMission/TemplateMission_Layers/{faction}/Players.layer',
@@ -668,6 +674,10 @@ REVIEWED_MISSING_ORDER_GROUPS = {
     ),
 }
 REVIEWED_MISSING_WAYPOINTS = {
+    'worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/BLUFOR/BLU_AI_STINGERS_7AI.layer':
+        ('59c8e46c27403dddb8a7557eb800c04408f6f513', {f'def_wp_CAF_{i}' for i in range(50, 55)}),
+    'worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/BLUFOR/BLU_AI_TOWN_86AI.layer':
+        ('adc697a4bd5df559b857519ee476ca8cc519bb70', {'def_wp_CAF_1'}),
     'worlds/TheLocalPub/LamentinLosers/LamentinLosers_Layers/BLUFOR_AI.layer':
         ('a8a7e4e23395b5de1f902bbb64b65148300a933f', {'BLUWATK10_1'}),
     'worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Insurgents/Insurgent_AI.layer':
@@ -2345,9 +2355,14 @@ REVIEWED_BUILDING_AREAS = {
     '31f8d038b181f0a8a3021ad08cae9713dc7e5df1',
     '27ce0a37a17a119bc53ccf9257df2a09a76679bf',
 }
+SCREENING_AREA_LAYER = ('worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/'
+                        'BLUFOR/BLU_AI_EXTERIOR_CachedAI.layer')
+SCREENING_AREA_BLOB = '2fd93fe71c5cbe9fcde680e6ba61c3ada8d9fac2'
+SCREENING_AREA_FLAGS = {'SouthExterior1': 1, 'WestExterior2': 1, 'SouthExterior2': 2}
 REVIEWED_DORMANT_SPAWNER_FLAGS = {
     **dict.fromkeys(REVIEWED_BUILDING_AREAS, (('SpawnTwo', 2), ('US_Trigger_Right_3', 1))),
     '9dfaedf4beacd04c9260e63be23dc6194ce4d9be': (('Counter_Trigger_2', 2),),
+    SCREENING_AREA_BLOB: (('WestExterior1', 1), ('MiddleExterior_Trigger_1', 1)),
 }
 BREAK_THE_LINE_EFFECTS = {
     'A7E0C1FAD9FFAB46': 'HTM_EffectModule_Zoned_MortarBarrage_Creeping.et',
@@ -3826,6 +3841,17 @@ PRESENCE_MESSAGES = (
 )
 
 
+def render_area_flag_observer(world, area, flag, check, stop):
+    key = f'{world}/area observer/{area}'
+    timer = next(i for i, line in enumerate(check) if line.lstrip().startswith('m_Capture '))
+    check = [*check[:timer], check[-1]]
+    check[0] = check[0].replace('GC_AreaCondition ', 'm_Area GC_AreaCondition ', 1)
+    check = [re.sub(r'"\{([A-F0-9]{16})\}"', lambda match: f'"{{{guid(key + "/" + match[1])}}}"',
+                    line[1:]) for line in check]
+    return [f'    GC_AreaFlagObserver "{{{guid(key)}}}" {{', f'     m_sFlag {flag}',
+            *(['     m_bStopAfterMatchChange 1'] if stop else []), *check, '    }']
+
+
 def attached_trigger_map(fields, dev):
     parent, children = trigger_children(fields)
     output, amounts = [], Counter()
@@ -3945,9 +3971,12 @@ def area_rules(source, world, dev=None):
                         fields.append(' m_flagName ' + flag)
                     if not LEGACY_FLAG.fullmatch(flag) or len(flag.encode()) > 130:
                         raise ValueError('invalid area flag ' + flag)
-                    if flag in conditions or flag in flags:
+                    shared_writer = (flag[1:-1] in SCREENING_AREA_FLAGS and layer == SCREENING_AREA_LAYER
+                                     and source.files.get(layer) == SCREENING_AREA_BLOB)
+                    if not shared_writer and (flag in conditions or flag in flags):
                         raise ValueError('duplicate area flag ' + flag)
-                    flags.add(flag)
+                    if not shared_writer:
+                        flags.add(flag)
                     token = flag[1:-1]
                     if len(token.encode()) > 100 or not re.fullmatch(r'[\w.-]+', token):
                         token = guid(world + '/area/' + flag)
@@ -3970,6 +3999,16 @@ def area_rules(source, world, dev=None):
                         capture_details[flag[1:-1]] = {'area': area_name, **details}
                     elif trigger['kind'] == 'Faction' and trigger['guid'] == '8C576D46F6579229':
                         built, area, details = capture_instance(world, area_name, fields, polygon=bool(shape))
+                        if shared_writer:
+                            if (shape or attached or not name or details['seconds'] or details.get('skipDiscovery')
+                                    or 'm_Messages' in '\n'.join(built[flag])):
+                                raise ValueError('shared area writer must be an immediate silent radius')
+                            observer = render_area_flag_observer(world, area_name, flag, built[flag],
+                                                                 details['stopsAfterFirstChange'])
+                            capture_details[name] = {'area': area_name, **details, 'writesFlag': flag[1:-1],
+                                                     'areaFlagObserver': observer}
+                            areas.append(area)
+                            continue
                         capture_details[flag[1:-1]] = {'area': area_name, **details}
                         if status_only:
                             capture_details[flag[1:-1]]['statusOnly'] = True
@@ -4316,7 +4355,7 @@ def mode_children(lines, disable_photo=False, lock_editor=False):
 
 
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None,
-                *, dynamic_respawn_factions=()):
+                *, dynamic_respawn_factions=(), area_flag_observers=()):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, environment, freeze = '', '', 0
@@ -4530,7 +4569,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         match = reconnect.get('m_iReconnectTimeAfterBriefing', -1)
         reconnect_fields = (f'   m_iSlotReservationTimeoutSeconds {pregame}\n'
                             f'   m_iMatchSlotReservationTimeoutSeconds {match}\n')
-    if additional_rules or objective_flags or respawn_fields or reconnect_fields:
+    if additional_rules or objective_flags or respawn_fields or reconnect_fields or area_flag_observers:
         flags = ''
         if objective_flags:
             flag_lines = []
@@ -4545,9 +4584,11 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
                 flag_lines.append('    }')
             flags = '   m_aMissionFlags + {\n' + '\n'.join(flag_lines) + '\n   }\n'
         events = f'   m_aMissionEvents + {{\n{additional_rules}   }}\n' if additional_rules else ''
+        observers = ('   m_aAreaFlagObservers {\n' + '\n'.join(area_flag_observers) + '\n   }\n'
+                     if area_flag_observers else '')
         settings += f'''
   GC_LobbyManager "{{6A137A39106A4973}}" {{
-{flags}{events}{respawn_fields}{reconnect_fields}  }}
+{flags}{events}{observers}{respawn_fields}{reconnect_fields}  }}
 '''
     marker_fields = ' m_bBriefingLeaderMarkers 1\n' if briefing_leader_markers else ''
     return f'''GC_LobbyGameMode GC_MigratedMission : "{{{resource}}}{preset}" {{
@@ -4583,6 +4624,20 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'respawn', 'file': world, 'detail': str(exc)})
     outcome = row.get('outcomeCandidate', {})
     rules = outcome.get('events', {})
+    shared_writers = [record for area in row.get('captureCandidate', {}).values() for record in area.values()
+                      if isinstance(record, dict) and 'areaFlagObserver' in record]
+    shared_flags = {record['writesFlag'] for record in shared_writers}
+    if shared_writers:
+        closure = '\n'.join(source.read(path) for path in source.closure(world)
+                            if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+        readers = placed_spawner_flag_reads(source, source.layers[world.lower()])
+        writers = Counter(record['writesFlag'] for record in shared_writers)
+        scripts = script_text(source)
+        if (writers != SCREENING_AREA_FLAGS or any(api in scripts for api in SCRIPT_FLAG_APIS)
+                or any(not readers[flag] or flag in scripts or closure.count(f'"{flag}"') != count + readers[flag]
+                       for flag, count in writers.items())):
+            blockers.append({'rule': 'shared area flags', 'file': world,
+                             'detail': 'expected all reviewed writers and only placed spawner readers'})
     ticket_edits = [action for event in rules.values() for action in event.get('convertedActions', [])
                     if 'ticketFaction' in action]
     edited_factions = {action['ticketFaction'] for action in ticket_edits if action['ticketAmount']}
@@ -4647,7 +4702,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         captures, placed_areas, _ = area_rules(source, world, dev)
         area_placements = {**placed_areas, **area_placements}
         spawners, schedules, spawner_audit, attached = world_spawners(source, world, resolve_spawn, captures,
-                                                           set(objective_flags) | event_flags, used_flags, blockers,
+                                                           set(objective_flags) | event_flags | shared_flags, used_flags, blockers,
                                                            resolve_crew, resolve_crew_config, single_draw_flags,
                                                            outcome.get('derivedSpawnerConditions'), area_placements)
         for location, (checks, areas) in area_placements.items():
@@ -4928,7 +4983,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             layer, index = mode_index
             rendered = render_mode(world, mode, preset or '', rule_text, zones, ai_faction,
                                    set(objective_flags) | event_flags, damage_flags,
-                                   dynamic_respawn_factions=edited_factions)
+                                   dynamic_respawn_factions=edited_factions,
+                                   area_flag_observers=[line for record in shared_writers
+                                                        for line in record['areaFlagObserver']])
             if preset:
                 parts[layer][index] = rendered
         except ValueError as exc:

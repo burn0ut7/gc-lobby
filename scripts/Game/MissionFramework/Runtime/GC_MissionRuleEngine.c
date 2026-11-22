@@ -94,12 +94,13 @@ class GC_MissionRuleEngine
 	protected ref map<GC_RuleCondition, bool> m_mDamageAnswers = new map<GC_RuleCondition, bool>();
 	protected ref map<GC_RuleCondition, bool> m_mDamageAvailability = new map<GC_RuleCondition, bool>();
 	protected ref array<GC_RuleCondition> m_aDamageConditions = {};
+	protected ref array<ref GC_AreaFlagObservation> m_aAreaFlagObservations = {};
 	protected int m_iRuns;
 	protected int m_iInvalidRules;
 	protected bool m_bEventLimitReached;
 
 	//------------------------------------------------------------------------------------------------
-	void Start(array<ref GC_CompiledMissionRule> rules, array<ref GC_MissionFlag> flags = null, SCR_EGameModeState initialState = -1, array<string> authoredEventNames = null, GC_CasualtySnapshot casualties = null, BaseWorld damageWorld = null, GC_LobbyManager areaManager = null)
+	void Start(array<ref GC_CompiledMissionRule> rules, array<ref GC_MissionFlag> flags = null, SCR_EGameModeState initialState = -1, array<string> authoredEventNames = null, GC_CasualtySnapshot casualties = null, BaseWorld damageWorld = null, GC_LobbyManager areaManager = null, array<ref GC_AreaFlagObserver> areaFlagObservers = null)
 	{
 		Stop();
 		m_ActionManager = areaManager;
@@ -181,7 +182,7 @@ class GC_MissionRuleEngine
 		m_DamageWorld = damageWorld;
 		RegisterEntityDamageConditions();
 		RegisterInteractionConditions();
-		RegisterAreaConditions(damageWorld, areaManager);
+		RegisterAreaConditions(damageWorld, areaManager, areaFlagObservers);
 		RegisterScriptConditions();
 		RegisterAIGroupConditions();
 		m_bRunning = true;
@@ -374,6 +375,7 @@ class GC_MissionRuleEngine
 		m_mInteractions.Clear();
 		m_DamageWorld = null;
 		m_Areas = null;
+		m_aAreaFlagObservations.Clear();
 		m_aEvents.Clear();
 		m_aScheduledActions.Clear();
 		ResetPulses();
@@ -500,7 +502,7 @@ class GC_MissionRuleEngine
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected bool ApplyFlagValue(string name, bool answer)
+	protected bool ApplyFlagValue(string name, bool answer, bool silent = false)
 	{
 		if (!m_bRunning || name.IsEmpty())
 			return false;
@@ -512,6 +514,8 @@ class GC_MissionRuleEngine
 		else
 			m_mFlagCounts.Set(name, 0);
 		m_mFlags.Set(name, GetFlagCallCount(name) > 0);
+		if (silent)
+			return true;
 		GC_ERuleEvent kind = GC_ERuleEvent.FLAG_OFF;
 		if (answer)
 			kind = GC_ERuleEvent.FLAG_ON;
@@ -598,6 +602,13 @@ class GC_MissionRuleEngine
 			AdvanceScheduledActions();
 		if (!m_bRunning || m_bWaitingForRespawnWave)
 			return;
+		// Shared area flags publish one complete transition before the next writer.
+		if (!m_aAreaFlagObservations.IsEmpty() && m_eGameModeState != SCR_EGameModeState.POSTGAME && m_fNow >= m_fNextAreaCheck)
+		{
+			SampleAreas();
+			if (!m_bRunning || m_bWaitingForRespawnWave)
+				return;
+		}
 		// Queue events until this pass completes, preventing reentrant timer execution.
 		m_bDispatching = true;
 		AdvanceRandomConditions();
@@ -766,7 +777,7 @@ class GC_MissionRuleEngine
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected void RegisterAreaConditions(BaseWorld world, GC_LobbyManager manager)
+	protected void RegisterAreaConditions(BaseWorld world, GC_LobbyManager manager, array<ref GC_AreaFlagObserver> observers)
 	{
 		array<GC_RuleCondition> conditions = {};
 		foreach (GC_MissionRuleState state : m_aStates)
@@ -779,7 +790,7 @@ class GC_MissionRuleEngine
 			if (memory.m_Condition)
 				memory.m_Condition.CollectAreaConditions(conditions);
 		}
-		if (conditions.IsEmpty())
+		if (conditions.IsEmpty() && (!observers || observers.IsEmpty()))
 			return;
 		m_Areas = new GC_MissionAreaTracker(world, manager);
 		bool overflow;
@@ -790,7 +801,56 @@ class GC_MissionRuleEngine
 		}
 		if (overflow)
 			Print("GC | Mission Framework | More than 256 unique target-selection/area combinations. Extra area conditions cannot pass.", LogLevel.ERROR);
+		if (observers)
+			RegisterAreaFlagObservers(observers);
 		SampleAreas(true);
+	}
+
+	protected void RegisterAreaFlagObservers(array<ref GC_AreaFlagObserver> observers)
+	{
+		if (observers.Count() > 256)
+		{
+			Print("GC | Mission Framework | More than 256 area flag observers; observers unavailable.", LogLevel.ERROR);
+			return;
+		}
+		foreach (GC_AreaFlagObserver observer : observers)
+		{
+			GC_RuleCondition check;
+			if (observer && observer.m_Area && !observer.m_Area.m_Capture)
+				check = observer.m_Area.BuildCheck();
+			if (!check || observer.m_sFlag.IsEmpty() || m_mFlagDefinitions.Contains(observer.m_sFlag) || !m_Areas.Register(check))
+			{
+				Print("GC | Mission Framework | Invalid area flag observer skipped.", LogLevel.ERROR);
+				continue;
+			}
+			GC_AreaFlagObservation state = new GC_AreaFlagObservation();
+			state.m_sFlag = observer.m_sFlag;
+			state.m_Check = check;
+			state.m_bStopAfterMatchChange = observer.m_bStopAfterMatchChange;
+			m_aAreaFlagObservations.Insert(state);
+		}
+	}
+
+	protected void PublishAreaFlags()
+	{
+		if (m_aAreaFlagObservations.IsEmpty() || m_bDispatching || !m_bRunning || m_bWaitingForRespawnWave
+			|| !GC_LobbyPhase.IsValid(m_eGameModeState) || m_eGameModeState == SCR_EGameModeState.POSTGAME)
+			return;
+		foreach (GC_AreaFlagObservation observer : m_aAreaFlagObservations)
+		{
+			if (observer.m_bStopped || !m_Areas.IsAvailable(observer.m_Check))
+				continue;
+			bool answer = m_Areas.PassesCondition(observer.m_Check);
+			bool first = !observer.m_bDiscovered;
+			if (!first && answer == observer.m_bLastAnswer)
+				continue;
+			observer.m_bDiscovered = true;
+			observer.m_bLastAnswer = answer;
+			observer.m_bStopped = !first && observer.m_bStopAfterMatchChange && m_eGameModeState == SCR_EGameModeState.GAME;
+			ApplyFlagValue(observer.m_sFlag, answer, first);
+			if (!m_bRunning || m_bWaitingForRespawnWave || m_eGameModeState == SCR_EGameModeState.POSTGAME)
+				return;
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -811,6 +871,7 @@ class GC_MissionRuleEngine
 		}
 		if (m_eGameModeState == SCR_EGameModeState.GAME && !notification.m_aAreaChecks.IsEmpty())
 			m_aEvents.Insert(notification);
+		PublishAreaFlags();
 	}
 
 	//------------------------------------------------------------------------------------------------
