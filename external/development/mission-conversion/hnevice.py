@@ -4,6 +4,7 @@ from briefings import block_end, guid
 from events import peak_notifications
 from launchers import launcher
 from markers import LEGACY, instance
+from terrain_parents import BYSTRANY_MAP_ENTITY, BYSTRANY_NATIVE_PARENT
 
 WORLD = 'worlds/Corax/Hnevice/Hnevice.ent'
 HEADER = 'Missions/Corax/Hnevice/Hnevice.conf'
@@ -99,7 +100,7 @@ def assemble(source, dev, row, generated):
     weather = '\n'.join(lines[weather_start:weather_end + 1]).replace('5EE3229927D4D2F5', '6B71E9A8B1A8C501')
     ai_world = '\n'.join(lines[:next(i for i, line in enumerate(lines) if line.startswith('PerceptionManager '))])
     # Core Dev has no GC_Bystrany wrapper. Its legacy layer added only the terrain map.
-    files[WORLD] = 'SubScene {\n Parent "{7A888BF1C248E2E6}Worlds/Bystrany/Bystrany.ent"\n}\n'
+    files[WORLD] = f'SubScene {{\n Parent "{BYSTRANY_NATIVE_PARENT}"\n}}\n'
     files[FOLDER + 'icons.layer'] = mission_icons(source)
     files[FOLDER + 'map_mask.layer'] = shape + '\n'
     ao['instances'][str(start + 1)] = {
@@ -107,13 +108,8 @@ def assemble(source, dev, row, generated):
         'lastLine': block_end(lines, start) + 1, 'candidateLayer': FOLDER + 'map_mask.layer',
     }
     # The native marker manager reads the map singleton during mode initialization.
-    map_entity = '''SCR_MapEntity MapEntity1 : "{731564B66F91B107}Prefabs/World/Game/MapEntity.et" {
- "Map Geometry Data" "{0C931F860C09AC4C}Worlds/Bystrany/Bystrany.topo"
- "Satellite background image" "{10EB7E9261F936BC}UI/Textures/Map/Worlds/Bystrany/Bystrany_Rasterized_Enhanced.edds"
-}
-'''
     files[FOLDER + 'default.layer'] = (
-        ai_world + '\n' + map_entity
+        ai_world + '\n' + BYSTRANY_MAP_ENTITY
         + f'GC_LobbyGameMode GC_HneviceMode : "{{{guid(WORLD + "/resource")}}}{settings}" {{\n'
         + ' components {\n' + weather + '\n'
         + f'  GC_LobbyFreezeComponent "{{E81E75BC287148D0}}" {{\n   m_iAuthoredCountdownSeconds {freeze_ms // 1000}\n  }}\n'

@@ -1,6 +1,13 @@
 """Verify archived terrain parents that the engine loads by path."""
 from hashlib import file_digest
 
+BYSTRANY_LEGACY_PARENT = '{E9D1005D38015A3C}worlds/Bystrany/GC_Bystrany.ent'
+BYSTRANY_NATIVE_PARENT = '{7A888BF1C248E2E6}Worlds/Bystrany/Bystrany.ent'
+BYSTRANY_MAP_ENTITY = '''SCR_MapEntity MapEntity1 : "{731564B66F91B107}Prefabs/World/Game/MapEntity.et" {
+ "Map Geometry Data" "{0C931F860C09AC4C}Worlds/Bystrany/Bystrany.topo"
+ "Satellite background image" "{10EB7E9261F936BC}UI/Textures/Map/Worlds/Bystrany/Bystrany_Rasterized_Enhanced.edds"
+}
+'''
 
 LONGMOOR_PARENT = ('E90C30D273FF302E', 'Worlds/LongmoorTrainingArea/LongmoorTrainingArea.ent')
 LONGMOOR_PROVIDER = 'Longmoor_61BD1072371B5470'

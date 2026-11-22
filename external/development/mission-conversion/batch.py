@@ -41,6 +41,7 @@ from outcomes import (DEPOT_SUPPLY_REVISIONS, FOOD_MARKET_OUTCOME_LAYER, FRAMEWO
                       leaves, render as render_outcome, render_capture_trackers)
 import polygon_capture
 from respawns import authored_respawn_fields, read_respawns
+from terrain_parents import BYSTRANY_LEGACY_PARENT, BYSTRANY_MAP_ENTITY, BYSTRANY_NATIVE_PARENT
 import teleports
 from scenery import FIELD, NUMBER as COORDINATE, StockPrefabs, WAYPOINT_CLASS
 from weather import convert_weather
@@ -6123,6 +6124,14 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     migrated_longmoor = body.strip() == f'SubScene {{\n Parent "{LONGMOOR_LEGACY_PARENT}"\n}}'
     if migrated_longmoor:
         body = body.replace(LONGMOOR_LEGACY_PARENT, LONGMOOR_CURRENT_PARENT)
+    if route_graph and body.strip() == f'SubScene {{\n Parent "{BYSTRANY_LEGACY_PARENT}"\n}}':
+        if not mode_index or any('SCR_MapEntity' in source.read(layer) for layer in source.layers[world.lower()]):
+            blockers.append({'rule': 'terrain and subscene', 'file': world,
+                             'detail': 'Bystrany wrapper replacement requires a unique terrain map'})
+        else:
+            body = body.replace(BYSTRANY_LEGACY_PARENT, BYSTRANY_NATIVE_PARENT)
+            main_layer = mode_index[0]
+            draft[main_layer] = BYSTRANY_MAP_ENTITY + draft[main_layer]
     draft[world] = body
     for header in row['headers']:
         try:
