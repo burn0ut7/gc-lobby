@@ -969,6 +969,7 @@ def startup_samples(source, world, owner, body, scripts, spawner_reads, definiti
         for definition in definitions.values():
             reads.update(literal_flag_reads(definition))
         labels = defaultdict(int)
+        spawn_anchors = Counter()
         for start, line in enumerate(body):
             if not EVENT.fullmatch(line):
                 continue
@@ -978,6 +979,12 @@ def startup_samples(source, world, owner, body, scripts, spawner_reads, definiti
                 label = re.fullmatch(r'   m_name (' + KEY + ')', field)
                 if label:
                     labels[label[1]] += 1
+                if SPAWN.fullmatch(field):
+                    close = block_end(fields, position)
+                    for instruction_field in fields[position + 1:close]:
+                        anchor = re.fullmatch(r'     m_locationName (' + FLAG_NAME + ')', instruction_field)
+                        if anchor:
+                            spawn_anchors[anchor[1]] += 1
                 if (term := TERM.fullmatch(field)) and term[1] == 'Literal':
                     close = block_end(fields, position)
                     values = properties(fields[position + 1:close], {'m_flagName', 'm_invertTerm'})
@@ -994,8 +1001,9 @@ def startup_samples(source, world, owner, body, scripts, spawner_reads, definiti
                         if path != owner and PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
     for flag in sampled:
         spawner_count = spawner_reads.get(flag[1:-1], 0)
+        expected = 1 + reads[flag] + labels[flag] + spawner_count + spawn_anchors[flag] + 2 * (flag in identity_flags)
         if (not (reads[flag] or spawner_count) or flag[1:-1] in scripts
-                or authored.count(flag) + outside.count(flag) != 1 + reads[flag] + labels[flag] + spawner_count):
+                or authored.count(flag) + outside.count(flag) != expected):
             return []
     if pregame and startup_flags(source, world, owner, body, scripts, identity_flags):
         return []

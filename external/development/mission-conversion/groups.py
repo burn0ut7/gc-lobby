@@ -96,6 +96,7 @@ UK_1983_AI_ROLES = {
     'FFB42452E9AD5FFC': 'SectionCommander', 'A6D0DBFAC6349E22': 'Rifleman',
     'F5B9FF92DBFB520C': 'Rifleman_LAT', '2C69231254D1AEDB': 'Section2IC',
     'D005E20AE7CB8431': 'GPMG_No1', '327FBCA6B02BC5A8': 'AMG', 'B3BBFBAC7CBF582E': 'L4LMG_No1',
+    '8C380664085E4A89': 'MAW_No1', 'E06C3284B49AC5A7': 'Maw_No2', 'E41871B093958DD1': 'Sapper',
 }
 UK_FORCED_ROLES = {
     '59DC74EF0ECF7E49': ('Medic', 'Medic'),
@@ -1094,7 +1095,7 @@ def convert_registered_group(lines, guid, source_units, dev_units, stock, locall
 def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset(),
                 reviewed_members=None, external_ai=None, allow_stock_ai=False, restored_members=None,
                 reviewed_ai_members=None, forced_external=None, *, rhs=None, uk=None, depth=0, local_aliases=None,
-                restored_rosters=None):
+                restored_rosters=None, workshop_groups=None):
     if not re.search(r'^(?:\$grp )?SCR_AIGroup\b', text, re.M):
         return None
 
@@ -1119,7 +1120,8 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
         children = group_layer(nested, source_units, dev_units, stock, locally_owned, reviewed_callsigns,
                                reviewed_members, external_ai, allow_stock_ai, restored_members,
                                reviewed_ai_members, forced_external, rhs=rhs, uk=uk, depth=depth + 1,
-                               local_aliases=local_aliases, restored_rosters=restored_rosters)
+                               local_aliases=local_aliases, restored_rosters=restored_rosters,
+                               workshop_groups=workshop_groups)
         if children is None:
             raise ValueError('unsupported child entity on a group')
         body, members = convert(fields[:start])
@@ -1143,9 +1145,9 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
             raise ValueError('mission-owned group ' + guid)
         spec = WRAPPERS['groups'].get(guid) if guid not in source_units.resources and stock else None
         native_group = allow_stock_ai and (guid in STOCK_AI_GROUPS or guid in RHS_AI_GROUPS or guid == UK_FIRETEAM)
-        stock_group = None
-        if native_group and guid not in source_units.resources and guid not in dev_units.resources:
-            path = REF.search(lines[i])[2]
+        path = REF.search(lines[i])[2]
+        stock_group = (workshop_groups or {}).get((guid, path)) if allow_stock_ai else None
+        if not stock_group and native_group and guid not in source_units.resources and guid not in dev_units.resources:
             stock_group = (verified_uk_fireteam(path, stock, uk, locally_owned, source_units, dev_units)
                            if guid == UK_FIRETEAM else
                            verified_stock_ai_group(guid, path, stock, locally_owned, source_units, dev_units,

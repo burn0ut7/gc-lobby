@@ -21,7 +21,9 @@ from vehicle_crew import (CREW_CONFIG_FIELD, FLORA_CREW_CONFIG, VERIFIED_DEFAULT
                           split_crew_block, verified_core_btr70_transfer)
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
-from groups import (CALL, COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, INDEX, SLOTS, compare_ai_parents, inheritance,
+from groups import (CALL, COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, INDEX, SLOTS,
+                    UK_1983_AI_ROLES, UK_GROUP_DIRECTORY, UK_PROVIDER,
+                    compare_ai_parents, inheritance,
                     legacy_member, reviewed_ai_member_ancestry, reviewed_native_ancestry,
                     unchanged_explicit_playability, verified_stock_ai_group)
 from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_prefab
@@ -256,6 +258,14 @@ WORKSHOP_SPAWN_GROUPS = {
         '601bb470309242c82429bf6956a9eaf8e6b62d84f10c946d36cbbfbe29da6710',
         (('8A265F54C454DD93', 'Prefabs/Groups/OPFOR/Group_USSR_ManeuverGroup_Late.et'),),
     ),
+}
+BRITISH_1983_GROUPS = {
+    '4679AD5C647BBE6A': ('InfantrySection', (
+        'FFB42452E9AD5FFC', '8C380664085E4A89', 'E06C3284B49AC5A7', 'F5B9FF92DBFB520C',
+        'F5B9FF92DBFB520C', '2C69231254D1AEDB', 'D005E20AE7CB8431', '327FBCA6B02BC5A8',
+    )),
+    '7EA45A04944D66B8': ('Team_AT', ('8C380664085E4A89', 'E06C3284B49AC5A7')),
+    'A54348BD64AE32BB': ('GunGroup', ('2C69231254D1AEDB', 'D005E20AE7CB8431', '327FBCA6B02BC5A8')),
 }
 METSALA_VEHICLE_LAYER = 'worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/ru.layer'
 METSALA_VEHICLE_BLOB = 'd2b64a9a0d8d2081238c2aff1ee520b4b42a6b61'
@@ -953,6 +963,9 @@ ZARICHNE_NAVMESH_ALIASES = {
 }
 
 WORKSHOP_RESOURCE_ALIASES = {
+    ('71E416DCB2BE86D7', 'Prefabs/Vehicles/Tracked/BFV/M2A2_BUSK_Desert.et'): (
+        'WCS_M2A2_63120AE07E6C0966', '71E416DCB2BE86D7',
+        'Prefabs/Vehicles/Tracked/M2A2/M2A2_BUSK_Desert.et'),
     ('051A6522307D9476', 'Prefabs/Compositions/Misc/FreeRoamBuilding/ACE_TrenchHalf_01_long.et'): (
         'ACETrenchesDev_65AD7CE59E8DB349', '051A6522307D9476',
         'Prefabs/Compositions/Misc/FreeRoamBuilding/ACE_TrenchSegment_01_short.et'),
@@ -1271,6 +1284,9 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    # Keep the repair station, three default occupants, and Gulf War appearance.
+    'worlds/Perfk/Prefabs/Vehicles/Wheeled/M923A1/M923A1_repair_GulfWar_unlimited_supply.et':
+        '5f43afde1cd048677e478cef8982457ffb77f47313d296c24383793714f42b80',
     'worlds/Corax/IntercectingForces/EffectModule_Zoned_MortarBarrage_Larger.et':
         '1c43b6578d12fd59e1d7c04ea36ef87054d9ad0604b97938e65e0abd4ad37f44',
     'worlds/James/KhandarClearance/EffectModule_Zoned_BM21Barrage.et':
@@ -3421,6 +3437,43 @@ def workshop_resources(workshop, packages):
     return approved
 
 
+def verified_british_ai_groups(workshop, stock, locally_owned, source_units, dev_units):
+    """Verify the archive containing the reviewed 1983 AI groups and their original rosters."""
+    base = ('000CD338713F2B5A', 'Prefabs/AI/Groups/Group_Base.et')
+    occupied = locally_owned | source_units.resources.keys() | dev_units.resources.keys()
+    if not workshop or not stock or base[0] in occupied or not stock.contains(*base):
+        return {}
+
+    group_prefix = UK_GROUP_DIRECTORY + '1983/Group_UK_1983_Regulars_'
+    role_prefix = 'Prefabs/Characters/Factions/BLUFOR/UK_Army/1983/Regulars/Character_UK_1983_Regulars_'
+    members = {member for _, roster in BRITISH_1983_GROUPS.values() for member in roster}
+    roles = {resource: role_prefix + UK_1983_AI_ROLES[resource] + '.et' for resource in members}
+    specs = {}
+    for resource, (name, roster) in BRITISH_1983_GROUPS.items():
+        path = group_prefix + name + '.et'
+        specs[resource, path] = {'path': path, 'slots': [(member, roles[member]) for member in roster]}
+    loadout = '4A29AE1848437792'
+    package_loadout = role_prefix + 'BaseLoadout.et'
+    units_loadout = package_loadout.replace('/Regulars/', '/Light Infantry/')
+    if (loadout in locally_owned or source_units.resources.get(loadout) != [units_loadout]
+            or dev_units.resources.get(loadout) != [units_loadout]
+            or any(snapshot.files.get(units_loadout) != '77a0b17f00bfd014678b658b6d20852d5ac3d4f4'
+                   or snapshot.files.get(units_loadout + '.meta') != '17524f6e0b2d8358bacdd69a1172d82c9956ef1b'
+                   for snapshot in (source_units, dev_units))):
+        return {}
+    required = set(specs) | set(roles.items()) | {
+        ('B08CB5CAE067C4CB', group_prefix + 'Base.et'),
+        ('FA77FB102E05692C', UK_GROUP_DIRECTORY + 'Group_UK_Base.et'),
+    }
+    if any(resource in occupied for resource, _ in required):
+        return {}
+    required.add((loadout, package_loadout))
+    approved = workshop_resources(workshop, {
+        UK_PROVIDER: ('fb3135513cb2abc077d891353cb83420c765a77186ecd751615fb683a7851350', required),
+    })
+    return specs if approved == required else {}
+
+
 BMP_DAMPER_AUDIO = ('F7D2EDE33E61A12A', 'Sounds/Vehicles/Wheeled/BTR70/Vehicles_BTR70_Dampers.acp')
 
 
@@ -3794,6 +3847,25 @@ def spawn_capture_latches(source, world, layers, captures, used_flags):
             if name not in references and name not in scripts:
                 latches[flag] = name
     return latches
+
+
+def stock_library_aliases(source, stock, occupied):
+    """Resolve the stock PrefabLibrary folder move while retaining each GUID."""
+    prefix = 'PrefabLibrary/'
+    current_prefix = prefix + 'DefaultLibrary/'
+    candidates = set()
+    for blob in source.blobs.values():
+        if b'}PrefabLibrary/' in blob:
+            candidates.update((resource.upper(), path) for resource, path in REF.findall(blob.decode('utf-8-sig'))
+                              if path.startswith(prefix) and not path.startswith(current_prefix))
+    aliases = {}
+    for resource, path in sorted(candidates):
+        if resource in occupied:
+            continue
+        canonical = current_prefix + path.removeprefix(prefix)
+        if stock.registered_paths(resource) == [canonical] and stock.registered_ids(canonical) == [resource]:
+            aliases[resource, path] = (resource, canonical)
+    return aliases
 
 
 def resource_aliases(workshop, units, stock):

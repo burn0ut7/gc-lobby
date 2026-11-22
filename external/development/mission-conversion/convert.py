@@ -151,6 +151,7 @@ def main():
     uk_database = None
     workshop_spawn_resources = ()
     workshop_spawn_groups = ()
+    british_groups = {}
     workshop_damage_resources = ()
     external_vehicle_parents = {}
     if args.batch and args.workshop_addons:
@@ -221,6 +222,10 @@ def main():
                         rhs_database, locally_owned, source_units, dev_units) | verified_msv85_forced_roles(
                             source_units, dev_units, locally_owned)
                 asset_aliases = batch.resource_aliases(args.workshop_addons, dev_units, stock)
+                if stock:
+                    asset_aliases.update(batch.stock_library_aliases(source, stock, occupied))
+                    british_groups = batch.verified_british_ai_groups(args.workshop_addons, stock, locally_owned,
+                                                                    source_units, dev_units)
                 asset_aliases.update(batch.reviewed_units_asset_paths(source_units, dev_units))
                 if args.workshop_addons:
                     unavailable = batch.unavailable_optional_resources(
@@ -239,7 +244,9 @@ def main():
                 if path in (f'Prefabs/Groups/{name}', f'worlds/Perfk/Prefabs/Groups/{name}'):
                     path = f'worlds/Perfk/Prefabs/Groups/{name}'
             owners = (locally_owned, source_units.resources, dev_units.resources)
-            if (resource, path) in workshop_spawn_groups and not any(resource in owner for owner in owners):
+            identity = (resource, path)
+            if ((identity in british_groups or identity in workshop_spawn_groups)
+                    and not any(resource in owner for owner in owners)):
                 return path
             if verified_stock_ai_group(resource, path, stock, locally_owned, source_units, dev_units, rhs_database):
                 return path
@@ -1009,7 +1016,7 @@ def main():
                                reviewed_ai_members={**native_ai_members, **(reviewed_ai_members or {})},
                                forced_external=forced_external,
                                rhs=rhs_database, uk=uk_database, local_aliases=local_groups,
-                               restored_rosters=restored_rosters)
+                               restored_rosters=restored_rosters, workshop_groups=british_groups)
 
         def resolve_crew_config(resource, path):
             return vehicle_crew.verified_crew_config(source_units, resource, path, locally_owned)
