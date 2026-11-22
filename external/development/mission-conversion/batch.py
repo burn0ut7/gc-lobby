@@ -43,7 +43,7 @@ from outcomes import (ASSAD_FRAMEWORK_BLOB, ASSAD_FRAMEWORK_LAYER, CONCRETE_COUN
                       SEEDER_REPLACEMENT_LAYER, SEEDER_REPLACEMENT_LAYER_BLOB,
                       SUPPLY_OUTCOME_BLOB, SUPPLY_OUTCOME_LAYER,
                       TRIFECTA_FRAMEWORK, TRIFECTA_MARKER, TRIFECTA_ROOT, TRIFECTA_STM,
-                      leaves, render as render_outcome, render_capture_trackers)
+                      leaves, render as render_outcome, render_capture_trackers, render_controlled_event)
 import polygon_capture
 from respawns import authored_respawn_fields, read_respawns
 from terrain_parents import BYSTRANY_LEGACY_PARENT, BYSTRANY_MAP_ENTITY, BYSTRANY_NATIVE_PARENT
@@ -4562,7 +4562,7 @@ def reviewed_spawn_type(source, resource, path, types):
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
                  resolve_crew_config=None, shadowed_names=(), missing_waypoints=(), self_waypoints=(),
                  capture_latches=None, single_draw_flags=(), derived_conditions=None, dormant_flags=(), allow_bare=False,
-                 local_files_markers=False, grouped_actions=None):
+                 local_files_markers=False, grouped_actions=None, shared_schedule=None):
     root = placed_spawner_root(block[0], allow_bare)
     if not root:
         raise ValueError('unverified placed spawner prefab')
@@ -4725,6 +4725,11 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                 target[seconds].extend(deliveries)
                 if marker_actions:
                     target[seconds].extend(marker_actions[seconds])
+        elif shared_schedule is not None:
+            if (flag != '"TownSpawnActive"' or not group or pregame != '0' or config is not None
+                    or spawned_name != '""' or len(timings) != 1 or Decimal(timings[0]) <= 0):
+                raise ValueError('shared town schedule requires one delayed Match AI group spawn per placement')
+            shared_schedule.append((term, actions))
         else:
             label = 'GC_MigratedSpawn_' + guid(key)
             rendered = render_outcome(key, label, term, actions, captures, {flag}, capture_latches or {})
@@ -4798,6 +4803,8 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
     shadowed = shadowed_crew_names(source, world, layers) if any('m_entityName ' in text for text in layers.values()) else ()
     for layer, text in layers.items():
         try:
+            town_schedule = [] if (layer == NAGALAM_TOWN_SPAWN_LAYER
+                                   and source.files[layer] == NAGALAM_TOWN_SPAWN_BLOB) else None
             dormant = dormant_spawner_flags(source, world, layer)
             blob, reviewed = REVIEWED_MISSING_SPAWN_WAYPOINTS.get(layer, (None, {}))
             missing_waypoints = set()
@@ -4817,6 +4824,7 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                     name = PLACED_SPAWNER.fullmatch(block[0])['name']
                     location += '/' + (name or guid('\n'.join(block)))
                 try:
+                    shared_schedule = [] if town_schedule is not None else None
                     self_waypoints = set()
                     if source.files[layer] == 'b5b00eae008bf41c803dd4469a54a34b93199767':
                         self_waypoints = {f'AI_Spawn_Sector2_{i}' for i in range(1, 15)}
@@ -4827,7 +4835,8 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                         capture_latches=capture_latches, single_draw_flags=single_draw_flags,
                         derived_conditions=derived_conditions, dormant_flags=dormant,
                         local_files_markers=source.files[layer] == LOCAL_FILES_SPAWNER_LAYERS.get(layer),
-                        allow_bare=(layer, source.files[layer]) in REVIEWED_BARE_SPAWNER_LAYERS)
+                        allow_bare=(layer, source.files[layer]) in REVIEWED_BARE_SPAWNER_LAYERS,
+                        shared_schedule=shared_schedule)
                 except ValueError as exc:
                     blockers.append({'rule': 'TILW_PrefabSpawnerEntity', 'file': layer, 'line': line,
                                      'detail': str(exc)})
@@ -4838,8 +4847,23 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                     attached[(layer, line)].append((block, native.splitlines()))
                 else:
                     placements[(layer, line)] = native
+                if town_schedule is not None:
+                    town_schedule.extend(shared_schedule)
                 schedules.append(scheduled)
                 audit.extend({'file': layer, 'line': line, 'startupChoice': None, **entry} for entry in info)
+            if town_schedule is not None:
+                if len(town_schedule) != 127 or any(term != town_schedule[0][0] for term, _ in town_schedule):
+                    raise ValueError('town schedule needs all 127 original spawns under the same condition')
+                # A successful flag check commits every place's independent timer. Keep
+                # source registration order for actions with the same due time.
+                actions = defaultdict(list)
+                for _, deliveries in town_schedule:
+                    for delay, body in deliveries.items():
+                        actions[delay].extend(body)
+                rendered = render_controlled_event(layer, 'GC_TownSpawnActive', town_schedule[0][0], actions,
+                                                   captures, set(), capture_latches,
+                                                   'TownSpawnActive')
+                schedules.append('\n'.join(rendered) + '\n')
         except ValueError as exc:
             blockers.append({'rule': 'placed spawner layer', 'file': layer, 'detail': str(exc)})
     used_captures = {entry['flag'] for entry in audit if entry['trigger'] == 'area capture'}
