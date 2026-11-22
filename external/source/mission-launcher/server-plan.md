@@ -8,7 +8,10 @@ experimental contract.
 
 The resolver includes the configured Core policy, mission owner, metadata addon
 GUIDs, deployment supplemental requirements and their native `.gproj` dependency
-closure. It rejects absent/ambiguous addons, authoring collections, mismatched
+closure. It also reads exact `GUID=version` requirements from the hash-verified
+native header's `m_aRequiredAddonVersions` field. Each pin adds the addon to
+the closure and must match the selected project's Workshop version. It rejects
+absent/ambiguous addons, authoring collections, mismatched
 catalogue revisions, changed request metadata, changed headers and scenario
 identity mismatches. Every included addon records its reasons.
 
@@ -49,8 +52,10 @@ selected addon and emits those exact versions in `game.mods`. `.gproj`, not
 ServerData, remains dependency authority. `local` mode emits an empty
 `game.mods` and records exact project paths/identities/hashes in `mods`.
 `server_worker.py` mounts only these projects through a fresh junction directory
-and revalidates their project hashes before launch. A local plan is not a
-Workshop download test. Both modes retain the requested scenario.
+and revalidates their project hashes and mission version pins before launch.
+Workshop jobs with mission pins download into a job-specific directory and
+verify the installed versions before acknowledging startup. Both modes retain
+the requested scenario.
 
 This module creates a plan only. The [worker](server-worker.md) consumes the
 queue, starts the server and verifies its acknowledgement. Do not report a queue

@@ -17,7 +17,7 @@ import urllib.request
 import uuid
 
 from mission_launch import VANILLA, digest, guid, reference
-from server_plan import make_plan, projects
+from server_plan import make_plan, project_version, projects
 
 
 def read(path):
@@ -98,6 +98,9 @@ def arguments(plan, executable, run, nonce, local_base_project=None):
             project = Path(mod["project"])
             if digest(project) != mod["projectSha256"]:
                 raise ValueError("Installed project changed after planning")
+            expected = plan.get("requiredAddonVersions", {}).get(mod["modId"])
+            if expected and project_version(project, mod["modId"]) != expected:
+                raise ValueError(f"Installed addon version changed after planning: {mod['modId']}")
             target = stage / mod["id"]
             if os.name == "nt":
                 import _winapi
@@ -108,6 +111,8 @@ def arguments(plan, executable, run, nonce, local_base_project=None):
         args.extend(["-server", plan["scenario"]])
     else:
         args.extend(["-config", str(config)])
+        if plan.get("requiredAddonVersions"):
+            args.extend(["-addonDownloadDir", str(run / "workshop")])
     return args, profile
 
 
@@ -196,6 +201,12 @@ class Worker:
                         time.sleep(0.5)  # Writer may still be closing its receipt.
                         continue
                     if receipt_matches(receipt, plan, nonce):
+                        if plan.get("requiredAddonVersions") and plan["mode"] == "workshop":
+                            archives = run / "workshop" / "addons"
+                            downloaded = projects(archives.glob("*/*.gproj"))
+                            for identity, expected in plan["requiredAddonVersions"].items():
+                                if downloaded.get(identity, {}).get("version") != expected:
+                                    raise ValueError(f"Downloaded addon version mismatch for {identity}={expected}")
                         ready = True
                         break
                 time.sleep(0.5)

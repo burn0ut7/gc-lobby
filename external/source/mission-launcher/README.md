@@ -33,7 +33,12 @@ layout. Windows PowerShell 5.1 reads native text with the included .NET helper.
 The actual scenario, GC Lobby startup receipt code and content must be
 in Workshop packages available to the server. Use metadata from that published
 build. A mission with script-selected content can declare extra Workshop GUIDs
-in its catalogue's `m_aRequiredAddonIds`. Schema 1 captures fewer references
+in its catalogue's `m_aRequiredAddonIds`. To require a specific release, add
+`m_aRequiredAddonVersions` at the root of the native header with quoted
+`GUID=version` entries. The portable export carries those entries in
+`requiredAddonVersions`. Each entry also requires the addon by GUID. The
+launcher rejects a conflicting server config pin and checks the selected local
+or downloaded package version. Schema 1 captures fewer references
 than schema 2. Inherited headers and missing snapshots require a self-contained
 metadata export for this prototype.
 

@@ -16,10 +16,37 @@ import uuid
 from mission_launch import VANILLA, digest, field, guid, reference, root, unquote
 
 COLLECTIONS = {"GlobalConflictsWorkbench", "GlobalConflictsWorkshop"}
+VERSION = r"[0-9]+(?:\.[0-9]+){1,3}"
 
 
 def canonical(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
+
+
+def project_version(path, identity):
+    server_data = path.with_name("ServerData.json")
+    if not server_data.exists():
+        return ""
+    data = json.loads(server_data.read_text(encoding="utf-8-sig"))
+    if guid(data["id"]) != identity:
+        raise ValueError(f"Installed version identity mismatch: {path}")
+    version = data["revision"]["version"]
+    if not isinstance(version, str) or not re.fullmatch(VERSION, version):
+        raise ValueError(f"Invalid installed version: {path}")
+    return version
+
+
+def required_addon_versions(header):
+    pins = {}
+    for token in field(header, "m_aRequiredAddonVersions", True):
+        match = re.fullmatch(rf"([0-9A-Fa-f]{{16}})=({VERSION})", unquote(token))
+        if not match:
+            raise ValueError("Invalid required addon version")
+        identity, version = match[1].upper(), match[2]
+        if identity in VANILLA or identity in pins:
+            raise ValueError(f"Duplicate or vanilla required addon version: {identity}")
+        pins[identity] = version
+    return pins
 
 
 def projects(paths):
@@ -37,15 +64,7 @@ def projects(paths):
         if identity in result or name.casefold() in names:
             raise ValueError(f"Ambiguous installed addon: {identity}/{name}")
         names.add(name.casefold())
-        version = ""
-        server_data = path.with_name("ServerData.json")
-        if server_data.exists():
-            data = json.loads(server_data.read_text(encoding="utf-8-sig"))
-            if guid(data["id"]) != identity:
-                raise ValueError(f"Installed version identity mismatch: {path}")
-            version = data["revision"]["version"]
-            if not isinstance(version, str) or not re.fullmatch(r"[0-9]+(?:\.[0-9]+){1,3}", version):
-                raise ValueError(f"Invalid installed version: {path}")
+        version = project_version(path, identity)
         result[identity] = {"id": name, "version": version, "project": str(path), "projectSha256": digest(path),
                             "dependencies": [guid(unquote(v)) for v in field(body, "Dependencies", True)]}
     return result
@@ -87,6 +106,7 @@ def make_plan(assignment, deployment, installed, core_ids, template, mode):
     _, header_body = root(header)
     world = field(header_body, "World")
     reference(world)
+    pins = required_addon_versions(header_body)
 
     core = sorted({guid(x) for x in core_ids})
     if not core or any(x in VANILLA for x in core):
@@ -118,6 +138,10 @@ def make_plan(assignment, deployment, installed, core_ids, template, mode):
         add(identity, "mission metadata")
     for identity in supplemental:
         add(identity, "deployment supplemental requirement")
+    for identity, version in pins.items():
+        add(identity, "mission addon version requirement")
+        if selected[identity]["version"] != version:
+            raise ValueError(f"Installed addon version mismatch for {identity}={version}")
     world_guid, world_path = reference(world)
     world_files = []
     for mod in selected.values():
@@ -142,6 +166,8 @@ def make_plan(assignment, deployment, installed, core_ids, template, mode):
             "source": manifest["source"], "scenario": scenario, "world": world, "worldFile": world_file,
             "dependencyResolution": coverage, "headerSha256": deployment["headerSha256"],
             "mods": [selected[x] for x in sorted(selected)], "config": config}
+    if pins:
+        plan["requiredAddonVersions"] = pins
     plan["planSha256"] = hashlib.sha256(canonical(plan)).hexdigest()
     return plan
 

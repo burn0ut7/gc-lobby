@@ -1,5 +1,6 @@
 import copy
 import hashlib
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -102,6 +103,36 @@ class ServerPlanTests(unittest.TestCase):
         for mod in self.installed.values():
             mod["version"] = "1.2.3"
         self.assertTrue(all(m["version"] == "1.2.3" for m in self.plan("workshop")["config"]["game"]["mods"]))
+
+    def test_header_pin_requires_the_exact_installed_version(self):
+        header = self.paths[2].with_name("Mission.conf")
+        header.write_text('GC_MissionHeader { World "{1111111111111111}Worlds/Test.ent" '
+                          'm_aRequiredAddonVersions { "0000000000000006=1.0.25" } }')
+        self.deployment["headerSha256"] = digest(header)
+        for project in self.paths:
+            identity = next(mod_id for mod_id, row in self.installed.items() if row["project"] == str(project))
+            version = "1.0.25" if identity.endswith("6") else "1.2.3"
+            project.with_name("ServerData.json").write_text(json.dumps(
+                {"id": identity, "revision": {"version": version}}))
+        self.installed = projects(self.paths)
+
+        identity = "0000000000000006"
+        local = self.plan()
+        self.assertEqual(local["requiredAddonVersions"], {identity: "1.0.25"})
+        workshop = self.plan("workshop")
+        self.assertIn({"modId": identity, "version": "1.0.25", "required": True}, workshop["config"]["game"]["mods"])
+        for version in ("", "1.0.43"):
+            self.installed[identity]["version"] = version
+            with self.assertRaisesRegex(ValueError, "Installed addon version mismatch"):
+                self.plan()
+
+    def test_duplicate_header_pins_are_rejected(self):
+        header = self.paths[2].with_name("Mission.conf")
+        header.write_text('GC_MissionHeader { World "{1111111111111111}Worlds/Test.ent" '
+                          'm_aRequiredAddonVersions { "0000000000000006=1.0.25" "0000000000000006=1.0.43" } }')
+        self.deployment["headerSha256"] = digest(header)
+        with self.assertRaisesRegex(ValueError, "Duplicate"):
+            self.plan()
 
 
 if __name__ == "__main__":

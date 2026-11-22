@@ -25,6 +25,20 @@ function Get-AddonGuid([string]$value) {
     $value.ToUpperInvariant()
 }
 
+function Get-AddonVersionPins($values) {
+    $pins = @{}
+    foreach ($value in $values) {
+        if ($value -isnot [string] -or $value -notmatch '^([0-9a-fA-F]{16})=([0-9]+(?:\.[0-9]+){1,3})$') {
+            throw "Invalid required addon version '$value'"
+        }
+        $id = $Matches[1].ToUpperInvariant()
+        $version = $Matches[2]
+        if ($id -in $stock -or $pins.ContainsKey($id)) { throw "Duplicate or vanilla required addon version $id" }
+        $pins[$id] = $version
+    }
+    return $pins
+}
+
 function Get-Resource([string]$value, [string]$extension) {
     if ($value -notmatch '^\{([0-9A-Fa-f]{16})\}([^:{}"<>|?*\x00-\x1f]+)$') { throw "Invalid resource '$value'" }
     $id = $Matches[1].ToUpperInvariant()
@@ -64,7 +78,8 @@ function Read-MissionHeader([string]$path) {
         $coverage = $generated.Text('m_sResourceCoverage')
         if ($coverage -ne 'authored_container_graph_partial') { throw 'Unsupported saved resource coverage' }
     } else { Write-Warning "Legacy mission metadata: $coverage. Refresh for nested resource coverage." }
-    $required = @()
+    $pins = Get-AddonVersionPins ($body.Strings('m_aRequiredAddonVersions'))
+    $required = @($pins.Keys)
     if ($catalog) {
         if ($catalog.Text('m_sMissionType') -in @('Broken','BROKEN')) { throw 'Mission is marked broken' }
         $required += $catalog.Strings('m_aRequiredAddonIds')
@@ -95,11 +110,16 @@ function Read-MissionHeader([string]$path) {
         if ([GcNativeBlock]::Read($ownerMeta,'MetaFileClass').Text('Name') -ne $world) { throw 'World .meta identity mismatch' }
         $knownWorldFile = '$' + $ownerProject.Text('ID') + ':' + $worldResource.path
     }
-    [pscustomobject]@{
+    $metadata = [pscustomobject]@{
         format='gc-mission-launch-v1'; scenario=$scenario; world=$world; worldFile=$knownWorldFile
         coverage=$coverage; requiredAddonIds=$required; headerSha256=(Get-FileHash -LiteralPath $header.FullName).Hash
         ownerProject=$projects[0].FullName
     }
+    if ($pins.Count) {
+        $versions = @($pins.Keys | Sort-Object | ForEach-Object { "$_=$($pins[$_])" })
+        Set-Field $metadata requiredAddonVersions $versions
+    }
+    $metadata
 }
 
 if ([IO.Path]::GetExtension($Mission) -eq '.json') {
@@ -134,7 +154,9 @@ $world = $metadata.world
 $worldResource = Get-Resource $world '.ent'
 $knownWorldFile = $metadata.worldFile
 $coverage = $metadata.coverage
-$required = @($metadata.requiredAddonIds | ForEach-Object { Get-AddonGuid $_ })
+$versionPins = Get-AddonVersionPins $metadata.requiredAddonVersions
+$required = @(@($metadata.requiredAddonIds) + @($versionPins.Keys) |
+    ForEach-Object { Get-AddonGuid $_ })
 if (!$Config) {
     $candidates = @(
         foreach ($file in Get-ChildItem -LiteralPath $ServerDirectory -File -Filter '*.json') {
@@ -159,6 +181,13 @@ $baseline = @($entries.Keys)
 foreach ($id in $required) {
     if (!$entries.Contains($id)) { $entries[$id] = [pscustomobject]@{modId=$id} }
     Set-Field $entries[$id] required $true
+}
+foreach ($id in $versionPins.Keys) {
+    $expected = $versionPins[$id]
+    if ($entries[$id].version -and $entries[$id].version -cne $expected) {
+        throw "Server template version conflicts with the mission requirement for ${id}=$expected"
+    }
+    Set-Field $entries[$id] version $expected
 }
 Set-Field $template.game scenarioId $scenario
 Set-Field $template.game mods @($entries.Values)
@@ -201,12 +230,22 @@ function Get-Dependencies($index, $roots) {
     $closure
 }
 
+function Assert-AddonVersion($addon, [string]$id, [string]$version) {
+    $path = Join-Path $addon.directory 'ServerData.json'
+    if (!(Test-Path -LiteralPath $path)) { throw "Cannot verify required addon version ${id}=$version" }
+    $data = Get-Content -LiteralPath $path -Encoding UTF8 -Raw | ConvertFrom-Json
+    if ($data.id -ne $id -or $data.revision.version -cne $version) {
+        throw "Installed addon version mismatch for ${id}=$version"
+    }
+}
+
 if ($entries.Contains('6B8E05204D634FA9')) { throw 'GC Workshop is an authoring collection' }
 $selected = $null
 if ($Local) {
     $paths = @($metadata.ownerProject) + $Project
     $installed = Get-Projects $paths $AddonDirectory
     $selected = Get-Dependencies $installed $entries.Keys
+    foreach ($id in $versionPins.Keys) { Assert-AddonVersion $selected[$id] $id $versionPins[$id] }
 }
 $plan = [pscustomobject]@{scenario=$scenario; world=$world; worldFile=$knownWorldFile; coverage=$coverage; mods=@($entries.Values); baseline=$baseline}
 if ($Local) { Set-Field $plan localAddonIds @($selected.Keys | Sort-Object) }
@@ -271,8 +310,7 @@ try {
                 $selected = Get-Dependencies $installed $roots
                 foreach ($id in $entries.Keys) {
                     if ($entries[$id].version -and $id -in $actual) {
-                        $data = Get-Content -LiteralPath (Join-Path $selected[$id].directory 'ServerData.json') -Encoding UTF8 -Raw | ConvertFrom-Json
-                        if ($data.id -ne $id -or $data.revision.version -cne $entries[$id].version) { throw "Workshop version mismatch for $id" }
+                        Assert-AddonVersion $selected[$id] $id $entries[$id].version
                     }
                 }
             }

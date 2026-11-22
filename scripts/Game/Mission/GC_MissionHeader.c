@@ -8,6 +8,10 @@ class GC_MissionHeader : SCR_MissionHeader
 	[Attribute("", UIWidgets.Hidden)]
 	ref array<string> m_aManualTags;
 
+	//! Exact Workshop releases required for this mission, written as GUID=version.
+	[Attribute("", UIWidgets.Hidden)]
+	ref array<string> m_aRequiredAddonVersions;
+
 	[Attribute("", UIWidgets.Hidden)]
 	ref GC_GeneratedMissionMetadata m_GC_GeneratedMetadata;
 }
@@ -17,6 +21,9 @@ class GC_ScenarioFrameworkMissionHeader : SCR_MissionHeaderScenarioFramework
 {
 	[Attribute("", UIWidgets.Object, "Choose the mission type, objectives and equipment. Other details are optional.", "noDetails")]
 	ref GC_CatalogMissionMetadata m_GC_Catalog;
+
+	[Attribute("", UIWidgets.Hidden)]
+	ref array<string> m_aRequiredAddonVersions;
 
 	[Attribute("", UIWidgets.Hidden)]
 	ref GC_GeneratedMissionMetadata m_GC_GeneratedMetadata;
