@@ -5309,6 +5309,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare the capture footprint and its shared map fill, outline and faction visibility.')
     if startup_slots:
         remaining.append('Compare random pilot placement and the two authored slots before role selection.')
+    if shared_writers:
+        remaining.append('Compare ordered area flag changes during staging and Match and the triggered AI spawns.')
     if any('m_fAuthoredCountdownSeconds ' in text for text in draft.values() if isinstance(text, str)):
         remaining.append('Compare the authored fractional staging release and displayed countdown.')
     if any('m_bRestrictAuthoredStagingCombat 1' in text for text in draft.values() if isinstance(text, str)):
