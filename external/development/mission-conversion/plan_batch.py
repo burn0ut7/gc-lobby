@@ -9,7 +9,9 @@ import subprocess
 import sys
 
 from dependencies import database_project, installed_version
+from review import known_zagoria_failure
 from scenery import StockPrefabs
+from vehicle_crew import ZAGORIA_BMP2
 
 
 def run_tool(name, args):
@@ -98,9 +100,46 @@ def dependency_recovery_queue(resources, held):
         -len(package['onlyMissingPackage']), -len(package['worlds']), package['provider']))
 
 
-def historical_provider_candidates(plan, roots):
-    """Find exact and alternate archived registrations for held draft references."""
-    references = {entry['reference']: entry['worlds'] for entry in plan['resourceRecoveryQueue']}
+ROSTER_RESOURCE_BLOCKER = re.compile(
+    r'SCR_AIGroup · (?:unresolved or duplicate Units prefab|unresolved character prefab) ([0-9A-F]{16})')
+
+
+def conversion_resource_queue(resources, loadout_parents, headers, blockers_by_world):
+    """Match unresolved roster checks to exact legacy resource references."""
+    worlds_by_header = {header: row.get('destinationWorld', '').partition('}')[2]
+                        for header, row in headers.items()}
+    candidates = defaultdict(set)
+    for entry in resources:
+        reference = f"{{{entry['guid']}}}{entry['path']}"
+        for header in entry['launchers']:
+            candidates[worlds_by_header.get(header), entry['guid']].add(reference)
+
+    affected = defaultdict(set)
+    sole = defaultdict(set)
+    for world, blockers in blockers_by_world.items():
+        for blocker in blockers:
+            match = ROSTER_RESOURCE_BLOCKER.fullmatch(blocker)
+            if not match or len(refs := candidates[world, match[1]]) != 1:
+                continue
+            reference = next(iter(refs))
+            affected[reference].add(world)
+            if len(blockers) == 1:
+                sole[reference].add(world)
+
+    for parent in loadout_parents:
+        reference = f"{{{parent['guid']}}}{parent['path']}"
+        affected[reference].update(parent['worlds'])
+        sole[reference].update(world for world, result in parent['worlds'].items()
+                               if result['onlyReportedBlocker'])
+    return [{'reference': ref, 'worlds': sorted(affected[ref]), 'onlyReportedBlocker': sorted(sole[ref])}
+            for ref in sorted(affected, key=lambda ref: (-len(sole[ref]), -len(affected[ref]), ref))]
+
+
+def historical_provider_candidates(plan, roots, base):
+    """Find exact and alternate archived registrations for known missing mission inputs."""
+    drafts = {entry['reference']: entry['worlds'] for entry in plan['resourceRecoveryQueue']}
+    conversion = {entry['reference']: entry for entry in plan.get('conversionResourceQueue', ())}
+    references = drafts.keys() | conversion.keys()
     if not references:
         return []
     held = {}
@@ -131,17 +170,26 @@ def historical_provider_candidates(plan, roots):
         addon_id, dependencies = provider
         if not (version := installed_version(database, addon_id)):
             continue
-        exact_worlds = {world for ref in matched for world in references[ref]}
-        review_worlds = {world for entry in alternates for world in references[entry['reference']]}
+        zagoria = f"{{{ZAGORIA_BMP2[0]}}}{ZAGORIA_BMP2[1]}"
+        runtime_blocked = {zagoria} if zagoria in matched and known_zagoria_failure(base, [database]) else set()
+        exact_worlds = {world for ref in matched for world in drafts.get(ref, ())}
+        conversion_worlds = {world for ref in matched for world in conversion.get(ref, {}).get('worlds', ())}
+        sole_conversion = {world for ref in matched - runtime_blocked
+                           for world in conversion.get(ref, {}).get('onlyReportedBlocker', ())}
+        review_worlds = {world for entry in alternates for world in (
+            *drafts.get(entry['reference'], ()), *conversion.get(entry['reference'], {}).get('worlds', ()))}
         candidates.append({
             'addonId': addon_id, 'version': version, 'projectDirectory': str(database.parent),
             'databaseSha256': sha256(stock.data).hexdigest(), 'directDependencies': list(dependencies),
             'exactReferences': sorted(matched), 'worlds': sorted(exact_worlds),
+            'conversionWorlds': sorted(conversion_worlds), 'onlyReportedConversionBlocker': sorted(sole_conversion),
             'alternateRegistrations': alternates, 'reviewWorlds': sorted(review_worlds),
-            'onlyMissingPackage': sorted(world for world in exact_worlds if held[world] <= matched),
+            'runtimeBlockedReferences': sorted(runtime_blocked),
+            'onlyMissingPackage': sorted(world for world in exact_worlds if held[world] <= matched - runtime_blocked),
         })
     return sorted(candidates, key=lambda row: (
-        -len(row['onlyMissingPackage']), -len(row['worlds']), row['addonId'],
+        -len(row['onlyMissingPackage']), -len(row['onlyReportedConversionBlocker']),
+        -len(row['worlds']), -len(row['conversionWorlds']), row['addonId'],
         row['version'], row['projectDirectory']))
 
 
@@ -341,6 +389,9 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         'outcomeFlagLeads': review.get('outcomeFlagLeads', {}),
         'scriptedInstructionLeads': review.get('scriptedInstructionLeads', {}),
         'resourceRecoveryQueue': resource_recovery_queue(review.get('unresolvedResources', []), held),
+        'conversionResourceQueue': conversion_resource_queue(
+            review.get('sourceDependencyLeads', ()), review.get('blockedLoadoutParents', ()),
+            inventory['headers'], blockers_by_world),
         'dependencyRecoveryQueue': dependency_recovery_queue(review.get('unresolvedResources', []), held),
         'blockedLoadoutParents': review.get('blockedLoadoutParents', []),
         'unavailableDependencyIds': review.get('unavailableDependencyIds', []),
@@ -455,18 +506,27 @@ def markdown(plan):
             registered = 'Yes' if entry['registeredInDevGraph'] else 'No'
             lines.append(f"| `{entry['reference']}` | {len(entry['onlyMissingAsset'])} | "
                          f"{len(entry['worlds'])} | {registered} |")
+    if conversions := plan.get('conversionResourceQueue'):
+        lines.extend(['', '## Missing resources reported by roster conversion', '',
+                      '| Legacy resource | Only reported blocker | Affected worlds |',
+                      '| --- | ---: | ---: |'])
+        for entry in conversions:
+            lines.append(f"| `{entry['reference']}` | {len(entry['onlyReportedBlocker'])} | {len(entry['worlds'])} |")
     if archives := plan.get('historicalAddonAlternatives'):
-        lines.extend(['', '## Historical addon versions for held drafts', '',
+        lines.extend(['', '## Historical addon versions for missing resources', '',
                       'Package coverage counts exact resource IDs and paths. '
                       'Alternate registrations require asset comparison. '
+                      'Exact matches with a verified runtime failure are excluded from package coverage. '
                       'Audit the full dependency graph with the selected version before delivery.', '',
-                      '| Addon | Version | Drafts with all blockers covered | Worlds with exact matches | Exact references | Alternatives to verify |',
+                      '| Addon | Version | Drafts with all blockers covered | Drafts with exact matches | Blocked conversions with exact matches | Alternatives to verify |',
                       '| --- | --- | ---: | ---: | ---: | ---: |'])
         for entry in archives:
             lines.append(f"| `{entry['addonId']}` | {entry['version']} | {len(entry['onlyMissingPackage'])} | "
-                         f"{len(entry['worlds'])} | {len(entry['exactReferences'])} | "
+                         f"{len(entry['worlds'])} | {len(entry['conversionWorlds'])} | "
                          f"{len(entry['alternateRegistrations'])} |")
         for entry in archives:
+            for reference in entry['runtimeBlockedReferences']:
+                lines.extend(['', f"- `{entry['addonId']} {entry['version']}` · `{reference}` failed runtime verification."])
             for alternate in entry['alternateRegistrations']:
                 label = f"`{entry['addonId']} {entry['version']}` for `{alternate['reference']}`"
                 details = [f"original ID at `{path}`" for path in alternate['sameIdPaths']]
@@ -619,7 +679,8 @@ def main():
                          args.batch_size, prior.get('runtimeChecksByLauncher'),
                          prior.get('authoredFileNotesByLauncher'))
         if args.historical_workshop:
-            plan['historicalAddonAlternatives'] = historical_provider_candidates(plan, args.historical_workshop)
+            plan['historicalAddonAlternatives'] = historical_provider_candidates(
+                plan, args.historical_workshop, StockPrefabs(args.base_database))
         if args.compare_provider_plan:
             baseline = json.loads(args.compare_provider_plan.read_text(encoding='utf-8'))
             plan['providerComparison'] = compare_provider_plans(baseline, plan)
