@@ -27,7 +27,7 @@ from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_p
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
 from local_loadouts import unchanged_units_parent
-from markers import (DEST as MAP_MARKER_PREFAB, convert_baked_marker_generator, convert_hover_camera,
+from markers import (DEST as MAP_MARKER_PREFAB, LEGACY as LEGACY_MARKER, convert_baked_marker_generator, convert_hover_camera,
                      convert_layer, convert_wall_markers)
 from outcomes import (DEPOT_SUPPLY_REVISIONS, FOOD_MARKET_OUTCOME_LAYER, FRAMEWORK, INTERDICTION_OUTCOME_LAYER, MATCH_PHASE_VALUE,
                       NAGALAM_AMBUSH_BLOBS, NAGALAM_AMBUSH_LAYERS, NAGALAM_LAYERS,
@@ -302,6 +302,14 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/Battle For Zarichne/BattleForZarichne.conf': (
+        'ea65ffeca620e32bfc7abdc15a9fa252f50b2ace',
+        (('worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/NVA_Players/NVA_Players.layer',
+          '8e7f98f6ebcf5e792f583614bee4bd0472b86b42'),
+         ('worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/US_Players/US_Players.layer',
+          '2216e12d652b1340978cbd5cc4b652b262aec963')),
+        110, 80,
+    ),
     'Missions/arc/UrbanTroubles.conf': (
         '44c5ff26490d165afbcaab0a572682cb99679a57',
         (('worlds/arc/UrbanTroubles/UrbanTroubles_Layers/playersCIV.layer',
@@ -1235,6 +1243,10 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/HitTheMan/Battle For Zarichne/Mine_M15AT_EffectModuleEntity_HTM.et':
+        '9ddd4b64ea129d6435e224f5732052697e70e5e16b29f3221015e121193bc961',
+    'worlds/HitTheMan/Battle For Zarichne/Warhead_Mine_M15AT_HTM.et':
+        '907ccedfaf6cca314f647e329ffb44f908d135a980dfd054364a057284c98869',
     'worlds/Til/MetsalaAirfield/Prefabs/Mi8MT_Hardpoints_black_HEDP_2.et':
         '2a457545cecc38d326ff96d123e76fad987f90704c3dc0eeac8c4aaa400c700b',
     'worlds/HitTheMan/2nd Break The Line/HTM_EffectModule_Zoned_MortarBarrage_Creeping.et':
@@ -2459,6 +2471,15 @@ CONCRETE_EXTRACTION_WRITERS = {
 DESERT_SENTINEL_LAYERS = 'worlds/anteante101/Operation Desert Sentinel/Operation Desert Sentinel_Layers/'
 DESERT_SENTINEL_MARKERS = DESERT_SENTINEL_LAYERS + 'markers.layer'
 DESERT_SENTINEL_MARKERS_BLOB = '90a3debf2867d1f7236d725165135fa213f69a3e'
+ZARICHNE_DEFAULT = 'worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/default.layer'
+ZARICHNE_DEFAULT_BLOB = '878a776b06914e05e7cf35b6d1ecae08354d4175'
+ZARICHNE_PROPS = 'worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/CORE/Props.layer'
+ZARICHNE_PROPS_BLOB = 'bfa408082be4d02e2b168aa8ec0a420d1799cc95'
+ZARICHNE_LAV_LAYER = 'worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/US_Players/US_Players.layer'
+ZARICHNE_LAV_BLOB = '2216e12d652b1340978cbd5cc4b652b262aec963'
+ZARICHNE_CREW_NAMES = ('LAVCrew1', 'LAVCrew2')
+ZARICHNE_MINE = 'worlds/HitTheMan/Battle For Zarichne/Mine_M15AT_EffectModuleEntity_HTM.et'
+ZARICHNE_WARHEAD = 'worlds/HitTheMan/Battle For Zarichne/Warhead_Mine_M15AT_HTM.et'
 REVIEWED_AREA_FLAG_WRITERS = {
     SCREENING_AREA_LAYER: (SCREENING_AREA_BLOB, SCREENING_AREA_FLAGS),
     **{f'{CONCRETE_CRUSHERS_LAYERS}PhaseTwoRedfor/{location}.layer':
@@ -2469,6 +2490,7 @@ REVIEWED_AREA_FLAG_WRITERS = {
         ('c939b15d295709f83d2008d87cc90766388b2c0f', {'HVT_Extracted': 2}),
     'worlds/Perfk/PowerPlay/PowerPlay_Layers/OPFOR/Players/Players.layer':
         ('4789915b7734553a2e1ba6492a4bc5da95d3ac55', {'ReleaseOpfor': 6}),
+    ZARICHNE_DEFAULT: (ZARICHNE_DEFAULT_BLOB, {'Compound': 2}),
     **{f'{NAGALAM_AMBUSH_LAYERS}Ambush_{index:02}.layer':
        (blob, {f'Ambush_{index:02}_Trigger': 2})
        for index, blob in enumerate(NAGALAM_AMBUSH_BLOBS, 1)},
@@ -2482,6 +2504,8 @@ REVIEWED_AREA_FLAG_READERS = {
         ('7cef76758a05e016aefe225413d201f04ecdb443', 'event', {'HVT_Extracted': 'All_HVTs_Extracted'}),
     'worlds/Perfk/PowerPlay/PowerPlay_Layers/default.layer':
         ('327c5cf20c9bbcfdf16a8456e2d0b5aa0812d2eb', 'event', {'ReleaseOpfor': 'ReleaseOpfor'}),
+    ZARICHNE_DEFAULT:
+        (ZARICHNE_DEFAULT_BLOB, 'event', {'Compound': ('NVA OBJ Victory', 'Compound Message')}),
     NAGALAM_LAYERS + 'default.layer':
         ('e0048e9e3cf31e8776a48dd15235d34b3673246f', 'spawner condition',
          {f'Ambush_{index:02}_Trigger': f'Ambush_{index:02}_CloseTrigger'
@@ -2670,12 +2694,15 @@ def convert_vehicle_groups(block, convert_group_block):
     return [*rendered, block[-1]], groups, slots
 
 
-def waypoint_gaps(named, assignments, spawned_names, scripts, crew_spawns=None):
+def waypoint_gaps(named, assignments, spawned_names, scripts, crew_spawns=None, placed_crews=()):
     gaps = set()
     no_ops = set()
     for action in assignments:
         group = action['group']
         placements = named.get(group, [])
+        missing = action.get('missingWaypoint')
+        if missing and (missing in named or missing in spawned_names or missing in placed_crews or missing in scripts):
+            gaps.add('reviewed missing waypoint now resolves: ' + missing)
         if (action['waypoints'] == [group] and len(placements) == 1
                 and re.fullmatch(WAYPOINT_CLASS, placements[0][0])
                 and group not in spawned_names and group not in scripts):
@@ -2685,6 +2712,8 @@ def waypoint_gaps(named, assignments, spawned_names, scripts, crew_spawns=None):
         crew = (crew_spawns or {}).get(group)
         if len(placements) == 1 and placements[0][0] == 'SCR_AIGroup':
             existing_points = '\n'.join(placements[0][1])
+        elif not placements and group in placed_crews and group not in spawned_names and group not in scripts:
+            existing_points = ''
         elif (not placements and crew and group not in spawned_names and group not in scripts
               and Decimal(crew[0]) < Decimal(action['delaySeconds'])):
             existing_points = ' '.join(f'"{point}"' for point in crew[1])
@@ -4047,8 +4076,13 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
                 moved_material = (identity and canonical.endswith('.emat') and (
                     PurePosixPath(path).name == PurePosixPath(canonical).name == PurePosixPath(identity[3]).name
                     or (resource, path, canonical, identity[3]) == BULGES_RED_MATERIAL))
+                moved_warhead = (owner == ZARICHNE_MINE
+                                 and source.files.get(owner) == '4e4194d349321ca4fe86ef3d4c317a8cbf837476'
+                                 and resource == '1D1694497FF79C23' and canonical == ZARICHNE_WARHEAD
+                                 and path == 'worlds/HitTheMan/Battle For Rasman/Warhead_Mine_M15AT_HTM.et')
                 if (not identity or identity[2].upper() != resource
-                        or (path != canonical and identity[3] not in (path, canonical) and not moved_material)):
+                        or (path != canonical and identity[3] not in (path, canonical)
+                            and not (moved_material or moved_warhead))):
                     raise ValueError('resource path disagrees with metadata')
                 if any(other != canonical for other in dev.resources.get(resource, [])):
                     raise ValueError('Dev resource identity collision')
@@ -4114,6 +4148,8 @@ def reviewed_area_flag_reference_text(source, path):
     if path == DESERT_SENTINEL_MARKERS and source.files[path] == DESERT_SENTINEL_MARKERS_BLOB:
         # These three marker descriptions are display text, not flag consumers.
         return re.sub(r'(?m)^ +m_sDescription "extract"$', '', text)
+    if path == ZARICHNE_DEFAULT and source.files[path] == ZARICHNE_DEFAULT_BLOB:
+        return re.sub(r'(?m)^ +(?:m_locationName|m_sDescription) "Compound"$', '', text)
     return text
 
 
@@ -4124,8 +4160,9 @@ def checked_area_flag_reads(flag, readers, events, derived):
     if kind == 'event':
         uses = [event.get('name') for event in events.values() if 'gap' not in event
                 for term in leaves(event) if term.get('flag') == flag]
-        if uses == [target]:
-            return 1 + (target == flag)
+        expected = (target,) if isinstance(target, str) else target
+        if Counter(uses) == Counter(expected):
+            return len(expected) + expected.count(flag)
     elif sum(term.get('flag') == flag for term in leaves(derived.get(target, {}))) == 1:
         return 1
     return 0
@@ -5299,7 +5336,17 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         if f'{{{BLOODY_GARRISON}}}' in head:
                             converted, groups, slots = garrison_placement(source, world, layer, block), 0, 0
                         else:
-                            vehicle, groups, slots = convert_vehicle_groups(convert_crew(block), convert_group_block)
+                            placed_names = ()
+                            if (layer == ZARICHNE_LAV_LAYER and source.files[layer] == ZARICHNE_LAV_BLOB and line == 1
+                                    and source.files.get(ZARICHNE_DEFAULT) == ZARICHNE_DEFAULT_BLOB):
+                                placed_names = ZARICHNE_CREW_NAMES
+                            vehicle, groups, slots = convert_vehicle_groups(
+                                convert_crew(block, placed_names=placed_names), convert_group_block)
+                            if layer == ZARICHNE_PROPS and source.files[layer] == ZARICHNE_PROPS_BLOB:
+                                for start, stop, indent, marker in reversed(list(
+                                        nested_placement_blocks(vehicle, LEGACY_MARKER))):
+                                    rendered, _ = convert_layer('\n'.join(marker) + '\n', dev, draw_order=True)
+                                    vehicle[start:stop + 1] = [' ' * indent + line for line in rendered.splitlines()]
                             if (layer == METSALA_VEHICLE_LAYER and source.files[layer] == METSALA_VEHICLE_BLOB
                                     and head == f'$grp Vehicle : "{METSALA_HIND}" {{'):
                                 # Version 8.4.0 retains these component, group and station IDs.
@@ -5455,6 +5502,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     crew_waypoints = {name for crew in placed_crew_fields
                       for _, fields in re.findall(r'(?ms)^( +)m_a(?:Crew)?Waypoints \{\n(.*?)^\1\}', crew)
                       for name in re.findall(r'"([\w.-]+)"', fields)}
+    placed_crew_names = Counter(name for crew in placed_crew_fields
+                                for name in re.findall(r'(?m)^ +m_sGroupName "([\w.-]+)"$', crew))
     if not blockers and (assignments or marker_edits or prefab_spawns or extraction_spawns or area_names or teleport_targets
                          or damage_flags or roster_assets or crew_waypoints
                          or any('m_aStatic' in body for body in draft.values())):
@@ -5548,7 +5597,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             missing_order_groups.update(action['group'] for action in orders if action['group'] in absent_groups)
             inert_spawner_orders.update(action['group'] for action in orders if action['group'] in inert_anchors)
             active_orders = [action for action in orders if action['group'] not in absent_groups | inert_anchors]
-            gaps, no_ops = waypoint_gaps(named, active_orders, spawned_names, script_text(source), earlier_crews)
+            placed_crews = ()
+            if event.get('name') == 'LAVWaypoint' and source.files.get(ZARICHNE_DEFAULT) == ZARICHNE_DEFAULT_BLOB:
+                placed_crews = {name for name in ZARICHNE_CREW_NAMES if placed_crew_names[name] == 1
+                                and name not in crew_name_counts}
+            gaps, no_ops = waypoint_gaps(named, active_orders, spawned_names, script_text(source), earlier_crews,
+                                        placed_crews=placed_crews)
             self_waypoints.extend(no_ops)
             for gap in gaps:
                 blockers.append({'rule': 'waypoint assignments', 'file': world, 'detail': gap})

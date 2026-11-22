@@ -136,7 +136,7 @@ class GC_VehicleCrewComponent : ScriptComponent
 			return;
 		foreach (GC_SpawnCrewGroup crew : m_aCrewGroups)
 		{
-			if (!crew || !crew.m_sGroupName.IsEmpty() || !crew.IsValid() || !crew.Prepare())
+			if (!crew || !crew.IsValid() || !crew.Prepare())
 				return;
 		}
 

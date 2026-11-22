@@ -409,7 +409,8 @@ def split_crew_block(lines, field):
     return lines[start + 1:end], lines[:start] + lines[end + 1:]
 
 
-def render_crew_config(config, key, resolve_character, *, shadowed_names=(), placed=False, allow_default_crew=False):
+def render_crew_config(config, key, resolve_character, *, shadowed_names=(), placed=False,
+                       allow_default_crew=False, placed_names=()):
     groups, fields = split_crew_block(config, 'm_crewGroups')
     settings = properties(fields, {'m_noTurretDismount', 'm_useIdleGroups'})
     seated = settings.get('m_noTurretDismount', '0')
@@ -432,7 +433,7 @@ def render_crew_config(config, key, resolve_character, *, shadowed_names=(), pla
         name = options.get('m_entityName', '""')
         if not re.fullmatch(r'"[\w.-]{0,128}"', name):
             raise ValueError('unsupported crew group name')
-        if placed and name != '""':
+        if placed and name != '""' and name[1:-1] not in placed_names:
             raise ValueError('placed crew group name requires spatial ownership review')
         shadowed = name[1:-1] in shadowed_names
         delay = options.get('m_waypointDelay', '0')
@@ -484,7 +485,7 @@ def render_crew_config(config, key, resolve_character, *, shadowed_names=(), pla
 
 
 def render_component(component, lines, resolve_character, single_turret, resolve_config=None, *,
-                     allow_default_crew=False):
+                     allow_default_crew=False, placed_names=()):
     configs = [i for i, line in enumerate(lines) if line.strip().startswith('m_crewConfig ')]
     if not configs:
         data = properties(lines, {'m_customCrew', 'm_noTurretDismount', 'm_idleGroup', 'm_pregameSpawn',
@@ -521,6 +522,8 @@ def render_component(component, lines, resolve_character, single_turret, resolve
         raise ValueError('unsupported placed crew timing or deprecated seat fields')
     # The configured legacy path reads seat filters and dismount policy only from its config.
     config = crew_config_contents(lines[index:close + 1], resolve_config)
+    if placed_names:
+        return render_structured_placement(component, config, resolve_character, placed_names=placed_names)
     groups = [i for i, line in enumerate(config) if line.strip() == 'm_crewGroups {']
     if len(groups) != 1:
         raise ValueError('crew authoring needs one m_crewGroups')
@@ -556,8 +559,8 @@ def render_component(component, lines, resolve_character, single_turret, resolve
     return crew_fields(component, flags, seated, roles, route)
 
 
-def render_structured_placement(component, config, resolve_character):
-    fields, _ = render_crew_config(config, component['id'], resolve_character, placed=True)
+def render_structured_placement(component, config, resolve_character, *, placed_names=()):
+    fields, _ = render_crew_config(config, component['id'], resolve_character, placed=True, placed_names=placed_names)
     return [f'  GC_VehicleCrewComponent {component["id"]} {{',
             *(line[5:] for line in fields), '  }']
 
@@ -617,7 +620,7 @@ def verified_crew_config(source_units, guid, path, owned):
 
 
 def convert(block, source_units, dev_units, stock, owned, external_vehicles=None, external_ai=None, *,
-            external_parents=None):
+            external_parents=None, placed_names=()):
     if not any('TILW_VehicleCrewComponent' in line for line in block):
         return block
     vehicle = VEHICLE.fullmatch(block[0])
@@ -664,7 +667,7 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
             lambda guid, path: character_reference(guid, path, source_units, dev_units, stock, owned, external_ai,
                                                    allow_legacy_playable=True),
             single_turret, lambda guid, path: verified_crew_config(source_units, guid, path, owned),
-            allow_default_crew=allow_default_crew)
+            allow_default_crew=allow_default_crew, placed_names=placed_names)
         return [*lines[:index], *replacement, *lines[end + 1:]]
 
     def convert_children(lines, parents=()):

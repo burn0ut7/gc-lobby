@@ -116,6 +116,8 @@ REVIEWED_MISSING_TERMS = {
 }
 # The legacy hint contains no display content. The outcome and its delay are separate.
 REVIEWED_MISSING_EVENT_WAYPOINTS = {
+    'worlds/HitTheMan/Battle For Zarichne/BattleForZarichne_Layers/default.layer':
+        ('878a776b06914e05e7cf35b6d1ecae08354d4175', 'LAVSnD'),
     'worlds/TheLocalPub/LamentinLosers/LamentinLosers_Layers/default.layer':
         ('0ad3b0e257f59917e585357ac9b026f6240feba9', 'BLUWP4_4'),
 }
@@ -344,10 +346,14 @@ def end_action(lines, key, *, extended_announcements=False, end_match=False):
         **({'delivery': 'match end'} if end_match else {})}
 
 
-def waypoint_action(lines, key):
+def waypoint_action(lines, key, *, missing_waypoint=None):
     data = properties(lines, {'m_groupName', 'm_waypointNames', 'm_clearExisting', 'm_executionDelay'})
     group = data.get('m_groupName', '')
     names = data.get('m_waypointNames', '').split()
+    absent = f'"{missing_waypoint}"' if missing_waypoint else None
+    omitted = absent in names
+    if omitted:
+        names = [name for name in names if name != absent]
     replace = data.get('m_clearExisting', '0')
     delay = data.get('m_executionDelay', '5')
     if (not re.fullmatch(KEY, group) or not all(re.fullmatch(KEY, name) for name in names)
@@ -361,6 +367,8 @@ def waypoint_action(lines, key):
         body.extend(['       m_aWaypoints {', *(f'        {name}' for name in names), '       }'])
     details = {'group': group[1:-1], 'waypoints': [name[1:-1] for name in names],
                'replaceExisting': replace == '1', 'delaySeconds': delay}
+    if omitted:
+        details['missingWaypoint'] = missing_waypoint
     return Decimal(delay), [*body, '      }'], details
 
 
@@ -595,7 +603,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                         empty_waypoints.append(waypoint_match[1])
                         j = last + 1
                         continue
-                    delay, body, assignment = waypoint_action(fields[j + 1:last], key + '/' + waypoint_match[1])
+                    delay, body, assignment = waypoint_action(fields[j + 1:last], key + '/' + waypoint_match[1],
+                                                              missing_waypoint=missing_group_waypoint)
                     assignments.append(assignment)
                 elif control_match:
                     kind, identity = control_match.groups()

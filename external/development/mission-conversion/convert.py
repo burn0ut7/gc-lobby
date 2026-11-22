@@ -285,7 +285,7 @@ def main():
         return vehicle_crew.character_reference(resource, path, source_units, dev_units, stock, locally_owned,
                                                 external_ai, allow_legacy_playable=allow_legacy_playable)
 
-    def convert_crew(block):
+    def convert_crew(block, *, placed_names=()):
         ref = REF.search(block[0])
         if (ref and vehicle_crew.VEHICLE.fullmatch(block[0])
                 and any('TILW_VehicleCrewComponent' in line for line in block)):
@@ -294,7 +294,8 @@ def main():
             if alias and REF.fullmatch(alias)[1] == guid:
                 block = [block[0][:ref.start()] + alias + block[0][ref.end():], *block[1:]]
         return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned,
-                                    external_vehicles, external_ai, external_parents=external_vehicle_parents)
+                                    external_vehicles, external_ai, external_parents=external_vehicle_parents,
+                                    placed_names=placed_names)
 
     out = {}
     arc_areas = {}
