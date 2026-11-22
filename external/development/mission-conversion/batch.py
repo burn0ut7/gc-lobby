@@ -793,6 +793,12 @@ STOCK_RESOURCE_ALIASES = {
 }
 MARINE_COBRA = ('0174CF72FDB6B805', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Marines.et')
 
+ZARICHNE_NAVMESH_ALIASES = {
+    ('4C5DC23B33285CBA', 'NavMesh/Soldiers.nmn'): ('26764981146D437B', 'NavMesh/Zarichne_Soldiers.nmn'),
+    ('6957D1DE8462E9A0', 'NavMesh/BTRlike.nmn'): ('7CF5039956B33F65', 'NavMesh/Zarichne_BTR.nmn'),
+    ('0C645FF0DA66996D', 'NavMesh/lowres.nmn'): ('C4AE9581E30730A8', 'NavMesh/Zarichne_LowRes.nmn'),
+}
+
 WORKSHOP_RESOURCE_ALIASES = {
     ('4A30874E3A255689', 'Prefabs/Weapons/HeavyWeapons/2A46/Cannon_2A466_T72A_HE.et'): (
         'WCS_T-72_5E0AB16BEB16D6A4', '4A30874E3A255689',
@@ -3031,6 +3037,13 @@ def resource_aliases(workshop, units, stock):
                     if stock and not stock.registered_paths(old) and stock.contains(new, path)})
     databases = {}
     if workshop:
+        zarichne = workshop_resources(workshop, {
+            'Zarichne2025_65EA8C9C25882838': (
+                'd72a1e7c7420d2a91313e0b13c0861902e31782e9a8590eff9d52b8c333cb261',
+                [*ZARICHNE_NAVMESH_ALIASES.values(), ('FA50B49D2E7A581D', 'Worlds/Zarichne.ent')]),
+        })
+        if len(zarichne) == len(ZARICHNE_NAVMESH_ALIASES) + 1:
+            aliases.update(ZARICHNE_NAVMESH_ALIASES)
         for original, (provider, guid, path) in WORKSHOP_RESOURCE_ALIASES.items():
             if provider not in databases:
                 registry = workshop / provider / 'resourceDatabase.rdb'
@@ -4684,6 +4697,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare capture and loss notices for areas with no outcome rule.')
     if any('GC_NavmeshRebuildComponent' in body for bodies in boundaries.values() for body in bodies):
         remaining.append('Compare navmesh rebuilds for map shape placements.')
+    if any(isinstance(body, str) and all(f'{{{identity}}}{path}' in body
+                                         for identity, path in ZARICHNE_NAVMESH_ALIASES.values())
+           for body in draft.values()):
+        remaining.append('Compare AI routing on the authored Zarichne island and verify custom navigation links.')
     if BLOODY_GARRISON_PREFAB in draft:
         remaining.append('Compare inherited garrison waypoints, slot transforms and navmesh rebuilds.')
     if mode and any(line.startswith((' m_iReconnectTime ', ' m_iReconnectTimeAfterBriefing ')) for line in mode):
