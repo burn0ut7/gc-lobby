@@ -286,6 +286,11 @@ DAMAGELESS_GROUPS = {
 PLACED_SPAWNER = re.compile(
     r'(?P<group>\$grp )?TILW_PrefabSpawnerEntity(?: (?P<name>[\w.-]+))? : '
     r'"\{7F10372CF1CA1175\}Prefabs/Utils/TILW_PrefabSpawner.et" \{')
+BARE_SPAWNER = re.compile(r'(?P<group>\$grp )?TILW_PrefabSpawnerEntity(?: (?P<name>[\w.-]+))? \{')
+REVIEWED_BARE_SPAWNER_LAYERS = {
+    ('worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1_Layers/AI.layer',
+     'f5d07d2c876a4ffae1a82146a65e5fabed52b5ea'),
+}
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 STOCK_TERRAIN_PARENTS = {
     'worlds/Arland/Arland.ent': 'A9806AF617972E97',
@@ -2398,7 +2403,7 @@ def placed_spawner_flag_reads(source, layers):
         if 'm_conditionFlag ' not in text or 'TILW_PrefabSpawnerEntity ' not in text:
             continue
         for _, _, block in placed_spawner_entries(source, path, text):
-            match = PLACED_SPAWNER.fullmatch(block[0])
+            match = placed_spawner_root(block[0], (path, source.files[path]) in REVIEWED_BARE_SPAWNER_LAYERS)
             if not match:
                 continue
             try:
@@ -2410,6 +2415,10 @@ def placed_spawner_flag_reads(source, layers):
                     if flag := re.fullmatch(r' m_conditionFlag (' + FLAG_NAME + ')', line):
                         flags[flag[1][1:-1]] += 1
     return flags
+
+
+def placed_spawner_root(header, allow_bare):
+    return PLACED_SPAWNER.fullmatch(header) or (allow_bare and BARE_SPAWNER.fullmatch(header))
 
 
 def trigger_children(fields):
@@ -3421,8 +3430,8 @@ def reviewed_spawn_type(source, resource, path, types):
 
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
                  resolve_crew_config=None, shadowed_names=(), missing_waypoint=None, self_waypoints=(),
-                 capture_latches=None, single_draw_flags=(), derived_conditions=None, dormant_flags=()):
-    root = PLACED_SPAWNER.fullmatch(block[0])
+                 capture_latches=None, single_draw_flags=(), derived_conditions=None, dormant_flags=(), allow_bare=False):
+    root = placed_spawner_root(block[0], allow_bare)
     if not root:
         raise ValueError('unverified placed spawner prefab')
     placements, rules, audit = [], [], []
@@ -3639,7 +3648,8 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                         source=source, resolve_crew_config=resolve_crew_config, shadowed_names=shadowed,
                         missing_waypoint=missing_waypoint, self_waypoints=self_waypoints,
                         capture_latches=capture_latches, single_draw_flags=single_draw_flags,
-                        derived_conditions=derived_conditions, dormant_flags=dormant)
+                        derived_conditions=derived_conditions, dormant_flags=dormant,
+                        allow_bare=(layer, source.files[layer]) in REVIEWED_BARE_SPAWNER_LAYERS)
                 except ValueError as exc:
                     blockers.append({'rule': 'TILW_PrefabSpawnerEntity', 'file': layer, 'line': line,
                                      'detail': str(exc)})

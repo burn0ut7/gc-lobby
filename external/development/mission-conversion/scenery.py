@@ -60,6 +60,9 @@ DEFEND_PRESET = re.compile(r'SCR_DefendWaypointPreset "\{[\da-fA-F]{16}\}" \{')
 DEFEND_FIELD = re.compile(r'm_bFastInit [01]')
 DEFEND_FRACTION = re.compile(rf'm_fFractionOfSA {NUMBER}')
 DEFEND_TAGS = re.compile(r'(?:"(?:ObservationPost|CoverPost|LoiterPost)"\s*)+')
+DEFEND_SETTING = re.compile(r'SCR_AICharacterSettingWithCause "\{[\da-fA-F]{16}\}" \{')
+PATROL_WAYPOINT = 'Prefabs/AI/Waypoints/AIWaypoint_Patrol.et'
+CYCLE_WAYPOINT = 'Prefabs/AI/Waypoints/AIWaypoint_Cycle.et'
 OBSERVATION_POINT = 'Prefabs/Systems/Compositions/PatrolPoint/PatrolPoint_ObservationPoint.et'
 SENTINEL_COMPONENT = 'SCR_AISmartActionSentinelComponent "{5CB0DBCC796A6F1C}" {'
 SENTINEL_STANCE = re.compile(r'm_iCharacterStance (?:CROUCH|PRONE)')
@@ -104,6 +107,12 @@ def placements(text, stock, owned):
             continue
         elif defend and stack[-1] == 'entity' and token == 'm_aDefendPresets {':
             stack.append('defend presets')
+        elif defend and stack[-1] == 'entity' and token == 'm_aSettings {':
+            stack.append('defend settings')
+        elif stack[-1] == 'defend settings' and DEFEND_SETTING.fullmatch(token):
+            stack.append('defend setting')
+        elif stack[-1] == 'defend setting' and token == 'm_eCause DANGER_HIGH':
+            continue
         elif stack[-1] == 'defend presets' and DEFEND_PRESET.fullmatch(token):
             stack.append('defend preset')
         elif stack[-1] == 'defend preset' and token == 'm_aTagsForSearch {':
@@ -116,6 +125,19 @@ def placements(text, stock, owned):
             continue
         elif defend and stack[-1] == 'entity' and token == '{':
             stack.append('defend children')
+        elif root['kind'] == 'SCR_AIWaypoint' and root['path'] == PATROL_WAYPOINT and stack[-1] == 'entity' and token == '{':
+            stack.append('patrol children')
+        elif stack[-1] == 'patrol children':
+            child = ROOT.fullmatch(token)
+            if (not child or (child['kind'], child['path']) not in
+                    {('SCR_AIWaypoint', PATROL_WAYPOINT), ('AIWaypointCycle', CYCLE_WAYPOINT)}
+                    or child['guid'].upper() in owned or not stock.contains(child['guid'], child['path'])):
+                return None
+            stack.append('patrol group' if child['group'] else 'patrol waypoint')
+        elif stack[-1] == 'patrol group' and re.fullmatch(rf'(?:{NAME} )?\{{', token):
+            stack.append('patrol waypoint')
+        elif stack[-1] == 'patrol waypoint' and FIELD.fullmatch(token):
+            continue
         elif stack[-1] == 'defend children':
             child = ROOT.fullmatch(token)
             if (not child or child['kind'] != 'GenericEntity' or child['path'] != OBSERVATION_POINT
