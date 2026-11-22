@@ -2622,7 +2622,13 @@ def authored_spawn_references(source, world):
         if 'TILW_PrefabSpawnerEntity ' in source_layer:
             for _, block in blocks(source_layer):
                 if root := PLACED_SPAWNER.fullmatch(block[0]):
-                    for _, fields in polygon_capture.members(block, root['group'], root['name']):
+                    try:
+                        placements = list(polygon_capture.members(block, root['group'], root['name']))
+                    except ValueError:
+                        # A later file check still reports unsupported placements. The
+                        # reference count prevents partial coverage for a damage prefab.
+                        continue
+                    for _, fields in placements:
                         for field in fields:
                             if field.startswith(' m_prefab ') and (ref := REF.fullmatch(field.removeprefix(' m_prefab '))):
                                 yield ref[1].upper(), ref[2], False
