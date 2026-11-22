@@ -32,6 +32,7 @@ ZAGORIA_DRIVETRAIN_FAILURE = {
     '37898175d32ccab770d122a90c35183cd0009a56d9411303974401e55d823ab6': '1.0.25',
 }
 ENGINE_19037_DATABASE = 'd65ebb14b5c9b2baaef1dfafd9b653f51a6ce11f9815585cf8b5ada88dd4e58a'
+BOLT_GUNS_57_ARCHIVE = 'd262083e654a4d4952b88c901d257377de03329b6df0c7204359dcc8a38e5550'
 SCREENING_RUNTIME_LAYER = 'worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/default.layer'
 SCREENING_RUNTIME_BLOB = '3eac40a7befe19671fbd9abb4e8e78714a804dd0'
 LEGACY_PRESENTATION_RESOURCES = {
@@ -67,6 +68,19 @@ def known_zagoria_failure(stock, providers):
             continue
         with package.open('rb') as native:
             return ZAGORIA_DRIVETRAIN_FAILURE.get(file_digest(native, 'sha256').hexdigest())
+    return None
+
+
+def known_compile_failure(stock, providers):
+    if sha256(stock.data).hexdigest() != ENGINE_19037_DATABASE:
+        return None
+    for database in providers:
+        package = database.with_name('data.pak')
+        if database.parent.name != 'ChungusBoltGuns_61BD6595183FCEBD' or not package.is_file():
+            continue
+        with package.open('rb') as native:
+            if file_digest(native, 'sha256').hexdigest() == BOLT_GUNS_57_ARCHIVE:
+                return 'Chungus Bolt Guns 1.0.57 fails script compilation on Reforger 1.9.0.37'
     return None
 
 
@@ -568,6 +582,8 @@ def main():
                 zagoria_failure = None
                 if ZAGORIA_BMP2 in references and ZAGORIA_BMP2 not in unresolved:
                     zagoria_failure = known_zagoria_failure(stock, chosen_providers)
+                if pins and not provider_issue:
+                    provider_issue = known_compile_failure(stock, chosen_providers)
                 for header in group:
                     missions[header] = compare_mission(source, target, header, notes, chosen_dependencies, stock,
                                                        unresolved, longmoor, provider_issue, zagoria_failure)

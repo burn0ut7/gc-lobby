@@ -5490,6 +5490,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(record.get('polygonMapOverlay') for trigger in row.get('captureCandidate', {}).values()
            for record in trigger.values() if isinstance(record, dict)):
         remaining.append('Compare the capture footprint and its shared map fill, outline and faction visibility.')
+    if any('SCR_EditableSystemComponent "{5EDF4803CD048668}"' in body
+           for path, body in draft.items() if path.endswith('.layer') and isinstance(body, str)):
+        remaining.append('Compare Game Master marker selection and descriptor display. Live marker attribute editing remains deferred.')
     if startup_slots:
         remaining.append('Compare random pilot placement and the two authored slots before role selection.')
     if shared_writers:

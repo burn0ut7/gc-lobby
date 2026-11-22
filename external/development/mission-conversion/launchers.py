@@ -30,6 +30,13 @@ NATIVE_TYPES = {
 GENERATED = re.compile(r' m_GC_GeneratedMetadata GC_GeneratedMissionMetadata(?: "[^"]+")? \{')
 ADDON_VERSIONS_FIELD = re.compile(r'^ m_aRequiredAddonVersions\b', re.M)
 ADDON_VERSION = re.compile(r'"([\da-fA-F]{16})=([0-9]+(?:\.[0-9]+){1,3})"')
+REVIEWED_VERSION_PINS = {
+    'Missions/Huska/WindyGoat.conf': (
+        'd7598feec3f1abf731fe149ea80be2fde129c041',
+        'Missions/Huska/Prefabs/Gabe_P.et', '76c5a6c7b1d5255aee20fabc0221fb85df347e64',
+        '61BD6595183FCEBD=1.0.56',
+    ),
+}
 
 
 def authored_header_text(body):
@@ -120,9 +127,14 @@ def launcher(source, dev, header):
             raise ValueError(f'{guid} already belongs to another Dev resource')
         if path in dev.files and path not in dev.resources.get(guid, []):
             raise ValueError(f'{path} already has a different Dev identity')
-    body = replace_reference(text, WORLD_REF, world_id, world)
+    body = native_header(replace_reference(text, WORLD_REF, world_id, world).encode()).decode()
+    if header in REVIEWED_VERSION_PINS:
+        header_blob, asset, asset_blob, pin = REVIEWED_VERSION_PINS[header]
+        if source.files[header] == header_blob and source.files.get(asset) == asset_blob:
+            # The later archive with the original registrations fails to compile on the current engine.
+            body = body.rstrip().removesuffix('}') + f' m_aRequiredAddonVersions {{\n  "{pin}"\n }}\n}}\n'
     files = {
-        header: native_header(body.encode()).decode(),
+        header: body,
         header + '.meta': replace_reference(header_meta, META_NAME, header_id, header),
         world + '.meta': replace_reference(source.read(world + '.meta'), META_NAME, world_id, world),
     }

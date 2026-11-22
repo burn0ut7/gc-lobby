@@ -972,7 +972,7 @@ def main():
         loadouts = local_loadouts.collect(
             source, dev, source_units, dev_units, stock,
             normalize_references=lambda body: batch.replace_registered_paths(body, source, dev, asset_aliases),
-            unavailable=unavailable, historical_parents=historical_roles,
+            unavailable=unavailable, historical_parents=historical_roles, rhs=rhs_database,
             published_playable_parents={current for (identity, _), current in aircrew_roles.items()
                                         if identity == current[0]})
         reviewed_members = {guid: asset[0] for guid, asset in loadouts.items()}

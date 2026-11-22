@@ -3,7 +3,7 @@ from decimal import Decimal
 import json
 from pathlib import Path
 import re
-from briefings import block_end, guid, properties
+from briefings import QUOTED, block_end, guid, properties
 from launchers import META_NAME
 from scenery import FIELD, NUMBER
 
@@ -45,6 +45,9 @@ WIDE_COVER_FIELDS = {
     'm_fWorldSize': '128000',
 }
 MARKER_COMPONENT = re.compile(r'\s*(\w+) "(\{[A-Fa-f0-9]{16}\})" \{')
+MARKER_DESCRIPTOR_ID = '{5EDF4803CD048668}'
+MARKER_DESCRIPTOR_INFO = 'm_UIInfo SCR_EditableDescriptorUIInfo "{5EDF4803E71335A1}" {'
+MARKER_DESCRIPTOR_ICON = '"{5E7A3FF224D598E3}UI/Textures/FieldManual/Gameplay/Navigation/Tiles/protractor-icon-brown_ui.edds"'
 BAKED_MARKER_GENERATOR = re.compile(
     r'PolylineShapeEntity \{\n coords (?P<origin>[^\n]+)\n Points \{\n'
     r'(?:  ShapePoint "\{[\da-fA-F]{16}\}" \{\n   Position [^\n]+\n  \}\n)+'
@@ -199,6 +202,8 @@ def marker_component(lines):
     if not head or block_end(lines, 0) != len(lines) - 1:
         raise ValueError('unsupported marker component block')
     kind, identity = head.groups()
+    if kind == 'PS_EditableMarkerComponent' and identity == MARKER_DESCRIPTOR_ID:
+        return editable_marker_descriptor(lines, identity)
     if kind == 'PK_EntityProtectorComponent':
         values = properties(lines[1:-1], {'Enabled', 'm_keepEntityAfterDelete'})
         if any(value not in ('0', '1') for value in values.values()):
@@ -218,6 +223,35 @@ def marker_component(lines):
         if properties(lines[1:-1], expected.keys()) == expected:
             return [f'  {kind} "{identity}" {{', *(f'   {line.strip()}' for line in lines[1:-1]), '  }']
     raise ValueError('custom or duplicate field components')
+
+
+def editable_marker_descriptor(lines, identity):
+    interior = [line.strip() for line in lines[1:-1]]
+    if interior[:1] == ['m_EntityType FACTION']:
+        entity_type = 'FACTION'
+        interior.pop(0)
+    else:
+        entity_type = 'SYSTEM'
+    if interior[:1] != [MARKER_DESCRIPTOR_INFO] or interior[-1:] != ['}']:
+        raise ValueError('unsupported editable marker descriptor')
+    values = properties(interior[1:-1], {'Description', 'Icon'})
+    if (not values or any(not re.fullmatch(QUOTED, value) for value in values.values())
+            or ('Icon' in values and not re.fullmatch(r'"\{[A-Fa-f0-9]{16}\}[^"]+\.edds"', values['Icon']))):
+        raise ValueError('unsupported editable marker description or icon')
+    return [
+        f'  SCR_EditableSystemComponent "{identity}" {{', f'   m_EntityType {entity_type}',
+        '   ' + MARKER_DESCRIPTOR_INFO, '    Name "Map Marker"',
+        *([f'    Description {values["Description"]}'] if 'Description' in values else []),
+        '    Icon ' + values.get('Icon', MARKER_DESCRIPTOR_ICON),
+        '    m_Image ' + MARKER_DESCRIPTOR_ICON,
+        '    m_aAuthoredLabels {', '     1', '    }',
+        '    m_aAutoLabels {', '     7', '    }',
+        '    m_sNameFormat "Marker"', '   }',
+        '   m_bAutoRegister ALWAYS', '   m_bStatic 1', '   m_Flags 71', '  }',
+        '  SCR_EditableEntityVisibilityChildComponent "{5EDF48006635F3CA}" {', '   m_State 96', '  }',
+        '  RplComponent "{5EDF48006635FC82}" {', '   Streamable Disabled', '  }',
+        '  Hierarchy "{5EDF48006635FC42}" {', '  }',
+    ]
 
 
 def instance(lines, name, inherited=None, *, draw_order=False):

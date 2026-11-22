@@ -17,12 +17,19 @@ GREEN_SNOOD = ('DBFF84DD336E1065',
                'Prefabs/Characters/HeadGear/Masks/Masks_Keela_Snood/Masks_Keela_Snood_GRN.et')
 LEGACY = re.compile(r'\b(?:PS|TILW)_\w+')
 MOVED_CHARACTER_PARENTS = {
+    ('60E1492FD0E1529B', 'Missions/Huska/Prefabs/Character_RHS_USAF_USCM_HeliPilot_P.et'):
+        'Missions/Huska/Prefabs/Character_RHS_USAF_USMC_HeliPilot_P.et',
     ('B64CD72F4D93A99E', 'worlds/James/newbritnvatvt/Character_UK_1989_Paras_LRDriver_P.et'):
         'worlds/James/JavoryPrelude/Character_UK_1989_Paras_LRDriver_P.et',
     ('3245F15CEA803F94',
      'Prefabs/Characters/Factions/BLUFOR/US_Army/1986/Infantry (Woodland)/Character_US_1986_BDU_Mechanic_P.et'):
         'worlds/Til/CompanyTeamCounterAttack/Prefabs/Character_US_1986_BDU_Mechanic_P.et',
 }
+REVIEWED_RHS_PILOT_PARENT = (
+    '228d83d6c2834be63c3405774cdd1cd6c03defff',
+    '42A502E3BB727CEC',
+    'Prefabs/Characters/Factions/BLUFOR/RHS_USAF/RHS_USAF_USMC_MEF/Character_RHS_USAF_USMC_HeliPilot.et',
+)
 MOVED_AI_PARENTS = {
     ('4C362B06571604F9', 'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/Character_GC_SEPARATIST_SL.et'):
         'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/2020/Character_SEP_SL.et',
@@ -108,7 +115,7 @@ def unchanged_units_parent(source_units, dev_units, resource):
 
 
 def collect(source, dev, source_units, dev_units, stock, *, normalize_references=None, unavailable=(),
-            historical_parents=None, published_playable_parents=()):
+            historical_parents=None, published_playable_parents=(), rhs=None):
     """Return approved asset bodies by unique source GUID."""
     approved = {}
     owned = source.resources.keys() | dev.resources.keys()
@@ -198,7 +205,9 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
                             return None
                 body = first.replace(parent[0], f'"{{{native_id}}}{native_path}"', 1) + body[len(first):]
             else:
-                if not (removed or verified_forced) or not stock.contains(resource, parent_path):
+                registered_rhs_pilot = (rhs and (source.files[path], resource, parent_path) == REVIEWED_RHS_PILOT_PARENT
+                                        and rhs.contains(resource, parent_path))
+                if not (removed or verified_forced) or not (registered_rhs_pilot or stock.contains(resource, parent_path)):
                     return None
         if (guid == '730C15295DBF4543' and source.files[path] == '90e7c82588520852e48f88e85f35bcbeb29b27ef'
                 and GREEN_SNOOD in unavailable

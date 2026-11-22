@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 from dependencies import database_project, installed_version
-from review import known_zagoria_failure
+from review import known_compile_failure, known_zagoria_failure
 from scenery import StockPrefabs
 from vehicle_crew import ZAGORIA_BMP2
 
@@ -172,6 +172,9 @@ def historical_provider_candidates(plan, roots, base):
             continue
         zagoria = f"{{{ZAGORIA_BMP2[0]}}}{ZAGORIA_BMP2[1]}"
         runtime_blocked = {zagoria} if zagoria in matched and known_zagoria_failure(base, [database]) else set()
+        compile_failure = known_compile_failure(base, [database])
+        if compile_failure:
+            runtime_blocked = matched
         exact_worlds = {world for ref in matched for world in drafts.get(ref, ())}
         conversion_worlds = {world for ref in matched for world in conversion.get(ref, {}).get('worlds', ())}
         sole_conversion = {world for ref in matched - runtime_blocked
@@ -185,6 +188,7 @@ def historical_provider_candidates(plan, roots, base):
             'conversionWorlds': sorted(conversion_worlds), 'onlyReportedConversionBlocker': sorted(sole_conversion),
             'alternateRegistrations': alternates, 'reviewWorlds': sorted(review_worlds),
             'runtimeBlockedReferences': sorted(runtime_blocked),
+            **({'runtimeFailure': compile_failure} if compile_failure else {}),
             'onlyMissingPackage': sorted(world for world in exact_worlds if held[world] <= matched - runtime_blocked),
         })
     return sorted(candidates, key=lambda row: (
