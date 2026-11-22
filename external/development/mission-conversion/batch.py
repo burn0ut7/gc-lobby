@@ -1112,6 +1112,10 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/FSM/Prefabs/Items/Core/Wirecutters/FSM_wirecutters.et':
+        '130d030871b4ba325e17d9314d447a2f3d1366a268868e0159affbeb67381a6a',
+    'worlds/RedTheKnown/ChakChakChosen/Prefabs/RebUnits/Custom_Shortmag_BC_PPSh41.et':
+        'dc68fa28e9136e995f0d03acfb29fe7b74d95d5b136df9f87df9cb1cee610b1e',
     'worlds/HitTheMan/2nd Break The Line/HTM_EffectModule_Zoned_Smoke_MortarBarrage_Creeping.et.et':
         '7b56f96c988c3e00ffa59c446488ab8ac9f50809a7772670a501339953d36a56',
     'worlds/HitTheMan/Prefabs/Vehicles/Heavy Weapon/Cannon_2A466_T72A_HE_HTM.et':
@@ -1358,6 +1362,33 @@ def static_spline_placement(block):
             and any(line.strip() == 'Points {' for line in block)
             and all(FIELD.fullmatch(line.strip()) or SPLINE_RECORD.fullmatch(line.strip())
                     for line in block[1:-1]))
+
+
+TAKISTAN_DIRT_ROAD = ('9495F43BDE130455', 'Prefabs/WEGenerators/Roads/Dirt/RG_Road_Dirt_Takistan.et')
+ROAD_GENERATOR = re.compile(r'(?P<group>\$grp )?RoadGeneratorEntity(?: (?P<name>[\w.-]+))? : ' + REF.pattern + r' \{')
+ROAD_ID = re.compile(r'   ID "[\da-fA-F]{16}"')
+
+
+def static_road_placement(block):
+    """Keep the Takistan generator and its authored instance overrides."""
+    head = ROAD_GENERATOR.fullmatch(block[0])
+    if not head or REF.search(block[0]).groups() != TAKISTAN_DIRT_ROAD:
+        return False
+    members = polygon_capture.members(block, head['group'], head['name'])
+    for _, fields in members:
+        if ' {' in fields:
+            start = fields.index(' {')
+            stop = block_end(fields, start)
+            if fields[stop - 1:stop + 1] != ['  }', ' }'] or fields[start + 1] != '  RoadEntity {':
+                return False
+            child = fields[start + 2:stop - 1]
+            if not child or not ROAD_ID.fullmatch(child[0]) or not all(
+                    FIELD.fullmatch(line.strip()) for line in child[1:]):
+                return False
+            fields = fields[:start] + fields[stop + 1:]
+        if not all(FIELD.fullmatch(line[1:]) for line in fields):
+            return False
+    return bool(members)
 
 
 SCENERY_MAP_PARENT = re.compile(
@@ -4207,6 +4238,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 elif LEGACY_WIRECUTTER.fullmatch(head):
                     result.append(restore_placed_wirecutters(block, asset_aliases, source.files[layer]))
                 elif kind == 'SplineShapeEntity' and static_spline_placement(block):
+                    result.append(body)
+                elif kind == 'RoadGeneratorEntity' and static_road_placement(block):
                     result.append(body)
                 elif kind in ('SplineShapeEntity', 'StaticModelEntity') and LEGACY.search(body) and (
                         'PS_ManualMarker' in body or 'TILW_MapShape' in body):
