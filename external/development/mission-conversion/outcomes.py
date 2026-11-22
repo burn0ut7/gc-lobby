@@ -269,15 +269,28 @@ def meta_flag_definitions(source, world, path, body, scripts):
         divider_uses = Counter(re.findall(r'-{3,}', references + '\n' + scripts))
         if any(divider_uses[flag[1:-1]] != count for flag, count in dividers.items()):
             raise ValueError('meta flag divider has another authored use')
-    dependencies = {flag: sorted({match[1] for line in lines if (match := META_FLAG_FIELD.fullmatch(line))
-                                  and match[1] in definitions})
-                    for flag, lines in definitions.items()}
-    try:
-        tuple(TopologicalSorter(dependencies).static_order())
-    except CycleError as exc:
-        cycle = ' -> '.join(exc.args[1])
-        raise ValueError('cyclic meta flag definitions: ' + cycle) from exc
     return definitions, identities, {flag[1:-1]: count for flag, count in dividers.items()}, discovery_resets
+
+
+def acyclic_meta_definitions(definitions):
+    """Keep definitions whose dependency chains can be expanded without a cycle."""
+    graph = TopologicalSorter({
+        flag: sorted({match[1] for line in lines if (match := META_FLAG_FIELD.fullmatch(line))
+                      and match[1] in definitions})
+        for flag, lines in definitions.items()
+    })
+    gap = None
+    try:
+        graph.prepare()
+    except CycleError as exc:
+        gap = 'cyclic meta flag definitions: ' + ' -> '.join(exc.args[1])
+    if gap is None:
+        return definitions, None
+    available = set()
+    while ready := graph.get_ready():
+        available.update(ready)
+        graph.done(*ready)
+    return {flag: lines for flag, lines in definitions.items() if flag in available}, gap
 
 
 def derived_flags_with_known_readers(source, world, framework_path, body, definitions, spawner_reads):
@@ -1176,11 +1189,12 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 meta_dividers_audit.update(dividers)
             if discovery_resets_audit is not None:
                 discovery_resets_audit.extend(discovery_resets)
+            acyclic, derived_gap = acyclic_meta_definitions(definitions)
             derived, unverified = derived_flags_with_known_readers(
-                source, world, path, body, definitions,
+                source, world, path, body, acyclic,
                 spawner_reads if derived_spawners_audit is not None else {})
             if unverified:
-                derived_gap = 'meta flag has another producer or unsupported use: ' + unverified
+                derived_gap = derived_gap or 'meta flag has another producer or unsupported use: ' + unverified
             identity_flags = identities
         except ValueError as exc:
             derived_gap = str(exc)

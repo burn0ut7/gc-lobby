@@ -1307,6 +1307,16 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/Til/RouteTremaux/Prefabs/blockers/abatis_1.et':
+        '4c85ef09b8fa042f302061b88607c9a55aa836c6fde8cbe8cabc13b0c7cb0601',
+    'worlds/Til/RouteTremaux/Prefabs/blockers/bridge_wrecks.et':
+        '464176b25f231dd2d59b9b8b4c28b6b28d0fa97e6c1ca30fad42e349f38a96f9',
+    'worlds/Til/RouteTremaux/Prefabs/blockers/creek_wrecks.et':
+        '3e8a15c8a3902683c441513625518eeb6c23b7f52f226a8dc2e4ad4e093777e9',
+    'worlds/Til/RouteTremaux/Prefabs/blockers/rocks_1.et':
+        '15df5d446eda9c0b71b02e2646d7640ffafcb3460a5e919d7e09cf36f8ac1939',
+    'worlds/Til/RouteTremaux/Prefabs/blockers/wreck_blockage.et':
+        '57cf0e6aefc8c9dbd57289a94eeb7425e2e453e8a1b59357377faf4bde1c8ce0',
     'worlds/FSM/Prefabs/Weapons/Magazines/FSM_Box_762x51_M240_100rnd_2Ball_1Tracer.et':
         '676f8f91d9795922ddb9a37da90842d5e1ad37c5650202ccba29cfc9757efd00',
     'worlds/Jub/OperationJaws/prefabs/JAWs_GC_M1151_armed_M2HB_MDO_OGPK+Cover_tan.et':
