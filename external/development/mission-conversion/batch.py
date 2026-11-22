@@ -1126,6 +1126,25 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    # These supply containers keep their authored capacity, fill, and decay settings.
+    'worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/HTMRepairingBox.et':
+        'f2b3f512ef0977f2970103d0acb48292362a366871af235f29711b8bc4e08854',
+    'worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/HTMTransportBox.et':
+        '6bb4a1bde834d64e26cc765f3729861c136b95c97a9574876a0ef42f28aadc03',
+    'worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/HTMTransportBoxSupply400.et':
+        '00b6fa2144d52bc181f98232665bb97aeebe510c73ef55c65d8ad5ae92c98a0c',
+    'worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/HTMTransportBoxSupply500.et':
+        '4869b2be5055f2d6d756040f13f2424cda87200c1760cc17af7871f9e493cd3f',
+    'worlds/Jub/CobrasBite/Prefabs/JLTV_Base_CobrasBite.et':
+        '07961f825852cbda25e268caeeb97adcd89b71b431f82469bce28866e1e6e869',
+    'worlds/Jub/OperationArrowheadMulladostPass/Prefabs/Stryker_CROWS_Cage_MK19_HQ.et':
+        '96d86ba4b10a812c3e1c315729ea14061ad52132abc690d566b979304769d723',
+    'worlds/Jub/OperationArrowheadMulladostPass/Prefabs/Stryker_CROWS_Cage_combatload.et':
+        'ebc93ec2130658bcaf95f486c1348663bb93c81095d92ba354769271b0d48c05',
+    'worlds/anteante101/Prefabs/Weapons/Rifle_M16A2_carbine_empty_AA101.et':
+        '2339ab3175b7db61be53fa243235efac60dff4ed8913b13376d299bdd40cdf25',
+    'worlds/anteante101/Prefabs/Weapons/Rifle_M16A2_empty_AA101.et':
+        '3e74c9f128709371d06128b3be1866f22c6d05cb2c3b3f4617eea087f07adfca',
     'worlds/ac337/prefab/1980s SF and Partners/SF/Rifle_M16A2_suppressor_M203_A2k.et':
         '30c03bee49f56c89683434638d6a35dcd859a29971d31db5f37ec22da4fe580b',
     'worlds/FSM/Prefabs/Items/Core/Wirecutters/FSM_wirecutters.et':
