@@ -696,6 +696,12 @@ STOCK_RESOURCE_REKEYS = {
 }
 
 STOCK_RESOURCE_ALIASES = {
+    ('0B1562B127AF6116', 'Configs/Weapons/AIBallisiticTables/AIBT_545x39_Tracer_7T3.conf'):
+        'Configs/Weapons/AIBallisticTables/AIBT_545x39_Tracer_7T3.conf',
+    ('18A55B529C1F6655', 'Configs/Weapons/AIBallisiticTables/AIBT_762x54r_Tracer_7T2.conf'):
+        'Configs/Weapons/AIBallisticTables/AIBT_762x54r_Tracer_7T2.conf',
+    ('71F92160489B0A8E', 'Assets/Weapons/Ammo/Bullets/762x54/Cartridge_762x54_T-46.xob'):
+        'Assets/Weapons/Ammo/Bullets/762x54/Cartridge_762x54_T46.xob',
     ('AED5759B653DF6D0', 'Prefabs/Vegetation/Bush/b_rosa_canina_1s_collision.et'):
         'Prefabs/Vegetation/Bush/b_rosa_canina_1s.et',
     ('2D556E41F306336C', 'Configs/Destruction/MultiphaseDestruction/FX_Debris/FX_Debris_Snadbags_Plastic.conf'):
@@ -1100,6 +1106,44 @@ REVIEWED_NATIVE_ASSETS = {
         'cb1cdb2ae1479ec1b3eb4a0c67131fc126ed64a84fee0dd7aebc276f34d5ff12',
     'worlds/FSM/Prefabs/Weapons/Explosives/DemoBlock_M112/FSM_DemoBlock_M112.et':
         'b0f3de095593e9567db7ee6d08c54f12a0cc01d59b13f1af973f45ca64b713fb',
+    'worlds/FSM/Configs/Weapons/Ammo/FSM_545_Tracer_Array.conf':
+        'd3d90125f1f867ba3fc99106125de72b9d6ea527f21d2742326b5aca58ce3c2a',
+    'worlds/FSM/Configs/Weapons/Ammo/FSM_762_Ammo_Tracer_Array.conf':
+        '1e9470f7ee255e0551d2b7909b894f94319c854507b8e0ddb8aa25b8a5ec7c2b',
+    'worlds/FSM/Prefabs/Weapons/Ammo/FSM_762x54_Tracer_Green.et':
+        '0bd76a58fc60cac32411149e72cd91edbb03a6e824967e9be2a5828f42268f04',
+    'worlds/FSM/Prefabs/Weapons/Ammo/FSM_Tracer_Bullet_Blue.et':
+        '60f8f32ba70e690cab282e4a0c65c74c4dac9a6cb805638dbf11290c2716daa7',
+    'worlds/FSM/Prefabs/Weapons/Ammo/FSM_Tracer_Bullet_Green.et':
+        '632f7914bb05c690047d467de77919edc4a111f820f2478060bf2c7d5e5420c1',
+    'worlds/FSM/Prefabs/Weapons/Ammo/FSM_Tracer_Bullet_Orange.et':
+        '68274861b1059c85aca4883cf43d6a4a3903f1e989c563e62958dc243064e89b',
+    'worlds/FSM/Prefabs/Weapons/Ammo/FSM_Tracer_Bullet_Purple.et':
+        '8a943a3d8674196c344a3333c44e0bbd76a5f9f646cd19e08ab98935b1c7ca3f',
+    'worlds/FSM/Prefabs/Weapons/Ammo/FSM_Tracer_Bullet_Red.et':
+        'a40f10bf7d55f850d0c9c806adf66e91c1fdee08f09f0bd646199fe58b7ee3cf',
+    'worlds/FSM/Prefabs/Weapons/Ammo/FSM_Tracer_Bullet_White.et':
+        '5017776f628d8da3b97719e310147e6b5d0ad8133e8adbdc0c4c3d8b395cb5f7',
+    'worlds/FSM/Prefabs/Weapons/Ammo/FSM_Tracer_Bullet_Yellow.et':
+        '4527850029d27af100c2f84e7480151f7bdc61ca6df5c0aa1765994f200e2aa5',
+    'worlds/FSM/Prefabs/Weapons/MachineGuns/PKM/FSM_MG_PKM_mixed.et':
+        '5d8ccf3b2775455b40361b22bfbdf7e12b6845ce31beee3dc9a6bcaf08368bd8',
+    'worlds/FSM/Prefabs/Weapons/Magazines/FSM_545_30rd_Plastic_Black_Reload_tracer.et':
+        '97c08a73b4cbfd8ebde1dab9619db9eff701d802e07d46de66e96943782d53cf',
+    'worlds/FSM/Prefabs/Weapons/Magazines/FSM_545_30rd_Plastic_black_Tracer_green.et':
+        '648ac0989da8cefc6239946998d4fcbca4bc6063cd47403a6cae01b0c7bf36ab',
+    'worlds/FSM/Prefabs/Weapons/Magazines/FSM_Box_762_3rd_1rd_tracer.et':
+        '1d90a0e1e5a517138552a71933c109fae0c46cc4c90631237c92b1235f0479ba',
+    'worlds/FSM/Prefabs/Weapons/Rifles/ak74_Reload_tracer/FSM_AK74M_GP25_RT.et':
+        '75be11888ee610a691a74124adf3b3f02fcc7a475758a2b847904dc2d8d125bd',
+    'worlds/FSM/Prefabs/Weapons/Rifles/ak74_Reload_tracer/FSM_AK74M_RT.et':
+        'cde01b0a9e57e7eb8d6a4a4e1d15dd8fef73021293e630f0e3c70bc044f1bcb6',
+    'worlds/FSM/Prefabs/Weapons/Rifles/ak74_Reload_tracer/FSM_FANCY_AK74M_b10m_b19n_Holo_RT.et':
+        'da3036c9c96a2f5b3da4ca781fa2fb9339e8f3ae64e2fee5ec7570547f225249',
+    'worlds/FSM/Prefabs/Weapons/Rifles/ak74_Reload_tracer/FSM_FANCY_AK74M_b30u_b31n_RT.et':
+        '5fcc4f78b28f6f29ad539f5379342a4081ac0e04d81971e93a371fb389cdd2dd',
+    'worlds/FSM/Prefabs/Weapons/Rifles/ak74_Reload_tracer/FSM_Rifle_AK74_RT.et':
+        'bb196a9a9eb14ffa7d72047731f654cf0d456590fd88050d42c4d653c9da557f',
     'worlds/TheLocalPub/RailroadReactions/Prefabs/AI/Groups/MSV_Flora_RifleSquad.et':
         '0a5ac894b9d00d95a61ab7bff77bbda73bc0a1adf45e26b8a630587850f3ea09',
     'worlds/HitTheMan/Prefabs/Vehicles/BMP1_Desert_ZU_HTM.et':
@@ -2215,6 +2259,10 @@ def passive_asset(source, path):
         return source.read_raw(path)
     if suffix == '.imageset':
         return source.read(path)
+    if path in REVIEWED_NATIVE_ASSETS:
+        body = source.read(path)
+        if sha256(body.strip().encode()).hexdigest() == REVIEWED_NATIVE_ASSETS[path] and not LEGACY.search(body):
+            return body
     if suffix == '.nmn' and source.files[path] == OBSOLETE_NAVMESH.get(path):
         tiles = len(source.navmesh_tiles(path))
         raise ValueError(f'Workbench rejected the compiled navmesh as obsolete. Regeneration needed. Found {tiles} original tiles')
@@ -2242,9 +2290,6 @@ def passive_asset(source, path):
         if path == BLACKBOX[1]:
             return blackbox_prefab(body)
         if STORAGE_BOX.fullmatch(body.rstrip('\n')):
-            return body
-        if (sha256(body.strip().encode()).hexdigest() == REVIEWED_NATIVE_ASSETS.get(path)
-                and not LEGACY.search(body)):
             return body
         lines = body.splitlines()
         material = MATERIAL_OVERRIDE.fullmatch(body.rstrip('\n'))
