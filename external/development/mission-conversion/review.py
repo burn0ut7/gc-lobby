@@ -32,6 +32,8 @@ ZAGORIA_DRIVETRAIN_FAILURE = {
     '37898175d32ccab770d122a90c35183cd0009a56d9411303974401e55d823ab6': '1.0.25',
 }
 ENGINE_19037_DATABASE = 'd65ebb14b5c9b2baaef1dfafd9b653f51a6ce11f9815585cf8b5ada88dd4e58a'
+SCREENING_RUNTIME_LAYER = 'worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/default.layer'
+SCREENING_RUNTIME_BLOB = '3eac40a7befe19671fbd9abb4e8e78714a804dd0'
 LEGACY_PRESENTATION_RESOURCES = {
     ('3136BE42592F3B1B', 'PrefabsEditable/MissionDescription/EditableMissionDescription.et'),
     ('CD85ADE9E0F54679', 'PrefabsEditable/Markers/EditableMarker.et'),
@@ -42,7 +44,7 @@ AREAS = {
     'roster': re.compile(r'\b(?:SCR_AIGroup|PS_PlayableComponent)\b|\bm_(?:aUnitPrefabSlots|\w*Callsign\w*|bPlayable)\b'),
     'map': re.compile(r'\b(?:PS_ManualMarker|GC_BriefingMarkerComponent|\w*MapShape\w*|\w*AOLimit\w*|ShapePoint)\b'),
     'respawn': re.compile(r'\b(?:PS_FactionRespawnCount|\w+Respawn\w*|m_\w+Tickets\w*)\b'),
-    'events': re.compile(r'\b(?:TILW_\w+(?:TriggerEntity|Instruction|Term|Flag\w*)|TILW_MissionEvent|GC_Event|GC_\w+(?:Action|Condition))\b|\bm_\w*Delay\b'),
+    'events': re.compile(r'\b(?:TILW_\w+(?:TriggerEntity|Instruction|Term|Flag\w*)|TILW_MissionEvent|GC_Event|GC_AreaFlagObserver|GC_\w+(?:Action|Condition))\b|\bm_\w*Delay\b'),
     'weather': re.compile(r'\b(?:\w*TimeAndWeather\w*|\w*StartingWeather\w*|m_\w*(?:StartingHour|StartingDay|DateOverride|WindSpeed)\w*)\b'),
     'vehicles': re.compile(r'^(?:\$grp )?Vehicle\b|\bm_sAttachmentGroupName\b'),
 }
@@ -210,6 +212,11 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
               if path_resolved_parents else []),
             *(['Compare startup cleanup targets and confirm protected entities survive.']
               if {'GC_StartupCleanupEntity', 'GC_StartupCleanupProtectionComponent'} <= kinds else []),
+            *(['Reproduce the Screening The Orb native startup crash on the retained addon graph.']
+              if target.files.get(SCREENING_RUNTIME_LAYER) == SCREENING_RUNTIME_BLOB and SCREENING_RUNTIME_LAYER in outgoing
+              else []),
+            *(['Verify Screening The Orb exterior reinforcements at 2 and 12 seconds after the shared area flag changes.']
+              if SCREENING_RUNTIME_LAYER in outgoing else []),
             *(['Compare issued equipment and slot presentation for the restored historical MSV80 roles.']
               if any('/MotorRifle_MSV80/Legacy/Character_USSR_Legacy_MSV80_' in path for _, path in refs) else []),
         ],

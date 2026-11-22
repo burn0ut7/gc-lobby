@@ -2361,16 +2361,11 @@ SCREENING_AREA_BLOB = '2fd93fe71c5cbe9fcde680e6ba61c3ada8d9fac2'
 SCREENING_AREA_FLAGS = {'SouthExterior1': 1, 'WestExterior2': 1, 'SouthExterior2': 2}
 SCREENING_AI_WORLD_LAYER = 'worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/default.layer'
 SCREENING_AI_WORLD_SOURCE = '3f8fbb421bf2b903a9034f8d698f85a01b8b27d2'
-SCREENING_AI_WORLD_MIGRATED = '58773b357fef8e5db20e8f3a5fc0b12891a43521'
+SCREENING_AI_WORLD_REVISIONS = {'58773b357fef8e5db20e8f3a5fc0b12891a43521',
+                                '3eac40a7befe19671fbd9abb4e8e78714a804dd0'}
+BAD_ORB_AI_WORLD = ('33A5B976E41B0A4C', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et')
+BAD_ORB_AI_WORLD_BLOB = 'fa88aab78356bca0f0a6995a880e5ccf9cf738f2'
 BARE_AI_WORLD = 'SCR_AIWorld {\n}\n'
-AI_WORLD_WITH_SETTINGS = '''SCR_AIWorld {
- components {
-  SCR_AISettingsComponent "{512CCCD0856CB4B9}" {
-   Enabled 1
-  }
- }
-}
-'''
 REVIEWED_DORMANT_SPAWNER_FLAGS = {
     **dict.fromkeys(REVIEWED_BUILDING_AREAS, (('SpawnTwo', 2), ('US_Trigger_Right_3', 1))),
     '9dfaedf4beacd04c9260e63be23dc6194ce4d9be': (('Counter_Trigger_2', 2),),
@@ -3659,6 +3654,13 @@ SYMBOLIC_MATCH_CONDITION = re.compile(
     r'(?P=indent) m_eGameModeState )GAME$')
 
 
+def screening_ai_world(dev):
+    identity, path = BAD_ORB_AI_WORLD
+    if dev.files.get(path) != BAD_ORB_AI_WORLD_BLOB or dev.resources.get(identity) != [path]:
+        return None
+    return f'SCR_AIWorld : "{{{identity}}}{path}" {{\n coords 0 0 0\n}}\n'
+
+
 def repair_existing_layers(source, dev, world, aliases):
     """Stage verified changes to existing layers with the original file hash."""
     repairs, original_hashes = {}, {}
@@ -3680,8 +3682,9 @@ def repair_existing_layers(source, dev, world, aliases):
                 pass
         updated = SYMBOLIC_MATCH_CONDITION.sub(lambda match: match['prefix'] + MATCH_PHASE_VALUE, updated)
         if (path == SCREENING_AI_WORLD_LAYER and source.files.get(path) == SCREENING_AI_WORLD_SOURCE
-                and dev.files[path] == SCREENING_AI_WORLD_MIGRATED and updated.startswith(BARE_AI_WORLD)):
-            updated = AI_WORLD_WITH_SETTINGS + updated.removeprefix(BARE_AI_WORLD)
+                and dev.files[path] in SCREENING_AI_WORLD_REVISIONS and updated.startswith('SCR_AIWorld {\n')):
+            if native_world := screening_ai_world(dev):
+                updated = native_world + updated.partition('\n}\n')[2]
         if updated != original:
             repairs[path] = updated
             original_hashes[path] = sha256(original.encode()).hexdigest()
@@ -4950,7 +4953,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append(restore_uk_ammo_boxes(block, layer, source.files[layer]))
                 elif (layer == SCREENING_AI_WORLD_LAYER and source.files[layer] == SCREENING_AI_WORLD_SOURCE
                       and body == BARE_AI_WORLD):
-                    result.append(AI_WORLD_WITH_SETTINGS)
+                    if native_world := screening_ai_world(dev):
+                        result.append(native_world)
+                    else:
+                        blockers.append({'rule': kind, 'file': layer, 'line': line,
+                                         'detail': 'verified Bad Orb AI world prefab unavailable'})
                 elif NATIVE.match(head):
                     try:
                         if f'{{{BLOODY_GARRISON}}}' in head:
