@@ -696,6 +696,8 @@ STOCK_RESOURCE_REKEYS = {
 }
 
 STOCK_RESOURCE_ALIASES = {
+    ('F62AA8E7B8EA9D26', 'configs/ResourceTypes/PS5/MeshObjectCommon.conf'):
+        'Configs/System/ResourceTypes/PS5/MeshObjectCommon.conf',
     ('0B1562B127AF6116', 'Configs/Weapons/AIBallisiticTables/AIBT_545x39_Tracer_7T3.conf'):
         'Configs/Weapons/AIBallisticTables/AIBT_545x39_Tracer_7T3.conf',
     ('18A55B529C1F6655', 'Configs/Weapons/AIBallisiticTables/AIBT_762x54r_Tracer_7T2.conf'):
@@ -3120,6 +3122,40 @@ def repair_existing_layers(source, dev, world, aliases):
     return repairs, original_hashes
 
 
+FSM_ORANGE_TRACER = ('E385D042495DEC73', 'Assets/Weapons/Ammo/Tracers/hc3_tracer_Base_Orange.xob')
+FSM_ORANGE_MATERIAL = ('7700A708C3B1AE6E', 'Assets/Weapons/Ammo/Tracers/Data/FSM_Tracer_Emit_Color_Orange.emat')
+FSM_ORANGE_TRACER_BLOBS = {
+    FSM_ORANGE_TRACER[1]: 'cc0ea55743b2375154c48f15d7ea0ed8633cd9e1',
+    FSM_ORANGE_TRACER[1] + '.meta': 'c83e945c2957d880258cdfb31162bcbf8c0f4bb0',
+    FSM_ORANGE_TRACER[1].removesuffix('.xob') + '.fbx': '1d67c95616d48ea6d34f1ccb299a1445b17cda4a',
+    FSM_ORANGE_TRACER[1].removesuffix('.xob') + '.txo': '66b6e18d9bf8828a28e509148147e49b325beb14',
+    FSM_ORANGE_MATERIAL[1]: '465bceae7b76d8445fc5e5bc4517b3906af854e1',
+    FSM_ORANGE_MATERIAL[1] + '.meta': '3a8008691c74cc0d2978afb7ae10bcce84bb304e',
+}
+
+
+def fsm_orange_tracer_assets(source, dev, aliases):
+    prefix = 'worlds/FSM/'
+    for identity, path in (FSM_ORANGE_TRACER, FSM_ORANGE_MATERIAL):
+        if (source.resources.get(identity) != [prefix + path]
+                or dev.resources.get(identity) not in (None, [path])):
+            raise ValueError('Orange tracer mesh or material registration changed')
+    files = {}
+    for path, blob in FSM_ORANGE_TRACER_BLOBS.items():
+        original = prefix + path
+        if source.files.get(original) != blob:
+            raise ValueError('Orange tracer mesh, import source or material changed')
+        # The compiled mesh embeds the original material path. Keep both registrations there.
+        body = (replace_registered_paths(source.read(original), source, dev, aliases)
+                if path.endswith(('.meta', '.emat')) else source.read_raw(original))
+        if path in dev.files:
+            existing = dev.read_raw(path) if isinstance(body, bytes) else dev.read(path)
+            if existing != body:
+                raise ValueError('Orange tracer asset would overwrite different Dev content')
+        files[path] = body
+    return files
+
+
 def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets, faction_assets):
     files = list(draft)
     blockers = set()
@@ -3142,6 +3178,13 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
                 if identity and identity[3] == new_ai_path and dev.read(new_ai_path).startswith('SCR_AIWorld : '):
                     return f'"{{{ref[1]}}}{new_ai_path}"'
             paths = source.resources.get(resource, [])
+            if (resource, path) == FSM_ORANGE_TRACER:
+                try:
+                    if path not in draft:
+                        draft.update(fsm_orange_tracer_assets(source, dev, asset_aliases))
+                except ValueError as exc:
+                    blockers.add((owner, path, str(exc)))
+                return ref[0]
             if not paths or path in draft or path in dev.files:
                 return ref[0]
             try:
