@@ -5527,7 +5527,7 @@ def checked_area_flag_reads(flag, readers, events, derived):
     return 0
 
 
-def attached_trigger_map(fields, dev):
+def attached_trigger_map(fields, dev, *, convert_radius=None):
     parent, children = trigger_children(fields)
     output, amounts = [], Counter()
     for _, block in children:
@@ -5547,6 +5547,9 @@ def attached_trigger_map(fields, dev):
             # The spawner pass replaces this child after its flags and prefab resolve.
             rendered = child
             amounts['attachedSpawners'] += 1
+        elif convert_radius and (trigger := PRESENCE_TRIGGER.fullmatch(block[0]) or TRIGGER.fullmatch(block[0])):
+            rendered = convert_radius(trigger, block[1:-1])
+            amounts['attachedRadiusTriggers'] += 1
         elif ((head := PLACED_ENTITY.fullmatch(block[0])) and head['name'] and not head['group']
               and re.fullmatch(WAYPOINT_CLASS, head['kind']) and REF.search(block[0])
               and all(FIELD.fullmatch(field.strip()) or re.fullmatch(rf' CompletionRadius {NUMBER}', field)
@@ -5559,6 +5562,36 @@ def attached_trigger_map(fields, dev):
     if not output:
         raise ValueError('empty trigger child list')
     return parent, output, amounts
+
+
+def flag_area_name(world, flag):
+    token = flag[1:-1]
+    if len(token.encode()) > 100 or not re.fullmatch(r'[\w.-]+', token):
+        token = guid(world + '/area/' + flag)
+    return 'GC_MigrationArea_' + token
+
+
+def attached_radius_rule(world, trigger, fields, scripts):
+    """Convert a child of a radius trigger in the original local coordinate space."""
+    name = trigger['name']
+    if trigger['group'] or (name and name in scripts):
+        raise ValueError('grouped or scripted child radius trigger')
+    flag_fields = [field.removeprefix(' m_flagName ') for field in fields if field.startswith(' m_flagName ')]
+    if len(flag_fields) != 1 or not LEGACY_FLAG.fullmatch(flag_fields[0]) or len(flag_fields[0].encode()) > 130:
+        raise ValueError('child radius trigger needs one valid flag')
+    flag, = flag_fields
+    if flag[1:-1] in scripts:
+        raise ValueError('child radius trigger may be controlled by mission scripts')
+    area_name = name or flag_area_name(world, flag)
+    if not any(field.startswith(' coords ') for field in fields):
+        fields = [' coords 0 0 0', *fields]
+    if trigger['kind'] == 'Presence':
+        rule, area, details = presence_rule(world, area_name, flag, fields)
+    elif trigger['kind'] == 'Extraction' and trigger['guid'] == '192ABD6B9232E064':
+        rule, area, details = extraction_rule(world, area_name, flag, fields)
+    else:
+        raise ValueError('unsupported child radius trigger identity')
+    return flag, rule, area, {'area': area_name, **details}
 
 
 JAWS_OBJECTIVES = 'worlds/Jub/OperationJaws/OperationJaws_Layers/OBJs.layer'
@@ -5637,6 +5670,8 @@ def area_rules(source, world, dev=None):
                 for index, (name, fields) in enumerate(polygon_capture.members(block, root['group'], root['name'])):
                     trigger = match
                     attached = []
+                    child_rules = {}
+                    child_areas = set()
                     pilot_spawn = None
                     empty_outline = False
                     if shape:
@@ -5662,7 +5697,20 @@ def area_rules(source, world, dev=None):
                         placement, (trigger, fields), vertices = polygon_capture.read(
                             fields, TRIGGER, startup_prefab=pilot_spawn)
                     elif ' {' in fields:
-                        fields, attached, amounts = attached_trigger_map(fields, dev)
+                        def convert_radius(child, child_fields):
+                            flag, child_rule, child_area, details = attached_radius_rule(
+                                world, child, child_fields, script_text(source))
+                            if flag in conditions or flag in flags or flag[1:-1] in writer_flags:
+                                raise ValueError('duplicate child radius flag ' + flag)
+                            if details['area'] in child_areas:
+                                raise ValueError('duplicate child radius area ' + details['area'])
+                            flags.add(flag)
+                            child_areas.add(details['area'])
+                            child_rules[flag] = child_rule
+                            capture_details[flag[1:-1]] = details
+                            return child_area
+
+                        fields, attached, amounts = attached_trigger_map(fields, dev, convert_radius=convert_radius)
                     flag_field = next((value.strip() for value in fields if value.strip().startswith('m_flagName ')),
                                       'm_flagName ""')
                     flag = flag_field.removeprefix('m_flagName ')
@@ -5688,14 +5736,13 @@ def area_rules(source, world, dev=None):
                         raise ValueError('duplicate area flag ' + flag)
                     if not shared_writer:
                         flags.add(flag)
-                    token = flag[1:-1]
-                    if len(token.encode()) > 100 or not re.fullmatch(r'[\w.-]+', token):
-                        token = guid(world + '/area/' + flag)
-                    area_name = 'GC_MigrationArea_' + token
+                    area_name = flag_area_name(world, flag)
                     if shared_writer and not name:
                         area_name += '_' + guid(f'{layer}:{line}/{index}')
                     if shape or trigger['kind'] in ('Faction', 'Presence'):
                         area_name = name or area_name
+                    if area_name in child_areas:
+                        raise ValueError('child radius area uses its parent name ' + area_name)
                     if trigger['kind'] == 'Presence':
                         if scripts is None:
                             scripts = script_text(source)
@@ -5773,6 +5820,7 @@ def area_rules(source, world, dev=None):
                         area = '\n'.join([*area.splitlines()[:-1], ' {', *attached, ' }', '}', ''])
                         capture_details.setdefault(flag[1:-1], {'area': area_name}).update(amounts)
                     result[flag] = rule
+                    result.update(child_rules)
                     areas.append(area)
             except (ArithmeticError, KeyError, ValueError) as exc:
                 audit[f'{layer}:{line}'] = {'gap': str(exc)}
@@ -7396,6 +7444,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(record.get('triggerAnchor') for trigger in row.get('captureCandidate', {}).values()
            for record in trigger.values() if isinstance(record, dict)):
         remaining.append('Compare named capture anchors, polygon occupation and associated map outlines.')
+    if any(record.get('attachedRadiusTriggers') for trigger in row.get('captureCandidate', {}).values()
+           for record in trigger.values() if isinstance(record, dict)):
+        remaining.append('Compare the parent and child radius triggers independently during Match.')
     if any(record.get('polygonMapOverlay') for trigger in row.get('captureCandidate', {}).values()
            for record in trigger.values() if isinstance(record, dict)):
         remaining.append('Compare the capture footprint and its shared map fill, outline and faction visibility.')

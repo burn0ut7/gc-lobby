@@ -2079,6 +2079,14 @@ The current game moved projectile audio into `SndSystem`. Its installed `Configs
 
 Missions Dev commit `f4ddc16a` retains all 128 playable slots and five Match-start AI spawners. Workbench session `logs_2026-11-22_18-42-34` loaded the converted world and refreshed metadata for 29,347 entities in a fixture without the incompatible RHIB dependency. The engine skipped the preserved empty map topology just as the same zero-byte resource requires. The session also reported obsolete serialized fields and resource paths in inherited dependencies. Commit `b974d2e6` contains the verified snapshot from the unchanged mission files. Client map rendering, projectile audio and in-Match behavior remain in the representative runtime queue.
 
+### Triggers attached to radius areas
+
+The converter keeps verified named-presence and extraction triggers under their enclosing radius area, with separate flags and evaluation settings. The published TilW presence trigger checks distance from its world origin. The base trigger uses polygon geometry only when its immediate parent is a `PolylineShapeEntity`. See `TILW_PresenceTriggerEntity.c` and `TILW_BaseTriggerEntity.c` in the published TilW archive, Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7`. The native areas retain each child’s local transform. An omitted child position retains the parent-relative origin. Duplicate flags and child areas that share the parent name stay in review.
+
+Company Team Counter Attack retains nine 120-second named-vehicle captures and nine independent immediate approach checks. Each approach keeps its 320–380 metre radius, original vehicle list and first-change latch. Cobra’s Bite retains the 185.5-metre enemy capture, the separate 180-metre US extraction with its 0.75 player threshold, and the existing map outline. The file comparison verified both shapes and their parent-relative placements. The representative runtime queue covers independent parent and child activation and event timing.
+
+The group converter also accepts exact, reviewed mission-owned roles in a complete roster authored on a registered stock group. Company Team Counter Attack’s Maintenance Team keeps its two original playable roles attached to the repair truck. The Chief inherits playability from the mission’s Mechanic, and both Dev role prefabs retain their authored equipment. The NVA headquarters and Cobra’s Bite’s remaining roster, crew and event blockers stay in the audit.
+
 ### Combined Anti-Armor Team
 
 The converter verifies the source framework and spawner layers and binds the eight `UK_KIA` spawns to the same UK AI casualty threshold used by the authored events. All eight retain their 180.9-second delay after the threshold is met during Match and their original RHS effect prefab. Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7` verifies the prefab and trigger parent. The audit records 14 converted placed spawners.

@@ -1139,9 +1139,10 @@ def convert_registered_group(lines, guid, source_units, dev_units, stock, locall
             or any(line.strip().startswith('m_aUnitPrefabSlots +') for line in lines)
             or any(resource.upper() in unverified_slots for resource, _ in authored_slots)):
         raise ValueError('unverified native AI group requires a complete replacement roster ' + guid)
+    reviewed_members = reviewed_members or {}
     all_playable = bool(authored_slots) and all(
-        resource.upper() in source_units.resources and legacy_member(source_units, resource.upper(), False)
-        for resource, _ in authored_slots)
+        reviewed_members.get(resource.upper()) == path or legacy_member(source_units, resource.upper(), False)
+        for resource, path in authored_slots)
     switches = [line.strip() for line in lines if line.strip().startswith('m_bSetPlayable ')]
     if not rosters and not unverified_slots and switches == ['m_bSetPlayable 1'] and guid in STOCK_FORCED_ROSTERS:
         registered = {resource: path for group, order in STOCK_FORCED_ROSTERS.items()
