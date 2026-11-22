@@ -341,6 +341,7 @@ WORKSHOP_SPAWN_PREFABS = {
     'RHS-StatusQuo_595F2BF2F44836FB': (
         None,
         (('1A486F1C4D22A32A', 'Prefabs/Vehicles/Tracked/T14/VehParts/Seats/T14_seat.et'),
+         ('F0C80F54A089F40B', 'Prefabs/Vehicles/Airplanes/FA18A/CAS_Spawner_GBU12.et'),
          ('EDD3E14E481BDA62', 'Prefabs/Vehicles/Airplanes/FA18A/FA18A_GBU_CAS.et'),
          ('17B08DA4B050BBFE', 'Prefabs/Vehicles/Missles/kh55/KH55_CAS.et'),
          ('EAD777F4CDA11F16', 'Prefabs/Vehicles/Airplanes/F22/F22_Flyby.et'),
@@ -5045,6 +5046,13 @@ def resource_aliases(workshop, units, stock):
             COBRA_PROVIDER: (COBRA_DIGEST, (MARINE_M299_CURRENT,)),
         }):
             aliases[MARINE_M299] = MARINE_M299_CURRENT
+        apache_path = 'Prefabs/Vehicles/Helicopters/AH64D/'
+        apache = ('397971C2026D588F', apache_path + 'USArmy/AH64D_USArmy_AGM114L_X2.et')
+        if apache in workshop_resources(workshop, {
+            'WCS_AH-64D_6303360DA719E832': (
+                '7f7cbdf17572449ef466802c5e834a7c6fdc64b14f2b96f08d20890800d7fb9b', (apache,)),
+        }):
+            aliases[apache[0], apache_path + 'AH64D_AGM114L_X2.et'] = apache
         for original, (provider, guid, path) in WORKSHOP_RESOURCE_ALIASES.items():
             if provider not in databases:
                 registry = workshop / provider / 'resourceDatabase.rdb'

@@ -1590,6 +1590,15 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             derived_gap = derived_gap or f'meta flag {flag} cannot gate a placed spawner: {exc}'
             continue
         derived_spawners[flag[1:-1]] = {**term, 'requiresMatch': True, 'derivedFlag': flag[1:-1]}
+    if (compound and spawner_reads.get('UK_KIA') == 8 and '"UK_KIA"' in ai
+            and source.files.get(path) == '8c317ad57d6514542dafc5fd619fa576b298220a'
+            and source.files.get(path.replace('/default.layer', '/AI/Spawns.layer'))
+            == '8b6d3b90546c1540d42e390498e0855024060fcb'
+            and scripts is not None and 'UK_KIA' not in scripts):
+        # These spawners read the same AI casualty threshold as the two framework events.
+        faction, ratio = ai['"UK_KIA"']
+        derived_spawners['UK_KIA'] = {'trigger': 'AI loss', 'flag': 'UK_KIA', 'faction': faction, 'ratio': ratio,
+                                    'requiresMatch': True, 'derivedFlag': 'UK_KIA'}
     parsed, audit = [], {}
     names = set()
     source_names = Counter(match[1][1:-1] for item in body

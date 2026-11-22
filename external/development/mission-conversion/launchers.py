@@ -31,6 +31,11 @@ GENERATED = re.compile(r' m_GC_GeneratedMetadata GC_GeneratedMissionMetadata(?: 
 ADDON_VERSIONS_FIELD = re.compile(r'^ m_aRequiredAddonVersions\b', re.M)
 ADDON_VERSION = re.compile(r'"([\da-fA-F]{16})=([0-9]+(?:\.[0-9]+){1,3})"')
 REVIEWED_VERSION_PINS = {
+    'Missions/Jub/OperationArrowheadMulladostPass.conf': (
+        'cb25c94860ef584a0110dc41ccfeb81c576bf4dd',
+        (('worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/Vehicles.layer',
+          '80be4ccc0bdcbbd12f984e3e02e1bb1013eeeede', '6303360DA719E832=8.4.0'),),
+    ),
     'Missions/Jub/OperationJaws.conf': (
         '7045bc4a9cb6949bf88d3d2815c9bafec58b95e3',
         (('worlds/Jub/OperationJaws/OperationJaws_Layers/vehicles.layer',
