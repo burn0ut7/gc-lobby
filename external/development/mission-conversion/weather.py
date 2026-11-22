@@ -90,13 +90,20 @@ def convert_weather(world, lines):
     if 'm_bOverrideTimeZone' in values:
         values['m_bDSTEnabled'] = str(int(enabled('m_fDSTEnabled')))
     if atmosphere:
-        if enabled('m_bFogOverride') or enabled('m_bWindOverride'):
-            raise ValueError('combined native and legacy environmental overrides need review')
         for legacy, (native, limit) in ENVIRONMENT.items():
             value = fields.get(legacy, '1')
             if not re.fullmatch(r'\d+(?:\.\d+)?', value) or Decimal(value) > limit:
                 raise ValueError('legacy weather value out of range: ' + legacy)
             values[native] = value
+        # The legacy extension writes these values after the native handler.
+        # Use the same values in both components so their order cannot change the result.
+        if enabled('m_bFogOverride'):
+            omit.update({'m_fFogAmount', 'm_fFogHeightDensity'})
+            output.extend([f'   m_fFogAmount {values["m_fFogAmount"]}',
+                           f'   m_fFogHeightDensity {values["m_fFogHeightDensity"]}'])
+        if enabled('m_bWindOverride'):
+            omit.add('m_fWindSpeed')
+            output.append(f'   m_fWindSpeed {values["m_fWindSpeed"]}')
     elif values:
         values['m_bOverrideAtmosphere'] = '0'
     environment = environment_component(world, values) if values else ''

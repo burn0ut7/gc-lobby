@@ -492,8 +492,8 @@ def main():
                 if ai_assets.keys() & playable.keys():
                     raise ValueError('objective character appears in both AI and playable rosters')
                 roster_assets = {**ai_assets, **playable}
-                ai_flags = [asset[key] for asset in roster_assets.values()
-                            for key in ('flag', 'deathFlag') if key in asset]
+                ai_flags = [asset['deathFlag'] for asset in roster_assets.values()]
+                ai_flags.extend(action['flag'] for asset in ai_assets.values() for action in asset['interactions'])
                 if len(set(ai_flags)) != len(ai_flags) or set(ai_flags) & set(objective_flags):
                     raise ValueError('duplicate AI objective flag producers')
                 if roster_assets:

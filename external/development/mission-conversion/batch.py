@@ -52,6 +52,20 @@ EMPTY_GROUP_FLAGS = [
     '  SCR_GroupsManagerComponent "{5706EC99934496F5}" {',
     '   m_aGroupFlags {', '   }', '  }',
 ]
+DISABLED_NATIVE_MODE_COMPONENTS = {
+    '  SCR_NametagConfigComponent "{571AA9E54FC9210D}" {',
+    '  SCR_SupportStationManagerComponent "{5B0AB3A852FCBF7E}" {',
+}
+NATIVE_END_SCREEN_SUBTITLES = re.compile(
+    r'  SCR_GameOverScreenManagerComponent "\{56DEC646298AD219\}" \{\n'
+    r'   m_GameOverScreenConfig SCR_GameOverScreenConfig "\{56DEC6462FFDD82D\}" \{\n'
+    r'    m_aGameOverScreens \{\n'
+    r'     SCR_FactionVictoryGameOverScreenInfo "\{568EB6DFEF507060\}" \{\n'
+    r'      m_OptionalParams SCR_BaseGameOverScreenInfoOptional "\{568EB6DFF87D9C84\}" \{\n'
+    rf'       m_sSubtitle {QUOTED}\n      \}}\n     \}}\n'
+    r'     SCR_EditorFactionGameOverScreenInfo "\{56EED1ED0A9954E6\}" \{\n'
+    r'      m_OptionalParams SCR_BaseGameOverScreenInfoOptional "\{56EED1ED10CDB164\}" \{\n'
+    rf'       m_sSubtitle {QUOTED}\n      \}}\n     \}}\n    \}}\n   \}}\n  \}}')
 LEGACY_JIP_MODES = {'Deny': 'DISABLED', 'Auto': 'AUTO', 'Manual': 'MANUAL',
                     '0': 'DISABLED', '1': 'AUTO', '2': 'MANUAL'}
 NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|RHS_Tank|Turret|SCR_AIWorld|GameEntity|GenericEntity|GenericTerrainEntity|GenericWorldFogEntity|StaticModelEntity|Tree|'
@@ -3154,9 +3168,10 @@ def playable_objectives(source, dev, world, stock, local_resources, source_units
     return reviewed
 
 
-def named_ai_rosters(text, prefab):
+def named_ai_rosters(text, prefabs):
+    references = '|'.join(re.escape(prefab) for prefab in sorted(prefabs))
     head = re.compile(r'(?P<group>\$grp )?SCR_AIGroup(?: (?P<name>[\w.-]+))? : "'
-                      + re.escape(prefab) + r'" \{')
+                      + '(?P<prefab>' + references + r')" \{')
     for line, group in blocks(text):
         root = head.fullmatch(group[0])
         if not root:
@@ -3167,11 +3182,11 @@ def named_ai_rosters(text, prefab):
             continue
         for name, fields in members:
             if name:
-                yield line, fields
+                yield line, fields, root['prefab']
 
 
 def ai_objectives(source, dev, world, stock, local_resources, source_units, dev_units):
-    """Convert named objective characters instantiated by the reviewed civilian AI group."""
+    """Convert named objective characters instantiated by verified AI groups."""
     reviewed = {}
     paths = sorted(p for p in source.closure(world) if PurePosixPath(p).suffix.lower() in SOURCE_TEXT)
     originals = {p: source.read(p) for p in paths}
@@ -3180,15 +3195,26 @@ def ai_objectives(source, dev, world, stock, local_resources, source_units, dev_
     scripts = script_text(source)
     base = ('E024A74F8A4BC644', 'Prefabs/Characters/Factions/CIV/Businessman/Character_CIV_Businessman_1.et')
     civ = ('DF688F0BC937BFC7', 'Prefabs/Groups/CIV/Group_CIV_Base.et')
-    if (base[0] in local_resources or not stock.contains(*base) or civ[0] in local_resources
-            or any(snapshot.resources.get(civ[0]) != [civ[1]] for snapshot in (source_units, dev_units))
-            or source_units.read(civ[1]) != dev_units.read(civ[1])
+    fia = ('EE92725E9B949C3D', 'Prefabs/Groups/INDFOR/Group_FIA_PlatoonHQ.et')
+    if (base[0] in local_resources or not stock.contains(*base)
             or not stock.contains('000CD338713F2B5A', 'Prefabs/AI/Groups/Group_Base.et')):
+        return reviewed
+    prefabs = set()
+    if (civ[0] not in local_resources
+            and all(snapshot.resources.get(civ[0]) == [civ[1]] for snapshot in (source_units, dev_units))
+            and source_units.read(civ[1]) == dev_units.read(civ[1])):
+        prefabs.add(f'{{{civ[0]}}}{civ[1]}')
+    fia_prefab = f'{{{fia[0]}}}{fia[1]}'
+    if verified_stock_ai_group(*fia, stock, local_resources, source_units, dev_units, inherited_slots=False):
+        prefabs.add(fia_prefab)
+    if not prefabs:
         return reviewed
     for layer in source.layers[world.lower()]:
         if 'SCR_AIGroup ' not in originals[layer]:
             continue
-        for line, group in named_ai_rosters(originals[layer], f'{{{civ[0]}}}{civ[1]}'):
+        for line, group, prefab in named_ai_rosters(originals[layer], prefabs):
+            if prefab == fia_prefab and [field for field in group if field.startswith(' m_faction ')] != [' m_faction "CIV"']:
+                continue
             slots = [i for i, field in enumerate(group) if field == ' m_aUnitPrefabSlots {']
             if len(slots) != 1 or any('m_bPlayable' in field or 'm_bSetPlayable' in field for field in group):
                 continue
@@ -3228,12 +3254,11 @@ def ai_objectives(source, dev, world, stock, local_resources, source_units, dev_
                 del after[damage_index:damage_close + 1]
                 native, actions = convert_object(after, name[1:-1], path, inherited_replication=True)
                 body = '\n'.join(native) + '\n'
-                if (len(actions) != 1 or 'requiredFlag' in actions[0] or LEGACY.search(body)
+                if (not actions or any('requiredFlag' in action for action in actions) or LEGACY.search(body)
                         or (path in dev.files and dev.read(path).strip() != body.strip())):
                     continue
-                action, = actions
-                flags = (death, '"' + action['flag'] + '"')
-                if len(set(flags)) != 2 or any(
+                flags = [death, *(f'"{action["flag"]}"' for action in actions)]
+                if len(set(flags)) != len(flags) or any(
                     condition_corpus.count(flag) != len(re.findall(r'(?m)^ +(?:m_condition )?TILW_LiteralTerm [^\n]+\n'
                                                          r'(?: +m_invertTerm [01]\n)? +m_flagName '
                                                          + re.escape(flag) + '$', corpus)) + 1
@@ -3243,8 +3268,8 @@ def ai_objectives(source, dev, world, stock, local_resources, source_units, dev_
                     continue
             except (KeyError, ValueError):
                 continue
-            reviewed[resource] = {'path': path, 'body': body, 'flag': action['flag'], 'deathFlag': death[1:-1],
-                                  'entity': name[1:-1], 'singleUse': action['singleUse'],
+            reviewed[resource] = {'path': path, 'body': body, 'interactions': actions, 'deathFlag': death[1:-1],
+                                  'entity': name[1:-1],
                                   'placement': f'{layer}:{line}'}
     return reviewed
 
@@ -4568,7 +4593,10 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
                                                     for field in component_lines[1:-1]):
                     weather += '\n'.join(component_lines) + '\n'
                 elif ((header == DEFAULT_BUILDING_MANAGER and stop == component + 1)
-                      or component_lines == EMPTY_GROUP_FLAGS):
+                      or component_lines == EMPTY_GROUP_FLAGS
+                      or (header in DISABLED_NATIVE_MODE_COMPONENTS
+                          and component_lines[1:-1] == ['   Enabled 0'])
+                      or NATIVE_END_SCREEN_SUBTITLES.fullmatch('\n'.join(component_lines))):
                     native_overrides.extend(component_lines)
                 else:
                     raise ValueError('custom legacy game mode components')
