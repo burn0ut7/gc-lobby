@@ -127,12 +127,13 @@ def derived_flags(source, world, framework_path, body, scripts):
     """Read pure derived flags whose authored references are all literal terms."""
     starts = [i for i, line in enumerate(body) if line == ' m_metaFlags {']
     if not starts:
-        return {}
+        return {}, set()
     if len(starts) != 1 or scripts is None or any(api in scripts for api in SCRIPT_FLAG_APIS):
         raise ValueError('meta flag ownership requires review')
     start = starts[0]
     end = block_end(body, start)
     definitions = {}
+    identities = set()
     cursor = start + 1
     while cursor < end:
         if not META_FLAG.fullmatch(body[cursor]):
@@ -146,9 +147,17 @@ def derived_flags(source, world, framework_path, body, scripts):
         term = terms[0]
         close = block_end(fields, term)
         flag = properties(fields[:term] + fields[close + 1:], {'m_flagName'}).get('m_flagName', '')
-        if not re.fullmatch(EVENT_LABEL, flag) or flag in definitions or flag in scripts:
+        if not re.fullmatch(EVENT_LABEL, flag) or flag in definitions or flag in identities or flag in scripts:
             raise ValueError('invalid or script-managed meta flag ' + flag)
-        definitions[flag] = fields[term:close + 1]
+        operand = fields[term + 1:close]
+        if TERM.fullmatch(fields[term])[1] == 'Literal' and operand in (
+                ['    m_flagName ' + flag],
+                ['    m_flagName ' + flag, '    m_invertTerm 0']):
+            # Writing the flag's current value is idempotent. Keep counting
+            # the two serialized occurrences when validating startup ownership.
+            identities.add(flag)
+        else:
+            definitions[flag] = fields[term:close + 1]
         cursor = stop + 1
 
     literal_uses = defaultdict(int)
@@ -175,7 +184,7 @@ def derived_flags(source, world, framework_path, body, scripts):
         tuple(TopologicalSorter(dependencies).static_order())
     except CycleError as exc:
         raise ValueError('cyclic meta flag definitions') from exc
-    return definitions
+    return definitions, identities
 
 
 def end_action(lines, key, *, extended_announcements=False, end_match=False):
@@ -685,7 +694,7 @@ def render_capture_trackers(world, tracked_areas, captures, capture_messages):
     return lines
 
 
-def startup_flags(source, world, owner, body, scripts):
+def startup_flags(source, world, owner, body, scripts, identity_flags=()):
     """Allow one uniform draw whose flags are each consumed by one pregame event."""
     roots = [i for i, line in enumerate(body) if line == ' m_randomFlags {']
     if len(roots) != 1:
@@ -713,7 +722,8 @@ def startup_flags(source, world, owner, body, scripts):
                         if path != owner and PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
     if 'GetFlagSetCopy' in scripts or 'm_flagSet' in scripts:
         return ()
-    if any(framework.count(flag) != 2 or owner_text.count(flag) != 2 + sum(body[i].endswith(flag) for i in labels)
+    if any(framework.count(flag) != 2 + 2 * (flag in identity_flags)
+           or owner_text.count(flag) != 2 + 2 * (flag in identity_flags) + sum(body[i].endswith(flag) for i in labels)
            or flag in outside or flag[1:-1] in scripts for flag in flags):
         return ()
     return tuple(flags)
@@ -879,7 +889,7 @@ def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
 
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
                      extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None,
-                     derived_audit=None, match_only_flags=(), startup_samples_audit=None,
+                     derived_audit=None, identity_flags_audit=None, match_only_flags=(), startup_samples_audit=None,
                      interaction_reads=None, spawner_reads=None):
     captures = captures or {}
     notification_audit = notification_audit or {}
@@ -918,19 +928,21 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     for flag, count in spawner_reads.items():
         flag_reads[flag] += count
     event_flags = instruction_flags(source, world, path, body, scripts, flag_reads) if scripts is not None else ()
-    derived, derived_gap = {}, None
+    derived, identity_flags, derived_gap = {}, set(), None
     if compound:
         try:
-            derived = derived_flags(source, world, path, body, scripts)
+            derived, identity_flags = derived_flags(source, world, path, body, scripts)
         except ValueError as exc:
             derived_gap = str(exc)
     if derived and derived_audit is not None:
         derived_audit.extend(flag[1:-1] for flag in derived)
+    if identity_flags and identity_flags_audit is not None:
+        identity_flags_audit.extend(flag[1:-1] for flag in sorted(identity_flags))
     samples, startup, binary_startup = [], (), None
     if compound and resolve_spawn:
         samples = startup_samples(source, world, path, body, scripts or '', spawner_reads)
         if not samples:
-            startup = startup_flags(source, world, path, body, scripts or '')
+            startup = startup_flags(source, world, path, body, scripts or '', identity_flags)
             if not startup:
                 binary_startup = startup_binary_flag(source, world, path, body, scripts or '')
                 startup = binary_startup or ()

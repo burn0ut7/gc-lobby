@@ -151,6 +151,7 @@ GMFX_DIGEST = '09a2e7a14300b916b1eaea43446d39d1d3334209e692e50d29406233962f7c80'
 COBRA_PROVIDER = 'WCS_AH-1S_64CB39E57377C861'
 COBRA_DIGEST = '683b318ce93cabf75ae5b3b2fe0a1ce49f30e76a693e3c959e353a6bc51da3f4'
 GMFX_AP_MINE = ('E1BBAB7F28FE8B0B', 'Prefabs/Systems/Mines/Mine_AP.et')
+DEPLOYED_PARACHUTE = ('9ADD554959C09197', 'Prefabs/DeployedParachutes/Core/DeployedParachuteMK4.et')
 WORKSHOP_DAMAGE_TARGETS = {
     GMFX_PROVIDER: (
         GMFX_DIGEST,
@@ -177,6 +178,10 @@ WORKSHOP_DAMAGE_TARGETS = {
     ),
 }
 WORKSHOP_SPAWN_PREFABS = {
+    'ParachuteFramework_65930CB4CD0237B2': (
+        'ccb22523ba0040cb9d9206a7ab0ae7e5b4411b1704bde39e3e4a7953416e3042',
+        (DEPLOYED_PARACHUTE,),
+    ),
     'ArmaTerrainCore_60B524F7A5AE96A8': (
         '28574b99f5d6a12a7199a29d94194081b196b8ca37d854895fe296763cba778c',
         (('6650B2B969248F4C', 'Prefabs/Structures/Rock/Afghan_Rock/GraniteCliff_Afghan_03.et'),),
@@ -1295,6 +1300,7 @@ def blocks(text):
 
 STARTUP_CLEANUP = re.compile(r'(?P<group>\$grp )?PK_EntityDeleter(?: (?P<name>[\w.-]+))? \{')
 STARTUP_PROTECTION = re.compile(rf' +PK_EntityProtectorComponent {SERIALIZED_ID} \{{')
+GARBAGE_PROTECTION = re.compile(rf' +TILW_NoGarbageComponent {SERIALIZED_ID} \{{')
 STARTUP_FIELDS = {
     'm_fRadius': 'm_fRadius',
     'm_excludePrefabsInList': 'm_bExcludePrefabs',
@@ -1710,13 +1716,17 @@ def native_placement(block, *, reviewed_character=False):
     if any('m_bEnableMoveOnFreeze' in line for line in block):
         block = staging_vehicle_placement(block)
     lines = block
-    if any('TILW_NavmeshRegenComponent' in line or 'PK_EntityProtectorComponent' in line for line in block):
+    if any(rebuilt in line for line in block for rebuilt in
+           ('TILW_NavmeshRegenComponent', 'PK_EntityProtectorComponent', 'TILW_NoGarbageComponent')):
         lines = block.copy()
         stack = []
         for index, line in enumerate(block):
             if (NAVMESH_COMPONENT.fullmatch(line) and stack and stack[-1] == 'components {'
                     and block[index + 1] == ' ' * (len(line) - len(line.lstrip())) + '}'):
                 lines[index] = line.replace('TILW_NavmeshRegenComponent', 'GC_NavmeshRebuildComponent', 1)
+            if (GARBAGE_PROTECTION.fullmatch(line) and stack and stack[-1] == 'components {'
+                    and block[index + 1] == ' ' * (len(line) - len(line.lstrip())) + '}'):
+                lines[index] = line.replace('TILW_NoGarbageComponent', 'GC_GarbageProtectionComponent', 1)
             if STARTUP_PROTECTION.fullmatch(line) and stack and stack[-1] == 'components {':
                 end = block_end(block, index)
                 values = properties(block[index + 1:end], {'m_keepEntityAfterDelete'})
@@ -4131,7 +4141,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     roots = [field.split()[0] for field in root_fields]
                     # The legacy framework uses named placements and flag data, not its own transform.
                     unsupported = set(roots) - {'m_missionEvents', 'm_casualtyFlags', 'm_suppressGameEnd'}
-                    if outcome.get('derivedFlags'):
+                    if outcome.get('derivedFlags') or outcome.get('identityFlags'):
                         unsupported.discard('m_metaFlags')
                     for field in root_fields:
                         name = field.split()[0]
