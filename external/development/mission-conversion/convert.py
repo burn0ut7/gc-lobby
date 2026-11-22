@@ -568,9 +568,15 @@ def main():
                                     for flag in candidate.get('placedDestructionFlags', [])}
                 if delayed:
                     match_only_flags.update(delayed.startup_consumers)
+                area_flag_readers = batch.reviewed_area_flag_readers(source, world) if args.batch else {}
+                observed_area_flags = {record['writesFlag'] for area in row.get('captureCandidate', {}).values()
+                                       for record in area.values() if isinstance(record, dict)
+                                       and record.get('writesFlag') in area_flag_readers}
+                match_only_flags.update(observed_area_flags)
                 rules, outcome_audit, gap = compile_outcomes(
                     source, world, captures, compound=args.batch, notification_audit=review,
-                    objective_flags=objective_flags, extraction_spawns=delayed.spawns if delayed else None,
+                    objective_flags=set(objective_flags) | observed_area_flags,
+                    extraction_spawns=delayed.spawns if delayed else None,
                     scripts=batch.script_text(source) if args.batch else None,
                     resolve_spawn=partial(resolve_spawn, objectives) if args.batch else None,
                     resolve_crew=resolve_crew if args.batch else None, hidden_briefings=hidden_briefings,

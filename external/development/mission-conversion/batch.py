@@ -28,6 +28,7 @@ from local_loadouts import unchanged_units_parent
 from markers import (DEST as MAP_MARKER_PREFAB, convert_baked_marker_generator, convert_hover_camera,
                      convert_layer, convert_wall_markers)
 from outcomes import (DEPOT_SUPPLY_REVISIONS, FOOD_MARKET_OUTCOME_LAYER, FRAMEWORK, INTERDICTION_OUTCOME_LAYER, MATCH_PHASE_VALUE,
+                      NAGALAM_AMBUSH_BLOBS, NAGALAM_AMBUSH_LAYERS, NAGALAM_LAYERS,
                       RUHA_PHASE_BLOB, RUHA_PHASE_LAYER, RUHA_UNIT_NAMES, SCRIPT_FLAG_APIS,
                       SUPPLY_OUTCOME_BLOB, SUPPLY_OUTCOME_LAYER,
                       leaves, render as render_outcome, render_capture_trackers)
@@ -2382,6 +2383,26 @@ SCREENING_AREA_LAYER = ('worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Laye
                         'BLUFOR/BLU_AI_EXTERIOR_CachedAI.layer')
 SCREENING_AREA_BLOB = '2fd93fe71c5cbe9fcde680e6ba61c3ada8d9fac2'
 SCREENING_AREA_FLAGS = {'SouthExterior1': 1, 'WestExterior2': 1, 'SouthExterior2': 2}
+REVIEWED_AREA_FLAG_WRITERS = {
+    SCREENING_AREA_LAYER: (SCREENING_AREA_BLOB, SCREENING_AREA_FLAGS),
+    'worlds/Huska/WindyGoat/WindyGoat_Layers/Triggers.layer':
+        ('c939b15d295709f83d2008d87cc90766388b2c0f', {'HVT_Extracted': 2}),
+    'worlds/Perfk/PowerPlay/PowerPlay_Layers/OPFOR/Players/Players.layer':
+        ('4789915b7734553a2e1ba6492a4bc5da95d3ac55', {'ReleaseOpfor': 6}),
+    **{f'{NAGALAM_AMBUSH_LAYERS}Ambush_{index:02}.layer':
+       (blob, {f'Ambush_{index:02}_Trigger': 2})
+       for index, blob in enumerate(NAGALAM_AMBUSH_BLOBS, 1)},
+}
+REVIEWED_AREA_FLAG_READERS = {
+    'worlds/Huska/WindyGoat/WindyGoat_Layers/default.layer':
+        ('7cef76758a05e016aefe225413d201f04ecdb443', 'event', {'HVT_Extracted': 'All_HVTs_Extracted'}),
+    'worlds/Perfk/PowerPlay/PowerPlay_Layers/default.layer':
+        ('327c5cf20c9bbcfdf16a8456e2d0b5aa0812d2eb', 'event', {'ReleaseOpfor': 'ReleaseOpfor'}),
+    NAGALAM_LAYERS + 'default.layer':
+        ('e0048e9e3cf31e8776a48dd15235d34b3673246f', 'spawner condition',
+         {f'Ambush_{index:02}_Trigger': f'Ambush_{index:02}_CloseTrigger'
+          for index in range(1, len(NAGALAM_AMBUSH_BLOBS) + 1)}),
+}
 SCREENING_AI_WORLD_LAYER = 'worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/default.layer'
 SCREENING_AI_WORLD_SOURCE = '3f8fbb421bf2b903a9034f8d698f85a01b8b27d2'
 SCREENING_AI_WORLD_REVISIONS = {'58773b357fef8e5db20e8f3a5fc0b12891a43521',
@@ -3904,6 +3925,29 @@ def render_area_flag_observer(world, area, flag, check, stop):
             *(['     m_bStopAfterMatchChange 1'] if stop else []), *check, '    }']
 
 
+def reviewed_area_flag_readers(source, world):
+    readers = {}
+    for layer in source.layers[world.lower()]:
+        blob, kind, targets = REVIEWED_AREA_FLAG_READERS.get(layer, (None, None, {}))
+        if source.files[layer] == blob:
+            readers.update({flag: (kind, target) for flag, target in targets.items()})
+    return readers
+
+
+def checked_area_flag_reads(flag, readers, events, derived):
+    if flag not in readers:
+        return 0
+    kind, target = readers[flag]
+    if kind == 'event':
+        uses = [event.get('name') for event in events.values() if 'gap' not in event
+                for term in leaves(event) if term.get('flag') == flag]
+        if uses == [target]:
+            return 1 + (target == flag)
+    elif sum(term.get('flag') == flag for term in leaves(derived.get(target, {}))) == 1:
+        return 1
+    return 0
+
+
 def attached_trigger_map(fields, dev):
     parent, children = trigger_children(fields)
     output, amounts = [], Counter()
@@ -3944,6 +3988,9 @@ def area_rules(source, world, dev=None):
     scripts = None
     for layer in source.layers[world.lower()]:
         text = source.read(layer)
+        writer_blob, writer_flags = REVIEWED_AREA_FLAG_WRITERS.get(layer, (None, {}))
+        if source.files[layer] != writer_blob:
+            writer_flags = {}
         if not any(f'TILW_{kind}TriggerEntity' in text for kind in ('Extraction', 'Faction', 'Presence')):
             continue
         for line, block in blocks(text):
@@ -3978,7 +4025,7 @@ def area_rules(source, world, dev=None):
             result, areas, capture_details = {}, [], {}
             flags = set()
             try:
-                for name, fields in polygon_capture.members(block, root['group'], root['name']):
+                for index, (name, fields) in enumerate(polygon_capture.members(block, root['group'], root['name'])):
                     trigger = match
                     attached = []
                     pilot_spawn = None
@@ -4023,8 +4070,7 @@ def area_rules(source, world, dev=None):
                         fields.append(' m_flagName ' + flag)
                     if not LEGACY_FLAG.fullmatch(flag) or len(flag.encode()) > 130:
                         raise ValueError('invalid area flag ' + flag)
-                    shared_writer = (flag[1:-1] in SCREENING_AREA_FLAGS and layer == SCREENING_AREA_LAYER
-                                     and source.files.get(layer) == SCREENING_AREA_BLOB)
+                    shared_writer = flag[1:-1] in writer_flags
                     if not shared_writer and (flag in conditions or flag in flags):
                         raise ValueError('duplicate area flag ' + flag)
                     if not shared_writer:
@@ -4033,6 +4079,8 @@ def area_rules(source, world, dev=None):
                     if len(token.encode()) > 100 or not re.fullmatch(r'[\w.-]+', token):
                         token = guid(world + '/area/' + flag)
                     area_name = 'GC_MigrationArea_' + token
+                    if shared_writer and not name:
+                        area_name += '_' + guid(f'{layer}:{line}/{index}')
                     if shape or trigger['kind'] in ('Faction', 'Presence'):
                         area_name = name or area_name
                     if trigger['kind'] == 'Presence':
@@ -4052,13 +4100,13 @@ def area_rules(source, world, dev=None):
                     elif trigger['kind'] == 'Faction' and trigger['guid'] == '8C576D46F6579229':
                         built, area, details = capture_instance(world, area_name, fields, polygon=bool(shape))
                         if shared_writer:
-                            if (shape or attached or not name or details['seconds'] or details.get('skipDiscovery')
+                            if (shape or attached or details['seconds'] or details.get('skipDiscovery')
                                     or 'm_Messages' in '\n'.join(built[flag])):
                                 raise ValueError('shared area writer must be an immediate silent radius')
                             observer = render_area_flag_observer(world, area_name, flag, built[flag],
                                                                  details['stopsAfterFirstChange'])
-                            capture_details[name] = {'area': area_name, **details, 'writesFlag': flag[1:-1],
-                                                     'areaFlagObserver': observer}
+                            capture_details[area_name] = {'area': area_name, **details, 'writesFlag': flag[1:-1],
+                                                          'areaFlagObserver': observer}
                             areas.append(area)
                             continue
                         capture_details[flag[1:-1]] = {'area': area_name, **details}
@@ -4692,12 +4740,24 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                             if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
         readers = placed_spawner_flag_reads(source, source.layers[world.lower()])
         writers = Counter(record['writesFlag'] for record in shared_writers)
+        expected_writers = Counter()
+        for layer in source.layers[world.lower()]:
+            blob, flags = REVIEWED_AREA_FLAG_WRITERS.get(layer, (None, {}))
+            if source.files[layer] == blob:
+                expected_writers.update(flags)
+        reviewed_readers = reviewed_area_flag_readers(source, world)
+        derived = outcome.get('derivedSpawnerConditions', {})
+        reviewed_reads = {flag: checked_area_flag_reads(flag, reviewed_readers, rules, derived) for flag in writers}
         scripts = script_text(source)
-        if (writers != SCREENING_AREA_FLAGS or any(api in scripts for api in SCRIPT_FLAG_APIS)
-                or any(not readers[flag] or flag in scripts or closure.count(f'"{flag}"') != count + readers[flag]
-                       for flag, count in writers.items())):
+        unresolved = sorted(flag for flag, count in writers.items()
+                            if not (readers[flag] or reviewed_reads[flag]) or flag in scripts
+                            or closure.count(f'"{flag}"') != count + readers[flag] + reviewed_reads[flag])
+        if unresolved or writers != expected_writers or any(api in scripts for api in SCRIPT_FLAG_APIS):
+            detail = 'expected all reviewed writers and only reviewed event or placed spawner readers'
+            if unresolved:
+                detail += ' for ' + ', '.join(unresolved)
             blockers.append({'rule': 'shared area flags', 'file': world,
-                             'detail': 'expected all reviewed writers and only placed spawner readers'})
+                             'detail': detail})
     ticket_edits = [action for event in rules.values() for action in event.get('convertedActions', [])
                     if 'ticketFaction' in action]
     edited_factions = {action['ticketFaction'] for action in ticket_edits if action['ticketAmount']}
@@ -5433,7 +5493,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if startup_slots:
         remaining.append('Compare random pilot placement and the two authored slots before role selection.')
     if shared_writers:
-        remaining.append('Compare ordered area flag changes during staging and Match and the triggered AI spawns.')
+        if reviewed_readers:
+            remaining.append('Compare ordered area flag changes during staging and Match and the dependent actions.')
+        else:
+            remaining.append('Compare ordered area flag changes during staging and Match and the triggered AI spawns.')
     if any('m_fAuthoredCountdownSeconds ' in text for text in draft.values() if isinstance(text, str)):
         remaining.append('Compare the authored fractional staging release and displayed countdown.')
     if any('m_bRestrictAuthoredStagingCombat 1' in text for text in draft.values() if isinstance(text, str)):

@@ -62,6 +62,15 @@ DEPOT_SUPPLY_REVISIONS = {
 RUHA_PHASE_LAYER = ('worlds/HotMic/DelayingActionRuhaPlatoon/'
                     'DelayingActionRuhaPlatoon_Layers/default.layer')
 RUHA_PHASE_BLOB = '785f74d7a29dcd03ecb23edef48a652878668841'
+NAGALAM_LAYERS = 'worlds/Perfk/NagalamTrafficJam/NagalamTrafficJam_Layers/'
+NAGALAM_AMBUSH_LAYERS = NAGALAM_LAYERS + 'AI_Phase_Two_Ambush/ambush_options/'
+NAGALAM_AMBUSH_BLOBS = (
+    '1e3558a86542b9a2725d268fd88f824bc82e57a7',
+    '4e5f944d7302d76a6a76edf11f381a60ff5073c7',
+    '307d256c30b7425b8fc29eba9b042c1bbc46bbf5',
+    'dad9c652f5fbfdb81530f3f2e1e5348fb1f6aeb5',
+    '4d34eab4f8c95988cd0068ceac6886429f2347f1',
+)
 RUHA_UNIT_NAMES = tuple(f'Unit{index}' for index in range(1, 11))
 RUHA_SCRIPT_CALLS = {
     '666D3A6A1E573D65': (['     m_executionDelay 75', '     m_bAllowRerun 1'], '75', [], ()),
@@ -265,8 +274,13 @@ def derived_flags_with_known_readers(source, world, framework_path, body, defini
     if not definitions:
         return definitions, None
     literal_uses = literal_flag_reads(body)
+    labels = {
+        NAGALAM_AMBUSH_LAYERS + 'Ambush_01.layer':
+            (NAGALAM_AMBUSH_BLOBS[0], '  m_locationName "Ambush_01"'),
+    }
     content = '\n'.join('\n'.join(line for line in source.read(path).splitlines()
-                                  if not (path == framework_path and line.startswith('   m_name ')))
+                                  if not (path == framework_path and line.startswith('   m_name '))
+                                  and labels.get(path) != (source.files[path], line))
                         for path in sorted(source.closure(world))
                         if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
     unverified = {flag for flag in definitions
