@@ -438,7 +438,7 @@ def stock_wrapper_ancestry_matches(source, dev, guid, stock, owned):
     return reviewed_native_ancestry((*before[:-1], native, *underlying), after, dev)
 
 
-def compare_ai_parents(source_units, dev_units, guid, *, replaces_playable_roster=False):
+def compare_ai_parents(source_units, dev_units, guid, *, overrides_playability=False):
     """Compare native AI group ancestry after removing lobby presentation metadata."""
     def normalize(body):
         lines = body.splitlines()
@@ -464,7 +464,7 @@ def compare_ai_parents(source_units, dev_units, guid, *, replaces_playable_roste
     new = inheritance(dev_units, guid)
     if not old or tuple(map(normalize, old)) != tuple(map(normalize, new)):
         raise ValueError('inherited AI group behavior differs')
-    if not replaces_playable_roster and (
+    if not overrides_playability and (
             scalar(old, 'm_bSetPlayable') not in (None, 0) or scalar(new, 'm_bPlayable') not in (None, 0)):
         raise ValueError('inherited AI group playability differs')
     return old
@@ -639,6 +639,16 @@ def unchanged_disabled_playability(source_units, dev_units, guid):
     return unchanged_explicit_playability(source_units, dev_units, guid, False)
 
 
+def unchanged_unforced_member(source, dev, stock, resource, path):
+    if source.resources.get(resource) != [path] or len(dev.resources.get(resource, ())) != 1:
+        return False
+    return (
+        unchanged_disabled_playability(source, dev, resource)
+        or (inherits_legacy_playable_base(source, resource, stock, dev)
+            and reviewed_native_ancestry(inheritance(source, resource), inheritance(dev, resource), dev))
+    )
+
+
 @lru_cache(maxsize=4096)
 def unchanged_explicit_playability(source_units, dev_units, guid, playable):
     marker = re.compile(r'^  PS_PlayableComponent "\{5EFCC1946F475F15\}" \{\n   m_bIsPlayable ([01])\n  \}\n', re.M)
@@ -670,9 +680,9 @@ def unchanged_deprecated_stock_override(source_units, dev_units, guid, path):
 
 
 def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai, stock_group=None,
-                        reviewed_ai_members=None, *, replaces_playable_roster=False):
+                        reviewed_ai_members=None, *, overrides_playability=False):
     old_chain = () if stock_group else compare_ai_parents(
-        source_units, dev_units, guid, replaces_playable_roster=replaces_playable_roster)
+        source_units, dev_units, guid, overrides_playability=overrides_playability)
     inherited_stock_slots = {tuple(slot) for slot in stock_group['slots']} if stock_group else set()
     checked = set()
 
@@ -699,7 +709,7 @@ def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, ext
             checked.add(resource)
         return '"{' + resource + '}' + only_path(dev_units, resource) + '"'
 
-    if not replaces_playable_roster and not any(line.strip() == 'm_aUnitPrefabSlots {' for line in lines):
+    if not any(line.strip() == 'm_aUnitPrefabSlots {' for line in lines):
         for parent in old_chain:
             if re.search(r'^ m_aUnitPrefabSlots \+ ?\{', parent, re.M):
                 raise ValueError('inherited additive AI slot roster requires review')
@@ -744,7 +754,7 @@ def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, ext
             result.append(line)
         elif re.fullmatch(r'm_sCustomNameSet ' + QUOTED, token):
             result.append(line.replace('m_sCustomNameSet ', 'm_sGC_ManualCallsign ', 1))
-        elif token == 'm_bPlayable 0' and (stock_group or replaces_playable_roster):
+        elif token == 'm_bPlayable 0' and (stock_group or overrides_playability):
             result.append(line)
         elif token != 'm_bSetPlayable 0' and not OBSOLETE_RESPAWN_POSITION.fullmatch(token):
             raise ValueError('AI group field needs review: ' + token.split()[0])
@@ -805,14 +815,27 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
         # Both runtimes see the explicit AI override. Validate the complete replacement
         # roster instead of the playable slots inherited from the group prefab.
         return convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai or {},
-                                   reviewed_ai_members=reviewed_ai_members, replaces_playable_roster=True)
-    if native_playable and native_override is None and not force and len(authored) == 1 and replace_slots:
-        entries = '\n'.join(lines[slots_start + 1:block_end(lines, slots_start)])
+                                   reviewed_ai_members=reviewed_ai_members, overrides_playability=True)
+    complete_override = len(authored) == 1 and replace_slots
+    inherited_roster = SLOTS.search(old) if not authored and switches == ['m_bSetPlayable 0'] else None
+    if inherited_roster:
+        published = SLOTS.findall(old)
+        native = SLOTS.findall(new)
+        if len(published) != 1 or published != native:
+            inherited_roster = None
+    if native_playable and native_override is None and not force and (complete_override or inherited_roster):
+        if complete_override:
+            entries = '\n'.join(lines[slots_start + 1:block_end(lines, slots_start)])
+        else:
+            entries = inherited_roster[1]
         slots = [(resource.upper(), path) for resource, path in REF.findall(entries)]
         known = external_ai or {}
-        reviewed_external = switches == ['m_bSetPlayable 0'] and all(
-            known.get(resource) == path and all(resource not in assets for assets in
-                                                (locally_owned, source_units.resources, dev_units.resources))
+        reviewed_disabled = switches == ['m_bSetPlayable 0'] and all(
+            resource not in locally_owned
+            and (unchanged_unforced_member(source_units, dev_units, stock, resource, path)
+                 and (not inherited_roster or dev_units.resources[resource] == [path])
+                 or (known.get(resource) == path
+                     and resource not in source_units.resources and resource not in dev_units.resources))
             for resource, path in slots
         )
         # Some native groups inherit a playable default from the Units migration.
@@ -821,10 +844,11 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             resource in source_units.resources and path in (forced_external or {}).get(resource, ())
             and not legacy_member(source_units, resource, False) for resource, path in slots
         )
-        if slots and not REF.sub('', entries).strip() and (reviewed_external or reviewed_unforced):
-            indent = lines[slots_start].partition('m_aUnitPrefabSlots')[0]
+        if slots and not REF.sub('', entries).strip() and (reviewed_disabled or reviewed_unforced):
+            indent = ' ' * min(len(line) - len(line.lstrip()) for line in lines if line.strip())
             return convert_ai_instance([*lines, indent + 'm_bPlayable 0'], guid, source_units, dev_units,
-                                       locally_owned, known, replaces_playable_roster=True)
+                                       locally_owned, known, reviewed_ai_members=reviewed_ai_members,
+                                       overrides_playability=True)
     restored_playable = False
 
     def playable_member(resource, path):

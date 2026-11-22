@@ -6,7 +6,7 @@ import re
 
 from briefings import block_end, guid, properties, target_names
 from catalog import REF
-from groups import inheritance, legacy_member
+from groups import inheritance, legacy_member, unchanged_disabled_playability
 from local_loadouts import unchanged_units_parent
 from polygon_capture import members
 from scenery import StockPrefabs
@@ -268,7 +268,8 @@ def character_reference(guid, path, source_units, dev_units, stock, owned, exter
     if guid in owned or not path.startswith('Prefabs/Characters/'):
         raise ValueError('unverified crew character ' + guid)
     if guid in source_units.resources or guid in dev_units.resources:
-        if (not unchanged_units_parent(source_units, dev_units, guid)
+        if (not (unchanged_units_parent(source_units, dev_units, guid)
+                 or unchanged_disabled_playability(source_units, dev_units, guid))
                 or (not allow_legacy_playable and legacy_member(source_units, guid, False))):
             raise ValueError('crew character ancestry needs review ' + guid)
         canonical, = dev_units.resources[guid]
