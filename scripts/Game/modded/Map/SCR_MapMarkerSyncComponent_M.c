@@ -9,6 +9,14 @@ modded class SCR_MapMarkerSyncComponent
 		if (GC_LobbyPhase.ArePlayerMapMarkersLocked())
 			return;
 
+		if (GC_LobbyPhase.UsesBriefingLeaderMarkers())
+		{
+			PlayerController controller = PlayerController.Cast(GetOwner());
+			if (!controller || !markerData || markerData.GetType() != SCR_EMapMarkerType.PLACED_CUSTOM
+				|| !GC_LobbyPhase.CanPlacePlayerMapMarker(controller.GetPlayerId()))
+				return;
+		}
+
 		super.RPC_AskAddStaticMarker(markerData);
 	}
 }

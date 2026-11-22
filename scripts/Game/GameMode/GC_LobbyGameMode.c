@@ -12,6 +12,9 @@ class GC_LobbyGameMode : SCR_BaseGameMode
 	[Attribute("1", UIWidgets.CheckBox, "Collect GC Lobby statistics, session history and playback. Disable for a full collection-off performance run. Set before starting the world.", category: "GC Lobby Collection")]
 	protected bool m_bCollectionEnabled = true;
 
+	[Attribute("0", UIWidgets.CheckBox, "Only group leaders may place custom markers during briefing.", category: "GC Lobby Gameplay")]
+	protected bool m_bBriefingLeaderMarkers;
+
 	[Attribute("1", UIWidgets.CheckBox, "Record playback telemetry, including turret direction. Requires Collection Enabled. Disable to compare playback cost while retaining statistics. Set before starting the world.", category: "GC Lobby Collection")]
 	protected bool m_bPlaybackTelemetryEnabled = true;
 
@@ -61,6 +64,12 @@ class GC_LobbyGameMode : SCR_BaseGameMode
 	bool IsCollectionEnabled()
 	{
 		return m_bCollectionEnabled;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	bool HasBriefingLeaderMarkers()
+	{
+		return m_bBriefingLeaderMarkers;
 	}
 
 	//------------------------------------------------------------------------------------------------

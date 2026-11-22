@@ -8,6 +8,13 @@ modded class SCR_MapMarkersUI
 		if (GC_LobbyPhase.ArePlayerMapMarkersLocked())
 			return true;
 
+		if (GC_LobbyPhase.UsesBriefingLeaderMarkers())
+		{
+			PlayerController controller = GetGame().GetPlayerController();
+			if (!controller || !GC_LobbyPhase.CanPlacePlayerMapMarker(controller.GetPlayerId()))
+				return true;
+		}
+
 		if (!GC_LobbyGameMode.GetGameMode() || !m_RootWidget)
 			return false;
 
@@ -20,7 +27,7 @@ modded class SCR_MapMarkersUI
 	{
 		// Omit player-placement actions, including recon markers, but keep the
 		// marker component active so mission and replicated markers still render.
-		if (GC_IsMarkerPlacementBlocked())
+		if (GC_LobbyPhase.UsesBriefingLeaderMarkers() || GC_IsMarkerPlacementBlocked())
 			return;
 
 		super.OnRadialMenuInit();
@@ -31,6 +38,22 @@ modded class SCR_MapMarkersUI
 	{
 		if (GC_IsMarkerPlacementBlocked())
 			return;
+
+		if (GC_LobbyPhase.UsesBriefingLeaderMarkers())
+		{
+			SCR_MapEntity mapEntity = SCR_MapEntity.GetMapInstance();
+			if (!mapEntity)
+				return;
+			SCR_MapMarkerMenuEntry entry = new SCR_MapMarkerMenuEntry();
+			entry.SetMarkerType(SCR_EMapMarkerType.PLACED_CUSTOM);
+			OnEntryPerformed(entry);
+
+			float worldX, worldY, screenX, screenY;
+			mapEntity.GetMapCursorWorldPosition(worldX, worldY);
+			mapEntity.WorldToScreen(worldX, worldY, screenX, screenY);
+			mapEntity.PanSmooth(screenX, screenY, 0.05);
+			return;
+		}
 
 		super.OnInputQuickMarkerMenu(value, reason);
 	}
@@ -67,7 +90,7 @@ modded class SCR_MapMarkersUI
 	//------------------------------------------------------------------------------------------------
 	override protected void CreateMilitaryMarkerEditDialog(bool isEditing = false, int selectedFactionEntry = -1, int selectedDimensionEntry = -1)
 	{
-		if (GC_IsMarkerPlacementBlocked())
+		if (GC_LobbyPhase.UsesBriefingLeaderMarkers() || GC_IsMarkerPlacementBlocked())
 			return;
 
 		super.CreateMilitaryMarkerEditDialog(isEditing, selectedFactionEntry, selectedDimensionEntry);

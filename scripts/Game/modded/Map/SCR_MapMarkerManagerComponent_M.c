@@ -34,6 +34,14 @@ modded class SCR_MapMarkerManagerComponent
 		if ((isLocal || !isServerMarker) && GC_LobbyPhase.ArePlayerMapMarkersLocked())
 			return;
 
+		if ((isLocal || !isServerMarker) && GC_LobbyPhase.UsesBriefingLeaderMarkers())
+		{
+			PlayerController controller = GetGame().GetPlayerController();
+			if (!controller || !marker || marker.GetType() != SCR_EMapMarkerType.PLACED_CUSTOM
+				|| !GC_LobbyPhase.CanPlacePlayerMapMarker(controller.GetPlayerId()))
+				return;
+		}
+
 		super.InsertStaticMarker(marker, isLocal, isServerMarker);
 	}
 }

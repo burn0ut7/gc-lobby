@@ -18,6 +18,66 @@ class GC_LobbyPhase
 		return gameMode && IsAtOrAfter(gameMode.GetState(), SCR_EGameModeState.GAME);
 	}
 
+	//------------------------------------------------------------------------------------------------
+	static bool UsesBriefingLeaderMarkers()
+	{
+		GC_LobbyGameMode mode = GC_LobbyGameMode.GetGameMode();
+		return mode && mode.HasBriefingLeaderMarkers();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	static bool CanPlacePlayerMapMarker(int playerId)
+	{
+		if (!UsesBriefingLeaderMarkers())
+			return !ArePlayerMapMarkersLocked();
+
+		GC_LobbyManager manager = GC_LobbyManager.GetManager();
+		if (!manager || manager.GetLobbyPhase() != SCR_EGameModeState.BRIEFING || playerId <= 0)
+			return false;
+		SCR_AIGroup group = manager.GetPlayerGroup(playerId);
+		if (!group || !group.GetPlayerIDs().Contains(playerId))
+			return false;
+
+		GC_Slot leader;
+		SCR_ECharacterRank leaderRank = SCR_ECharacterRank.INVALID;
+		array<int> members = group.GetPlayerIDs();
+		foreach (GC_Slot slot : manager.GetSlotsForGroup(group))
+		{
+			int occupant = slot.GetPlayerId();
+			if (occupant <= 0 || !members.Contains(occupant))
+				continue;
+			SCR_ECharacterRank rank = GetBriefingSlotRank(slot);
+			if (!leader || rank > leaderRank)
+			{
+				leader = slot;
+				leaderRank = rank;
+			}
+		}
+		return leader && leader.GetPlayerId() == playerId;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Selection order breaks equal native ranks before the characters spawn.
+	protected static SCR_ECharacterRank GetBriefingSlotRank(GC_Slot slot)
+	{
+		IEntity character = slot.GetEntity();
+		if (character)
+			return SCR_CharacterRankComponent.GetCharacterRank(character);
+
+		ResourceName prefab = slot.GetResolvedPrefab();
+		if (prefab.IsEmpty())
+			prefab = slot.GetAuthoredPrefab();
+		Resource resource = Resource.Load(prefab);
+		if (!resource || !resource.IsValid())
+			return SCR_ECharacterRank.INVALID;
+		IEntityComponentSource rankSource = SCR_BaseContainerTools.FindComponentSource(resource, SCR_CharacterRankComponent);
+		if (!rankSource)
+			return SCR_ECharacterRank.INVALID;
+		int rank = SCR_ECharacterRank.PRIVATE;
+		rankSource.Get("m_iRank", rank);
+		return rank;
+	}
+
 	static SCR_EGameModeState GetNext(SCR_EGameModeState phase)
 	{
 		switch (phase)

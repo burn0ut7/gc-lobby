@@ -157,12 +157,16 @@ def spawn_details(data, resolve_resource):
             'prefab': f'"{{{ref[1]}}}{path}"', 'delay': delay}
 
 
-def prefab_spawn(lines, key, resolve_resource, group=False):
+def prefab_spawn(lines, key, resolve_resource, group=False, missing_group_waypoint=None):
     allowed = SPAWN_FIELDS | {'m_waypointNames'} if group else SPAWN_FIELDS
     data = properties(lines, allowed)
     details = spawn_details(data, resolve_resource)
     fields = []
     waypoints = target_names(data['m_waypointNames'], skip_blank=True) if data.get('m_waypointNames') else []
+    missing = f'"{missing_group_waypoint}"' if group and missing_group_waypoint else None
+    omitted_waypoint = missing in waypoints
+    if omitted_waypoint:
+        waypoints.remove(missing)
     if waypoints:
         fields = ['        m_aWaypoints {', *('         ' + name for name in waypoints), '        }']
     kind = 'GC_AIGroupSpawn' if group else 'GC_PrefabSpawn'
@@ -172,6 +176,8 @@ def prefab_spawn(lines, key, resolve_resource, group=False):
                           'spawnAnchor': details['anchor'], 'spawnName': details['area'], 'prefab': details['prefab']}
     if group:
         audit['groupWaypoints'] = [name[1:-1] for name in waypoints]
+        if omitted_waypoint:
+            audit['missingGroupWaypoint'] = missing_group_waypoint
     return seconds, body, audit
 
 

@@ -51,6 +51,10 @@ REVIEWED_MISSING_TERMS = {
         ('516573a5947dd2aabfafcb80d7b364850f933e64', {'6A9F56058342FF13'}),
 }
 # The legacy hint contains no display content. The outcome and its delay are separate.
+REVIEWED_MISSING_EVENT_WAYPOINTS = {
+    'worlds/TheLocalPub/LamentinLosers/LamentinLosers_Layers/default.layer':
+        ('0ad3b0e257f59917e585357ac9b026f6240feba9', 'BLUWP4_4'),
+}
 REVIEWED_EMPTY_HINTS = {
     'worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/default.layer':
         ('74df0f746d04e31fdd1227c261978d0b01b070ce', '62672C5D0EC091B7'),
@@ -378,7 +382,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
                resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None,
                log_only=False, named_events=(), inactive=(), binary_startup=None, missing_term=False, ends_match=False,
-               direct_control=False, empty_hint=None):
+               direct_control=False, empty_hint=None, missing_group_waypoint=None):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -468,8 +472,9 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 elif (spawn_match or group_match) and resolve_spawn:
                     identity = (spawn_match or group_match)[1]
                     resolver = partial(resolve_spawn, group=True) if group_match else resolve_spawn
-                    delay, body, details = prefab_spawn(fields[j + 1:last], key + '/' + identity,
-                                                        resolver, group=bool(group_match))
+                    delay, body, details = prefab_spawn(
+                        fields[j + 1:last], key + '/' + identity, resolver,
+                        group=bool(group_match), missing_group_waypoint=missing_group_waypoint)
                     converted_actions.append({'instructionId': identity, **details})
                 elif vehicle_match:
                     delay, body, details = vehicle_spawn(fields[j + 1:last], key + '/' + vehicle_match[1],
@@ -943,6 +948,10 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     hint_blob, reviewed_empty_hint = REVIEWED_EMPTY_HINTS.get(path, (None, None))
     if source.files[path] != hint_blob:
         reviewed_empty_hint = None
+    route_blob, missing_group_waypoint = REVIEWED_MISSING_EVENT_WAYPOINTS.get(path, (None, None))
+    if (not missing_group_waypoint or source.files[path] != route_blob
+            or scripts is None or missing_group_waypoint in scripts):
+        missing_group_waypoint = None
     capture_messages = set() if compound else None
     for i, line in enumerate(body):
         event = EVENT.fullmatch(line)
@@ -978,7 +987,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived,
                 log_only=log_only, named_events=source_names, inactive=inactive, binary_startup=binary_startup,
                 direct_control=direct_control, ends_match=ends_match,
-                empty_hint=reviewed_empty_hint,
+                empty_hint=reviewed_empty_hint, missing_group_waypoint=missing_group_waypoint,
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
             if any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):

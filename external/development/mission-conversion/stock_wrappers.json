@@ -489,6 +489,14 @@
       "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AMG_P.et",
       "sha256": "2c1fccb790fce1ed53fe77e3a79fce926b2b3eba2abb7d90c170a2575ba121c0"
     },
+    "D2E883F5E6911DBA": {
+      "parent": [
+        "98EB9CDD85B8C92C",
+        "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Unarmed.et"
+      ],
+      "path": "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Unarmed_P.et",
+      "sha256": "8426c5c657024f137edcf935e9deb847b0ff2aa0bea0d3ae403dcb6a0428af26"
+    },
     "DBC177C261C93B9D": {
       "parent": [
         "E45F1E163F5CA080",
@@ -687,6 +695,24 @@
         ]
       ]
     },
+    "1E91FCDB0DA40A55": {
+      "parent": [
+        "3BF36BDEEB33AEC9",
+        "Prefabs/Groups/BLUFOR/Group_US_SentryTeam.et"
+      ],
+      "path": "Prefabs/Groups/BLUFOR/Group_US_SentryTeam_p.et",
+      "sha256": "01628d953d67d0de6a02c736e5142ae9eb8037391838d2681f536e5b73b6f4d2",
+      "slots": [
+        [
+          "64AD55FF89C97DF9",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman_P.et"
+        ],
+        [
+          "64AD55FF89C97DF9",
+          "Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman_P.et"
+        ]
+      ]
+    },
     "288D5E5619568501": {
       "parent": [
         "97D45056CFC22FF2",
@@ -718,6 +744,24 @@
         [
           "11DB79E241B3A90A",
           "Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Rifleman_KLMK_P.et"
+        ]
+      ]
+    },
+    "41F0D95175F5D179": {
+      "parent": [
+        "CB58D90EA14430AD",
+        "Prefabs/Groups/OPFOR/Group_USSR_SentryTeam.et"
+      ],
+      "path": "Prefabs/Groups/OPFOR/Group_USSR_SentryTeam_p.et",
+      "sha256": "f201cab875340e208b2aa6e852e5b8e3f7211cda005ef0cb776c7ea722de629b",
+      "slots": [
+        [
+          "47B0BA658525301A",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman_P.et"
+        ],
+        [
+          "47B0BA658525301A",
+          "Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman_P.et"
         ]
       ]
     },

@@ -186,6 +186,10 @@ WORKSHOP_SPAWN_PREFABS = {
     'BritishForces_5AE50EC5B8D6F4AE': (
         None, (('775DFB7F4529A122', 'Prefabs/Weapons/Rifles/L42A1/Rifle_L42A1.et'),),
     ),
+    'WCS_AH-1S_64CB39E57377C861': (
+        '683b318ce93cabf75ae5b3b2fe0a1ce49f30e76a693e3c959e353a6bc51da3f4',
+        (('C8C37964483452EA', 'Prefabs/Vehicles/Helicopters/AH1S/Army/AH1S_Army_M261_X4.et'),),
+    ),
     'RHS-StatusQuo_595F2BF2F44836FB': (
         None,
         (('1A486F1C4D22A32A', 'Prefabs/Vehicles/Tracked/T14/VehParts/Seats/T14_seat.et'),
@@ -630,6 +634,8 @@ REVIEWED_MISSING_ORDER_GROUPS = {
     ),
 }
 REVIEWED_MISSING_WAYPOINTS = {
+    'worlds/TheLocalPub/LamentinLosers/LamentinLosers_Layers/BLUFOR_AI.layer':
+        ('a8a7e4e23395b5de1f902bbb64b65148300a933f', {'BLUWATK10_1'}),
     'worlds/Barwick/The Blood and Smoke/The Blood and Smoke_Layers/Insurgents/Insurgent_AI.layer':
         ('899263002cdc221867c535cfca930b39e55867d9', {'Defend'}),
     'worlds/HitTheMan/VDV Leads The Way/VDVLLeadsTheWay_Layers/AI_Defenders/AI_Encounters_1.layer':
@@ -1164,6 +1170,8 @@ REVIEWED_NATIVE_ASSETS = {
         '32c230dad35e78b1da7b8b93351f4c3e7a4962b0918299be45e16c1a5b4d8cbc',
     'worlds/TheLocalPub/LamentinLosers/Prefabs/Weapons/Explosives/Mine_TM62M/Mine_TM62M_LamentinLosers.et':
         '168f1b77cfe825a1a980903dcacc10461131b8f9b56463e228dae8931f25bc58',
+    'worlds/TheLocalPub/LamentinLosers/Prefabs/Wheeled/Ural4320/VehParts/Ural4320_ammo_box_no_arsenal.et':
+        'f41c3211fd6951a0e06fc8fe4dc9f358c717470c0d507fd687f69a9adb6046d3',
     'worlds/anteante101/Prefabs/group/Group_GC_ION_Uniformed_CAT_WL_AA101.et':
         'ae267b03015662a0badcfa9210ce86ca18d1c3bf2e06efe19fe8b0b009fe4813',
     'worlds/arc/CommandosReforged/Prefabs/BLU/Barret_m107a1_IR.et':
@@ -3581,6 +3589,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     disable_photo = None
     lock_editor = None
     restrict_staging_combat = None
+    briefing_leader_markers = None
     transform = {}
     immediate_release = False
     construction = {}
@@ -3662,6 +3671,8 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             lock_editor = line.endswith(' 1')
         elif re.fullmatch(r' m_bFreezeTimeShootingForbiden [01]', line) and restrict_staging_combat is None:
             restrict_staging_combat = line.endswith(' 1')
+        elif re.fullmatch(r' m_bMarkersOnlyOnBriefing [01]', line) and briefing_leader_markers is None:
+            briefing_leader_markers = line.endswith(' 1')
         elif line == ' m_aDisabledResourceTypes {' and not disabled_resources:
             end = block_end(root, index)
             values = ' '.join(field.strip() for field in root[index + 1:end]).split()
@@ -3803,11 +3814,12 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
   GC_LobbyManager "{{6A137A39106A4973}}" {{
 {flags}{events}{respawn_fields}{reconnect_fields}  }}
 '''
+    marker_fields = ' m_bBriefingLeaderMarkers 1\n' if briefing_leader_markers else ''
     return f'''GC_LobbyGameMode GC_MigratedMission : "{{{resource}}}{preset}" {{
  components {{
 {weather}{environment}{settings} }}
 {placement}
-{jip_fields}{disabled_resources}{children}}}
+{jip_fields}{marker_fields}{disabled_resources}{children}}}
 '''
 
 
@@ -4399,6 +4411,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare the authored fractional staging release and displayed countdown.')
     if any('m_bRestrictAuthoredStagingCombat 1' in text for text in draft.values() if isinstance(text, str)):
         remaining.append('Compare remote-player staging input, vehicle exemptions, zone exit and release.')
+    if any('m_bBriefingLeaderMarkers 1' in text for text in draft.values() if isinstance(text, str)):
+        remaining.append('Compare leader rank and equal-rank precedence, briefing marker creation and Match drag lock.')
     if migrated_longmoor:
         remaining.append('Compare the authored locations against the historical Longmoor terrain.')
     capacity_notes = {}

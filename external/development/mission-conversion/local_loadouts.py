@@ -130,7 +130,12 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
         historical = None
         if verified_forced and resource not in owned and resource not in source_units.resources:
             historical = (historical_parents or {}).get((resource, parent_path))
-        inherited_playable = bool(parent_asset) or legacy_member(source_units, resource, False)
+        published_parent = stock_character(resource, parent_path, stock)
+        inherits_published_playability = (published_parent and resource not in owned
+                                          and resource not in source_units.resources
+                                          and resource not in dev_units.resources)
+        inherited_playable = (bool(parent_asset) or legacy_member(source_units, resource, False)
+                              or inherits_published_playability)
         try:
             body, removed = migrate_playability(text, inherited_playable=inherited_playable or verified_forced)
         except ValueError:
@@ -153,7 +158,6 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
             stock_wrapper = stock_wrapper_ancestry_matches(source_units, dev_units, resource, stock, owned)
             if not stock_wrapper and not unchanged_units_parent(source_units, dev_units, resource):
                 return None
-            published_parent = stock_character(resource, parent_path, stock)
             unit_parent = REF.search(inheritance(source_units, resource)[0].partition('\n')[0])
             inherits_published_role = bool(published_parent and unit_parent
                                            and tuple(published_parent) == unit_parent.groups())
@@ -173,9 +177,8 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
         else:
             if parent_path.startswith('GitHub/gc-reforger-units/'):
                 return None
-            native = stock_character(resource, parent_path, stock)
-            if native:
-                native_id, native_path = native
+            if published_parent:
+                native_id, native_path = published_parent
                 if native_id in source.resources or native_id in dev.resources:
                     return None
                 if native_id in source_units.resources or native_id in dev_units.resources:
