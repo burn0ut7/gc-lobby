@@ -56,6 +56,13 @@ WAYPOINT_CLASS = r'(?:SCR_AIWaypoint|SCR_DefendWaypoint|SCR_SearchAndDestroyWayp
 ROOT = re.compile(rf'(?P<group>\$grp )?(?P<kind>{SCENERY_CLASS}|{WAYPOINT_CLASS})(?: {NAME})? : "\{{(?P<guid>[\da-fA-F]{{16}})\}}(?P<path>[^"]+\.et)" \{{')
 NUMBER = r'[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?'
 FIELD = re.compile(rf'(?:(?:coords|angles) {NUMBER} {NUMBER} {NUMBER}|(?:angleX|angleY|angleZ|scale) {NUMBER})')
+DEFEND_PRESET = re.compile(r'SCR_DefendWaypointPreset "\{[\da-fA-F]{16}\}" \{')
+DEFEND_FIELD = re.compile(r'm_bFastInit [01]')
+DEFEND_FRACTION = re.compile(rf'm_fFractionOfSA {NUMBER}')
+DEFEND_TAGS = re.compile(r'(?:"(?:ObservationPost|CoverPost|LoiterPost)"\s*)+')
+OBSERVATION_POINT = 'Prefabs/Systems/Compositions/PatrolPoint/PatrolPoint_ObservationPoint.et'
+SENTINEL_COMPONENT = 'SCR_AISmartActionSentinelComponent "{5CB0DBCC796A6F1C}" {'
+SENTINEL_STANCE = re.compile(r'm_iCharacterStance (?:CROUCH|PRONE)')
 SCENERY = ('prefabs/structures/', 'prefabs/props/', 'prefabs/rocks/', 'prefabs/vegetation/',
            'prefabs/compositions/', 'prefabs/buildings/', 'prefabs/decals/')
 
@@ -74,6 +81,7 @@ def placements(text, stock, owned):
             if not root:
                 return None
             waypoint = bool(re.fullmatch(WAYPOINT_CLASS, root['kind']))
+            defend = root['kind'] == 'SCR_DefendWaypoint'
             kinds.add('waypoints' if waypoint else 'scenery')
             prefixes = ('prefabs/ai/waypoints/',) if waypoint else SCENERY
             if not root['path'].lower().startswith(prefixes):
@@ -93,6 +101,36 @@ def placements(text, stock, owned):
         elif stack[-1] == 'cycle' and re.fullmatch(r'(?:"[\w.\- ]+"\s*)+', token):
             continue
         elif waypoint and stack[-1] == 'entity' and re.fullmatch(rf'CompletionRadius {NUMBER}', token):
+            continue
+        elif defend and stack[-1] == 'entity' and token == 'm_aDefendPresets {':
+            stack.append('defend presets')
+        elif stack[-1] == 'defend presets' and DEFEND_PRESET.fullmatch(token):
+            stack.append('defend preset')
+        elif stack[-1] == 'defend preset' and token == 'm_aTagsForSearch {':
+            stack.append('defend tags')
+        elif stack[-1] == 'defend preset' and DEFEND_FRACTION.fullmatch(token):
+            continue
+        elif stack[-1] == 'defend tags' and DEFEND_TAGS.fullmatch(token):
+            continue
+        elif defend and stack[-1] == 'entity' and DEFEND_FIELD.fullmatch(token):
+            continue
+        elif defend and stack[-1] == 'entity' and token == '{':
+            stack.append('defend children')
+        elif stack[-1] == 'defend children':
+            child = ROOT.fullmatch(token)
+            if (not child or child['kind'] != 'GenericEntity' or child['path'] != OBSERVATION_POINT
+                    or child['guid'].upper() in owned or not stock.contains(child['guid'], child['path'])):
+                return None
+            stack.append('observation group' if child['group'] else 'observation point')
+        elif stack[-1] == 'observation group' and re.fullmatch(rf'(?:{NAME} )?\{{', token):
+            stack.append('observation point')
+        elif stack[-1] == 'observation point' and FIELD.fullmatch(token):
+            continue
+        elif stack[-1] == 'observation point' and token == 'components {':
+            stack.append('observation components')
+        elif stack[-1] == 'observation components' and token == SENTINEL_COMPONENT:
+            stack.append('sentinel component')
+        elif stack[-1] == 'sentinel component' and SENTINEL_STANCE.fullmatch(token):
             continue
         elif stack[-1] != 'entity' or not FIELD.fullmatch(token):
             return None
