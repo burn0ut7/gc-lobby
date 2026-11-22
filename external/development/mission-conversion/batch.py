@@ -28,7 +28,8 @@ from local_loadouts import unchanged_units_parent
 from markers import (DEST as MAP_MARKER_PREFAB, convert_baked_marker_generator, convert_hover_camera,
                      convert_layer, convert_wall_markers)
 from outcomes import (DEPOT_SUPPLY_REVISIONS, FOOD_MARKET_OUTCOME_LAYER, FRAMEWORK, INTERDICTION_OUTCOME_LAYER, MATCH_PHASE_VALUE,
-                      SCRIPT_FLAG_APIS, SUPPLY_OUTCOME_BLOB, SUPPLY_OUTCOME_LAYER,
+                      RUHA_PHASE_BLOB, RUHA_PHASE_LAYER, RUHA_UNIT_NAMES, SCRIPT_FLAG_APIS,
+                      SUPPLY_OUTCOME_BLOB, SUPPLY_OUTCOME_LAYER,
                       leaves, render as render_outcome, render_capture_trackers)
 import polygon_capture
 from respawns import authored_respawn_fields, read_respawns
@@ -662,11 +663,15 @@ REVIEWED_CAPACITY = {
 REVIEWED_MISSING_SPAWN_ANCHORS = {
     'worlds/Til/TyroneThrust/TyroneThrust.ent': (
         'worlds/Til/TyroneThrust/TyroneThrust_Layers/default.layer',
-        'ecde2a6f7b09a65b77a6bbf372c3ed282762daed', '6219244BFF9757BC', 'QRFSpawn',
+        'ecde2a6f7b09a65b77a6bbf372c3ed282762daed', {('6219244BFF9757BC', 'QRFSpawn')},
     ),
     'worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty.ent': (
         'worlds/Cunnah/Arty_Arty_Arty/Arty_Arty_Arty_Layers/default.layer',
-        '475f775d2eac67dd94f1161e277b32a2a8094a55', '650557F5B24BB14C', 'motar_target_8',
+        '475f775d2eac67dd94f1161e277b32a2a8094a55', {('650557F5B24BB14C', 'motar_target_8')},
+    ),
+    'worlds/HotMic/DelayingActionRuhaPlatoon/DelayingActionRuhaPlatoon.ent': (
+        RUHA_PHASE_LAYER, RUHA_PHASE_BLOB,
+        {('660D35BA2C88B6D2', 'Phase2_Smoke1'), ('660D35BBEF2F1785', 'Phase3_Smoke1')},
     ),
 }
 REVIEWED_MISSING_ORDER_GROUPS = {
@@ -4403,7 +4408,7 @@ def mode_children(lines, disable_photo=False, lock_editor=False):
 
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None,
                 *, dynamic_respawn_factions=(), area_flag_observers=(), cache_supply_depot=False,
-                inherited_immediate_release=False):
+                inherited_immediate_release=False, capture_phase_entities=False):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, environment, freeze = '', '', 0
@@ -4640,6 +4645,11 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
 '''
     if cache_supply_depot:
         settings += f'  GC_MissionSupplyDepotComponent "{{{guid(world + "/supply depot")}}}" {{\n  }}\n'
+    if capture_phase_entities:
+        names = ' '.join(f'"{name}"' for name in RUHA_UNIT_NAMES)
+        settings += (f'  GC_PhaseEntitySet "{{{guid(world + "/phase entities")}}}" {{\n'
+                     f'   m_aTemporaryNames {{\n    {names}\n   }}\n'
+                     '   m_sCapturedPrefix "PhaseUnit"\n  }\n')
     marker_fields = ' m_bBriefingLeaderMarkers 1\n' if briefing_leader_markers else ''
     return f'''GC_LobbyGameMode GC_MigratedMission : "{{{resource}}}{preset}" {{
  components {{
@@ -4700,6 +4710,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     represented = notices | {location for location, entry in rules.items() if 'gap' not in entry}
     framework_supported = (len(represented) == row['serializedTypes'].get('TILW_MissionEvent', 0)
                            and not outcome.get('gap'))
+    phase_entity_capture = (framework_supported and RUHA_PHASE_LAYER in source.layers[world.lower()]
+                            and source.files.get(RUHA_PHASE_LAYER) == RUHA_PHASE_BLOB)
+    temporary_names = RUHA_UNIT_NAMES if phase_entity_capture else ()
     rule_text = staged.get(outcome.get('stagedFragment'), '')
     terms = [term for event in rules.values() if 'gap' not in event for term in leaves(event)]
     used_flags = {term.get('flag') for term in terms}
@@ -4847,7 +4860,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 elif FRAMEWORK.fullmatch(head) and framework_supported and (represented or outcome.get('startupSamples')):
                     fields = block[1:-1]
                     if ((script_flags and layer == SUPPLY_OUTCOME_LAYER and source.files[layer] == SUPPLY_OUTCOME_BLOB)
-                            or (cache_supply_depot and layer == depot_layer)):
+                            or (cache_supply_depot and layer == depot_layer)
+                            or (phase_entity_capture and layer == RUHA_PHASE_LAYER)):
                         # The reviewed prefix contains the replaced scripts and optional unused coordinates.
                         fields = fields[fields.index(' m_missionEvents {'):]
                     root_fields = [field.strip() for field in fields
@@ -5075,6 +5089,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                    cache_supply_depot=cache_supply_depot,
                                    inherited_immediate_release=(
                                        depot_layer == layer == FOOD_MARKET_OUTCOME_LAYER),
+                                   capture_phase_entities=phase_entity_capture,
                                    area_flag_observers=[line for record in shared_writers
                                                         for line in record['areaFlagObserver']])
             if preset:
@@ -5209,10 +5224,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             matches = named.get(name, ())
             if policies == {True} and len(matches) == 1 and matches[0][0] == 'GenericEntity' and name not in spawned_names:
                 continue
-            if matches or name in spawned_names or True in policies:
+            if matches or (name in spawned_names and name not in temporary_names) or True in policies:
                 blockers.append({'rule': 'named crew group', 'file': world,
                                  'detail': 'crew group name conflicts with another entity: ' + name})
-        reviewed_missing_anchor = REVIEWED_MISSING_SPAWN_ANCHORS.get(world)
+        anchor_source, anchor_blob, missing_anchors = REVIEWED_MISSING_SPAWN_ANCHORS.get(world, (None, None, ()))
         for spawn in prefab_spawns:
             anchor, name = spawn['spawnAnchor'], spawn['spawnName']
             missing_route = spawn.get('missingGroupWaypoint')
@@ -5220,10 +5235,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                   or missing_route in crew_names):
                 blockers.append({'rule': 'AI group spawn', 'file': world,
                                  'detail': 'reviewed missing waypoint now resolves: ' + missing_route})
-            if (reviewed_missing_anchor and not named.get(anchor) and not name
-                    and anchor not in spawned_names and anchor not in crew_names and anchor not in script_text(source)
-                    and (source.files.get(reviewed_missing_anchor[0]), spawn.get('instructionId'), anchor)
-                    == reviewed_missing_anchor[1:]):
+            if ((spawn.get('instructionId'), anchor) in missing_anchors
+                    and source.files.get(anchor_source) == anchor_blob and not named.get(anchor) and not name
+                    and anchor not in spawned_names and anchor not in crew_names
+                    and anchor not in script_text(source)):
                 # The published spawn instruction returns when its anchor is absent.
                 missing_spawn_anchors.add(anchor)
                 continue
@@ -5231,7 +5246,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             mutually_exclusive = (None not in choices and len(set(choices)) == len(choices)
                                   and len({draw_by_flag.get(choice) for choice in choices}) == 1)
             if (len(named.get(anchor, [])) != 1
-                    or (name and ((len(choices) > 1 and not mutually_exclusive) or name in named))):
+                    or (name and ((len(choices) > 1 and not mutually_exclusive and name not in temporary_names)
+                                  or name in named))):
                 blockers.append({'rule': 'prefab spawn', 'file': world,
                                  'detail': 'missing anchor or conflicting spawn name for ' + anchor})
             for waypoint in spawn.get('crewWaypoints', spawn.get('groupWaypoints', ())):
@@ -5379,6 +5395,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                          'Historical damage thresholds and break physics remain unverified.')
     if converted_artillery:
         remaining.append('Compare the call-in menu, radio authorization, salvo timing and the late-join ammunition display.')
+    if phase_entity_capture:
+        remaining.append('Compare the three phase snapshots and cleanup when a phase ends before its capture runs.')
     if cache_supply_depot and depot_layer == INTERDICTION_OUTCOME_LAYER:
         remaining.append('Compare the cargo selection, selected van refill, depot initialization and repeated exact-supply check.')
     elif cache_supply_depot:

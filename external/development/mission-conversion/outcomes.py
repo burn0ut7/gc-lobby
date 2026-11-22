@@ -59,6 +59,18 @@ DEPOT_SUPPLY_REVISIONS = {
                              ('Phase 1 Done Flag', 'Phase 2 Done Flag')),
     }),
 }
+RUHA_PHASE_LAYER = ('worlds/HotMic/DelayingActionRuhaPlatoon/'
+                    'DelayingActionRuhaPlatoon_Layers/default.layer')
+RUHA_PHASE_BLOB = '785f74d7a29dcd03ecb23edef48a652878668841'
+RUHA_UNIT_NAMES = tuple(f'Unit{index}' for index in range(1, 11))
+RUHA_SCRIPT_CALLS = {
+    '666D3A6A1E573D65': (['     m_executionDelay 75', '     m_bAllowRerun 1'], '75', [], ()),
+    '666E050B8BEDB2C6': (['     m_executionDelay 10', '     m_bAllowRerun 1'], '10', [], ()),
+    '666E050B9BD2219D': (['     m_executionDelay 225', '     m_bAllowRerun 1'], '225', [], ()),
+    **dict.fromkeys(('666D3A6A67B0A257', '666E050BF68F4A49'),
+                    (['     m_executionDelay 6', '     m_iScriptNumber 2', '     m_bAllowRerun 1'], '6',
+                     ['        m_bDeleteCaptured 1'], ())),
+}
 NATIVE_ACTION = re.compile(r'      GC_\w+ "\{[\da-fA-F]{16}\}" \{')
 KEY = r'"[\w.-]+"'
 EVENT_LABEL = r'"[^"\\\x00-\x1f]+"'
@@ -346,7 +358,7 @@ def waypoint_trigger(term):
     return term['trigger'] in ('Match start', 'dormant', 'area capture', 'interaction flag', 'event flag')
 
 
-def event_control(kind, lines, key, named_events, *, direct):
+def event_control(kind, lines, key, named_events, *, direct, inactive_targets=()):
     allowed = {'m_eventNames', 'm_executionDelay'}
     if kind == 'RunEvents':
         allowed.add('m_allowRerun')
@@ -370,10 +382,13 @@ def event_control(kind, lines, key, named_events, *, direct):
     if direct:
         order = {name: index for index, name in enumerate(named_events)}
         targets.sort(key=lambda name: order.get(name[1:-1], len(order)))
-    actions, active, case_mismatches = [], [], []
+    actions, active, case_mismatches, inactive = [], [], [], []
     folded = Counter(name.casefold() for name in named_events)
     for index, target in enumerate(targets):
         name = target[1:-1]
+        if name in inactive_targets and name not in named_events:
+            inactive.append(name)
+            continue
         if name not in named_events and folded[name.casefold()] == 1:
             # A differently capitalized literal does not match the authored
             # name in the legacy instruction's string list.
@@ -384,6 +399,7 @@ def event_control(kind, lines, key, named_events, *, direct):
                         f'       m_sEventName {target}', f'       m_iOperation {operation}', '      }'])
     return Decimal(delay), actions, {'instruction': f'TILW_{kind}Instruction',
                                     audit_field: active, 'delaySeconds': delay,
+                                    **({'inactiveTargets': inactive} if inactive else {}),
                                     **({'caseMismatchedTargets': case_mismatches} if case_mismatches else {})}
 
 
@@ -491,7 +507,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None,
                log_only=False, named_events=(), inactive=(), binary_startup=None, missing_term=False, ends_match=False,
                direct_control=False, empty_hint=None, missing_group_waypoint=None, sampled_pregame_flags=(),
-               supply_comparison=False, depot_supply_calls=None):
+               supply_comparison=False, reviewed_script_calls=None, reviewed_script_type=None):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -540,7 +556,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 waypoint_match = WAYPOINTS.fullmatch(fields[j]) if compound else None
                 control_match = CONTROL_INSTRUCTION.fullmatch(fields[j]) if compound else None
                 action_match = recognized(fields[j]) if compound else None
-                script_match = SCRIPT_INSTRUCTION.fullmatch(fields[j]) if supply_comparison or depot_supply_calls else None
+                script_match = SCRIPT_INSTRUCTION.fullmatch(fields[j]) if supply_comparison or reviewed_script_calls else None
                 spawn_match = SPAWN.fullmatch(fields[j]) if extraction_spawns or resolve_spawn else None
                 group_match = GROUP_SPAWN.fullmatch(fields[j]) if resolve_spawn else None
                 vehicle_match = VEHICLE_SPAWN.fullmatch(fields[j]) if resolve_spawn and resolve_crew else None
@@ -568,8 +584,12 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                     assignments.append(assignment)
                 elif control_match:
                     kind, identity = control_match.groups()
+                    inactive_targets = ()
+                    if reviewed_script_type == 'GC_PhaseEntitySetScript' and identity == '660C40F7AE4DE2A2':
+                        inactive_targets = ('Phase 2 Flag',)
                     delay, body, details = event_control(kind, fields[j + 1:last], key + '/' + identity,
-                                                         named_events, direct=direct_control)
+                                                         named_events, direct=direct_control,
+                                                         inactive_targets=inactive_targets)
                     converted_actions.append(details)
                 elif action_match:
                     delay, body, details = compile_action(action_match, fields[j + 1:last], key, hidden_briefings)
@@ -589,12 +609,12 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                                 '       m_iAmount 1', '      }']
                         details = {'setsFlag': SUPPLY_COUNT_FLAG, 'producesFlags': SUPPLY_COUNT_FLAGS}
                     else:
-                        entry = depot_supply_calls.get(identity)
+                        entry = reviewed_script_calls.get(identity)
                         if not entry or fields[j + 1:last] != entry[0]:
-                            raise ValueError('unreviewed inline depot supply call')
+                            raise ValueError('unreviewed inline script call')
                         _, delay_text, settings, flags_written = entry
                         body = [f'      GC_CustomScriptAction "{{{guid(action_key)}}}" {{',
-                                f'       m_Script GC_MissionSupplyScript "{{{guid(action_key + "/script")}}}" {{',
+                                f'       m_Script {reviewed_script_type} "{{{guid(action_key + "/script")}}}" {{',
                                 *settings, '       }', '      }']
                         details = {'producesFlags': flags_written}
                     delay = Decimal(delay_text)
@@ -1069,6 +1089,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     depot_blob, depot_supply_calls = DEPOT_SUPPLY_REVISIONS.get(path, (None, {}))
     if not compound or source.files[path] != depot_blob:
         depot_supply_calls = {}
+    phase_capture = compound and path == RUHA_PHASE_LAYER and source.files[path] == RUHA_PHASE_BLOB
+    reviewed_script_calls = RUHA_SCRIPT_CALLS if phase_capture else depot_supply_calls
+    reviewed_script_type = 'GC_PhaseEntitySetScript' if phase_capture else 'GC_MissionSupplyScript'
     local = [p for p in source.closure(world) if p.lower().endswith(('.et', '.layer'))]
     controls = {p: matches for p in local if (matches := EVENT_CONTROL.findall(source.read(p)))}
     if controls and (not compound or set(controls) != {path}):
@@ -1185,7 +1208,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         if not spawns and not log_only and not any(
                 ENDING.fullmatch(item) or (compound and (
                     WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item) or recognized(item) or CONTROL_INSTRUCTION.fullmatch(item)
-                    or ((supply_comparison or depot_supply_calls) and SCRIPT_INSTRUCTION.fullmatch(item))
+                    or ((supply_comparison or reviewed_script_calls) and SCRIPT_INSTRUCTION.fullmatch(item))
                     or (resolve_spawn and (SPAWN.fullmatch(item) or GROUP_SPAWN.fullmatch(item)))
                     or (resolve_crew and VEHICLE_SPAWN.fullmatch(item))))
                 for item in fields):
@@ -1203,7 +1226,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 direct_control=direct_control, ends_match=ends_match,
                 empty_hint=reviewed_empty_hint, missing_group_waypoint=missing_group_waypoint,
                 sampled_pregame_flags=sampled_pregame_flags, supply_comparison=supply_comparison,
-                depot_supply_calls=depot_supply_calls,
+                reviewed_script_calls=reviewed_script_calls, reviewed_script_type=reviewed_script_type,
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
             if not term.get('pregameSample') and any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
@@ -1312,11 +1335,11 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             *(f'        {field} "{value}"' for field, value in SUPPLY_COUNT_FIELDS.items()),
             '       }', '      }', '     }', '    }',
         ])
-    if depot_supply_calls:
+    if reviewed_script_calls:
         calls = {action['instructionId'] for entry in audit.values() for action in entry.get('convertedActions', ())
                  if action.get('instruction') == 'TILW_RunScriptInstruction'}
-        if calls != depot_supply_calls.keys():
-            return [], audit, 'depot supply conversion requires all reviewed calls'
+        if calls != reviewed_script_calls.keys():
+            return [], audit, 'inline script conversion requires all reviewed calls'
     compiled.extend(render_capture_trackers(world, tracked_areas, captures, capture_messages))
     for identity, name, display_name, term, actions in parsed:
         if direct_control and term['trigger'] not in ('startup choice', 'pregame start'):

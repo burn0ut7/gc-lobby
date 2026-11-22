@@ -63,7 +63,8 @@ class GC_PrefabSpawn
 			return false;
 		BaseWorld world = GetGame().GetWorld();
 		IEntity location = world.FindEntityByName(m_sLocation);
-		if (!location || (!m_sEntityName.IsEmpty() && world.FindEntityByName(m_sEntityName)))
+		if (!location || (!m_sEntityName.IsEmpty() && world.FindEntityByName(m_sEntityName)
+			&& !GC_PhaseEntitySet.AllowsNameReuse(m_sEntityName)))
 			return false;
 		Resource resource = Resource.Load(m_sPrefab);
 		if (!resource || !resource.IsValid() || !Prepare(resource.GetResource().ToEntitySource()))
@@ -352,7 +353,8 @@ class GC_SpawnCrewGroup : GC_SpawnCrewStation
 			else if (existing)
 			{
 				existingGroup = SCR_AIGroup.Cast(existing);
-				if (!existingGroup || existingGroup.IsPlayable())
+				if ((!existingGroup && !GC_PhaseEntitySet.AllowsNameReuse(m_sGroupName))
+					|| (existingGroup && existingGroup.IsPlayable()))
 					return false;
 			}
 		}
