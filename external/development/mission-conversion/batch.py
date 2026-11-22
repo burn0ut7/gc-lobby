@@ -768,6 +768,8 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Props/Wrecks/BTR70_Wreck/BTR70_wreck_static.et',
     ('388B774519BD6294', 'Prefabs/Props/Wrecks/T62_wreck.et'):
         'Prefabs/Props/Wrecks/T62_wreck/T62_wreck.et',
+    ('922F95F91943F69A', 'Prefabs/Items/Equipment/Maps/PaperMap_01_folded_US.et'):
+        'Prefabs/Items/Equipment/Maps/Map_Paper_01/PaperMap_01_folded_US.et',
     ('F849217AB3BA88BE', 'Prefabs/Items/Equipment/Maps/PaperMap_01_folded_USSR.et'):
         'Prefabs/Items/Equipment/Maps/Map_Paper_01/PaperMap_01_folded_USSR.et',
     ('865B9E01D2C0B2D7', 'Prefabs/Items/Equipment/Maps/PaperMap_01_full.et'):
@@ -4994,10 +4996,19 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     extraction_spawns = [item for event in rules.values() for item in event.get('extractionSpawns', [])]
     if delayed:
         flag_uses = Counter(term.get('flag') for term in terms if term['trigger'] == 'area capture')
-        if ({item['area'] for item in extraction_spawns} != {item['area'] for item in delayed.spawns.values()}
-                or any(flag_uses[flag[1:-1]] != 1 for flag in delayed.conditions)):
+        expected_spawns = [item for group in delayed.spawns.values() for item in group]
+        placements = Counter((item['area'], item['anchor']) for item in extraction_spawns)
+        if (placements != Counter((item['area'], item['anchor']) for item in expected_spawns)
+                or any(flag_uses[flag[1:-1]] != delayed.startup_consumers.get(flag[1:-1], 1)
+                       for flag in delayed.conditions)):
             blockers.append({'rule': 'delayed extraction', 'file': world,
-                             'detail': 'extraction needs all spawns and one positive consumer per flag'})
+                             'detail': 'extraction needs all reviewed spawns and consumers'})
+        if delayed.startup_consumers:
+            choices = {item['sample'] for item in expected_spawns}
+            if not any(set(sample['flags']) == choices and sample['drawCount'] == 1
+                       for sample in startup_samples):
+                blockers.append({'rule': 'delayed extraction', 'file': world,
+                                 'detail': 'extraction spawns need a shared exclusive draw'})
     missing_waypoints = []
     group_waypoint_links = []
     missing_spawn_anchors = set()

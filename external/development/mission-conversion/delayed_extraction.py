@@ -1,4 +1,4 @@
-"""Port extraction spheres spawned by unconditional legacy Match-start events."""
+"""Port extraction spheres spawned by legacy events."""
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -10,10 +10,14 @@ from event_actions import SPAWN
 from events import EVENT, LITERAL
 from extraction import condition
 from launchers import META_NAME, replace_reference
+from markers import convert_layer
 
 EXTRACTION = re.compile(r'TILW_ExtractionTriggerEntity : "\{192ABD6B9232E064\}[^"]+" \{')
 KEY = r'"[\w.-]+"'
 NUMBER = r'\d+(?:\.\d+)?'
+LOST_AND_FOUND = 'worlds/FloridaMan/worlds/LostAndFound/LostAndFound.ent'
+EXTRACT_POINT = 'worlds/FloridaMan/Prefabs/Setpeice/BLUFOR_Extract_Point.et'
+EXTRACT_POINT_ID = 'B9CFA890D70B27DE'
 
 
 @dataclass
@@ -21,6 +25,69 @@ class DelayedExtraction:
     assets: dict = field(default_factory=dict)
     spawns: dict = field(default_factory=dict)
     conditions: dict = field(default_factory=dict)
+    startup_consumers: dict = field(default_factory=dict)
+
+
+def sampled_extraction(source, world):
+    layer = world.removesuffix('.ent') + '_Layers/default.layer'
+    anchors = world.removesuffix('.ent') + '_Layers/Setpeices.layer'
+    expected = {layer: 'd1b502d87d4664112e0e1260fcc5a81a8fdd2b84',
+                anchors: '6fd8ec7b5bbedc002e8aa4df76a3315a64a894e2',
+                EXTRACT_POINT: 'eb9247cf65f7f174bd497fc6905b46c0b18b23ef'}
+    if (any(source.files.get(path) != blob for path, blob in expected.items())
+            or source.resources.get(EXTRACT_POINT_ID) != [EXTRACT_POINT]):
+        raise ValueError('reviewed sampled extraction files changed')
+    result = DelayedExtraction(startup_consumers={'USAF_Extracted': 2, 'US_Extracted': 1})
+    lines = source.read(EXTRACT_POINT).splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith('  PS_ManualMarker '))
+    root, identity, *fields = [line[2:] for line in lines[start:block_end(lines, start) + 1]]
+    marker, count = convert_layer('\n'.join([root, *fields]) + '\n', draw_order=True, source=source)
+    if count != 1:
+        raise ValueError('sampled extraction needs its authored BLUFOR marker')
+    marker_fields = marker.splitlines()
+    marker_fields.insert(1, identity)
+    meta = source.read(EXTRACT_POINT + '.meta')
+    old_identity = META_NAME.search(meta)
+    if not old_identity or old_identity[2].upper() != EXTRACT_POINT_ID or old_identity[3] != EXTRACT_POINT:
+        raise ValueError('sampled extraction prefab registration changed')
+    targets = []
+    for flag, faction, radius, ratio in (('USAF_Extracted', 'RHS_USAF', 80, '0.9'), ('US_Extracted', 'US', 30, '1')):
+        primary = faction == 'RHS_USAF'
+        asset = EXTRACT_POINT if primary else EXTRACT_POINT.removesuffix('.et') + '_Pilots.et'
+        resource = EXTRACT_POINT_ID if primary else guid(asset)
+        if not primary and (asset in source.files or resource in source.resources):
+            raise ValueError('sampled extraction resource identity conflicts')
+        area = 'GC_MigrationExtraction_' + guid(world + '/' + flag)
+        shape = ['GC_RadiusAreaEntity : "{2C4447C53A1E450B}Prefabs/Logic/Mission/RadiusArea.et" {',
+                 f' m_fRadius {radius}']
+        if primary:
+            shape.extend([' {', *('  ' + line for line in marker_fields), ' }'])
+        result.assets[asset] = '\n'.join([*shape, '}', ''])
+        result.assets[asset + '.meta'] = replace_reference(meta, META_NAME, resource, asset)
+        check = condition(world, flag, area, faction, ratio, whole_number_quotient=True)
+        result.conditions[f'"{flag}"'] = ['      ' + line for line in check.splitlines()]
+        targets.append({'prefab': f'"{{{resource}}}{asset}"', 'area': area, 'delay': '0', 'flag': flag})
+    lines = source.read(layer).splitlines()
+    for index, line in enumerate(lines):
+        if not (event := EVENT.fullmatch(line)):
+            continue
+        fields = lines[index + 1:block_end(lines, index)]
+        for slot, instruction in enumerate(fields):
+            if not (spawn := SPAWN.fullmatch(instruction)):
+                continue
+            data = properties(fields[slot + 1:block_end(fields, slot)],
+                              {'m_prefab', 'm_locationName', 'm_executionDelay'})
+            if data.get('m_prefab') != f'"{{{EXTRACT_POINT_ID}}}{EXTRACT_POINT}"':
+                continue
+            anchor = re.fullmatch(r'"extract([1-5])"', data.get('m_locationName', ''))
+            if not anchor or data.get('m_executionDelay') != '0' or '   m_pregameEvent 1' not in fields:
+                raise ValueError('unverified sampled extraction spawn')
+            sample = 'ExtractPoint' + anchor[1]
+            result.spawns[event[1] + '/' + spawn[1]] = [
+                {**target, 'anchor': anchor[0][1:-1], 'sample': sample} for target in targets]
+    if sorted(pair[0]['sample'] for pair in result.spawns.values()) != [f'ExtractPoint{i}' for i in range(1, 6)]:
+        raise ValueError('sampled extraction needs each original spawn')
+    return result
 
 
 def read_prefab(source, path, asset, key):
@@ -58,6 +125,8 @@ def read_prefab(source, path, asset, key):
 
 
 def collect(source, world):
+    if world == LOST_AND_FOUND:
+        return sampled_extraction(source, world)
     result = DelayedExtraction()
     groups = defaultdict(list)
     prefabs = defaultdict(set)
@@ -96,15 +165,15 @@ def collect(source, world):
                     raise ValueError('duplicate dynamic extraction instruction')
                 result.assets[resource_path] = shape
                 result.assets[resource_path + '.meta'] = meta
-                result.spawns[child] = {'prefab': ref[0], 'anchor': anchor[1:-1], 'area': area, 'delay': delay,
-                                        'flag': flag[1:-1]}
+                result.spawns[child] = [{'prefab': ref[0], 'anchor': anchor[1:-1], 'area': area, 'delay': delay,
+                                         'flag': flag[1:-1]}]
                 groups[flag].append(check)
                 prefabs[flag].add(resource_path)
     if not groups:
         return result
     closure = [source.read(path) for path in source.closure(world)
                if '.' + path.rsplit('.', 1)[-1].lower() in SOURCE_TEXT]
-    for ref, count in Counter(entry['prefab'] for entry in result.spawns.values()).items():
+    for ref, count in Counter(entry['prefab'] for group in result.spawns.values() for entry in group).items():
         if sum(text.count(ref) for text in closure) != count:
             raise ValueError('dynamic extraction prefab is used outside supported spawn instructions')
     for flag, checks in groups.items():

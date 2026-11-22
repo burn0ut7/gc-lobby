@@ -564,8 +564,10 @@ def main():
                 identity_flags_audit = []
                 meta_dividers_audit = {}
                 startup_samples_audit = []
-                damage_flags_before_match = {flag for candidate in row.get('damageFlagCandidates', {}).values()
-                                             for flag in candidate.get('placedDestructionFlags', [])}
+                match_only_flags = {flag for candidate in row.get('damageFlagCandidates', {}).values()
+                                    for flag in candidate.get('placedDestructionFlags', [])}
+                if delayed:
+                    match_only_flags.update(delayed.startup_consumers)
                 rules, outcome_audit, gap = compile_outcomes(
                     source, world, captures, compound=args.batch, notification_audit=review,
                     objective_flags=objective_flags, extraction_spawns=delayed.spawns if delayed else None,
@@ -575,7 +577,7 @@ def main():
                     derived_audit=derived_audit, identity_flags_audit=identity_flags_audit,
                     meta_dividers_audit=meta_dividers_audit,
                     startup_samples_audit=startup_samples_audit,
-                    match_only_flags=damage_flags_before_match |
+                    match_only_flags=match_only_flags |
                     {asset['flag'] for asset in objectives.values() if asset.get('destroyed')},
                     interaction_reads=Counter(flag for placement in row.get('interactionCandidate', {}).values()
                                               if isinstance(placement, dict)

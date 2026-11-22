@@ -533,9 +533,14 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                         raise ValueError('flag has another producer or unsupported use: ' + flag)
                     converted_actions.append(details)
                 elif spawn_match and spawn_match[1] in extraction_spawns:
-                    details = extraction_spawns[spawn_match[1]]
-                    delay, body = render_spawn(details, key + '/' + spawn_match[1])
-                    delayed_areas.append(details)
+                    for details in extraction_spawns[spawn_match[1]]:
+                        identity = key + '/' + spawn_match[1]
+                        if 'sample' in details:
+                            identity += '/' + details['flag']
+                        delay, spawn_body = render_spawn(details, identity)
+                        actions[delay].extend(spawn_body)
+                        delayed_areas.append(details)
+                    body = []
                 elif (spawn_match or group_match) and resolve_spawn:
                     identity = (spawn_match or group_match)[1]
                     resolver = partial(resolve_spawn, group=True) if group_match else resolve_spawn
@@ -567,6 +572,12 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         term = {'trigger': 'pregame start'}
     pregame_start = term['trigger'] == 'pregame start'
     sample_before_match = term.get('pregameSample', False)
+    if delayed_areas and any('sample' in area for area in delayed_areas):
+        if not pregame or not sample_before_match or any(area.get('sample') != term.get('flag') for area in delayed_areas):
+            raise ValueError('extraction spawn needs its verified pregame sample')
+        pregame_extraction = True
+    else:
+        pregame_extraction = False
     if pregame != (term['trigger'] in ('startup choice', 'pregame start') or sample_before_match):
         raise ValueError('pregame event requires a reviewed startup selection')
     startup_actions = ({'TILW_SetFlagInstruction'} if pregame_start
@@ -575,7 +586,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         startup_actions.add('TILW_DeleteEntitiesInstruction')
     if sample_before_match:
         startup_actions.add('TILW_DeleteEntitiesInstruction')
-    if pregame and (notices or assignments or delayed_areas or messages or (pregame_start and not converted_actions)
+    if pregame and (notices or assignments or (delayed_areas and not pregame_extraction)
+                    or messages or (pregame_start and not converted_actions)
                     or (sample_before_match and (direct_control or any(delay != 0 for delay in actions)))
                     or any(action['instruction'] not in startup_actions
                            for action in converted_actions)):
