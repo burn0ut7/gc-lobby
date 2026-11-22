@@ -1785,6 +1785,35 @@ def script_text(source):
                      for path in source.files if path.lower().endswith('.c'))
 
 
+FIA_CACHE_COMPOSITION = ('AB1A97B1BAE8C395', 'Prefabs/Compositions/Slotted/SlotFlatSmall/SupplyCache_S_FIA_01.et')
+FIA_CACHE_NESTED_DAMAGE = (
+    ('9AE2149222FAD9A3', 'Prefabs/Compositions/Misc/SubCompositions/Storage/Slotted/Storage_Supplies_FIA_03.et'),
+    ('3FD3F403025BBDF5', 'Prefabs/Props/Military/SupplyBox/SupplyStack/SupplyStack_Large_01/SupplyStack_Large_01_storage.et'),
+    ('BD2934A1F1EFE742', 'Prefabs/Props/Military/SupplyBox/SupplyStack/SupplyStack_Large_01/SupplyStack_Large_01_storage_base.et'),
+    ('3260189525F39062', 'Prefabs/Props/Military/SupplyBox/SupplyStack/SupplyStack_Large_01/SupplyStack_Large_01_base.et'),
+)
+
+
+def fia_cache_damage_placement(block, stock, source_units, dev_units, local_resources):
+    references = (FIA_CACHE_COMPOSITION, *FIA_CACHE_NESTED_DAMAGE)
+    if (not stock or not all(stock.contains(*ref) for ref in references)
+            or any(identity in local_resources or identity in source_units.resources or identity in dev_units.resources
+                   for identity, _ in references)
+            or sha256('\n'.join(block).encode()).hexdigest()
+            != 'c51174920566523737086ccf2fd6ed1435a4f9f0eeca6c426e563ad2ea320b8b'):
+        raise ValueError('reviewed FIA cache composition or damage target changed')
+    # The stock storage subcomposition binds this placement ID to its large supply stack.
+    start = block.index('     ID "5D45393FFA2FEF0F"') - 1
+    stop = block_end(block, start)
+    indent = '    '
+    leaf = [line.removeprefix(indent) for line in block[start:stop + 1]]
+    converted, flag = damage_state_flag_placement(leaf, clear_on_mismatch=True)
+    native = native_placement([*block[:start], *(indent + line for line in converted), *block[stop + 1:]])
+    if not native:
+        raise ValueError('FIA cache composition has another legacy component')
+    return native, [flag]
+
+
 def damage_flag_rules(source, world, stock, local_resources, source_units, dev_units, rhs=None, *,
                       workshop_targets=()):
     placements, audit, candidates = {}, {}, defaultdict(list)
@@ -1808,6 +1837,13 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                 continue
             components = [i for i, part in enumerate(block) if DAMAGE_COMPONENT.fullmatch(part)]
             if not components:
+                ref = REF.search(block[0])
+                if ref and ref.groups() == FIA_CACHE_COMPOSITION and any('TILW_Flag_EntityDamage' in part for part in block):
+                    try:
+                        observed[(path, line)] = fia_cache_damage_placement(
+                            block, stock, source_units, dev_units, local_resources)
+                    except ValueError as exc:
+                        audit[location] = {'gap': str(exc)}
                 continue
             try:
                 ref = REF.search(block[0])

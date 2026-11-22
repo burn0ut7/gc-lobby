@@ -31,6 +31,8 @@ class GC_MapShapeComponent : ScriptComponent
 	protected bool m_bFillOpenShape;
 	[Attribute("0", UIWidgets.CheckBox, "Fill outside the polygon instead of inside. The interior remains clear.", category: "Fill")]
 	protected bool m_bInvertFill;
+	[Attribute("0", UIWidgets.Hidden)]
+	protected bool m_bAllowAuthoredCrossings;
 	[Attribute("0.2 0.5 1 0.2", UIWidgets.ColorPicker, "Solid fill color and opacity. Low opacity keeps terrain and grid readable.", category: "Fill")]
 	protected ref Color m_FillColor;
 	protected ShapeEntity m_Shape;
@@ -163,7 +165,11 @@ class GC_MapShapeComponent : ScriptComponent
 				polygon[i] = m_Shape.CoordToParent(polygon[i]);
 		}
 		// Spline outlines can cross themselves because they never need triangulation.
-		if (polygon.Count() < 2 || ((closed || m_bFillEnabled) && !splineOutline && !ValidPolygon(polygon)))
+		// Reviewed decorative fills pass their exact point order to the canvas polygon command.
+		bool authoredCrossings = m_bAllowAuthoredCrossings && closed && m_bFillEnabled && !m_bInvertFill
+			&& !m_bAutoFrameMap && !m_AO && !m_aRuntimePoints && PolylineShapeEntity.Cast(m_Shape);
+		if (polygon.Count() < 2 || (authoredCrossings && polygon.Count() < 3)
+			|| ((closed || m_bFillEnabled) && !splineOutline && !authoredCrossings && !ValidPolygon(polygon)))
 			return;
 		if (m_bAutoFrameMap && frameBounds)
 		{

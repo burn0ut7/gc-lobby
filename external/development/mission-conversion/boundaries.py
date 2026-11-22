@@ -19,6 +19,7 @@ MAP_SHAPE = '{8F470B543A20D963}Prefabs/Logic/Mission/MapShape.et'
 REVIEWED_BOUNDARY_CROSSINGS = {
     'd140047c759fdf8f7bda1e1a11689c2659d14142': (49, 'Two Bloody Miles/outer AO/', 0, 5, 0.005),
 }
+ZHEREBETS_ISLAND_DRAWING = '487957d47bc078d6f3c4fb42f34f958a87f35390'
 ALLOWED = {'m_killTimer', 'm_factionKeys', 'm_ignoredVehicles', 'm_visibility', 'm_defaultColor',
            'm_useFactionColor', 'm_lineWidth', 'Enabled'}
 COMPONENTS = {
@@ -57,7 +58,7 @@ def rotate_point(point, yaw, pitch, roll):
     return x * math.cos(yaw) + z * math.sin(yaw), y, -x * math.sin(yaw) + z * math.cos(yaw)
 
 
-def validate_polygon(vertices, origin, yaw=0, pitch=0, roll=0):
+def validate_polygon(vertices, origin, yaw=0, pitch=0, roll=0, *, allow_crossings=False):
     if not 3 <= len(vertices) <= 128:
         raise ValueError('native polygon requires 3 to 128 points')
     if pitch or roll:
@@ -75,6 +76,8 @@ def validate_polygon(vertices, origin, yaw=0, pitch=0, roll=0):
         if math.dist(a, b) <= 0.0001 or (abs(cross(a, b, c)) <= 0.00001 and
                 (b[0]-a[0])*(c[0]-b[0]) + (b[1]-a[1])*(c[1]-b[1]) < 0):
             raise ValueError('degenerate or backtracking boundary edge')
+        if allow_crossings:
+            continue
         for j in range(i+2, len(ring)):
             if i == 0 and j == len(ring)-1:
                 continue
@@ -144,7 +147,7 @@ def settings(lines, extended_shapes, standalone=False, passive_cover=False, *, b
 
 
 def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=False, world_width=False,
-                    navmesh=(), require_assigned=False, open_fill=False):
+                    navmesh=(), require_assigned=False, open_fill=False, allow_authored_crossings=False):
     keys = overlay.get('m_factionKeys', '')
     if '""' in keys and re.fullmatch(r'(?:\s*"[\w.-]*"\s*)+', keys):
         assigned = re.findall(r'"[\w.-]+"', keys)
@@ -177,6 +180,8 @@ def convert_passive(name, placement, overlay, *, auto_frame=False, standalone=Fa
         lines.append('   m_bEnabled 0')
     if open_fill:
         lines.append('   m_bFillOpenShape 1')
+    if allow_authored_crossings:
+        lines.append('   m_bAllowAuthoredCrossings 1')
     if outline == '1':
         lines.append('   m_fLineWidth ' + line_width)
         if world_width:
@@ -233,7 +238,7 @@ def render_cover(coords, vertices, yaw, cover, pitch=0, roll=0, *, name='', pres
 
 def convert_instance(lines, name, passive_only=False, allow_public_faction_color=False, split_fill=True,
                      extended_shapes=False, standalone=False, parent_origin=(0, 0, 0), parent_yaw=0,
-                     parent_scale=1, passive_cover=False, bare=False, nested=False):
+                     parent_scale=1, passive_cover=False, bare=False, nested=False, reviewed_map_drawing=False):
     values, overlay, cover = {}, {}, {}
     navmesh = []
     placement = []
@@ -328,12 +333,18 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     open_fill = (extended_shapes and closed is False and not cover and not standalone_ao
                  and (standalone or passive_overlay) and overlay.get('m_drawArea', '1') == '1'
                  and overlay.get('m_drawLine') == '1' and overlay.get('m_invert', '0' if standalone else '1') == '0')
-    if closed is not False or standalone_ao or open_fill:
+    reviewed_fill = (reviewed_map_drawing and standalone and not nested and not values and not cover and not navmesh
+                     and closed is not False and overlay.get('m_drawArea', '1') == '1'
+                     and overlay.get('m_invert', '0') == '0')
+    empty_template = reviewed_fill and not vertices
+    allow_crossings = reviewed_fill and not empty_template
+    if not empty_template and (closed is not False or standalone_ao or open_fill):
         relative = tuple(axis * parent_scale for axis in origin)
         if parent_yaw:
             relative = rotate_point(relative, parent_yaw, 0, 0)
         world_origin = tuple(local + parent for local, parent in zip(relative, parent_origin))
-        validate_polygon(vertices, world_origin, yaw + parent_yaw, pitch, roll)
+        validate_polygon(vertices, world_origin, yaw + parent_yaw, pitch, roll,
+                         allow_crossings=allow_crossings)
     if (closed is False and not open_fill and not (standalone_ao and not visible_standalone)
             and (not (standalone or passive_overlay) or cover
                  or not 2 <= len(vertices) <= 128 or overlay.get('m_drawArea', '1') != '0')):
@@ -344,7 +355,7 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
             placement.append(' LineColor 1 0 0 1')
         if not standalone_ao:
             return convert_passive(name, placement, overlay, standalone=True, navmesh=navmesh,
-                                   open_fill=open_fill), len(vertices)
+                                   open_fill=open_fill, allow_authored_crossings=allow_crossings), len(vertices)
         if visible_standalone:
             standalone_overlay = convert_passive('', placement, overlay, standalone=True) + '\n'
         if closed is False:
@@ -590,11 +601,13 @@ def convert_boundaries(text, allow_public_faction_color=False, split_fill=True, 
                 bridge_here = bridge and start + source_line == bridge[0]
                 if bridge_here:
                     fields = bridge_polygon(fields, *bridge[1:])
+                reviewed_map_drawing = (source_blob == ZHEREBETS_ISLAND_DRAWING
+                                        and name in ('LandTemplate', 'Treestemplate', 'Land_2'))
                 body,count = convert_hierarchy(fields, ' '+name if name else '',
                                                {'allow_public_faction_color': allow_public_faction_color,
                                                 'split_fill': split_fill, 'extended_shapes': extended_shapes,
                                                 'standalone': bool(standalone), 'passive_cover': bool(passive_cover),
-                                                'bare': bool(bare)},
+                                                'bare': bool(bare), 'reviewed_map_drawing': reviewed_map_drawing},
                                                area_children=area_children)
                 emitted.append(body)
                 review[str(start+1)] = {'vertices':count,'name':name,'lastLine':stop+1}
