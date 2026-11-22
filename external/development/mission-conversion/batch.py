@@ -1063,6 +1063,8 @@ RHIB_LEGACY_MOUNT_LAYERS = {
 RHIB_CURRENT_MOUNT_LAYERS = {'10cceaf84b88a05e2c3cad314b005f18334dba38'}  # Taking Trenches
 WIRECUTTER_LAYER_BLOBS = {'7673b673c619b44b0f80cfb54d029b5cdd208350', 'f5c094b3c8f19c596b5f44c2b903f6942e0c0874'}
 WIRECUTTER_PREFAB = ('42232FFE6E7AC415', 'Prefabs/Items/Core/Wirecutters/wirecutters.et')
+GRAVETTE_WIRECUTTER_ROLE = 'worlds/ac337/prefab/1980s SF and Partners/Partner Force/AC_PF_Rifleman_Ladder_P.et'
+GRAVETTE_WIRECUTTER = 'worlds/ac337/prefab/Gravette_Wirecutters.et'
 LEGACY_WIRECUTTER = re.compile(
     r'\$grp GenericEntity : "\{8554ED3F088BADA6\}Prefabs/Items/Core/Wirecutters/wirecutters(?:old)?\.et" \{')
 UNITS_PREFAB_ALIASES = {
@@ -1665,6 +1667,21 @@ def update_cobra_armament(block, aliases):
     return output
 
 
+def wirecutter_inventory_fields():
+    return [
+        ' components {',
+        '  InventoryItemComponent "{5222EB4D0C73006B}" {',
+        '   Attributes SCR_ItemAttributeCollection "{5222EB4D0A2B466B}" {',
+        '    ItemPhysAttributes ItemPhysicalAttributes "{62F35B4168194640}" : PhysicalAttributes {',
+        '     Weight 0.01',
+        '    }',
+        '    m_SlotType SLOT_LOADOUT_STORAGE',
+        '   }',
+        '  }',
+        ' }',
+    ]
+
+
 def restore_placed_wirecutters(block, aliases, source_blob):
     if source_blob not in WIRECUTTER_LAYER_BLOBS or WIRECUTTER_PREFAB not in aliases:
         raise ValueError('wirecutter placement needs the reviewed source and Workshop archive')
@@ -1676,16 +1693,7 @@ def restore_placed_wirecutters(block, aliases, source_blob):
             raise ValueError('wirecutter placement has unsupported overrides')
         rebuilt.extend([
             f' {name} {{' if name else ' {',
-            '  components {',
-            '   InventoryItemComponent "{5222EB4D0C73006B}" {',
-            '    Attributes SCR_ItemAttributeCollection "{5222EB4D0A2B466B}" {',
-            '     ItemPhysAttributes ItemPhysicalAttributes "{62F35B4168194640}" : PhysicalAttributes {',
-            '      Weight 0.01',
-            '     }',
-            '     m_SlotType SLOT_LOADOUT_STORAGE',
-            '    }',
-            '   }',
-            '  }',
+            *(' ' + field for field in wirecutter_inventory_fields()),
             *(' ' + field for field in fields),
             ' }',
         ])
@@ -3327,6 +3335,23 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
 
         def relocate(ref):
             resource, path = ref[1].upper(), ref[2]
+            if ((resource, path) == ('8554ED3F088BADA6', WIRECUTTER_PREFAB[1])
+                    and owner == GRAVETTE_WIRECUTTER_ROLE
+                    and source.files.get(owner) == '0c1bdbf6239721b499105469fed6b5520a4ee099'
+                    and WIRECUTTER_PREFAB in asset_aliases):
+                destination = GRAVETTE_WIRECUTTER
+                identity = guid(destination)
+                if identity in source.resources or dev.resources.get(identity) not in (None, [destination]):
+                    blockers.add((owner, path, 'wirecutter compatibility prefab identity collision'))
+                    return ref[0]
+                parent, parent_path = WIRECUTTER_PREFAB
+                draft[destination] = '\n'.join([
+                    f'GenericEntity : "{{{parent}}}{parent_path}" {{',
+                    ' ID "508AB2013EEE1E00"', *wirecutter_inventory_fields(), '}', '',
+                ])
+                draft[destination + '.meta'] = replace_reference(
+                    source.read(owner + '.meta'), META_NAME, identity, destination)
+                return f'"{{{identity}}}{destination}"'
             if faction := faction_assets.get((resource, path)):
                 identity, destination, assets = faction
                 draft.update(assets)
