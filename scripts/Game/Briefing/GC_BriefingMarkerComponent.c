@@ -7,9 +7,11 @@ class GC_BriefingMarkerComponent : ScriptComponent
 {
 	protected const int MAX_REGISTRATION_ATTEMPTS = 20;
 	protected const int REGISTRATION_RETRY_MS = 100;
+	protected const int TRACK_TRANSFORM_INTERVAL_MS = 500;
 	protected int m_iRegistrationAttempts;
 	protected bool m_bRegistered;
 	protected string m_sMarkerName;
+	protected GC_LobbyManager m_RegistrationManager;
 
 	[Attribute("", UIWidgets.ResourcePickerThumbnail, "Texture or image-set resource used by the briefing marker", params: "imageset edds png")]
 	protected ResourceName m_sImageSetOrImage;
@@ -68,6 +70,9 @@ class GC_BriefingMarkerComponent : ScriptComponent
 	[Attribute("0", UIWidgets.CheckBox, "Use the first child of this named marker as a static map preview camera anchor.")]
 	protected bool m_bPreviewOnHover;
 
+	[Attribute("0", UIWidgets.CheckBox, "Refresh the map position and heading when this marker or its parent moves.")]
+	protected bool m_bTrackTransform;
+
 	IEntity GetHoverCameraAnchor()
 	{
 		IEntity owner = GetOwner();
@@ -102,11 +107,47 @@ class GC_BriefingMarkerComponent : ScriptComponent
 		if (manager)
 		{
 			m_bRegistered = manager.RegisterBriefingMarker(this);
+			if (m_bRegistered)
+			{
+				m_RegistrationManager = manager;
+				if (m_bTrackTransform)
+					GetGame().GetCallqueue().CallLater(RefreshTrackedTransform, TRACK_TRANSFORM_INTERVAL_MS, true);
+			}
 			return;
 		}
 
 		if (m_iRegistrationAttempts < MAX_REGISTRATION_ATTEMPTS)
 			GetGame().GetCallqueue().CallLater(RegisterWithManager, REGISTRATION_RETRY_MS);
+	}
+
+	protected void RefreshTrackedTransform()
+	{
+		IEntity owner = GetOwner();
+		GC_LobbyGameMode mode = GC_LobbyGameMode.GetGameMode();
+		if (!owner || !mode || owner.GetWorld() != mode.GetWorld() || !m_RegistrationManager
+			|| m_RegistrationManager != GC_LobbyManager.GetManager() || !Replication.IsServer())
+		{
+			GetGame().GetCallqueue().Remove(RefreshTrackedTransform);
+			return;
+		}
+
+		GC_BriefingMarker current = m_RegistrationManager.GetBriefingMarker(m_sMarkerName);
+		if (!current)
+		{
+			GetGame().GetCallqueue().Remove(RefreshTrackedTransform);
+			return;
+		}
+
+		vector position = owner.GetOrigin();
+		float rotation = owner.GetYawPitchRoll()[0] - 90;
+		if (vector.DistanceSq(current.GetWorldPosition(), position) < 0.25
+			&& Math.AbsFloat(current.GetRotation() - rotation) < 1)
+			return;
+
+		GC_BriefingMarker update = new GC_BriefingMarker();
+		update.CopyFrom(current);
+		update.SetWorldTransform(position, rotation);
+		m_RegistrationManager.UpsertBriefingMarker(update);
 	}
 
 	override void OnDelete(IEntity owner)
@@ -115,14 +156,13 @@ class GC_BriefingMarkerComponent : ScriptComponent
 		m_EditorPreview = null;
 #endif
 		GetGame().GetCallqueue().Remove(RegisterWithManager);
-		if (m_bRegistered && owner)
-		{
-			GC_LobbyManager manager = GC_LobbyManager.GetManager();
-			if (manager)
-				manager.RemoveBriefingMarker(m_sMarkerName);
-		}
+		if (m_bTrackTransform)
+			GetGame().GetCallqueue().Remove(RefreshTrackedTransform);
+		if (m_bRegistered && owner && m_RegistrationManager && m_RegistrationManager == GC_LobbyManager.GetManager())
+			m_RegistrationManager.RemoveBriefingMarker(m_sMarkerName);
 
 		m_bRegistered = false;
+		m_RegistrationManager = null;
 		super.OnDelete(owner);
 	}
 

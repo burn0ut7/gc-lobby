@@ -32,7 +32,7 @@ from interactions import convert_block as convert_interaction_block, convert_obj
 from launchers import META_NAME, launcher, replace_reference
 from local_loadouts import unchanged_units_parent
 from markers import (DEST as MAP_MARKER_PREFAB, LEGACY as LEGACY_MARKER, convert_baked_marker_generator, convert_hover_camera,
-                     convert_layer, convert_wall_markers)
+                     convert_layer, convert_wall_markers, instance as marker_instance)
 from outcomes import (ASSAD_FRAMEWORK_BLOB, ASSAD_FRAMEWORK_LAYER, DEPOT_SUPPLY_REVISIONS,
                       FOOD_MARKET_OUTCOME_LAYER, FRAMEWORK, INTERDICTION_OUTCOME_LAYER,
                       INTERSECTING_DEFAULT, INTERSECTING_DEFAULT_BLOB, MATCH_PHASE_VALUE,
@@ -197,6 +197,7 @@ SEEDER_REPLACEMENT_PARENTS = {
     ('1FBB492E86002BF5', 'Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport.et'),
     ('A5647958579A4149', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_repair.et'),
     ('4C81D7ED8F8C0D87', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker.et'),
+    ('1BABF6B33DA0AEB6', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_command.et'),
 }
 SEEDER_RHS_REPLACEMENT_PARENTS = {
     ('00AED68EFBF251BA', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered_closed_camo1.et'),
@@ -215,6 +216,14 @@ SEEDER_TRUCK_BLOBS = {
     'Ural4320_repair2.et': 'f7dc7f44cf3f299f90fd30c8862e2584c261d85b',
     'Ural4320_tanker1.et': '77c6a1fa70c4ab57b759532828f542bfd8ea2627',
     'Ural4320_tanker2.et': '00fdc7f3552e9cc7a4d440958c90fd3530f34678',
+    'Ural4320_command1.et': 'b7355e23d8ae23c181311d387a86c93eea80e4b5',
+}
+SEEDER_COMMAND_TRUCK = SEEDER_REPLACEMENT_DIR + 'Ural4320_command1.et'
+SEEDER_COMMAND_MARKER = SEEDER_REPLACEMENT_DIR + 'CommandTruckMarker.et'
+SEEDER_COMMAND_ANCHOR = SEEDER_REPLACEMENT_DIR + 'TPTruck.et'
+SEEDER_COMMAND_CHILDREN = {
+    SEEDER_COMMAND_MARKER: 'b29d1cbfff1577e9e6a33e67ce5944a40845e9b1',
+    SEEDER_COMMAND_ANCHOR: 'f2b93071267b1a2c01982db8a168648af90bd32e',
 }
 SEEDER_CARGO_BLOBS = {
     'HTMEngineeringBox.et': '1b69602de123e1f107b734540d9f1cfc71af01cc',
@@ -3001,6 +3010,8 @@ def passive_asset(source, path):
             blob = SEEDER_CARGO_BLOBS.get(path.removeprefix(SEEDER_REPLACEMENT_DIR))
             if blob and source.files.get(path) == blob and not LEGACY.search(body):
                 return body
+        if path in SEEDER_COMMAND_CHILDREN:
+            return seeder_command_child(source, path)
         if path == SKALISTY_FALLBACK_AO:
             return skalisty_fallback_ao(body)
         if path in REVIEWED_SPAWNED_MARKERS:
@@ -3340,6 +3351,26 @@ def spawned_damage_objective(block, stock, local_resources, workshop_targets, *,
     return '\n'.join(lines) + '\n', flag
 
 
+def seeder_command_child(source, path):
+    if source.files.get(path) != SEEDER_COMMAND_CHILDREN[path]:
+        raise ValueError('reviewed command truck child changed')
+    lines = source.read(path).splitlines()
+    name = next(index for index, line in enumerate(lines) if 'TILW_SetNameComponent ' in line)
+    naming = [lines[name].replace('TILW_SetNameComponent', 'GC_MissionEntityNameComponent'),
+              lines[name + 1].replace('m_setName', 'm_sMissionName'), '  }']
+    component_end = block_end(lines, 2)
+    fields = lines[component_end + 1:-1]
+    if path == SEEDER_COMMAND_ANCHOR:
+        transform = [line for line in fields if FIELD.fullmatch(line.strip())]
+        return '\n'.join(['GenericEntity {', lines[1], ' components {', *naming, ' }', *transform, '}', ''])
+    marker = marker_instance(fields, '', draw_order=True).splitlines()
+    component_end = block_end(marker, 2)
+    marker[component_end:component_end] = ['   m_bTrackTransform 1']
+    marker[component_end + 2:component_end + 2] = naming
+    marker.insert(1, lines[1])
+    return '\n'.join(marker) + '\n'
+
+
 def reviewed_replacement_vehicle(source, resource, path, corpus):
     """Verify one initial placement and the complete destruction-to-replacement loop."""
     if (not path.startswith(SEEDER_REPLACEMENT_DIR)
@@ -3357,6 +3388,8 @@ def reviewed_replacement_vehicle(source, resource, path, corpus):
     if len(fields) != 1:
         return None
     flag = fields[0]
+    event_name = 'Respawn ' + flag.removeprefix('Resp')
+    anchor = flag if flag.startswith('Resp') else 'Resp' + flag
     resource_ref = f'"{{{resource}}}{path}"'
     owner = f'Vehicle {name} : {resource_ref} {{'
     if corpus.splitlines().count(owner) != 1 or corpus.count(resource_ref) != 2:
@@ -3367,18 +3400,25 @@ def reviewed_replacement_vehicle(source, resource, path, corpus):
     entity_uses = 0
     if name.startswith('UAZ452_transport'):
         entity_uses = events.count(f'      "{flag}"') + events.count(f'     m_setEntityName "{flag}"')
+    if anchor == flag:
+        entity_uses += events.count(f'     m_locationName "{anchor}"')
     if corpus.count(f'"{flag}"') != literal_flag_reads(corpus, flag) + 2 + entity_uses:
         return None
     for start, line in enumerate(events):
         if not EVENT.fullmatch(line):
             continue
         fields = events[start + 1:block_end(events, start)]
-        if f'   m_name "Respawn {flag}"' not in fields:
+        if f'   m_name "{event_name}"' not in fields:
             continue
         if (f'     m_prefab {resource_ref}' in fields and f'     m_setEntityName "{name}"' in fields
-                and f'     m_locationName "Resp{flag}"' in fields and f'      "{name}"' in fields
-                and fields.count(f'      "Respawn {flag}"') == 1):
-            return {'replacementEntity': name, 'replacementEvent': 'Respawn ' + flag, 'flag': flag}
+                and f'     m_locationName "{anchor}"' in fields and f'      "{name}"' in fields
+                and fields.count(f'      "{event_name}"') == 1):
+            replacement = {'replacementEntity': name, 'replacementEvent': event_name, 'flag': flag}
+            if path == SEEDER_COMMAND_TRUCK:
+                if any(source.files.get(child) != blob for child, blob in SEEDER_COMMAND_CHILDREN.items()):
+                    return None
+                replacement['attachedTeleportDestination'] = 'TPTruck'
+            return replacement
     return None
 
 
@@ -3446,6 +3486,9 @@ def spawned_objectives(source, dev, world, stock, local_resources, workshop_targ
                     if flag != replacement['flag']:
                         continue
                     kind.update(replacement)
+                    if 'attachedTeleportDestination' in replacement:
+                        native = native.replace(SEEDER_REPLACEMENT_DIR + 'CommandTruckMarkers.et',
+                                                SEEDER_COMMAND_MARKER, 1)
                     attachment = re.search(r'(?m)^ m_sAttachmentGroupName "([^"\n]+)"$', text)
                     if attachment:
                         kind['legacyAttachmentGroup'] = attachment[1]
@@ -6128,10 +6171,19 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             if len(named.get(target, [])) != 1:
                 blockers.append({'rule': 'damage flag target', 'file': world,
                                  'detail': 'expected one placed entity named ' + target})
+        attached_destinations = defaultdict(list)
+        for asset in spawned_assets.values():
+            if destination := asset.get('attachedTeleportDestination'):
+                attached_destinations[destination].append(asset['replacementEntity'])
         for target in sorted(teleport_targets):
-            if len(named.get(target, [])) != 1:
-                blockers.append({'rule': 'teleport destination', 'file': world,
-                                 'detail': 'expected one placed entity named ' + target})
+            placements = named.get(target, ())
+            attached = attached_destinations.get(target, ())
+            if not attached and len(placements) == 1:
+                continue
+            if not placements and len(attached) == 1 and len(named.get(attached[0], ())) == 1:
+                continue
+            blockers.append({'rule': 'teleport destination', 'file': world,
+                             'detail': 'expected one placed or vehicle-attached entity named ' + target})
         for name in sorted(set(area_names)):
             if len(named.get(name, [])) != 1:
                 blockers.append({'rule': 'area name', 'file': world, 'detail': 'ambiguous area named ' + name})

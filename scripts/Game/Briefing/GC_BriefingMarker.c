@@ -40,6 +40,11 @@ class GC_BriefingMarker
 	string GetQuadName() { return m_sQuadName; }
 	vector GetWorldPosition() { return m_vWorldPosition; }
 	float GetRotation() { return m_fRotation; }
+	void SetWorldTransform(vector position, float rotation)
+	{
+		m_vWorldPosition = position;
+		m_fRotation = rotation;
+	}
 	bool IsTextAlignedWithMarkerRotation() { return m_bAlignTextWithMarkerRotation; }
 	bool IsWorldScale() { return m_bWorldScale; }
 	float GetSize() { return m_fSize; }
