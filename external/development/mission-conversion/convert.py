@@ -530,6 +530,11 @@ def main():
                 spawned_assets[world] = objectives
             except ValueError as exc:
                 row['spawnedComputerPrefabs'] = {'gap': str(exc)}
+            try:
+                objectives.update(batch.local_files_intel_marker(source, dev, stock))
+                spawned_assets[world] = objectives
+            except ValueError as exc:
+                row['intelTracker'] = {'gap': str(exc)}
         if (args.batch and batch.CONCRETE_FRAMEWORK[0] in source.layers[world.lower()]
                 and source.files[batch.CONCRETE_FRAMEWORK[0]] == batch.CONCRETE_FRAMEWORK[1]):
             try:

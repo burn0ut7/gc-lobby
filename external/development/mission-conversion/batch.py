@@ -1749,6 +1749,15 @@ LOCAL_FILES_COMPUTER = ('F9516BAAF0D2E496', LOCAL_FILES_ROOT + 'Computer_Secure.
 LOCAL_FILES_MARKER = ('7CEE9BACABE39C3E', LOCAL_FILES_ROOT + 'ComputerMarker.et')
 LOCAL_FILES_MARKER_SPAWNER = LOCAL_FILES_ROOT + 'MarkerPrefab.et'
 LOCAL_FILES_SEARCH_FLAG = 'ComputerCaptured'
+LOCAL_FILES_INTEL = ('F3739484332D8932', LOCAL_FILES_ROOT + 'Intel.et')
+LOCAL_FILES_TRACKER_ASSETS = {
+    LOCAL_FILES_DEFAULT: LOCAL_FILES_DEFAULT_BLOB,
+    LOCAL_FILES_INTEL[1]: 'b308a287d9238b2093ffecd68a81dd8743141efd',
+    LOCAL_FILES_ROOT + 'Objective_Marker_Lunchyyy.et': 'bd85de28a39108cd7adb867bbc7f0a97edb34a20',
+    'worlds/arc/CommandosReforged/Prefabs/Objective_Marker.et': '15d8920014534efd3ad16a710e1d3985da7337cd',
+    'scripts/game/arc/CommandosReforged/GC_CommandosManager.c':
+        '6964da122cd0121fb80e9f3a8c7033c996bcf320',
+}
 
 
 def local_files_computer_assets(source, dev, stock, local_resources):
@@ -1794,6 +1803,35 @@ def local_files_marker_child(source, child, parent_fields):
         f' m_prefab "{{{LOCAL_FILES_MARKER[0]}}}{LOCAL_FILES_MARKER[1]}"',
         f' m_conditionFlag {flag}', ' m_spawnTimings {', '  300', ' }', '}',
     ]
+
+
+def local_files_intel_marker(source, dev, stock):
+    """Port the single Intel tracker without importing the Commandos runtime."""
+    identity, path = LOCAL_FILES_INTEL
+    if (any(source.files.get(name) != blob for name, blob in LOCAL_FILES_TRACKER_ASSETS.items())
+            or source.resources.get(identity) != [path] or dev.resources.get(identity) not in (None, [path])):
+        raise ValueError('The Local Files Intel or tracker source changed')
+    lines = source.read(path).splitlines()
+    base = REF.search(lines[0])
+    if not stock or not base or not stock.contains(*base.groups()):
+        raise ValueError('The Local Files Intel base is unavailable')
+    start = next(index for index, line in enumerate(lines) if line.startswith('  GC_CommandosObjRegister '))
+    del lines[start:block_end(lines, start) + 1]
+    body = '\n'.join(lines) + '\n'
+    if path in dev.files and body.strip() != dev.read(path).strip():
+        raise ValueError('Dev contains different Intel prefab content')
+    intel = [block for _, block in blocks(source.read(LOCAL_FILES_DEFAULT))
+             if block[0] == f'GenericEntity Intel : "{{{identity}}}{path}" {{']
+    if len(intel) != 1:
+        raise ValueError('The Local Files requires exactly one named Intel placement')
+    coordinates = next(line for line in intel[0] if line.startswith(' coords '))
+    marker = marker_instance([
+        coordinates, ' angleY 0', ' m_MarkerColor 0.5 0 1 1', ' m_sQuadName "objective-marker"',
+        ' m_fWorldSize 300', ' m_sDescription "HVT"', ' m_bShowForAnyFaction 1', ' m_iZOrder 100',
+    ], ' GC_LocalFilesIntelMarker', draw_order=True)
+    marker = marker.replace('   m_sDescription "HVT"\n',
+                            '   m_sDescription "HVT"\n   m_sTrackedEntity "Intel"\n   m_iTrackingIntervalMs 600000\n')
+    return {identity: {'path': path, 'body': body, 'trackingMarker': marker + '\n'}}
 BULGES = 'worlds/TheLocalPub/BattleOfTheBulges'
 LOST_AND_FOUND_DELTA_GROUP = ('worlds/FloridaMan/Prefabs/Groups/BLUFOR/US/Army_2010_DeltaForce/'
                               'Group_Delta_2010_Assault_m_P.et')
@@ -4431,14 +4469,16 @@ def reviewed_spawn_type(source, resource, path, types):
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
                  resolve_crew_config=None, shadowed_names=(), missing_waypoints=(), self_waypoints=(),
                  capture_latches=None, single_draw_flags=(), derived_conditions=None, dormant_flags=(), allow_bare=False,
-                 local_files_markers=False):
+                 local_files_markers=False, grouped_actions=None):
     root = placed_spawner_root(block[0], allow_bare)
     if not root:
         raise ValueError('unverified placed spawner prefab')
     placements, rules, audit = [], [], []
+    paired_actions = defaultdict(list) if local_files_markers else None
     transform_fields = SPAWNER_TRANSFORM | {'scale'}
     for index, (name, lines) in enumerate(polygon_capture.members(block, root['group'], root['name'])):
         children = []
+        marker_actions = defaultdict(list) if local_files_markers else None
         key = f'{location}/spawner/{index}'
         if ' {' in lines:
             child_start = lines.index(' {')
@@ -4450,11 +4490,10 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                 if len(child_blocks) != 1:
                     raise ValueError('computer spawner needs one authored marker')
                 child = local_files_marker_child(source, child_blocks[0][1], lines[:child_start])
-                native, scheduled, info = placed_spawn(
+                native, _, info = placed_spawn(
                     child, key + '/marker', resolve_resource, captures, flags, used_flags, resolve_crew, source=source,
-                    single_draw_flags=single_draw_flags)
+                    single_draw_flags=single_draw_flags, grouped_actions=marker_actions)
                 children = [' {', *('  ' + line for line in native.splitlines()), ' }']
-                rules.extend(scheduled.splitlines())
                 audit.extend(info)
                 child_blocks = []
             for _, child in child_blocks:
@@ -4584,12 +4623,22 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             scheduled = str(Decimal(delay) + startup_delay) if startup_delay else delay
             seconds, action = render_spawn({**details, 'delay': scheduled}, spawn_key, kind, fields)
             actions[seconds].extend(action)
-        label = 'GC_MigratedSpawn_' + guid(key)
-        rendered = render_outcome(key, label, term, actions, captures, {flag}, capture_latches or {})
-        if term['trigger'] == 'interaction flag' and not term.get('requiresMatch'):
-            rendered[3:3] = [f'      GC_GameModeStateCondition "{{{guid(key + "/match")}}}" {{',
-                             f'       m_eGameModeState {MATCH_PHASE_VALUE}', '      }']
-        rules.extend(rendered)
+        if local_files_markers or grouped_actions is not None:
+            if (term['trigger'] != 'interaction flag' or term['flag'] not in single_draw_flags
+                    or set(actions) != {Decimal(300)}):
+                raise ValueError('paired spawn requires one verified Match draw and the authored schedule')
+            target = paired_actions if local_files_markers else grouped_actions
+            for seconds, deliveries in actions.items():
+                target[seconds].extend(deliveries)
+                if marker_actions:
+                    target[seconds].extend(marker_actions[seconds])
+        else:
+            label = 'GC_MigratedSpawn_' + guid(key)
+            rendered = render_outcome(key, label, term, actions, captures, {flag}, capture_latches or {})
+            if term['trigger'] == 'interaction flag' and not term.get('requiresMatch'):
+                rendered[3:3] = [f'      GC_GameModeStateCondition "{{{guid(key + "/match")}}}" {{',
+                                 f'       m_eGameModeState {MATCH_PHASE_VALUE}', '      }']
+            rules.extend(rendered)
         placements.extend([f'GenericEntity {anchor} {{', *(' ' + line for line in transform), *children, '}'])
         audit.append({'spawnAnchor': anchor, 'spawnName': details['area'], 'prefab': details['prefab'],
                       'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in group_waypoints], **term})
@@ -4613,6 +4662,13 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                 audit[-1]['ignoredVehicleGroupWaypoints'] = [point[1:-1] for point in waypoints]
     if not audit:
         raise ValueError('empty placed spawner group')
+    if local_files_markers:
+        sampled_flags = {item.get('startupChoice') for item in audit}
+        if len(sampled_flags) != 1 or None in sampled_flags or len(audit) != 50:
+            raise ValueError('expected 25 computer and marker pairs for one startup choice')
+        selected, = sampled_flags
+        term = {'trigger': 'interaction flag', 'flag': selected, 'requiresMatch': True}
+        rules = render_outcome(location, f'GC_ComputerSpawns_{selected}', term, paired_actions, captures, None, {})
     return '\n'.join(placements) + '\n', '\n'.join(rules) + '\n', audit
 
 
@@ -5926,7 +5982,7 @@ def mode_children(lines, disable_photo=False, lock_editor=False):
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None,
                 *, dynamic_respawn_factions=(), area_flag_observers=(), cache_supply_depot=False,
                 inherited_immediate_release=False, capture_phase_entities=False, source_blob=None,
-                derived_flag_containers=()):
+                derived_flag_containers=(), local_files_tracker=False):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, environment, freeze = '', '', 0
@@ -5977,6 +6033,9 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
                     native_overrides.extend(component_lines)
                 elif source_blob == ASSAD_FRAMEWORK_BLOB and component_lines == EMPTY_LEGACY_CUTSCENE:
                     # This mode inherits the disabled cutscene setting and has no cinematic entity.
+                    pass
+                elif local_files_tracker and header == '  GC_CommandosManager "{66FA7E68E581F311}" {':
+                    # The native marker placement owns the reviewed Intel tracking behavior.
                     pass
                 else:
                     kind = header.strip().partition(' ')[0]
@@ -6210,6 +6269,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         except ValueError as exc:
             blockers.append({'rule': 'respawn', 'file': world, 'detail': str(exc)})
     outcome = row.get('outcomeCandidate', {})
+    local_files_tracker = spawned_assets.get(LOCAL_FILES_INTEL[0], {}).get('trackingMarker')
     rules = outcome.get('events', {})
     route_graph = outcome.get('orderedRouteFlags', {})
     route_flags = set(route_graph.get('areas', ()))
@@ -6708,15 +6768,21 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                        depot_layer == layer == FOOD_MARKET_OUTCOME_LAYER),
                                    capture_phase_entities=phase_entity_capture,
                                    source_blob=source.files[layer],
+                                   local_files_tracker=bool(local_files_tracker and layer == LOCAL_FILES_DEFAULT),
                                    derived_flag_containers=route_graph.get('containers', ()),
                                    area_flag_observers=[line for observer in route_observers.values() for line in observer]
                                    + [line for record in shared_writers for line in record['areaFlagObserver']])
             if preset:
+                event_pattern = r'(?m)^\s*GC_(?:Event|RandomEventGroup) "\{[\da-fA-F]{16}\}" \{'
+                if len(re.findall(event_pattern, rendered + staged.get(preset, ''))) > 256:
+                    raise ValueError('generated mission exceeds the 256-rule engine limit')
                 parts[layer][index] = rendered
         except ValueError as exc:
             blockers.append({'rule': 'mode settings', 'file': mode_index[0], 'detail': str(exc)})
     for path, blocks_in_layer in parts.items():
         contents = ''.join(blocks_in_layer)
+        if local_files_tracker and path == LOCAL_FILES_DEFAULT:
+            contents += local_files_tracker
         if contents.strip() or world == TEMPLATE_WORLD and not source.read(path):
             draft[path] = contents
     if world == TEMPLATE_WORLD and (instructions := 'worlds/TemplateMission/READ ME.txt') in source.files:

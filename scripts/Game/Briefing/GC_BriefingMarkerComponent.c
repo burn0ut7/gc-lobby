@@ -7,7 +7,6 @@ class GC_BriefingMarkerComponent : ScriptComponent
 {
 	protected const int MAX_REGISTRATION_ATTEMPTS = 20;
 	protected const int REGISTRATION_RETRY_MS = 100;
-	protected const int TRACK_TRANSFORM_INTERVAL_MS = 500;
 	protected int m_iRegistrationAttempts;
 	protected bool m_bRegistered;
 	protected string m_sMarkerName;
@@ -73,6 +72,12 @@ class GC_BriefingMarkerComponent : ScriptComponent
 	[Attribute("0", UIWidgets.CheckBox, "Refresh the map position and heading when this marker or its parent moves.")]
 	protected bool m_bTrackTransform;
 
+	[Attribute("", UIWidgets.EditBox, "Sample the position of this named world entity instead of the marker's own transform. The marker keeps its authored heading.")]
+	protected string m_sTrackedEntity;
+
+	[Attribute("500", UIWidgets.SpinBox, "Milliseconds between position samples.", params: "100 86400000 100")]
+	protected int m_iTrackingIntervalMs;
+
 	IEntity GetHoverCameraAnchor()
 	{
 		IEntity owner = GetOwner();
@@ -110,8 +115,11 @@ class GC_BriefingMarkerComponent : ScriptComponent
 			if (m_bRegistered)
 			{
 				m_RegistrationManager = manager;
-				if (m_bTrackTransform)
-					GetGame().GetCallqueue().CallLater(RefreshTrackedTransform, TRACK_TRANSFORM_INTERVAL_MS, true);
+				if (m_bTrackTransform || !m_sTrackedEntity.IsEmpty())
+				{
+					int interval = Math.Max(100, Math.Min(m_iTrackingIntervalMs, 86400000));
+					GetGame().GetCallqueue().CallLater(RefreshTrackedTransform, interval, true);
+				}
 			}
 			return;
 		}
@@ -138,11 +146,25 @@ class GC_BriefingMarkerComponent : ScriptComponent
 			return;
 		}
 
-		vector position = owner.GetOrigin();
-		float rotation = owner.GetYawPitchRoll()[0] - 90;
-		if (vector.DistanceSq(current.GetWorldPosition(), position) < 0.25
-			&& Math.AbsFloat(current.GetRotation() - rotation) < 1)
-			return;
+		vector position;
+		float rotation = current.GetRotation();
+		if (!m_sTrackedEntity.IsEmpty())
+		{
+			IEntity target = mode.GetWorld().FindEntityByName(m_sTrackedEntity);
+			if (!target)
+				return;
+			position = target.GetOrigin();
+			if (position == current.GetWorldPosition())
+				return;
+		}
+		else
+		{
+			position = owner.GetOrigin();
+			rotation = owner.GetYawPitchRoll()[0] - 90;
+			if (vector.DistanceSq(current.GetWorldPosition(), position) < 0.25
+				&& Math.AbsFloat(current.GetRotation() - rotation) < 1)
+				return;
+		}
 
 		GC_BriefingMarker update = new GC_BriefingMarker();
 		update.CopyFrom(current);
@@ -156,7 +178,7 @@ class GC_BriefingMarkerComponent : ScriptComponent
 		m_EditorPreview = null;
 #endif
 		GetGame().GetCallqueue().Remove(RegisterWithManager);
-		if (m_bTrackTransform)
+		if (m_bTrackTransform || !m_sTrackedEntity.IsEmpty())
 			GetGame().GetCallqueue().Remove(RefreshTrackedTransform);
 		if (m_bRegistered && owner && m_RegistrationManager && m_RegistrationManager == GC_LobbyManager.GetManager())
 			m_RegistrationManager.RemoveBriefingMarker(m_sMarkerName);
