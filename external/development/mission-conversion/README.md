@@ -1954,3 +1954,13 @@ Nested interactions convert in their original hierarchy. The three Cold War Domi
 The map comparison retains all 13 icons and the four-point HQ outline with its original point IDs, parent-relative transform, open path and ten-metre line width. The converter preserves all six reward prefabs, including the 5,000-supply container and the authored depot build catalogues, and converts their exact runtime name assignments. Both Mi-8 reward instructions keep their original GUID and use the exact current WCS Armaments path. The audit also recognizes the two separator entries with an empty condition and no instructions.
 
 The batch checks reproduce the previous 330 draft files and reduce the reported blockers from eight to two, both in framework assembly. The 32 event records still in review include the four spawned cleanup prefabs, flag ownership for the main and side objective cycles, and dependent event-control targets. Representative Match checks cover the boards, reward deliveries and the HQ outline.
+
+### Cold War Domination cleanup timing
+
+The published cleanup entity registers for the base game mode’s world-postprocess callback. The stock source invokes that callback during world loading, and the published Lobby and TilW scripts have no additional invocations. Reforger MCP catalogue `fba5aab1702b48bcb65994175809308f` supplies `SCR_BaseGameMode.c` and `PK_EntityDeleter.c`. Dedicated fixture `logs_2026-11-22_11-04-17` ran the published class. The placed positive control deleted its target. A separate instance spawned in Match left itself and its matching target present, and the callback count stayed at one.
+
+The converter records and removes the 14 inert framework spawns and their cleanup-only deletion names for the exact published revision. The file check verifies that unrelated deletion targets are retained. Seven nested references in the original objective compositions are still recorded for the composition conversion. A functioning Match-time radius cleanup would change the published behavior and remains a separate feature.
+
+Spawn anchors with the same spelling as a flag count as entity references during flag validation. This resolves the four framework-owned location flags for Kamoryn, Brambledeep, Nova Olesov and Pasastejn. The Contact and SpawnReinforcements flags still depend on the objective compositions and their placed producers or consumers.
+
+The full 277-launcher audit reproduced all 330 earlier drafts and reduced the event records still in review from 32 to 30. Several events now reach a later dependency check on a spawned main or side objective composition. The two framework assembly blockers remain open.

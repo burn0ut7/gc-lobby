@@ -25,6 +25,14 @@ ASSAD_FRAMEWORK_LAYER = 'worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layer
 ASSAD_FRAMEWORK_BLOB = 'bdd7db4625b168d6954457d5337ea54ef84ff00f'
 SEEDER_REPLACEMENT_LAYER = 'worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_Layers/default.layer'
 SEEDER_REPLACEMENT_LAYER_BLOB = '1e76b3d650d08d9ba159b19ae3c2479e895ac32a'
+SEEDER_CLEANUP_ROOT = SEEDER_REPLACEMENT_LAYER.removesuffix('ColdWarDomination_Layers/default.layer') + 'Prefabs/'
+SEEDER_LATE_CLEANUP = (
+    ('DeleteAllAIBodies.et', '3D54A6583D027631', 'd0c206e3d310d7dc13b050935ba60c527f0e2720', 4, 4),
+    ('DeleteAllObjectiveSupplies.et', '40008B98A9DD6225', '320aadc124c0a4229b3b585da30659668d4c91aa', 4, 0),
+    ('DeleteAllObjectiveSuppliesSide.et', '4111F5D4CBA2D671', '71a97e168de2c9ee01071d7e8a549f4d76756a2c', 3, 0),
+    ('Objectives/Side Objectives/DeleteAllSideObjective.et', '4FF97BC050F82106',
+     '89404403d1f422ca8443de6ba07434fdaf286c76', 3, 3),
+)
 ENDING = re.compile(r'^    TILW_EndGameInstruction "\{([\da-fA-F]{16})\}" \{$')
 WAYPOINTS = re.compile(r'^    TILW_AssignWaypointsInstruction "\{([\da-fA-F]{16})\}" \{$')
 EVENT_CONTROL = re.compile(r'\bTILW_(RunEvents|ReactivateEvents|DeactivateEvents)Instruction\b')
@@ -198,6 +206,13 @@ def instruction_flags(source, world, framework_path, lines, scripts, flag_reads)
             if names is not None:
                 for name in re.findall(EVENT_LABEL, ' '.join(lines[names + 1:block_end(lines, names)])):
                     known_uses[name] += 1
+        if any(pattern.fullmatch(line) for pattern in (SPAWN, GROUP_SPAWN, VEHICLE_SPAWN)):
+            end = block_end(lines, start)
+            for field in lines[start + 1:end]:
+                anchor = re.fullmatch(r'     m_locationName (' + FLAG_NAME + ')', field)
+                if anchor:
+                    # A location can share a flag's spelling without using that flag.
+                    known_uses[anchor[1]] += 1
         action = FLAG_ACTION.fullmatch(line)
         is_literal = line.startswith('   ') and TERM.fullmatch(line)
         if not action and (not is_literal or is_literal[1] != 'Literal'):
@@ -1218,6 +1233,65 @@ def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
     return review
 
 
+def reviewed_late_cleanup(source, world, scripts):
+    """The published cleanup prefab only subscribed to the one-time world load hook."""
+    closure = [path for path in source.closure(world) if PurePosixPath(path).suffix.lower() in SOURCE_TEXT]
+    refs, names = {}, set()
+    assets = {SEEDER_CLEANUP_ROOT + item[0] for item in SEEDER_LATE_CLEANUP}
+    source_text = '\n'.join(source.read(path) for path in closure if path not in assets)
+    framework = source.read(SEEDER_REPLACEMENT_LAYER)
+    objectives = '\n'.join(source.read(path) for path in closure
+                           if path not in assets and path.startswith(SEEDER_CLEANUP_ROOT + 'Objectives/'))
+    for relative, resource, blob, count, nested in SEEDER_LATE_CLEANUP:
+        path = SEEDER_CLEANUP_ROOT + relative
+        if source.files.get(path) != blob or source.resources.get(resource) != [path]:
+            return {}, set()
+        ref = f'"{{{resource}}}{path}"'
+        if (source_text.count(ref) != count + nested or framework.count('     m_prefab ' + ref) != count
+                or len(re.findall(r'(?m)^ +m_prefab ' + re.escape(ref) + '$', objectives)) != nested):
+            return {}, set()
+        refs[ref] = count
+        names.add('"' + PurePosixPath(relative).stem + '"')
+    if scripts is None or any(name[1:-1] in scripts for name in names):
+        return {}, set()
+    if any(source_text.count(name) != framework.count(name) for name in names):
+        return {}, set()
+    return refs, names
+
+
+def remove_late_cleanup(fields, refs, names):
+    """Drop the inert spawn shells and their cleanup-only name targets."""
+    if not refs or '   m_pregameEvent 1' in fields:
+        return fields, {}
+    omitted = {}
+    replacements = {}
+    for index, line in enumerate(fields):
+        spawn = SPAWN.fullmatch(line)
+        action = recognized(line)
+        if not spawn and not (action and action[1] == 'TILW_DeleteEntitiesInstruction'):
+            continue
+        end = block_end(fields, index)
+        body = fields[index + 1:end]
+        if spawn:
+            prefab = next((field.removeprefix('     m_prefab ') for field in body
+                           if field.startswith('     m_prefab ')), None)
+            if prefab in refs:
+                omitted[spawn[1]] = prefab
+                replacements[index] = (end, [])
+        else:
+            targets = [field for field in body if field.strip() in names]
+            if not targets:
+                continue
+            body = [field for field in body if field not in targets]
+            has_remaining_targets = any(re.fullmatch('      ' + FLAG_NAME, field) for field in body)
+            omitted[action[2]] = [field.strip()[1:-1] for field in targets]
+            replacements[index] = (end, [line, *body, fields[end]] if has_remaining_targets else [])
+    result = fields.copy()
+    for index, (end, body) in reversed(list(replacements.items())):
+        result[index:end + 1] = body
+    return result, omitted
+
+
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
                      extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None,
                      derived_audit=None, identity_flags_audit=None, meta_dividers_audit=None, discovery_resets_audit=None,
@@ -1256,7 +1330,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         return [], {}, 'has legacy event control instructions'
     direct_control = bool(controls and set(controls[path]) - {'DeactivateEvents'})
     dormant_helo = False
+    late_cleanup_refs, cleanup_names = {}, set()
     if compound and (path, source.files[path]) == (SEEDER_REPLACEMENT_LAYER, SEEDER_REPLACEMENT_LAYER_BLOB):
+        late_cleanup_refs, cleanup_names = reviewed_late_cleanup(source, world, scripts)
         replacement_flags = {**replacement_flags,
                              **{f'Clear {flag} Flag': flag for flag in ('MainMission', 'SideMission')
                                 if flag in objective_flags}}
@@ -1383,6 +1459,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             continue
         fields = body[i + 1:block_end(body, i)]
         loc = f'{path}:{i + base + 2}'
+        fields, omitted_cleanup = remove_late_cleanup(fields, late_cleanup_refs, cleanup_names)
         label = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
         if dormant_helo and event[1] == '687B646FB4D615D8':
             audit[loc] = {'name': 'Respawn Helo2', 'trigger': 'dormant', 'flag': 'Helo2',
@@ -1451,11 +1528,15 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 raise ValueError('duplicate generated event name')
             parsed.append((event[1], native_name, name, term, actions))
             audit[loc] = {**term, 'name': name, **details}
+            if omitted_cleanup:
+                audit[loc]['omittedLateCleanup'] = omitted_cleanup
             if native_name != name:
                 audit[loc]['eventName'] = native_name
             names.update(emitted_names)
         except ValueError as exc:
             audit[loc] = {'name': name, 'gap': str(exc)}
+            if omitted_cleanup:
+                audit[loc]['omittedLateCleanup'] = omitted_cleanup
             if resolve_spawn:
                 spawns_for_review = review_prefab_spawns(fields, world + '/' + event[1], resolve_spawn, resolve_crew)
                 if spawns_for_review:
