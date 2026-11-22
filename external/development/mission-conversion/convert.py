@@ -559,6 +559,7 @@ def main():
                 derived_audit = []
                 derived_spawners_audit = {}
                 identity_flags_audit = []
+                meta_dividers_audit = {}
                 startup_samples_audit = []
                 damage_flags_before_match = {flag for candidate in row.get('damageFlagCandidates', {}).values()
                                              for flag in candidate.get('placedDestructionFlags', [])}
@@ -569,6 +570,7 @@ def main():
                     resolve_spawn=partial(resolve_spawn, objectives) if args.batch else None,
                     resolve_crew=resolve_crew if args.batch else None, hidden_briefings=hidden_briefings,
                     derived_audit=derived_audit, identity_flags_audit=identity_flags_audit,
+                    meta_dividers_audit=meta_dividers_audit,
                     startup_samples_audit=startup_samples_audit,
                     match_only_flags=damage_flags_before_match |
                     {asset['flag'] for asset in objectives.values() if asset.get('destroyed')},
@@ -585,6 +587,8 @@ def main():
                     outcome['derivedSpawnerConditions'] = derived_spawners_audit
                 if identity_flags_audit:
                     outcome['identityFlags'] = identity_flags_audit
+                if meta_dividers_audit:
+                    outcome['omittedMetaDividers'] = meta_dividers_audit
                 if startup_samples_audit:
                     outcome['startupSamples'] = startup_samples_audit
                 if gap:

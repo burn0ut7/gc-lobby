@@ -4513,7 +4513,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     roots = [field.split()[0] for field in root_fields]
                     # The legacy framework uses named placements and flag data, not its own transform.
                     unsupported = set(roots) - {'m_missionEvents', 'm_casualtyFlags', 'm_suppressGameEnd'}
-                    if outcome.get('derivedFlags') or outcome.get('identityFlags'):
+                    if any(outcome.get(field) for field in ('derivedFlags', 'identityFlags', 'omittedMetaDividers')):
                         unsupported.discard('m_metaFlags')
                     for field in root_fields:
                         name = field.split()[0]

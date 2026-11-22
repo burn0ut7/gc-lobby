@@ -131,17 +131,18 @@ def instruction_flags(source, world, framework_path, lines, scripts, flag_reads)
                         and corpus.count(flag) == known_uses[flag] + flag_reads.get(flag[1:-1], 0)))
 
 
-def meta_flag_definitions(body, scripts):
-    """Read serialized meta definitions and idempotent self-assignments."""
+def meta_flag_definitions(source, world, body, scripts):
+    """Read meta definitions, including self-assignments and unused editor dividers."""
     starts = [i for i, line in enumerate(body) if line == ' m_metaFlags {']
     if not starts:
-        return {}, set()
+        return {}, set(), {}
     if len(starts) != 1 or scripts is None or any(api in scripts for api in SCRIPT_FLAG_APIS):
         raise ValueError('meta flag ownership requires review')
     start = starts[0]
     end = block_end(body, start)
     definitions = {}
     identities = set()
+    dividers = Counter()
     cursor = start + 1
     while cursor < end:
         if not META_FLAG.fullmatch(body[cursor]):
@@ -155,6 +156,10 @@ def meta_flag_definitions(body, scripts):
         term = terms[0]
         close = block_end(fields, term)
         flag = properties(fields[:term] + fields[close + 1:], {'m_flagName'}).get('m_flagName', '')
+        if re.fullmatch(r'"-{3,}"', flag) and TERM.fullmatch(fields[term])[1] == 'Literal' and close == term + 1:
+            dividers[flag] += 1
+            cursor = stop + 1
+            continue
         if not re.fullmatch(EVENT_LABEL, flag) or flag in definitions or flag in identities or flag in scripts:
             raise ValueError('invalid or script-managed meta flag ' + flag)
         operand = fields[term + 1:close]
@@ -168,14 +173,21 @@ def meta_flag_definitions(body, scripts):
             definitions[flag] = fields[term:close + 1]
         cursor = stop + 1
 
-    dependencies = {flag: {match[1] for line in lines if (match := META_FLAG_FIELD.fullmatch(line))
-                           and match[1] in definitions}
+    if dividers:
+        references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                               if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+        divider_uses = Counter(re.findall(r'-{3,}', references + '\n' + scripts))
+        if any(divider_uses[flag[1:-1]] != count for flag, count in dividers.items()):
+            raise ValueError('meta flag divider has another authored use')
+    dependencies = {flag: sorted({match[1] for line in lines if (match := META_FLAG_FIELD.fullmatch(line))
+                                  and match[1] in definitions})
                     for flag, lines in definitions.items()}
     try:
         tuple(TopologicalSorter(dependencies).static_order())
     except CycleError as exc:
-        raise ValueError('cyclic meta flag definitions') from exc
-    return definitions, identities
+        cycle = ' -> '.join(exc.args[1])
+        raise ValueError('cyclic meta flag definitions: ' + cycle) from exc
+    return definitions, identities, {flag[1:-1]: count for flag, count in dividers.items()}
 
 
 def derived_flags_with_known_readers(source, world, framework_path, body, definitions, spawner_reads):
@@ -928,7 +940,8 @@ def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
 
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
                      extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None,
-                     derived_audit=None, identity_flags_audit=None, match_only_flags=(), startup_samples_audit=None,
+                     derived_audit=None, identity_flags_audit=None, meta_dividers_audit=None,
+                     match_only_flags=(), startup_samples_audit=None,
                      interaction_reads=None, spawner_reads=None, derived_spawners_audit=None):
     captures = captures or {}
     notification_audit = notification_audit or {}
@@ -970,7 +983,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     definitions, derived, identity_flags, derived_gap = {}, {}, set(), None
     if compound:
         try:
-            definitions, identities = meta_flag_definitions(body, scripts)
+            definitions, identities, dividers = meta_flag_definitions(source, world, body, scripts)
+            if meta_dividers_audit is not None:
+                meta_dividers_audit.update(dividers)
             derived, unverified = derived_flags_with_known_readers(
                 source, world, path, body, definitions,
                 spawner_reads if derived_spawners_audit is not None else {})
