@@ -848,6 +848,14 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Scenarios/SP01/SP01_UAZ469_USSR.et',
 }
 MARINE_COBRA = ('0174CF72FDB6B805', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Marines.et')
+LACOURT_HORNBEAM_LAYER = 'worlds/James/LacourtManor/LacourtManor_Layers/map_objects.layer'
+LACOURT_HORNBEAM_BLOB = '093740b8eb4453861952cf72981d43b60c46c195'
+LACOURT_HORNBEAMS = {
+    ('40DDF1D03B686B5A', 'Prefabs/Vegetation/Tree/Dst/t_carpinus_betulus_2f_dst.et'):
+        ('4B176F8E58FA9D53', 'Prefabs/Vegetation/Tree/t_carpinus_betulus_2f.et'),
+    ('F8A054C092BE9AAE', 'Prefabs/Vegetation/Tree/Dst/t_carpinus_betulus_3s_dst.et'):
+        ('8F91FCAFE65FCDA6', 'Prefabs/Vegetation/Tree/t_carpinus_betulus_3s.et'),
+}
 MARINE_M299 = ('B8D8076535277E61', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Marines_M299.et')
 MARINE_M299_CURRENT = (MARINE_M299[0], 'Prefabs/Vehicles/Helicopters/AH1S/Marines/AH1S_Marines_M299_X2.et')
 
@@ -4680,6 +4688,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     converted_cover = False
     converted_passive_cover = False
     converted_bare_map = False
+    converted_hornbeams = False
     converted_scenery_map = False
     inactive_placements = []
     reused_layers = set()
@@ -4958,6 +4967,18 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     else:
                         blockers.append({'rule': kind, 'file': layer, 'line': line,
                                          'detail': 'verified Bad Orb AI world prefab unavailable'})
+                elif (layer == LACOURT_HORNBEAM_LAYER
+                      and source.files[layer] == LACOURT_HORNBEAM_BLOB
+                      and (tree := REF.search(head)) and tree.groups() in LACOURT_HORNBEAMS):
+                    replacement = registered_alias(*LACOURT_HORNBEAMS[tree.groups()], source, dev, asset_aliases)
+                    if (replacement and head == f'SCR_DestructibleTreeV2 : {tree[0]} {{'
+                            and all(field.strip().partition(' ')[0] in SPAWNER_TRANSFORM and FIELD.fullmatch(field.strip())
+                                    for field in block[1:-1])):
+                        result.append('\n'.join([f'Tree : {replacement} {{', *block[1:]]) + '\n')
+                        converted_hornbeams = True
+                    else:
+                        blockers.append({'rule': kind, 'file': layer, 'line': line,
+                                         'detail': 'unverified hornbeam replacement or placement'})
                 elif NATIVE.match(head):
                     try:
                         if f'{{{BLOODY_GARRISON}}}' in head:
@@ -5305,6 +5326,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         if count:
             advertised[header] = int(count[1])
     remaining = inactive_placements
+    if converted_hornbeams:
+        remaining.append('The two retired hornbeams use current destructible trees of the same varieties. '
+                         'Historical damage thresholds and break physics remain unverified.')
     for target in sorted({spawn['missingGroupWaypoint'] for spawn in prefab_spawns if 'missingGroupWaypoint' in spawn}):
         remaining.append(f'The original reinforcement waypoint {target} has no authored target.')
     for target in sorted(missing_spawn_anchors):
