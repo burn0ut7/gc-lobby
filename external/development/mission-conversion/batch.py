@@ -2930,6 +2930,8 @@ def passive_asset(source, path):
         return source.read_raw(path)
     if suffix == '.imageset':
         return source.read(path)
+    if path in ROUTE_OBSTACLE_PREFABS:
+        return route_obstacle_prefab(source, path)[0]
     if path in REVIEWED_NATIVE_ASSETS:
         body = source.read(path)
         if sha256(body.strip().encode()).hexdigest() == REVIEWED_NATIVE_ASSETS[path] and not LEGACY.search(body):
@@ -4373,6 +4375,16 @@ TEMPLATE_TRIGGER_PATHS = {
 }
 PRESENCE_TRIGGER = re.compile(r'(?P<group>\$grp )?TILW_(?P<kind>Presence)TriggerEntity(?: (?P<name>[\w.-]+))?'
                               r' : "\{826E6F2246328952\}Prefabs/Logic/Triggers/TILW_PresenceTrigger\.et" \{')
+ROUTE_OBSTACLE_LAYER = 'worlds/Til/RouteTremaux/RouteTremaux_Layers/obstacles_removable.layer'
+ROUTE_OBSTACLE_LAYER_BLOB = '06f0036f9a45d0989f462285e56011e0a6fdaee5'
+ROUTE_OBSTACLE_PREFABS = {
+    'worlds/Til/RouteTremaux/Prefabs/obstacles/obstacle_mines_1.et': '6bb7f4cca722c085521e12e04aaef87df8e45c94',
+    'worlds/Til/RouteTremaux/Prefabs/obstacles/obstacle_wire_1.et': '0f55ff42f932e65f62df958f41b38ba41e5b6db3',
+    'worlds/Til/RouteTremaux/Prefabs/obstacles/obstacle_wire_2.et': 'ad24f9762180fd59e186e20e0a7e8d23c081f658',
+}
+ROUTE_OBSTACLE_GROUP = re.compile(r'\$grp GenericEntity : ' + REF.pattern + r' \{')
+PRESENCE_OVERRIDE = re.compile(r'TILW_PresenceTriggerEntity ([\w.-]+) \{')
+OBSTACLE_TARGET = re.compile(r'(GenericEntity|StaticModelEntity) ([\w.-]+) \{')
 PRESENCE_MESSAGES = (
     '"Established presence at %2."', '"Establishing presence at %2."', '"No longer establishing presence at %2."',
     '"Abandoned presence at %2."', '"Abandoning presence at %2."', '"No longer abandoning presence at %2."',
@@ -4490,6 +4502,16 @@ def area_rules(source, world, dev=None):
         if not any(f'TILW_{kind}TriggerEntity' in text for kind in ('Extraction', 'Faction', 'Presence')):
             continue
         for line, block in blocks(text):
+            if layer == ROUTE_OBSTACLE_LAYER and source.files[layer] == ROUTE_OBSTACLE_LAYER_BLOB:
+                try:
+                    checks, converted, records = route_obstacle_placements(source, world, block, conditions)
+                except (ArithmeticError, KeyError, ValueError) as exc:
+                    audit[f'{layer}:{line}'] = {'gap': str(exc)}
+                else:
+                    conditions.update(checks)
+                    placements[(layer, line)] = checks, converted
+                    audit[f'{layer}:{line}'] = records
+                continue
             match = TRIGGER.fullmatch(block[0]) or PRESENCE_TRIGGER.fullmatch(block[0])
             shape = polygon_capture.SHAPE.fullmatch(block[0])
             if AO_SHAPE.fullmatch(block[0]) or STANDALONE_SHAPE.fullmatch(block[0]):
@@ -4829,6 +4851,92 @@ def presence_rule(world, area_name, flag, fields, *, polygon=False):
         'quotient': 'whole number',
         'seconds': float(hold), 'skipDiscovery': skip == '1', 'stopsAfterFirstChange': stop == '1',
     }
+
+
+@lru_cache(maxsize=12)
+def route_obstacle_prefab(source, path):
+    if source.files.get(path) != ROUTE_OBSTACLE_PREFABS[path]:
+        raise ValueError('obstacle prefab differs from the reviewed source')
+    original = source.read(path).splitlines()
+    parent, children = trigger_children(original[1:-1])
+    targets = {}
+    converted = []
+    presence = None
+    for _, child in children:
+        if PRESENCE_TRIGGER.fullmatch(child[0]):
+            if presence:
+                raise ValueError('obstacle prefab needs one presence trigger')
+            identity = child[1]
+            fields = child[2:-1]
+            data = properties(fields, CAPTURE_TRANSFORM | CAPTURE_EDITOR_FIELDS | {
+                'm_queryRadius', 'm_comparisonMode', 'm_stopAfterFirstChange', 'm_entityNames',
+                'm_ratioThreshold',
+            })
+            # The placement supplies the flag and the full name array.
+            start = fields.index(' m_entityNames {')
+            end = block_end(fields, start)
+            preserved = fields[:start] + fields[end + 1:]
+            presence = identity, preserved
+            child = ['GC_RadiusAreaEntity {', identity,
+                     *(f' {key} {value}' for key, value in data.items() if key in CAPTURE_TRANSFORM),
+                     ' m_fRadius ' + data['m_queryRadius'], '}']
+        else:
+            group = re.fullmatch(r'\$grp (GenericEntity|StaticModelEntity) : ' + REF.pattern + r' \{', child[0])
+            if not group:
+                raise ValueError('obstacle prefab contains an unreviewed target')
+            for _, fields in polygon_capture.members(child, True, None):
+                data = properties(fields, CAPTURE_TRANSFORM | {'ID'})
+                if data['ID'] in targets:
+                    raise ValueError('duplicate obstacle target ID')
+                targets[data['ID']] = group[1]
+        converted.extend('  ' + field for field in child)
+    if not presence or not targets:
+        raise ValueError('obstacle prefab needs a trigger and targets')
+    return '\n'.join([original[0], *parent, ' {', *converted, ' }', '}', '']), presence, targets
+
+
+def route_obstacle_placements(source, world, block, known_conditions):
+    root = ROUTE_OBSTACLE_GROUP.fullmatch(block[0])
+    if not root or root[2] not in ROUTE_OBSTACLE_PREFABS or source.resources.get(root[1].upper()) != [root[2]]:
+        raise ValueError('obstacle placement needs a reviewed prefab')
+    _, (trigger_id, inherited), template_targets = route_obstacle_prefab(source, root[2])
+    checks, records, output = {}, {}, [block[0]]
+    for name, fields in polygon_capture.members(block, True, None):
+        if not re.fullmatch(r'obst_\d{2}', name or ''):
+            raise ValueError('unsupported obstacle name')
+        parent, children = trigger_children(fields)
+        if not all(FIELD.fullmatch(field.strip()) for field in parent):
+            raise ValueError('unsupported obstacle transform')
+        targets = {}
+        flag = area_name = None
+        placed = []
+        for _, child in children:
+            if target := OBSTACLE_TARGET.fullmatch(child[0]):
+                data = properties(child[1:-1], {'ID'})
+                identity = data['ID']
+                if identity in targets or template_targets.get(identity) != target[1]:
+                    raise ValueError('obstacle target does not match its prefab')
+                targets[identity] = target[2]
+            elif (trigger := PRESENCE_OVERRIDE.fullmatch(child[0])) and not area_name and child[1] == trigger_id:
+                area_name = trigger[1]
+                data = properties(child[2:-1], {'m_flagName', 'm_entityNames'})
+                flag = data['m_flagName']
+                names = target_names(data['m_entityNames'])
+                area_fields = child[2:-1]
+                child = [f'GC_RadiusAreaEntity {area_name} {{', trigger_id, '}']
+            else:
+                raise ValueError('unsupported obstacle child override')
+            placed.extend('   ' + field for field in child)
+        if (not area_name or flag != f'"{name}"' or flag in known_conditions or flag in checks
+                or set(targets) != template_targets.keys() or sorted(names) != sorted(f'"{target}"' for target in targets.values())
+                or len(set(targets.values())) != len(targets)):
+            raise ValueError('obstacle trigger targets must match its inherited children')
+        position = [] if any(field.startswith(' coords ') for field in inherited) else [' coords 0 0 0']
+        check, _, details = presence_rule(world, area_name, flag, [*position, *inherited, *area_fields])
+        checks[flag] = check
+        records[flag[1:-1]] = {'area': area_name, 'obstaclePrefab': root[2], **details}
+        output.extend([f' {name} {{', *(' ' + field for field in parent), '  {', *placed, '  }', ' }'])
+    return checks, '\n'.join([*output, '}', '']), records
 
 
 def extraction_rule(world, area_name, flag, fields, *, polygon=False):
