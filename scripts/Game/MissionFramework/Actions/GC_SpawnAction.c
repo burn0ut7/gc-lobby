@@ -126,6 +126,9 @@ class GC_CrewedVehicleSpawn : GC_PrefabSpawn
 	[Attribute("", UIWidgets.Object, "Optional crew groups, processed from top to bottom. Empty: fill available seats with the vehicle's default crew in one AI group. Add groups to separate driver/passengers from gunners or give them different waypoints. Each seat is used at most once.")]
 	ref array<ref GC_SpawnCrewGroup> m_aCrewGroups;
 
+	[Attribute("0", UIWidgets.CheckBox, "Reserve the next eligible seat when an explicit station roster is exhausted. Later stations cannot fill that seat.")]
+	bool m_bReserveNextCrewSeat;
+
 	//------------------------------------------------------------------------------------------------
 	override bool IsValid()
 	{
@@ -169,6 +172,7 @@ class GC_CrewedVehicleSpawn : GC_PrefabSpawn
 		manager.GetCompartments(slots);
 		if (slots.IsEmpty() || slots.Count() > 128)
 			return false;
+		attempt.m_bReserveNextCrewSeat = m_bReserveNextCrewSeat;
 		if (!m_aCrewGroups || m_aCrewGroups.IsEmpty())
 		{
 			GC_SpawnCrewGroup defaults = new GC_SpawnCrewGroup();
@@ -223,11 +227,12 @@ class GC_SpawnCrewStation
 	{
 		int characterIndex;
 		bool custom = m_aCharacters && !m_aCharacters.IsEmpty();
+		bool reserveNext = attempt.m_bPlacedCrew || attempt.m_bReserveNextCrewSeat;
 		array<BaseCompartmentSlot> available = {};
 		available.Copy(slots);
 		foreach (BaseCompartmentSlot slot : available)
 		{
-			if (custom && characterIndex >= m_aCharacters.Count() && !attempt.m_bPlacedCrew)
+			if (custom && characterIndex >= m_aCharacters.Count() && !reserveNext)
 				break;
 			if (!slot || slot.IsOccupied() || !slot.IsCompartmentAccessible())
 				continue;
@@ -235,7 +240,7 @@ class GC_SpawnCrewStation
 			if (!((type == ECompartmentType.PILOT && m_bDriver) || (type == ECompartmentType.TURRET && m_bGunners)
 				|| (type == ECompartmentType.CARGO && m_bPassengers)))
 				continue;
-			// Legacy placed stations claim the next eligible seat before checking roster exhaustion.
+			// Reserve the next eligible seat before moving to the following station.
 			if (custom && characterIndex >= m_aCharacters.Count())
 			{
 				slots.RemoveItemOrdered(slot);
@@ -402,6 +407,7 @@ class GC_SpawnAttempt
 {
 	GC_MissionRuleEngine m_RuleSource;
 	bool m_bPlacedCrew;
+	bool m_bReserveNextCrewSeat;
 	protected ref array<IEntity> m_aCrew = {};
 	protected ref array<AIGroup> m_aGroups = {};
 	protected ref array<ref GC_InitialCrewOrders> m_aInitialOrders = {};

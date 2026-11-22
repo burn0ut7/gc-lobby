@@ -7,6 +7,7 @@ from itertools import chain
 from math import isfinite
 from pathlib import PurePosixPath
 import re
+from subprocess import CalledProcessError, check_output
 
 from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURRENT_PARENT,
                          LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, capture_status_texts, faction_keys)
@@ -16,7 +17,7 @@ from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import OBSOLETE_NAVMESH, REF, SOURCE_TEXT
 from event_actions import (FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, VEHICLE_SPAWN,
                            render_crew_config, render_spawn, spawn_details)
-from vehicle_crew import (CREW_CONFIG_FIELD, VERIFIED_DEFAULT_CREW, ZAGORIA_BMP2, crew_config_contents,
+from vehicle_crew import (CREW_CONFIG_FIELD, FLORA_CREW_CONFIG, VERIFIED_DEFAULT_CREW, ZAGORIA_BMP2, crew_config_contents,
                           split_crew_block, verified_core_btr70_transfer)
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
@@ -1168,6 +1169,10 @@ GRAVETTE_WIRECUTTER = 'worlds/ac337/prefab/Gravette_Wirecutters.et'
 LEGACY_WIRECUTTER = re.compile(
     r'\$grp GenericEntity : "\{8554ED3F088BADA6\}Prefabs/Items/Core/Wirecutters/wirecutters(?:old)?\.et" \{')
 UNITS_PREFAB_ALIASES = {
+    ('BE2630E26227D529', 'Prefabs/Vehicles/Wheeled/M998/GC_M1151_armed_M134.et'): (
+        'BE2630E26227D529', 'Prefabs/Vehicles/Wheeled/M998/M1151/M134/GC_M1151_armed_M134.et',
+        '1c9b03336c59ea87be7bce7a5e7c271bed535b54272e01c65e3cced9a205c1bc',
+    ),
     # The previous Power Struggle variant migrated this exact vehicle radio slot in 1b3bd78c.
     ('88B4E9C3B4F3B89D', 'Prefabs/Items/Equipment/Radios/Radio_R148_Multi.et'): (
         'E1A5D4B878AA8980', 'Prefabs/Items/Equipment/Radios/RU/Radio_R148.et',
@@ -3450,6 +3455,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                     raise ValueError('spawner child needs a named native waypoint')
             lines = lines[:child_start]
         config = None
+        reserve_next_seat = False
         config_fields = [i for i, line in enumerate(lines) if line.startswith(' m_crewConfig ')]
         if config_fields:
             if len(config_fields) != 1:
@@ -3457,6 +3463,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             start, = config_fields
             end = block_end(lines, start)
             config = crew_config_contents(lines[start:end + 1], resolve_crew_config)
+            reference = REF.search(lines[start])
+            reserve_next_seat = (allow_bare and bool(reference) and reference[1].upper() == FLORA_CREW_CONFIG)
             lines = lines[:start] + lines[end + 1:]
         data = properties(lines, transform_fields | {
             'm_prefab', 'm_conditionFlag', 'm_spawnTimings', 'm_setEntityNames', 'm_waypointNames', 'm_pregameSpawn',
@@ -3553,7 +3561,10 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             if config is not None:
                 fields, crew_groups = render_crew_config(config, spawn_key, resolve_crew,
                                                          shadowed_names=shadowed_names,
-                                                         allow_default_crew=(ref[1].upper(), ref[2]) in VERIFIED_DEFAULT_CREW)
+                                                         allow_default_crew=(reserve_next_seat or
+                                                                             (ref[1].upper(), ref[2]) in VERIFIED_DEFAULT_CREW))
+                if reserve_next_seat:
+                    fields.insert(0, '        m_bReserveNextCrewSeat 1')
                 kind = 'GC_CrewedVehicleSpawn'
             scheduled = str(Decimal(delay) + startup_delay) if startup_delay else delay
             seconds, action = render_spawn({**details, 'delay': scheduled}, spawn_key, kind, fields)
@@ -3944,6 +3955,14 @@ def archived_volha_assets(source, dev, path, identity):
     return {name: text for name, text in files.items() if name not in dev.files}
 
 
+LOOSE_ENDS_COMPUTER_IMAGE = 'Missions/Corax/LooseEnds/Computer.edds'
+LOOSE_ENDS_IMAGE_ASSETS = {
+    LOOSE_ENDS_COMPUTER_IMAGE: 'c9e30be31c2668c8a503872d7f0033549ee4171a',
+    LOOSE_ENDS_COMPUTER_IMAGE + '.meta': '7cbdd4e4731ff4e01a712bd261d030d9d026c415',
+    'Missions/Corax/LooseEnds/Computer.jpg': 'f0baabb2639887f66cae71e949f75b86b3eb2785',
+}
+
+
 def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets, faction_assets):
     files = list(draft)
     blockers = set()
@@ -3953,6 +3972,18 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
 
         def relocate(ref):
             resource, path = ref[1].upper(), ref[2]
+            if ((resource, path) == ('B044199ADB2E7A7C', LOOSE_ENDS_COMPUTER_IMAGE)
+                    and resource not in source.resources and resource not in dev.resources
+                    and path not in draft):
+                briefing = ('worlds/Corax/TF141/COOPXX_Loose Ends_V1/'
+                            'COOPXX_LooseEnds_V1_Layers/Briefing.layer')
+                if source.files.get(briefing) == '272c3a708f50d1a6089a3cc710e91497f705b8d7':
+                    try:
+                        draft.update({name: check_output(['git', '-C', str(source.repo), 'cat-file', 'blob', blob])
+                                      for name, blob in LOOSE_ENDS_IMAGE_ASSETS.items()})
+                    except (OSError, CalledProcessError):
+                        blockers.add((owner, path, 'original briefing image blobs are unavailable'))
+                return ref[0]
             if (resource, path) == ARCHIVED_VOLHA and VOLHA_MESH in asset_aliases:
                 try:
                     destination = 'worlds/Perfk/Prefabs/Scenery/GC_ArchivedVolhaWreck.et'

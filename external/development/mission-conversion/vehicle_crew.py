@@ -215,7 +215,15 @@ UNITS_CREW_PREFABS = {
 WORKSHOP_VEHICLE_PARENTS = {
     '8A883ABED22B6E27': ('WCS_SpaceCore_5E389BB9F58B79A6', 'Prefabs/Vehicles/Core/Tracked_Base.et'),
 }
+FLORA_CREW_CONFIG = '47ABFE35CED7D5AA'
+FLORA_CREW_GROUP = 'TILW_CrewGroup "{64F2F8212EF64955}"'
+FLORA_HEAD_STATION = 'TILW_CrewStation "{64F2F8217DD33B67}"'
+FLORA_MAIN_STATION = 'TILW_CrewStation "{64FAF9F5899BF37B}"'
+FLORA_RIFLEMAN = ('"{7CCAB195F5A1D9CA}Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/Flora/'
+                   'Character_RHS_RF_MSV_Flora_Rifleman.et"')
 REVIEWED_CREW_CONFIGS = {
+    FLORA_CREW_CONFIG: ('Configs/Crews/AFRF/BTR_AFRF_Crew_Flora_AI.conf',
+                        'd443c4b6878ece839d55219f14daad6c2d6e604175f4841357a3f386686e590f'),
     'A48A101CB478559D': ('Configs/Crews/GC_CDF/BTR70/BTR70_CDF_Crew_AI.conf',
                          'd569b28ad795ab451116b807145d40e52110ba840edc6c7745d44bc7196ed49f'),
     '012709863EB73BED': ('Configs/Crews/GC_NVA/Crew_NVA_AI.conf',
@@ -319,7 +327,43 @@ def crew_config_contents(lines, resolve_config=None):
     if not resolve_config:
         raise ValueError('referenced crew config needs a verified base')
     base = resolve_config(reference[1].upper(), reference[2])
+    if reference[1].upper() == FLORA_CREW_CONFIG and lines[1:-1]:
+        return merge_flora_vehicle_crew(base, lines[1:-1])
     return merge_crew_routes(base, lines[1:-1]) if lines[1:-1] else base
+
+
+def merge_flora_vehicle_crew(base, override):
+    """Flatten the reviewed BTR crew variant authored for the TIGR placements."""
+    groups = contents(override, 'm_crewGroups')
+    group = contents(groups, FLORA_CREW_GROUP)
+    stations, route = split_crew_block(group, 'm_crewStations')
+    expected = [
+        FLORA_HEAD_STATION + ' {', 'm_allowPilot 0', 'm_allowTurret 0',
+        'm_characters {', '""', '""', '}', '}',
+        FLORA_MAIN_STATION + ' {', 'm_allowPilot 1', 'm_allowTurret 1',
+        'm_characters +{', FLORA_RIFLEMAN, '}', '}',
+    ]
+    if [line.strip() for line in stations] != expected:
+        raise ValueError('unverified Flora crew station override')
+    properties(route, {'m_waypointNames', 'm_waypointDelay'})
+
+    start = next((i for i, row in enumerate(base) if row.strip() == FLORA_HEAD_STATION + ' {'), None)
+    if start is None:
+        raise ValueError('Flora crew head station not found')
+    end = block_end(base, start)
+    other = end + 1
+    if base[other].strip() != FLORA_MAIN_STATION + ' {':
+        raise ValueError('Flora crew station order differs')
+    tail = block_end(base, other)
+    original = base[other + 1:tail]
+    names, fields = split_crew_block(original, 'm_characters')
+    if properties(fields, {'m_allowPilot', 'm_allowTurret'}) != {'m_allowPilot': '0', 'm_allowTurret': '0'}:
+        raise ValueError('Flora crew base seat filters differ')
+    # The first station inherits cargo disabled and explicitly disables pilot and turret.
+    # Its blank entries cannot claim a seat. The second station appends one role.
+    merged = [base[other], '     m_characters {', *names, '      ' + FLORA_RIFLEMAN, '     }', base[tail]]
+    return merge_crew_routes([*base[:start], *merged, *base[tail + 1:]],
+                             [override[0], groups[0], *route, groups[-1], override[-1]])
 
 
 def merge_crew_routes(base, override):
