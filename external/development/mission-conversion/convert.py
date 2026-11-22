@@ -256,7 +256,8 @@ def main():
                 return path
             if verified_stock_ai_group(resource, path, stock, locally_owned, source_units, dev_units, rhs_database):
                 return path
-            if batch.verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path, external_ai):
+            if batch.verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path, external_ai,
+                                             ai_loadouts, rhs_database):
                 return path
             if (alias := asset_aliases.get((resource, path))) and alias[0] == resource:
                 path = alias[1]
@@ -324,6 +325,7 @@ def main():
                                     resolve_character=resolve_crew,
                                     placed_names=placed_names)
 
+    ai_loadouts = local_loadouts.collect_ai(source, dev, source_units, dev_units, stock) if args.batch else {}
     out = {}
     arc_areas = {}
     batch_areas = {}
@@ -1025,7 +1027,6 @@ def main():
             ],
         }
     if args.batch:
-        ai_loadouts = local_loadouts.collect_ai(source, dev, source_units, dev_units, stock)
         native_ai_members = {guid: asset[0] for guid, asset in ai_loadouts.items()}
         try:
             historical_roles = verified_roles(dev_units, stock)

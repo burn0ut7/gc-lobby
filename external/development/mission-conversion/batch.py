@@ -1418,7 +1418,9 @@ UNITS_PREFAB_ALIASES = {
         'B343AB76B0725657', 'Prefabs/Items/Equipment/Radios/RU/Radio_R187P1_OLD.et',
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
+RASMAN_AA_GROUP = 'worlds/HotMic/Prefabs/Characters/Afghan/GC_INS_Afghan_Squad_WithAA_HotMIc.et'
 REVIEWED_NATIVE_ASSETS = {
+    RASMAN_AA_GROUP: 'ee9f8f696dbc3ee06ad5d2218082bf11703a4575b6ab5d75830d953c0ff9006d',
     'worlds/chllboy/Hephaestus Forge/Prefabs/AUS_UH60_armed1_EW.et':
         '24b130cf49808656d5d1ae0aff3e2f6fb1345253aa5925adda880c290bb21787',
     'worlds/chllboy/Hephaestus Forge/Prefabs/AUS_UH60_unarmed_EW.et':
@@ -2318,6 +2320,14 @@ def garrison_placement(source, world, layer, block):
     return garrison_anchors(block, 3)
 
 
+REVIEWED_REMOVABLE_SIGNS = {
+    'worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase_Layers/default.layer':
+        'e6590e10100359f749151b044bd0e19069241b59',
+    'worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/Objectives.layer':
+        '1afcdd5588c87b19e7282e90e76a9ee752eecdf8',
+}
+
+
 def interaction_rules(source, world, stock, local_resources):
     placements, audit = {}, {}
     names, flags = set(), set()
@@ -2358,7 +2368,9 @@ def interaction_rules(source, world, stock, local_resources):
                     if flags_read:
                         audit[location]['teleportRequiredFlags'] = flags_read
                     continue
-                native, details = convert_interaction_block(block, location, stock, local_resources)
+                native, details = convert_interaction_block(
+                    block, location, stock, local_resources,
+                    removable_sign=source.files[path] == REVIEWED_REMOVABLE_SIGNS.get(path))
                 if not details or LEGACY.search(native):
                     raise ValueError('unconverted interaction component or side effect')
                 objectives = [record['flag'] for record in details]
@@ -2788,6 +2800,7 @@ LEGACY_ARTILLERY = 'GCC_Arty : "{6C38A36F9C37A967}Prefabs/Modules/Off_Map_Arty.e
 LOBBY_ARTILLERY = ('GC_OffMapArtillery GC_OffMapArtillery : '
                    '"{3AF7F6A04B4F7564}Prefabs/Modules/GC_OffMapArtillery.et" {')
 REVIEWED_DORMANT_SPAWNER_FLAGS = {
+    'c63178d8012c2dfeb9ccf8d669018d8502bcb10f': (('Spawn At Oil Depots', 1),),
     'fc23379018f367731dde8cd1214c4b800c72f0e5': (('HeliTwo', 1),),
     **dict.fromkeys(REVIEWED_BUILDING_AREAS, (('SpawnTwo', 2), ('US_Trigger_Right_3', 1))),
     '9dfaedf4beacd04c9260e63be23dc6194ce4d9be': (('Counter_Trigger_2', 2),),
@@ -3086,6 +3099,8 @@ def passive_asset(source, path):
     if path in REVIEWED_NATIVE_ASSETS:
         body = source.read(path)
         if sha256(body.strip().encode()).hexdigest() == REVIEWED_NATIVE_ASSETS[path] and not LEGACY.search(body):
+            if path == RASMAN_AA_GROUP:
+                return body.replace('\n m_sCustomNameSet ', '\n m_sGC_Description ', 1)
             return body
     if suffix == '.nmn' and source.files[path] == OBSOLETE_NAVMESH.get(path):
         tiles = len(source.navmesh_tiles(path))
@@ -3520,23 +3535,33 @@ def playable_group_prefab(body, path):
         '\n m_sCustomNameSet ', '\n m_sGC_Description ')
 
 
-def verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path, external_ai):
+def verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path, external_ai,
+                            local_ai, rhs=None):
     if (not stock or path not in REVIEWED_NATIVE_ASSETS or source.resources.get(resource) != [path]
             or dev.resources.get(resource) not in (None, [path])
             or resource in source_units.resources or resource in dev_units.resources):
         return False
-    body = source.read(path)
-    if (not body.startswith('SCR_AIGroup : ') or LEGACY.search(body)
-            or sha256(body.strip().encode()).hexdigest() != REVIEWED_NATIVE_ASSETS[path]
-            or (path in dev.files and body != dev.read(path))):
+    try:
+        body = passive_asset(source, path)
+    except ValueError:
+        return False
+    if (not body.startswith('SCR_AIGroup : ') or (path in dev.files and body != dev.read(path))):
         return False
     parent = REF.search(body.partition('\n')[0])
+    roster = SLOTS.search(body)
+    members = set(REF.findall(roster[1])) if roster else set()
+    owned = source.resources.keys() | dev.resources.keys()
     refs = {*REF.findall(body), ('000CD338713F2B5A', 'Prefabs/AI/Groups/Group_Base.et')}
     for guid, asset in refs:
-        if guid in source.resources or guid in dev.resources:
-            return False
+        if guid in owned:
+            if (guid, asset) not in members or local_ai.get(guid, (None,))[0] != asset:
+                return False
+            continue
         if guid not in source_units.resources and guid not in dev_units.resources:
-            if not (stock.contains(guid, asset) or external_ai.get(guid) == asset):
+            if not (stock.contains(guid, asset) or external_ai.get(guid) == asset
+                    or (members and parent and parent.groups() == (guid, asset)
+                        and verified_stock_ai_group(guid, asset, stock, owned, source_units, dev_units,
+                                                    rhs, inherited_slots=False))):
                 return False
             continue
         if source_units.resources.get(guid) != [asset] or dev_units.resources.get(guid) != [asset]:

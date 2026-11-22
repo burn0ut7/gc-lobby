@@ -145,7 +145,12 @@ REVIEWED_EMPTY_HINTS = {
     'worlds/Til/PerelleBayPeril/PerelleBayPeril_Layers/default.layer':
         ('74df0f746d04e31fdd1227c261978d0b01b070ce', '62672C5D0EC091B7'),
 }
+RASMAN_FRAMEWORK = (
+    'worlds/HotMic/AssaultOnRasmanMilitaryBase/AssaultOnRasmanMilitaryBase_Layers/Managers.layer',
+    '683e30dd77020632d61c8df48dfdf921de49e6e2',
+)
 REVIEWED_INACTIVE_FLAGS = {
+    RASMAN_FRAMEWORK[0]: (RASMAN_FRAMEWORK[1], '"Clear AI Respawns Flags"', 2),
     FOOD_MARKET_OUTCOME_LAYER: (FOOD_MARKET_OUTCOME_BLOB, '"Check Supplies Success Flag"', 1),
     'worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/default.layer':
         ('ec2d8e9742da07dccacdb9f37beebfb23449e213', '"Industrial"', 2),
@@ -326,6 +331,7 @@ def derived_flags_with_known_readers(source, world, framework_path, body, defini
     labels = {
         NAGALAM_AMBUSH_LAYERS + 'Ambush_01.layer':
             (NAGALAM_AMBUSH_BLOBS[0], '  m_locationName "Ambush_01"'),
+        RASMAN_FRAMEWORK[0]: (RASMAN_FRAMEWORK[1], '     m_messageTitle "Phase 1 Done"'),
     }
     content = '\n'.join('\n'.join(line for line in source.read(path).splitlines()
                                   if not (path == framework_path and line.startswith('   m_name '))
@@ -1349,6 +1355,10 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     late_cleanup_refs, cleanup_names = {}, set()
     clearable_flags = set(bound_clearable_flags)
     inactive_control_targets = ()
+    if compound and (path, source.files[path]) == RASMAN_FRAMEWORK:
+        # All three references are in control arrays. The published event list
+        # has no event with this name.
+        inactive_control_targets = ('AA_Truck_Move_Waypoint',)
     if compound and (path, source.files[path]) == (SEEDER_REPLACEMENT_LAYER, SEEDER_REPLACEMENT_LAYER_BLOB):
         late_cleanup_refs, cleanup_names = reviewed_late_cleanup(source, world, scripts)
         replacement_flags = {**replacement_flags,

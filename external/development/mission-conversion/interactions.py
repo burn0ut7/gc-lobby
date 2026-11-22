@@ -11,6 +11,7 @@ OBJECT = re.compile(r'GenericEntity(?: ([\w.-]+))?(?: : "[^"]+")? \{')
 MEMBER = re.compile(r' (?:([\w.-]+) )?\{')
 ACTION = re.compile(r'\s*TILW_BaseInteraction "\{([\da-fA-F]{16})\}" \{')
 KEY = r'"[\w.-]+"'
+FLAG_KEY = r'"[\w.-]+(?: +[\w.-]+)*"'
 NATIVE_FIELDS = {'ParentContextList', 'UIInfo', 'ActionTitle', 'VisibilityRange', 'Duration'}
 LEGACY_FIELDS = {'m_actionName', 'm_factionKeys', 'm_flagName', 'm_singleUse', 'm_conditionFlag', 'm_deleteParent'}
 REPLICATED_PREFABS = {
@@ -18,6 +19,8 @@ REPLICATED_PREFABS = {
     ('E1AED4C5182AA514', 'Prefabs/Props/Military/MilitaryCrates/CrateStack_01/Dst/CrateStack_01_Dst_2_decal_01.et'),
 }
 LEGACY_PREFAB = ('584EB34600E9698D', 'Prefabs/Utils/Interactions/TILW_SetFlagInteraction.et')
+LEGACY_PREFAB_ALIAS = (LEGACY_PREFAB[0], 'Prefabs/Utils/Interactions/TILW_BaseInteraction.et')
+REMOVABLE_SIGN = ('76167BEC292DCF79', 'Prefabs/Structures/Signs/Military/SignRectangle_01_140x100/Sign_Warzone_US_01.et')
 NATIVE_PREFAB = '{B48D431A323D4564}Prefabs/Logic/Mission/Interaction.et'
 BLACKBOX = ('B66EE06D3F5749D6', 'worlds/FloridaMan/Prefabs/Setpeice/Wreck_AH64_Blackbox.et')
 BLACKBOX_MARKER_ID = '655B660447B37DF0'
@@ -152,7 +155,7 @@ def convert_action(action, name, match_key, *, allow_parent_removal=False):
     while i < len(action) - 1:
         field = action[i].strip().split(' ', 1)[0]
         stop = block_end(action, i) if action[i].rstrip().endswith(' {') else i
-        if field in NATIVE_FIELDS:
+        if field in NATIVE_FIELDS or re.fullmatch(r'"Sort Priority" -?\d+', action[i].strip()):
             native.extend(action[i:stop + 1])
         elif field in LEGACY_FIELDS:
             legacy.extend(action[i:stop + 1])
@@ -166,9 +169,9 @@ def convert_action(action, name, match_key, *, allow_parent_removal=False):
     once = data.get('m_singleUse', '1')
     required = data.get('m_conditionFlag', '""')
     remove_parent = data.get('m_deleteParent', '0')
-    if (not re.fullmatch(QUOTED, title) or title == '""' or not re.fullmatch(KEY, flag)
+    if (not re.fullmatch(QUOTED, title) or title == '""' or not re.fullmatch(FLAG_KEY, flag)
             or not all(re.fullmatch(KEY, faction) for faction in factions) or once not in ('0', '1')
-            or (required != '""' and not re.fullmatch(KEY, required))
+            or (required != '""' and not re.fullmatch(FLAG_KEY, required))
             or remove_parent not in ('0', '1') or (remove_parent == '1' and not allow_parent_removal)):
         raise ValueError('interaction availability or side effects need review')
     fields = [' m_sActionName ' + title, ' m_sCallFlag ' + flag]
@@ -187,22 +190,25 @@ def convert_action(action, name, match_key, *, allow_parent_removal=False):
                                           **({'requiredFlag': required[1:-1]} if required != '""' else {})}
 
 
-def convert_block(lines, key, stock=None, local_resources=()):
+def convert_block(lines, key, stock=None, local_resources=(), *, removable_sign=False, allow_parent_removal=False):
     group = lines[0].startswith('$grp GenericEntity')
     root = OBJECT.fullmatch(lines[0])
     if not root and not group:
         raise ValueError('interaction is not on a generic object')
     prefab = REF.search(lines[0])
     resource = (prefab[1].upper(), prefab[2]) if prefab else None
-    standalone = resource == LEGACY_PREFAB
+    standalone = resource in (LEGACY_PREFAB, LEGACY_PREFAB_ALIAS)
     if standalone and resource[0] in local_resources:
         raise ValueError('mission overrides the legacy interaction prefab')
     inherited = standalone or (stock is not None and resource in REPLICATED_PREFABS
                                and resource[0] not in local_resources and stock.contains(*resource))
     head = REF.sub(lambda _: f'"{NATIVE_PREFAB}"', lines[0], count=1) if standalone else lines[0]
+    removable_sign = (removable_sign and resource == REMOVABLE_SIGN and stock
+                      and resource[0] not in local_resources and stock.contains(*resource))
     if root:
         placement, details = convert_with_children([head, *lines[1:]], root[1] or key, key, stock,
-                                                    local_resources, inherited, standalone=standalone)
+                                                    local_resources, inherited, standalone=standalone,
+                                                    removable_sign=removable_sign, allow_parent_removal=allow_parent_removal)
         return '\n'.join(placement) + '\n', details
     output, details, names = [head], [], set()
     index = 1
@@ -212,7 +218,8 @@ def convert_block(lines, key, stock=None, local_resources=()):
             raise ValueError('unnamed interaction group member')
         end = block_end(lines, index)
         placement, items = convert_with_children(lines[index:end + 1], name[1] or f'{key}/{index}', key,
-                                                  stock, local_resources, inherited, standalone=standalone)
+                                                  stock, local_resources, inherited, standalone=standalone,
+                                                  removable_sign=removable_sign)
         if items and name[1]:
             if name[1] in names:
                 raise ValueError('duplicate interaction group member name')
@@ -223,12 +230,14 @@ def convert_block(lines, key, stock=None, local_resources=()):
     return '\n'.join([*output, lines[-1]]) + '\n', details
 
 
-def convert_with_children(lines, name, key, stock, local_resources, inherited, *, standalone):
+def convert_with_children(lines, name, key, stock, local_resources, inherited, *, standalone, removable_sign=False,
+                          allow_parent_removal=False):
     """Convert each interaction owner independently while retaining its parent transform."""
     indent = ' ' * (len(lines[0]) - len(lines[0].lstrip()) + 1)
     child_list = indent + '{'
     if child_list not in lines[1:-1]:
-        return convert_object(lines, name, key, inherited, standalone=standalone)
+        return convert_object(lines, name, key, inherited, standalone=standalone,
+                              allow_parent_removal=standalone and allow_parent_removal)
     start = lines.index(child_list, 1)
     stop = block_end(lines, start)
     if stop != len(lines) - 2:
@@ -248,7 +257,8 @@ def convert_with_children(lines, name, key, stock, local_resources, inherited, *
         child = lines[cursor:end + 1]
         if any(ACTION.fullmatch(line) for line in child):
             converted, items = convert_block([line.removeprefix(child_indent) for line in child],
-                                             f'{name}/child/{cursor}', stock, local_resources)
+                                             f'{name}/child/{cursor}', stock, local_resources,
+                                             allow_parent_removal=removable_sign)
             child = [child_indent + line for line in converted.splitlines()]
             details.extend(items)
         rendered.extend(child)
