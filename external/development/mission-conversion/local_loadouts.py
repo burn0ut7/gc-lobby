@@ -108,7 +108,7 @@ def unchanged_units_parent(source_units, dev_units, resource):
 
 
 def collect(source, dev, source_units, dev_units, stock, *, normalize_references=None, unavailable=(),
-            historical_parents=None):
+            historical_parents=None, published_playable_parents=()):
     """Return approved asset bodies by unique source GUID."""
     approved = {}
     owned = source.resources.keys() | dev.resources.keys()
@@ -138,7 +138,8 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
         inherits_published_playability = (published_parent and resource not in owned
                                           and resource not in source_units.resources
                                           and resource not in dev_units.resources)
-        inherited_playable = (bool(parent_asset) or legacy_member(source_units, resource, False)
+        verified_playable_parent = (resource, parent_path) in published_playable_parents
+        inherited_playable = (bool(parent_asset) or verified_playable_parent or legacy_member(source_units, resource, False)
                               or inherits_published_playability)
         try:
             body, removed = migrate_playability(text, inherited_playable=inherited_playable or verified_forced)
@@ -165,7 +166,8 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
             unit_parent = REF.search(inheritance(source_units, resource)[0].partition('\n')[0])
             inherits_published_role = bool(published_parent and unit_parent
                                            and tuple(published_parent) == unit_parent.groups())
-            if (not removed and not stock_wrapper and not legacy_member(source_units, resource, False)
+            if (not removed and not stock_wrapper and not verified_playable_parent
+                    and not legacy_member(source_units, resource, False)
                     and not inherits_published_role
                     and not (verified_forced and inherits_legacy_playable_base(source_units, resource,
                                                                               stock, dev_units))):

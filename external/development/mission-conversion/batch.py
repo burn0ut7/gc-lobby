@@ -1390,6 +1390,7 @@ ROCKY_CIVILIANS = 'worlds/Burn0ut7/Rocky Road/Prefabs/CiV_Group.et'
 BULGES = 'worlds/TheLocalPub/BattleOfTheBulges'
 LOST_AND_FOUND_DELTA_GROUP = ('worlds/FloridaMan/Prefabs/Groups/BLUFOR/US/Army_2010_DeltaForce/'
                               'Group_Delta_2010_Assault_m_P.et')
+LOST_AND_FOUND_PILOT_GROUP = 'worlds/FloridaMan/Prefabs/Groups/BLUFOR/US/US_Pilot_Group.et'
 REVIEWED_SPAWNED_MARKERS = {
     'worlds/Perfk/Prefabs/Markers/EditableMarker_AmmoCache_VIS_GC_MUJ.et':
         '8246d5e01642372cc3e1e71714c846059d5ee937e6abf54f0d75f33e8380131e',
@@ -1416,6 +1417,10 @@ REVIEWED_GROUP_CALLSIGNS = {
         '12bd5100b584b1d07a21445336bcbdb67537dee0',
         'worlds/FloridaMan/worlds/LostAndFound/LostAndFound_Layers/BLUFOR.layer',
         '9063e2ec7ab2a43b8dc4c89d63a918aa5ad9782d', (1, 1, 1), True),
+    LOST_AND_FOUND_PILOT_GROUP: (
+        '946a8720187a87393c596e12d0ae53c024565039',
+        'worlds/FloridaMan/worlds/LostAndFound/LostAndFound_Layers/BLUFOR.layer',
+        '9063e2ec7ab2a43b8dc4c89d63a918aa5ad9782d', (4, 5, 2), False),
 }
 REVIEWED_PLAYABLE_GROUPS = {
     ROCKY_CIVILIANS: '6ab575e5895921c869d63aa3c896bd59f52a4b809317a1c80f3717514a4de117',
@@ -2760,6 +2765,12 @@ def reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed
                     or not legacy_member(source_units, guid, False)
                     or not unchanged_units_parent(source_units, dev_units, guid)) for guid, member in roles):
                 continue
+        elif path == LOST_AND_FOUND_PILOT_GROUP:
+            delta = aliases.get(parent)
+            roles = REF.findall(SLOTS.search(native)[1])
+            if not delta or delta[0] != parent_path or any(reviewed_members.get(guid) != member
+                                                           for guid, member in roles):
+                continue
         elif playable:
             slots = SLOTS.search(body)
             if (not stock or not stock.contains(parent, parent_path) or not slots
@@ -3162,7 +3173,8 @@ def reviewed_missing_bmp_audio(source, dev, unavailable):
 
 def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, objectives, workshop_resources=(), *,
                    reviewed_assets=None, aliases=None):
-    if not path.lower().endswith('.et') or path.lower().startswith('prefabs/groups/'):
+    if (not path.lower().endswith('.et') or path.lower().startswith('prefabs/groups/')
+            or path in REVIEWED_PLAYABLE_GROUPS or path in REVIEWED_GROUP_CALLSIGNS):
         return None
     owned = source.resources.get(guid)
     if owned:
