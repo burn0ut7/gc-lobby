@@ -612,6 +612,8 @@ def main():
                 rules, outcome_audit, gap = compile_outcomes(
                     source, world, captures, compound=args.batch, notification_audit=review,
                     objective_flags=set(objective_flags) | observed_area_flags,
+                    replacement_flags={asset['replacementEvent']: asset['flag'] for asset in objectives.values()
+                                       if 'replacementEvent' in asset},
                     extraction_spawns=delayed.spawns if delayed else None,
                     scripts=batch.script_text(source) if args.batch else None,
                     resolve_spawn=partial(resolve_spawn, objectives) if args.batch else None,

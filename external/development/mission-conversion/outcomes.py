@@ -563,7 +563,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                log_only=False, named_events=(), inactive=(), binary_startup=None, missing_term=False, ends_match=False,
                direct_control=False, empty_hint=None, missing_group_waypoint=None, sampled_pregame_flags=(),
                supply_comparison=False, reviewed_script_calls=None, reviewed_script_type=None,
-               unused_vehicle_name=None):
+               unused_vehicle_name=None, replacement_flag=None):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -651,7 +651,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 elif action_match:
                     delay, body, details = compile_action(action_match, fields[j + 1:last], key, hidden_briefings)
                     flag = details.get('setsFlag') or details.get('clearsFlag')
-                    if flag and flag not in event_flags:
+                    if (flag and flag not in event_flags
+                            and (not replacement_flag or details.get('clearsFlag') != replacement_flag)):
                         raise ValueError('flag has another producer or unsupported use: ' + flag)
                     converted_actions.append(details)
                 elif script_match:
@@ -1214,10 +1215,12 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                      extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None,
                      derived_audit=None, identity_flags_audit=None, meta_dividers_audit=None, discovery_resets_audit=None,
                      match_only_flags=(), startup_samples_audit=None,
-                     interaction_reads=None, spawner_reads=None, derived_spawners_audit=None, route_graph_audit=None):
+                     interaction_reads=None, spawner_reads=None, derived_spawners_audit=None, route_graph_audit=None,
+                     replacement_flags=None):
     captures = captures or {}
     notification_audit = notification_audit or {}
     extraction_spawns = extraction_spawns or {}
+    replacement_flags = replacement_flags or {}
     layers = source.layers[world.lower()]
     owners = [(path, source.read(path)) for path in layers if 'TILW_MissionFrameworkEntity' in source.read(path)]
     if len(owners) != 1:
@@ -1400,6 +1403,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 sampled_pregame_flags=sampled_pregame_flags, supply_comparison=supply_comparison,
                 reviewed_script_calls=reviewed_script_calls, reviewed_script_type=reviewed_script_type,
                 unused_vehicle_name=unused_vehicle_name,
+                replacement_flag=replacement_flags.get(name),
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
             if not term.get('pregameSample') and any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):

@@ -191,6 +191,13 @@ SPAWN_DAMAGE_VEHICLES = {
     ('48A6D4372444B85A', 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_covered_closed.et'),
     CAMPAIGN_RADIO_TRUCK,
 }
+SEEDER_UAZ_PARENTS = {
+    ('259EE7B78C51B624', 'Prefabs/Vehicles/Wheeled/UAZ469/UAZ469.et'),
+    ('43C4AF1EEBD001CE', 'Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_ambulance.et'),
+    ('1FBB492E86002BF5', 'Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport.et'),
+}
+SEEDER_UAZ_LAYER = 'worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_Layers/default.layer'
+SEEDER_UAZ_LAYER_BLOB = '1e76b3d650d08d9ba159b19ae3c2479e895ac32a'
 GMFX_AMMO_TARGETS = (
     ('8B9AFAD3A1548FCE', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage.et'),
     ('4C931B452C796A2A', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage_USSR.et'),
@@ -3264,13 +3271,16 @@ def damage_state_flag_placements(block, *, allow_multiple_states, clear_on_misma
     return [*lines, *block[cursor:]], flags
 
 
-def spawned_damage_objective(block, stock, local_resources, workshop_targets, *, vehicle=False):
+def spawned_damage_objective(block, stock, local_resources, workshop_targets, *, vehicle=False, replacement=False):
     parent = REF.search(block[0])
     owner_type = 'Vehicle' if vehicle else 'GenericEntity'
     if not parent or not block[0].startswith(owner_type + ' : '):
         raise ValueError('unsupported spawned damage owner')
     ref = (parent[1].upper(), parent[2])
-    registered_stock = ref in (SPAWN_DAMAGE_VEHICLES if vehicle else SPAWN_DAMAGE_TARGETS) and (
+    approved = SPAWN_DAMAGE_VEHICLES if vehicle else SPAWN_DAMAGE_TARGETS
+    if replacement:
+        approved = approved | SEEDER_UAZ_PARENTS
+    registered_stock = ref in approved and (
         stock and stock.contains(*ref))
     registered_workshop = not vehicle and ref in GMFX_AMMO_TARGETS and ref in workshop_targets
     if ref[0] in local_resources or not (registered_stock or registered_workshop):
@@ -3284,11 +3294,53 @@ def spawned_damage_objective(block, stock, local_resources, workshop_targets, *,
         if (len(tail) == 3 and ref == CAMPAIGN_RADIO_TRUCK and tail[1].startswith(' coords ')
                 and FIELD.fullmatch(tail[1].strip())):
             tail = [tail[0], tail[-1]]
+        if (replacement and len(tail) == 4 and tail[1].startswith(' coords ')
+                and tail[2].startswith(' angles ')):
+            if all(FIELD.fullmatch(line.strip()) for line in tail[1:3]):
+                tail = [tail[0], tail[-1]]
         if tail != [' }', '}']:
             raise ValueError('spawned damage vehicle has other authored overrides')
     # A replacement vehicle observes its initial state and can clear a flag left by the previous instance.
     lines, flag = damage_state_flag_placement(block, allow_multiple_states=vehicle, clear_on_mismatch=vehicle)
+    if replacement:
+        index = lines.index('   m_bClearOnMismatch 1')
+        lines.insert(index + 1, '   m_bDeferInitialSample 1')
     return '\n'.join(lines) + '\n', flag
+
+
+def reviewed_replacement_vehicle(source, resource, path, corpus):
+    """Verify one initial placement and the complete destruction-to-replacement loop."""
+    prefix = 'worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/Transports/'
+    match = re.fullmatch(r'(UAZ|UAZ452_ambulance|UAZ452_transport)([1-3])\.et', path.removeprefix(prefix))
+    if not path.startswith(prefix) or not match or source.files.get(SEEDER_UAZ_LAYER) != SEEDER_UAZ_LAYER_BLOB:
+        return None
+    variant, number = match.groups()
+    name = variant + number
+    flag_prefix = 'Ambu' if variant == 'UAZ452_ambulance' else 'UAZ'
+    flag = flag_prefix + (str(int(number) + 3) if variant == 'UAZ' else number)
+    resource_ref = f'"{{{resource}}}{path}"'
+    owner = f'Vehicle {name} : {resource_ref} {{'
+    if corpus.splitlines().count(owner) != 1 or corpus.count(resource_ref) != 2:
+        return None
+    events = source.read(SEEDER_UAZ_LAYER).splitlines()
+    # The flags UAZ1 through UAZ3 also occur as the entity names in the
+    # pinned delete and spawn instructions for the separate UAZ4–UAZ6 loops.
+    entity_uses = 0
+    if variant == 'UAZ452_transport':
+        entity_uses = events.count(f'      "{flag}"') + events.count(f'     m_setEntityName "{flag}"')
+    if corpus.count(f'"{flag}"') != literal_flag_reads(corpus, flag) + 2 + entity_uses:
+        return None
+    for start, line in enumerate(events):
+        if not EVENT.fullmatch(line):
+            continue
+        fields = events[start + 1:block_end(events, start)]
+        if f'   m_name "Respawn {flag}"' not in fields:
+            continue
+        if (f'     m_prefab {resource_ref}' in fields and f'     m_setEntityName "{name}"' in fields
+                and f'     m_locationName "Resp{flag}"' in fields and f'      "{name}"' in fields
+                and fields.count(f'      "Respawn {flag}"') == 1):
+            return {'replacementEntity': name, 'replacementEvent': 'Respawn ' + flag, 'flag': flag}
+    return None
 
 
 def authored_spawn_references(source, world):
@@ -3327,6 +3379,7 @@ def spawned_objectives(source, dev, world, stock, local_resources, workshop_targ
     """Identify mission-owned objective prefabs referenced by a standard spawn."""
     reviewed = {}
     placements = Counter()
+    corpus = None
     for resource, path, vehicle in authored_spawn_references(source, world):
         placements[resource] += 1
         if (resource in reviewed or source.resources.get(resource) != [path]
@@ -3339,8 +3392,19 @@ def spawned_objectives(source, dev, world, stock, local_resources, workshop_targ
             (_, block), = blocks(text)
             if 'TILW_Flag_EntityDamage' in text:
                 vehicle = vehicle or block[0].startswith('Vehicle : ')
-                native, flag = spawned_damage_objective(block, stock, local_resources, workshop_targets, vehicle=vehicle)
+                replacement = None
+                if vehicle and SEEDER_UAZ_LAYER in source.layers[world.lower()]:
+                    if corpus is None:
+                        corpus = '\n'.join(source.read(owner) for owner in sorted(source.closure(world))
+                                           if PurePosixPath(owner).suffix.lower() in SOURCE_TEXT)
+                    replacement = reviewed_replacement_vehicle(source, resource, path, corpus)
+                native, flag = spawned_damage_objective(block, stock, local_resources, workshop_targets,
+                                                        vehicle=vehicle, replacement=bool(replacement))
                 kind = {'destroyed': True, **({'vehicle': True} if vehicle else {})}
+                if replacement:
+                    if flag != replacement['flag']:
+                        continue
+                    kind.update(replacement)
             else:
                 if vehicle:
                     continue
@@ -3357,15 +3421,18 @@ def spawned_objectives(source, dev, world, stock, local_resources, workshop_targ
         reviewed[resource] = {'path': path, 'body': native, 'flag': flag, **kind}
     damaged = {resource: asset for resource, asset in reviewed.items() if asset.get('destroyed')}
     if damaged:
-        corpus = '\n'.join(source.read(path) for path in sorted(source.closure(world))
-                           if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+        if corpus is None:
+            corpus = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                               if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
         scripts = script_text(source)
         for resource, asset in damaged.items():
             flag = asset['flag']
             uses = placements[resource]
-            if (corpus.count(f'"{flag}"') != literal_flag_reads(corpus, flag) + 1 or flag in scripts
+            replacement = 'replacementEntity' in asset
+            if ((not replacement and corpus.count(f'"{flag}"') != literal_flag_reads(corpus, flag) + 1)
+                    or flag in scripts
                     or any(api in scripts for api in SCRIPT_FLAG_APIS)
-                    or corpus.upper().count('{' + resource + '}') != uses):
+                    or corpus.upper().count('{' + resource + '}') != uses + int(replacement)):
                 del reviewed[resource]
             else:
                 asset['spawnCount'] = uses
@@ -5925,7 +5992,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         flag = event.get('flag')
         selected = (event.get('trigger') == 'startup choice' or
                     (event.get('trigger') == 'event flag' and not event.get('inverted') and flag in single_draw_flags))
-        prefab_spawns.extend({**item, 'startupChoice': flag if selected else None}
+        prefab_spawns.extend({**item, 'startupChoice': flag if selected else None, 'sourceEvent': event['name']}
                              for item in event.get('convertedActions', []) if 'spawnAnchor' in item)
     prefab_spawns.extend(spawner_audit)
     crew_names = defaultdict(set)
@@ -6042,6 +6109,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         anchor_source, anchor_blob, missing_anchors = REVIEWED_MISSING_SPAWN_ANCHORS.get(world, (None, None, ()))
         for spawn in prefab_spawns:
             anchor, name = spawn['spawnAnchor'], spawn['spawnName']
+            resource = REF.fullmatch(spawn['prefab'])[1].upper()
+            asset = spawned_assets.get(resource, {})
+            targets = named.get(name, ())
+            replacement = (name and name == asset.get('replacementEntity') and len(spawned_names[name]) == 1
+                           and spawn.get('sourceEvent') == asset['replacementEvent']
+                           and len(targets) == 1 and targets[0][0] == 'Vehicle'
+                           and f' : {spawn["prefab"]} {{' in targets[0][1][0])
             missing_routes = [route for group in spawn.get('crewGroups', ()) for route in group.get('missingWaypoints', ())]
             if missing_route := spawn.get('missingGroupWaypoint'):
                 missing_routes.append(missing_route)
@@ -6061,7 +6135,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                   and len({draw_by_flag.get(choice) for choice in choices}) == 1)
             if (len(named.get(anchor, [])) != 1
                     or (name and ((len(choices) > 1 and not mutually_exclusive and name not in temporary_names)
-                                  or name in named))):
+                                  or (name in named and not replacement)))):
                 blockers.append({'rule': 'prefab spawn', 'file': world,
                                  'detail': 'missing anchor or conflicting spawn name for ' + anchor})
             for waypoint in spawn.get('crewWaypoints', spawn.get('groupWaypoints', ())):
