@@ -191,13 +191,38 @@ SPAWN_DAMAGE_VEHICLES = {
     ('48A6D4372444B85A', 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_covered_closed.et'),
     CAMPAIGN_RADIO_TRUCK,
 }
-SEEDER_UAZ_PARENTS = {
+SEEDER_REPLACEMENT_PARENTS = {
     ('259EE7B78C51B624', 'Prefabs/Vehicles/Wheeled/UAZ469/UAZ469.et'),
     ('43C4AF1EEBD001CE', 'Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_ambulance.et'),
     ('1FBB492E86002BF5', 'Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport.et'),
+    ('A5647958579A4149', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_repair.et'),
+    ('4C81D7ED8F8C0D87', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker.et'),
 }
-SEEDER_UAZ_LAYER = 'worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_Layers/default.layer'
-SEEDER_UAZ_LAYER_BLOB = '1e76b3d650d08d9ba159b19ae3c2479e895ac32a'
+SEEDER_RHS_REPLACEMENT_PARENTS = {
+    ('00AED68EFBF251BA', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered_closed_camo1.et'),
+    ('323B9051ED5C2F7A', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_engineer_camo1.et'),
+}
+SEEDER_REPLACEMENT_LAYER = 'worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_Layers/default.layer'
+SEEDER_REPLACEMENT_LAYER_BLOB = '1e76b3d650d08d9ba159b19ae3c2479e895ac32a'
+SEEDER_REPLACEMENT_DIR = 'worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/'
+SEEDER_TRUCK_BLOBS = {
+    'Transports/Ural_Truck_1.et': 'e5b81108b638698b7f314ec836613b8abfbacd79',
+    'Transports/Ural_Truck_2.et': 'df71a1b99ccce5d8e5314d3ae1333fb8ef40bbf8',
+    'Transports/Ural_Truck_3.et': '4c9eac480b3ff495a928dea0078292e3123ed0f2',
+    'Ural4320_engineer_camo1.et': 'c0ab3ac1cebe4196823a7f2e415ffa2922626ee7',
+    'Ural4320_engineer_camo2.et': 'f48c0d2f0c5835bcab2b021cdeea8706cbe9b9ca',
+    'Ural4320_repair1.et': 'f44e331d7f69dd21eaabfd2c3caed92efa9a3d4e',
+    'Ural4320_repair2.et': 'f7dc7f44cf3f299f90fd30c8862e2584c261d85b',
+    'Ural4320_tanker1.et': '77c6a1fa70c4ab57b759532828f542bfd8ea2627',
+    'Ural4320_tanker2.et': '00fdc7f3552e9cc7a4d440958c90fd3530f34678',
+}
+SEEDER_CARGO_BLOBS = {
+    'HTMEngineeringBox.et': '1b69602de123e1f107b734540d9f1cfc71af01cc',
+    'HTMRepairingBox.et': 'a3c6d12d51fd7897f470b56a8320379e29615ee7',
+    'HTMTransportBox.et': '81ea34c7b0f95770586d29a4da20d32d914fe7f9',
+    'HTMTransportBoxSupply400.et': '22d358e27225f592878199559853520c5e96e549',
+    'HTMTransportBoxSupply500.et': '79552770d7d8e7189ba973ed53f440deb73158c8',
+}
 GMFX_AMMO_TARGETS = (
     ('8B9AFAD3A1548FCE', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage.et'),
     ('4C931B452C796A2A', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage_USSR.et'),
@@ -2972,6 +2997,10 @@ def passive_asset(source, path):
             return body
     if suffix == '.et':
         body = source.read(path)
+        if path.startswith(SEEDER_REPLACEMENT_DIR):
+            blob = SEEDER_CARGO_BLOBS.get(path.removeprefix(SEEDER_REPLACEMENT_DIR))
+            if blob and source.files.get(path) == blob and not LEGACY.search(body):
+                return body
         if path == SKALISTY_FALLBACK_AO:
             return skalisty_fallback_ao(body)
         if path in REVIEWED_SPAWNED_MARKERS:
@@ -3271,7 +3300,8 @@ def damage_state_flag_placements(block, *, allow_multiple_states, clear_on_misma
     return [*lines, *block[cursor:]], flags
 
 
-def spawned_damage_objective(block, stock, local_resources, workshop_targets, *, vehicle=False, replacement=False):
+def spawned_damage_objective(block, stock, local_resources, workshop_targets, *, vehicle=False,
+                             replacement=False, reviewed_overrides=False, rhs=None):
     parent = REF.search(block[0])
     owner_type = 'Vehicle' if vehicle else 'GenericEntity'
     if not parent or not block[0].startswith(owner_type + ' : '):
@@ -3279,13 +3309,15 @@ def spawned_damage_objective(block, stock, local_resources, workshop_targets, *,
     ref = (parent[1].upper(), parent[2])
     approved = SPAWN_DAMAGE_VEHICLES if vehicle else SPAWN_DAMAGE_TARGETS
     if replacement:
-        approved = approved | SEEDER_UAZ_PARENTS
+        approved = approved | SEEDER_REPLACEMENT_PARENTS
     registered_stock = ref in approved and (
         stock and stock.contains(*ref))
     registered_workshop = not vehicle and ref in GMFX_AMMO_TARGETS and ref in workshop_targets
+    if replacement and ref in SEEDER_RHS_REPLACEMENT_PARENTS:
+        registered_workshop = rhs and rhs.contains(*ref)
     if ref[0] in local_resources or not (registered_stock or registered_workshop):
         raise ValueError('unverified spawned damage prefab')
-    if vehicle:
+    if vehicle and not reviewed_overrides:
         if (len(block) < 8 or not re.fullmatch(r' ID "[\da-fA-F]{16}"', block[1])
                 or block[2] != ' components {' or not DAMAGE_COMPONENT.fullmatch(block[3])):
             raise ValueError('spawned damage vehicle has other authored overrides')
@@ -3310,23 +3342,30 @@ def spawned_damage_objective(block, stock, local_resources, workshop_targets, *,
 
 def reviewed_replacement_vehicle(source, resource, path, corpus):
     """Verify one initial placement and the complete destruction-to-replacement loop."""
-    prefix = 'worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/Transports/'
-    match = re.fullmatch(r'(UAZ|UAZ452_ambulance|UAZ452_transport)([1-3])\.et', path.removeprefix(prefix))
-    if not path.startswith(prefix) or not match or source.files.get(SEEDER_UAZ_LAYER) != SEEDER_UAZ_LAYER_BLOB:
+    if (not path.startswith(SEEDER_REPLACEMENT_DIR)
+            or source.files.get(SEEDER_REPLACEMENT_LAYER) != SEEDER_REPLACEMENT_LAYER_BLOB):
         return None
-    variant, number = match.groups()
-    name = variant + number
-    flag_prefix = 'Ambu' if variant == 'UAZ452_ambulance' else 'UAZ'
-    flag = flag_prefix + (str(int(number) + 3) if variant == 'UAZ' else number)
+    relative = path.removeprefix(SEEDER_REPLACEMENT_DIR)
+    truck_blob = SEEDER_TRUCK_BLOBS.get(relative)
+    if truck_blob:
+        if source.files.get(path) != truck_blob:
+            return None
+    elif not re.fullmatch(r'Transports/(?:UAZ|UAZ452_ambulance|UAZ452_transport)[1-3]\.et', relative):
+        return None
+    name = PurePosixPath(path).stem
+    fields = re.findall(r'(?m)^   m_flagName "([\w.-]+)"$', source.read(path))
+    if len(fields) != 1:
+        return None
+    flag = fields[0]
     resource_ref = f'"{{{resource}}}{path}"'
     owner = f'Vehicle {name} : {resource_ref} {{'
     if corpus.splitlines().count(owner) != 1 or corpus.count(resource_ref) != 2:
         return None
-    events = source.read(SEEDER_UAZ_LAYER).splitlines()
+    events = source.read(SEEDER_REPLACEMENT_LAYER).splitlines()
     # The flags UAZ1 through UAZ3 also occur as the entity names in the
     # pinned delete and spawn instructions for the separate UAZ4–UAZ6 loops.
     entity_uses = 0
-    if variant == 'UAZ452_transport':
+    if name.startswith('UAZ452_transport'):
         entity_uses = events.count(f'      "{flag}"') + events.count(f'     m_setEntityName "{flag}"')
     if corpus.count(f'"{flag}"') != literal_flag_reads(corpus, flag) + 2 + entity_uses:
         return None
@@ -3375,7 +3414,7 @@ def authored_spawn_references(source, world):
                 continue
 
 
-def spawned_objectives(source, dev, world, stock, local_resources, workshop_targets=()):
+def spawned_objectives(source, dev, world, stock, local_resources, workshop_targets=(), *, rhs=None):
     """Identify mission-owned objective prefabs referenced by a standard spawn."""
     reviewed = {}
     placements = Counter()
@@ -3393,18 +3432,23 @@ def spawned_objectives(source, dev, world, stock, local_resources, workshop_targ
             if 'TILW_Flag_EntityDamage' in text:
                 vehicle = vehicle or block[0].startswith('Vehicle : ')
                 replacement = None
-                if vehicle and SEEDER_UAZ_LAYER in source.layers[world.lower()]:
+                if vehicle and SEEDER_REPLACEMENT_LAYER in source.layers[world.lower()]:
                     if corpus is None:
                         corpus = '\n'.join(source.read(owner) for owner in sorted(source.closure(world))
                                            if PurePosixPath(owner).suffix.lower() in SOURCE_TEXT)
                     replacement = reviewed_replacement_vehicle(source, resource, path, corpus)
                 native, flag = spawned_damage_objective(block, stock, local_resources, workshop_targets,
-                                                        vehicle=vehicle, replacement=bool(replacement))
+                                                        vehicle=vehicle, replacement=bool(replacement), rhs=rhs,
+                                                        reviewed_overrides=bool(replacement and path.removeprefix(
+                                                            SEEDER_REPLACEMENT_DIR) in SEEDER_TRUCK_BLOBS))
                 kind = {'destroyed': True, **({'vehicle': True} if vehicle else {})}
                 if replacement:
                     if flag != replacement['flag']:
                         continue
                     kind.update(replacement)
+                    attachment = re.search(r'(?m)^ m_sAttachmentGroupName "([^"\n]+)"$', text)
+                    if attachment:
+                        kind['legacyAttachmentGroup'] = attachment[1]
             else:
                 if vehicle:
                     continue

@@ -539,7 +539,8 @@ def main():
         if args.batch and any(row['serializedTypes'].get(kind)
                               for kind in ('TILW_SpawnPrefabInstruction', 'TILW_SpawnVehicleInstruction',
                                            'TILW_PrefabSpawnerEntity')):
-            spawned = batch.spawned_objectives(source, dev, world, stock, locally_owned, workshop_damage_resources)
+            spawned = batch.spawned_objectives(source, dev, world, stock, locally_owned, workshop_damage_resources,
+                                               rhs=rhs_database)
             if spawned:
                 asset_flags = [item['flag'] for item in spawned.values()]
                 if (len(asset_flags) != len(set(asset_flags)) or set(asset_flags) & set(objective_flags)
