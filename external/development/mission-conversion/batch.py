@@ -33,7 +33,8 @@ from launchers import META_NAME, launcher, replace_reference
 from local_loadouts import unchanged_units_parent
 from markers import (DEST as MAP_MARKER_PREFAB, LEGACY as LEGACY_MARKER, convert_baked_marker_generator, convert_hover_camera,
                      convert_layer, convert_wall_markers)
-from outcomes import (DEPOT_SUPPLY_REVISIONS, FOOD_MARKET_OUTCOME_LAYER, FRAMEWORK, INTERDICTION_OUTCOME_LAYER,
+from outcomes import (ASSAD_FRAMEWORK_BLOB, ASSAD_FRAMEWORK_LAYER, DEPOT_SUPPLY_REVISIONS,
+                      FOOD_MARKET_OUTCOME_LAYER, FRAMEWORK, INTERDICTION_OUTCOME_LAYER,
                       INTERSECTING_DEFAULT, INTERSECTING_DEFAULT_BLOB, MATCH_PHASE_VALUE,
                       NAGALAM_AMBUSH_BLOBS, NAGALAM_AMBUSH_LAYERS, NAGALAM_LAYERS,
                       RUHA_PHASE_BLOB, RUHA_PHASE_LAYER, RUHA_UNIT_NAMES, SCRIPT_FLAG_APIS,
@@ -56,8 +57,7 @@ CONSTRUCTION_FIELDS = {
     'm_fGameMultiplier': ('m_fMatchMultiplier', 0.5, 10000000),
 }
 DEFAULT_BUILDING_MANAGER = '  SCR_CampaignBuildingManagerComponent "{61B4DDBF56BF1B48}" {'
-ASSAD_FRAMEWORK_BLOB = 'bdd7db4625b168d6954457d5337ea54ef84ff00f'
-ASSAD_LAYERS = 'worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/'
+ASSAD_LAYERS = ASSAD_FRAMEWORK_LAYER.removesuffix('framework.layer')
 ARCHIVED_AAS_CREW = {
     'E417F82BEA7137D5': ('Rifleman', 'b9f7231eeac59fd931fcf4edb4b62be2b06c7197',
                          '3003343eed710f717c2fd3c9786072fda13d3cc6'),
@@ -781,6 +781,7 @@ SKALISTY_NORTH_LAYER = ('worlds/HitTheMan/Air Assault Onto Skalisty/'
                         'AirAssaultOnSkalisty_Layers/AI_Defenders/AI_Defenders_North.layer')
 SKALISTY_NORTH_BLOB = '3f995e58fda7c5b32500dad62ff5b7b6c599eacd'
 REVIEWED_MISSING_WAYPOINTS = {
+    ASSAD_LAYERS + 'AiA.layer': ('5fcab9e05f41d5aaa9dcdc3516d462b57fd1686f', {'AIWP_Defend_12'}),
     SKALISTY_NORTH_LAYER: (SKALISTY_NORTH_BLOB, {'DefInside_WPNorth_US_10'}),
     'worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_Layers/BLUFOR/BLU_AI_Town_Defene_60xAI.layer':
         ('1eb75b271a2d5a51e0e2982674a6a5f0bfdb4f32', BREAK_THE_LINE_MISSING_WAYPOINTS),
@@ -1151,6 +1152,9 @@ WORKSHOP_RESOURCE_ALIASES = {
     ('9FF4AA98784BDF8B', 'Prefabs/Vehicles/Helicopters/AH6M/OPFOR/AH6M_OPFOR_base.et'): (
         'WCS_AH-6M_6273146ADFE8241D', '9FF4AA98784BDF8B',
         'Prefabs/Vehicles/Helicopters/AH6M/OPFOR/AH6M_OPFOR_Base.et'),
+    ('6CA46BC65DE861A8', 'Prefabs/Vehicles/Helicopters/AH6M/AH6M_Armed_base.et'): (
+        'WCS_AH-6M_6273146ADFE8241D', '6CA46BC65DE861A8',
+        'Prefabs/Vehicles/Helicopters/AH6M/AH6M_Armed_Base.et'),
     ('72018C87FBDC9F8C', 'Prefabs/Vehicles/Tracked/BFV/M2A2_Desert.et'): (
         'WCS_M2A2_63120AE07E6C0966', '72018C87FBDC9F8C',
         'Prefabs/Vehicles/Tracked/M2A2/M2A2_Desert.et'),
@@ -4266,7 +4270,7 @@ LOOSE_ENDS_IMAGE_ASSETS = {
 
 def reviewed_archived_mission_crew(source, dev, stock):
     """Restore the original AI-only crew assets removed with Central Anizay AAS."""
-    if (not stock or source.files.get(ASSAD_LAYERS + 'framework.layer') != ASSAD_FRAMEWORK_BLOB
+    if (not stock or source.files.get(ASSAD_FRAMEWORK_LAYER) != ASSAD_FRAMEWORK_BLOB
             or source.files.get(ASSAD_LAYERS + 'props.layer') != '15d7559e5c9b917375979b7d6f0090e5360771a8'):
         return {}
     restored = {}
@@ -6446,6 +6450,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare the fallback boundary transition, containment at all three crossings, and public shading.')
     if any(spawn['startupChoice'] for spawn in prefab_spawns):
         remaining.append('Compare pregame selection, spawn timing and faction-specific briefing and map updates.')
+    if any(event.get('startupVehicles') for event in rules.values()):
+        remaining.append('Compare pregame vehicle placement, crew seating and delays across the transition to Match.')
     if outcome.get('startupSamples'):
         if any(spawn.get('startupInitializationSeconds') and spawn['startupChoice'] for spawn in prefab_spawns):
             remaining.append('Compare the single startup draw and verify each selected spawn in its authored phase.')

@@ -323,7 +323,13 @@ class GC_MissionRuleEngine
 		if (!m_aDiscoveryResetFlags.IsEmpty() && (initialObservation || state == SCR_EGameModeState.GAME))
 			m_fDiscoveryRecheck = m_fNow + 0.01;
 		if (state != SCR_EGameModeState.GAME)
-			m_aScheduledActions.Clear();
+		{
+			for (int i = m_aScheduledActions.Count() - 1; i >= 0; i--)
+			{
+				if (!m_aScheduledActions[i].m_Action.m_bScheduleFromStaging)
+					m_aScheduledActions.RemoveOrdered(i);
+			}
+		}
 		ResetRandomConditions();
 		SampleAreas(true);
 		if (!m_bRunning || !RecheckDerivedFlags())
@@ -687,7 +693,7 @@ class GC_MissionRuleEngine
 			if (!RecheckDerivedFlags())
 				return;
 		}
-		if (m_eGameModeState == SCR_EGameModeState.GAME)
+		if (GC_LobbyPhase.IsValid(m_eGameModeState))
 			AdvanceScheduledActions();
 		if (!m_bRunning || m_bWaitingForRespawnWave)
 			return;
@@ -1263,7 +1269,12 @@ class GC_MissionRuleEngine
 	//------------------------------------------------------------------------------------------------
 	protected void ScheduleAction(GC_RuleAction action, string eventName)
 	{
-		if (m_eGameModeState != SCR_EGameModeState.GAME)
+		if (action.m_bScheduleFromStaging)
+		{
+			if (!GC_LobbyPhase.IsValid(m_eGameModeState) || GC_LobbyPhase.IsAtOrAfter(m_eGameModeState, SCR_EGameModeState.GAME))
+				return;
+		}
+		else if (m_eGameModeState != SCR_EGameModeState.GAME)
 			return;
 		if (m_aScheduledActions.Count() >= 4096)
 		{
@@ -1296,8 +1307,10 @@ class GC_MissionRuleEngine
 		}
 		foreach (GC_ScheduledRuleAction pending : ready)
 		{
-			if (!m_bRunning || m_bWaitingForRespawnWave || m_eGameModeState != SCR_EGameModeState.GAME)
+			if (!m_bRunning || m_bWaitingForRespawnWave)
 				break;
+			if (!pending.m_Action.m_bScheduleFromStaging && m_eGameModeState != SCR_EGameModeState.GAME)
+				continue;
 			m_aScheduledActions.RemoveItemOrdered(pending);
 			ExecuteAction(pending.m_Action, pending.m_sEventName);
 		}

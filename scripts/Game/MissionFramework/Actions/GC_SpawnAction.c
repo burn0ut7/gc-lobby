@@ -5,11 +5,15 @@ class GC_SpawnAction : GC_ActionBase
 	[Attribute("", UIWidgets.Object, "Choose Prefab, AI Group or Crewed Vehicle. Spawns once each time this action runs. Use the event's conditions, repeatability and Delay to control when it happens.")]
 	ref GC_PrefabSpawn m_Spawn;
 
+	[Attribute("0", UIWidgets.CheckBox, "With Schedule Action enabled, queue this spawn during pregame, slotting or briefing. Once queued it stays due until this world ends.")]
+	bool m_bScheduleFromStaging;
+
 	//------------------------------------------------------------------------------------------------
 	override GC_RuleAction BuildAction()
 	{
 		GC_RuleAction action = new GC_RuleAction();
 		action.m_eDo = GC_ERuleAction.SPAWN;
+		action.m_bScheduleFromStaging = m_bScheduleFromStaging;
 		action.m_Spawn = m_Spawn;
 		if (m_Spawn)
 			action.m_sTextOrName = m_Spawn.m_sLocation;

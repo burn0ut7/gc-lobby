@@ -48,6 +48,7 @@ enum GC_ERuleAction
 class GC_RuleAction
 {
 	float m_fActionDelay = -1;
+	bool m_bScheduleFromStaging;
 	[Attribute("Test action", UIWidgets.EditBox, "A short name to help you find this action.")]
 	string m_sName;
 	[Attribute("0", UIWidgets.ComboBox, "Choose a small test action. These do not spawn units, end the game, or change player settings.", enums: {ParamEnum("Write a test message to the log", "0"), ParamEnum("Set a flag to true or false", "1"), ParamEnum("Send a named test event", "2")})]
@@ -105,6 +106,8 @@ class GC_RuleAction
 	bool IsValid()
 	{
 		if (!(m_fActionDelay == -1 || (m_fActionDelay >= 0 && m_fActionDelay <= 86400)))
+			return false;
+		if (m_bScheduleFromStaging && (m_fActionDelay < 0 || m_eDo != GC_ERuleAction.SPAWN))
 			return false;
 		switch (m_eDo)
 		{

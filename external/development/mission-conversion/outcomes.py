@@ -21,6 +21,8 @@ ROUTE_SCORING_LAYERS = {
     ROUTE_FRAMEWORK.replace('default.layer', 'node_triggers.layer'): 'defdd5e4bb24597a6b0aaa1b19220447f1bfce20',
     ROUTE_FRAMEWORK.replace('default.layer', 'obstacles_removable.layer'): '06f0036f9a45d0989f462285e56011e0a6fdaee5',
 }
+ASSAD_FRAMEWORK_LAYER = 'worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/framework.layer'
+ASSAD_FRAMEWORK_BLOB = 'bdd7db4625b168d6954457d5337ea54ef84ff00f'
 ENDING = re.compile(r'^    TILW_EndGameInstruction "\{([\da-fA-F]{16})\}" \{$')
 WAYPOINTS = re.compile(r'^    TILW_AssignWaypointsInstruction "\{([\da-fA-F]{16})\}" \{$')
 EVENT_CONTROL = re.compile(r'\bTILW_(RunEvents|ReactivateEvents|DeactivateEvents)Instruction\b')
@@ -560,7 +562,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None,
                log_only=False, named_events=(), inactive=(), binary_startup=None, missing_term=False, ends_match=False,
                direct_control=False, empty_hint=None, missing_group_waypoint=None, sampled_pregame_flags=(),
-               supply_comparison=False, reviewed_script_calls=None, reviewed_script_type=None):
+               supply_comparison=False, reviewed_script_calls=None, reviewed_script_type=None,
+               unused_vehicle_name=None):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -691,8 +694,15 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                         group=bool(group_match), missing_group_waypoint=missing_group_waypoint)
                     converted_actions.append({'instructionId': identity, **details})
                 elif vehicle_match:
-                    delay, body, details = vehicle_spawn(fields[j + 1:last], key + '/' + vehicle_match[1],
+                    settings = fields[j + 1:last]
+                    unused = f'     m_setEntityName "{unused_vehicle_name}"'
+                    omit_name = bool(unused_vehicle_name and unused in settings)
+                    if omit_name:
+                        settings.remove(unused)
+                    delay, body, details = vehicle_spawn(settings, key + '/' + vehicle_match[1],
                                                          resolve_spawn, resolve_crew)
+                    if omit_name:
+                        details['unusedOriginalSpawnName'] = unused_vehicle_name
                     converted_actions.append({'instructionId': vehicle_match[1], **details})
                 else:
                     raise ValueError('unsupported outcome instruction ' + fields[j].strip().split(' ')[0])
@@ -724,6 +734,11 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         raise ValueError('pregame event requires a reviewed startup selection')
     startup_actions = ({'TILW_SetFlagInstruction'} if pregame_start
                        else {'TILW_SpawnPrefabInstruction', 'TILW_EditMapItemInstruction'})
+    startup_vehicles = pregame_start and converted_actions and all(
+        action['instruction'] == 'TILW_SpawnVehicleInstruction' for action in converted_actions)
+    if startup_vehicles:
+        startup_actions.add('TILW_SpawnVehicleInstruction')
+        term['startupVehicles'] = True
     if binary_startup and not pregame_start:
         startup_actions.add('TILW_DeleteEntitiesInstruction')
     if sample_before_match:
@@ -736,7 +751,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         raise ValueError('unsupported pregame action')
     if assignments and not waypoint_trigger(term):
         raise ValueError('waypoint assignments need positive capture or verified mission flags, or Match start')
-    if direct_control and not pregame and sum(
+    if (startup_vehicles or (direct_control and not pregame)) and sum(
             bool(NATIVE_ACTION.fullmatch(line)) for body in actions.values() for line in body) > 256:
         raise ValueError('controlled event exceeds the native action limit')
     audit = {'announcements': notices, 'instructionDelaysSeconds': [f'{delay:f}' for delay in actions]}
@@ -829,6 +844,10 @@ def render_check(term, key, captures, capture_messages, tracked_areas):
 
 
 def render(key, name, term, actions, captures, capture_messages, tracked_areas, display_name=None):
+    if term.get('startupVehicles'):
+        return [f'    GC_Event "{{{guid(key + "/trigger")}}}" {{', f'     m_sName "{name}"',
+                *startup_conditions(key), '     m_aActions {', *render_scheduled_actions(actions, staging=True),
+                '     }', '    }']
     dormant = term['trigger'] == 'dormant'
     condition = term['trigger'] not in ('Match start', 'dormant')
     startup = term['trigger'] == 'startup choice'
@@ -884,6 +903,18 @@ def render(key, name, term, actions, captures, capture_messages, tracked_areas, 
     return result
 
 
+def render_scheduled_actions(actions, *, staging=False):
+    result = []
+    for delay, body in actions.items():
+        for line in body:
+            result.append(line)
+            if NATIVE_ACTION.fullmatch(line):
+                result.extend(['       m_bScheduleAction 1', f'       m_fActionDelay {delay:f}'])
+                if staging:
+                    result.append('       m_bScheduleFromStaging 1')
+    return result
+
+
 def render_controlled_event(key, name, term, actions, captures, capture_messages, tracked_areas, display_name):
     # A run commits the event once and schedules that run's independent actions.
     # Later controls can rearm the event without cancelling any scheduled delivery.
@@ -895,11 +926,7 @@ def render_controlled_event(key, name, term, actions, captures, capture_messages
     elif term['trigger'] != 'Match start':
         result.extend(render_check(term, key, captures, capture_messages, tracked_areas))
     result.extend(['     }', '     m_aActions {'])
-    for delay, body in actions.items():
-        for line in body:
-            result.append(line)
-            if NATIVE_ACTION.fullmatch(line):
-                result.extend(['       m_bScheduleAction 1', f'       m_fActionDelay {delay:f}'])
+    result.extend(render_scheduled_actions(actions))
     if not actions:
         result.extend([f'      GC_MessageAction "{{{guid(key + "/log")}}}" {{',
                        '       m_bScheduleAction 1', '       m_fActionDelay 0', f'       m_sMessage "{display_name}"',
@@ -1196,6 +1223,16 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     if len(owners) != 1:
         return [], {}, 'requires one reviewed framework owner'
     path, text = owners[0]
+    unused_vehicle_name = None
+    if compound and (path, source.files[path]) == (ASSAD_FRAMEWORK_LAYER, ASSAD_FRAMEWORK_BLOB):
+        # Seven QRF hulls receive the same name. No authored consumer looks it up.
+        name_reads = re.compile(r'(?i)"truck"|^[ \t]*(?:\w+ +)?truck *(?=[:{])', re.MULTILINE)
+        framework_without_writes = text.replace('     m_setEntityName "truck"\n', '')
+        if (not name_reads.search(framework_without_writes)
+                and not any(name_reads.search(source.read(item)) for item in source.closure(world)
+                            if item != path and PurePosixPath(item).suffix.lower() in SOURCE_TEXT)
+                and not name_reads.search(scripts or '')):
+            unused_vehicle_name = 'truck'
     supply_comparison = compound and path == SUPPLY_OUTCOME_LAYER and source.files[path] == SUPPLY_OUTCOME_BLOB
     depot_blob, depot_supply_calls = DEPOT_SUPPLY_REVISIONS.get(path, (None, {}))
     if not compound or source.files[path] != depot_blob:
@@ -1362,6 +1399,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 empty_hint=reviewed_empty_hint, missing_group_waypoint=missing_group_waypoint,
                 sampled_pregame_flags=sampled_pregame_flags, supply_comparison=supply_comparison,
                 reviewed_script_calls=reviewed_script_calls, reviewed_script_type=reviewed_script_type,
+                unused_vehicle_name=unused_vehicle_name,
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
             if not term.get('pregameSample') and any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
@@ -1371,7 +1409,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 suffixes.add(' (0s)')
             if term['trigger'] not in ('Match start', 'startup choice', 'dormant'):
                 suffixes.add('')
-            if direct_control and term['trigger'] not in ('startup choice', 'pregame start'):
+            if term.get('startupVehicles') or (direct_control and term['trigger'] not in ('startup choice', 'pregame start')):
                 suffixes = {''}
             native_name = name
             emitted_names = {name + suffix for suffix in suffixes}
@@ -1392,7 +1430,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 if spawns_for_review:
                     audit[loc]['prefabSpawnCandidates'] = spawns_for_review
     pregame_writes = {action['setsFlag'] for entry in audit.values() if entry.get('trigger') == 'pregame start'
-                      for action in entry['convertedActions']}
+                      for action in entry['convertedActions'] if 'setsFlag' in action}
     for term in [item[3] for item in parsed] + [entry for entry in audit.values() if 'gap' not in entry]:
         if term.get('trigger') and any(item.get('flag') in pregame_writes for item in leaves(term)):
             term['requiresMatch'] = True
