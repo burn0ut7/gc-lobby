@@ -2359,6 +2359,18 @@ SCREENING_AREA_LAYER = ('worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Laye
                         'BLUFOR/BLU_AI_EXTERIOR_CachedAI.layer')
 SCREENING_AREA_BLOB = '2fd93fe71c5cbe9fcde680e6ba61c3ada8d9fac2'
 SCREENING_AREA_FLAGS = {'SouthExterior1': 1, 'WestExterior2': 1, 'SouthExterior2': 2}
+SCREENING_AI_WORLD_LAYER = 'worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/default.layer'
+SCREENING_AI_WORLD_SOURCE = '3f8fbb421bf2b903a9034f8d698f85a01b8b27d2'
+SCREENING_AI_WORLD_MIGRATED = '58773b357fef8e5db20e8f3a5fc0b12891a43521'
+BARE_AI_WORLD = 'SCR_AIWorld {\n}\n'
+AI_WORLD_WITH_SETTINGS = '''SCR_AIWorld {
+ components {
+  SCR_AISettingsComponent "{512CCCD0856CB4B9}" {
+   Enabled 1
+  }
+ }
+}
+'''
 REVIEWED_DORMANT_SPAWNER_FLAGS = {
     **dict.fromkeys(REVIEWED_BUILDING_AREAS, (('SpawnTwo', 2), ('US_Trigger_Right_3', 1))),
     '9dfaedf4beacd04c9260e63be23dc6194ce4d9be': (('Counter_Trigger_2', 2),),
@@ -3667,6 +3679,9 @@ def repair_existing_layers(source, dev, world, aliases):
                 # Layers with unknown or independently edited markers need a file comparison.
                 pass
         updated = SYMBOLIC_MATCH_CONDITION.sub(lambda match: match['prefix'] + MATCH_PHASE_VALUE, updated)
+        if (path == SCREENING_AI_WORLD_LAYER and source.files.get(path) == SCREENING_AI_WORLD_SOURCE
+                and dev.files[path] == SCREENING_AI_WORLD_MIGRATED and updated.startswith(BARE_AI_WORLD)):
+            updated = AI_WORLD_WITH_SETTINGS + updated.removeprefix(BARE_AI_WORLD)
         if updated != original:
             repairs[path] = updated
             original_hashes[path] = sha256(original.encode()).hexdigest()
@@ -4933,6 +4948,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append(placed_static_sentries(block, resolve_crew))
                 elif head == '$grp GenericEntity : "' + UK_AMMO_BOX + '" {':
                     result.append(restore_uk_ammo_boxes(block, layer, source.files[layer]))
+                elif (layer == SCREENING_AI_WORLD_LAYER and source.files[layer] == SCREENING_AI_WORLD_SOURCE
+                      and body == BARE_AI_WORLD):
+                    result.append(AI_WORLD_WITH_SETTINGS)
                 elif NATIVE.match(head):
                     try:
                         if f'{{{BLOODY_GARRISON}}}' in head:
