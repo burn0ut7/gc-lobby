@@ -115,6 +115,17 @@ INIT_WEATHER_FIELD = re.compile(
     r'm_initialWeatherDuration(?:Min|Max) \d+(?:\.\d+)?)')
 PERCEPTION = re.compile(r'^PerceptionManager(?: [\w.-]+| "(?P<serialized>[\da-fA-F]{16})")?'
                         r' : "\{028DAEAD63E056BE\}[^"]+" \{$')
+SUMMER_DAYS_DEFAULT = 'worlds/Corax/SummerDays/SummerDays_Layers/default.layer'
+SUMMER_DAYS_DEFAULT_BLOB = '45d91535504c59cfdf271f36fecaa9f028eccbb2'
+SUMMER_DAYS_TOPO = 'worlds/Corax/SummerDays/SummerDays.topo'
+SUMMER_DAYS_MANAGERS = {
+    'SCR_DestructionManager : "{E5B570B5F32A7BAE}Prefabs/Systems/Destruction/DestructionManager.et" {',
+    'ProjectileSoundsManager : "{B4DA8B0024536625}Prefabs/World/Game/ProjectileSoundsManager.et" {',
+    'BasePreloadManager PreloadManager1 : "{104F8505FD1871EF}Prefabs/World/Game/PreloadManager.et" {',
+    'RadioBroadcastManager : "{66B93BC296E2F977}Prefabs/Radio/RadioBroadcastManager.et" {',
+    'SoundWorld : "{8A8604E158704937}Prefabs/Sounds/SoundWorld/SoundWorld_Eden.et" {',
+    'SCR_MPDestructionManager : "{9BB369F2803C6F71}Prefabs/MP/MPDestructionManager.et" {',
+}
 LIGHT = 'LightEntity : "{C274EE54AB618B04}Prefabs/Structures/Core/Lamp_LightEntity_base.et" {'
 LIGHT_COMPONENT = [
     ' components {', '  StreetLampComponent "{55A0954A909C9109}" {', '   Enabled 0', '  }', ' }',
@@ -981,6 +992,8 @@ STOCK_RESOURCE_REKEYS = {
 }
 
 STOCK_RESOURCE_ALIASES = {
+    ('66B93BC296E2F977', 'Prefabs/Radio/RadioBroadcastManager.et'):
+        'Prefabs/Systems/Radio/RadioBroadcastManager_Everon.et',
     ('D0BD7A55306FC46B', 'Prefabs/Props/Furniture/Faucet_01.et'):
         'Prefabs/Props/Furniture/Faucet_01/Faucet_01.et',
     ('407A7B6D0444D05B', 'PrefabLibrary/Vegetation/Plants/b_urtica_dioica_0s.et'):
@@ -1270,6 +1283,9 @@ WORKSHOP_RESOURCE_ALIASES = {
     ('19D504D46A48529A', 'Prefabs/Structures/Military/Fortifications/Trenches/ACE_TrenchHalf_01_long.et'): (
         'ACETrenchesDev_65AD7CE59E8DB349', '19D504D46A48529A',
         'Prefabs/Structures/Military/Fortifications/Trenches/ACE_TrenchSegment_01_short.et'),
+    ('1DF64746992BC64A', 'PrefabsEditable/Auto/Structures/Military/Fortifications/E_ACE_TrenchHalf_01_long.et'): (
+        'ACETrenchesDev_65AD7CE59E8DB349', '1DF64746992BC64A',
+        'PrefabsEditable/Auto/Structures/Military/Fortifications/E_ACE_TrenchSegment_01_short.et'),
     ('12C35C0A24EDA6D0', 'Prefabs/Vehicles/Tracked/BFV/M2A3_BUSK_MERDC.et'): (
         'WCS_M2A2_63120AE07E6C0966', '12C35C0A24EDA6D0',
         'Prefabs/Vehicles/Tracked/M2A2/M2A3/M2A3_BUSK_MERDC.et'),
@@ -3309,6 +3325,10 @@ def skalisty_fallback_ao(text):
 
 
 def passive_asset(source, path):
+    if (path == SUMMER_DAYS_TOPO and source.files[path] == 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391'
+            and source.files.get(path + '.meta') == 'ad93c07b9a7e51f489692ab26ec3860a6cfead54'):
+        # The published archive also contains the empty map topology resource.
+        return b''
     suffix = PurePosixPath(path).suffix.lower()
     if suffix == '.edds':
         return source.read_raw(path)
@@ -5264,10 +5284,19 @@ def archived_volha_assets(source, dev, path, identity):
 
 
 LOOSE_ENDS_COMPUTER_IMAGE = 'Missions/Corax/LooseEnds/Computer.edds'
-LOOSE_ENDS_IMAGE_ASSETS = {
-    LOOSE_ENDS_COMPUTER_IMAGE: 'c9e30be31c2668c8a503872d7f0033549ee4171a',
-    LOOSE_ENDS_COMPUTER_IMAGE + '.meta': '7cbdd4e4731ff4e01a712bd261d030d9d026c415',
-    'Missions/Corax/LooseEnds/Computer.jpg': 'f0baabb2639887f66cae71e949f75b86b3eb2785',
+SUMMER_DAYS_SATELLITE = 'worlds/Corax/SummerDays/SummerDays.edds'
+ARCHIVED_MISSION_IMAGES = {
+    ('B044199ADB2E7A7C', LOOSE_ENDS_COMPUTER_IMAGE): (
+        'worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1_Layers/Briefing.layer',
+        '272c3a708f50d1a6089a3cc710e91497f705b8d7', {
+            LOOSE_ENDS_COMPUTER_IMAGE: 'c9e30be31c2668c8a503872d7f0033549ee4171a',
+            LOOSE_ENDS_COMPUTER_IMAGE + '.meta': '7cbdd4e4731ff4e01a712bd261d030d9d026c415',
+            'Missions/Corax/LooseEnds/Computer.jpg': 'f0baabb2639887f66cae71e949f75b86b3eb2785',
+        }),
+    ('C8BA8787536DB9A7', SUMMER_DAYS_SATELLITE): (SUMMER_DAYS_DEFAULT, SUMMER_DAYS_DEFAULT_BLOB, {
+        SUMMER_DAYS_SATELLITE: '1213fd398f81c55d50bc18d76105e43b94e6f806',
+        SUMMER_DAYS_SATELLITE + '.meta': '64027788bca402537ff561970d0c899f88a84114',
+    }),
 }
 
 
@@ -5316,17 +5345,16 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
                     draft[path], draft[path + '.meta'] = crew
                     files.append(path)
                 return ref[0]
-            if ((resource, path) == ('B044199ADB2E7A7C', LOOSE_ENDS_COMPUTER_IMAGE)
+            if ((archived := ARCHIVED_MISSION_IMAGES.get((resource, path)))
                     and resource not in source.resources and resource not in dev.resources
                     and path not in draft):
-                briefing = ('worlds/Corax/TF141/COOPXX_Loose Ends_V1/'
-                            'COOPXX_LooseEnds_V1_Layers/Briefing.layer')
-                if source.files.get(briefing) == '272c3a708f50d1a6089a3cc710e91497f705b8d7':
+                placement, expected, assets = archived
+                if source.files.get(placement) == expected:
                     try:
                         draft.update({name: check_output(['git', '-C', str(source.repo), 'cat-file', 'blob', blob])
-                                      for name, blob in LOOSE_ENDS_IMAGE_ASSETS.items()})
+                                      for name, blob in assets.items()})
                     except (OSError, CalledProcessError):
-                        blockers.add((owner, path, 'original briefing image blobs are unavailable'))
+                        blockers.add((owner, path, 'original mission image blobs are unavailable'))
                 return ref[0]
             if (resource, path) == ARCHIVED_VOLHA and VOLHA_MESH in asset_aliases:
                 try:
@@ -6633,11 +6661,15 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append(f'GC_RadiusAreaEntity {trigger["name"]} : '
                                   '"{2C4447C53A1E450B}Prefabs/Logic/Mission/RadiusArea.et" {\n'
                                   f'{block[1]}\n m_fRadius 25\n}}\n')
-                elif world == TEMPLATE_WORLD and FRAMEWORK.fullmatch(head) and (
-                        source.files[layer] == 'f2c572e21672fb6eccb7e9c583a0109678944e00'
+                elif FRAMEWORK.fullmatch(head) and (
+                        (world == TEMPLATE_WORLD and source.files[layer] == 'f2c572e21672fb6eccb7e9c583a0109678944e00'
+                         or layer == SUMMER_DAYS_DEFAULT and source.files[layer] == SUMMER_DAYS_DEFAULT_BLOB)
                         and len(block) == 3 and FIELD.fullmatch(block[1].strip())):
-                    # This shipped starter has no events, flags or script overrides.
-                    inactive_placements.append('The original template framework is empty and runs no mission events.')
+                    label = 'template framework' if world == TEMPLATE_WORLD else 'Summer Days framework'
+                    inactive_placements.append(f'The original {label} is empty and runs no mission events.')
+                elif (layer == SUMMER_DAYS_DEFAULT and source.files[layer] == SUMMER_DAYS_DEFAULT_BLOB
+                      and head in SUMMER_DAYS_MANAGERS and block[1:] == ['}']):
+                    result.append(body)
                 elif (layer == INACTIVE_DOOR_LAYER and source.files[layer] == 'b21a4cb26d47b0c4e0cdd9fc04786a90adc2c5cd'
                       and block == INACTIVE_DOOR and 'TILW_DoorOpenerComponent' not in script_text(source)):
                     # The released TilW prefab still names the component removed in c47df35.

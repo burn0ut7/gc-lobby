@@ -2069,6 +2069,14 @@ Open **Tools → Navmesh Tool** in the isolated PowerPlay project. Temporarily s
 
 The graph audit found a stock faucet reference at its old path. The converter now uses the current registered path for the same GUID. The new batch reproduced all 330 prior draft files byte for byte. PowerPlay's file-reviewed conversion and schema 2 launcher snapshot are in Missions Dev at `bd8b8e3f`. Workbench captured the snapshot from 1,814 entities, and the installer verified the saved world, layers and resources against Dev before merging it.
 
+### Summer Days world assets
+
+Summer Days now produces a 21-file draft. The converter retains the original manager placements and uses the current registrations for the Everon radio manager and the ACE trench composition. It preserves the empty topology resource, which also ships empty in the published Missions archive. The archived TilW framework prefab and Core override supply no events or flags, and the mission placement supplies only coordinates. The draft omits that inactive framework placement.
+
+Missions commit `fb831399` removed the satellite texture while the saved map kept its GUID. The converter recovers the exact last texture and registration from the parent of that commit. The published briefing thumbnail is a separate resource with its own GUID. The next comparison should verify the restored background in the briefing map. All 330 prior draft files reproduced byte for byte, and the full audit checked 277 launchers.
+
+Summer Days remains held on `B4DA8B0024536625` at `Prefabs/World/Game/ProjectileSoundsManager.et`. Bohemia documents the renamed module and its role in flybys and sonic cracks. Neither the legacy path nor the documented module prefab resolves in the installed base-game data. Summer Days has no local overrides on the original manager, so a verified current equivalent can retain the authored stock behavior. [Bohemia projectile sounds guide](https://community.bistudio.com/wiki/Arma_Reforger%3AAudio%3A_Projectile_Sounds_Module)
+
 ### Combined Anti-Armor Team
 
 The converter verifies the source framework and spawner layers and binds the eight `UK_KIA` spawns to the same UK AI casualty threshold used by the authored events. All eight retain their 180.9-second delay after the threshold is met during Match and their original RHS effect prefab. Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7` verifies the prefab and trigger parent. The audit records 14 converted placed spawners.
