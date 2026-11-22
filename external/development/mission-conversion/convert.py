@@ -147,6 +147,7 @@ def main():
     external_ai = {}
     external_vehicles = {}
     rhs_database = None
+    uk_database = None
     workshop_spawn_resources = ()
     workshop_spawn_groups = ()
     workshop_damage_resources = ()
@@ -154,7 +155,8 @@ def main():
     if args.batch and args.workshop_addons:
         try:
             external_ai, rhs_database = rhs_ai_characters(args.workshop_addons)
-            external_ai.update(uk_ai_characters(args.workshop_addons))
+            british_ai, uk_database = uk_ai_characters(args.workshop_addons)
+            external_ai.update(british_ai)
             external_vehicles = vehicle_crew.workshop_vehicles(args.workshop_addons)
             external_vehicle_parents = vehicle_crew.workshop_vehicles(
                 args.workshop_addons, vehicle_crew.WORKSHOP_VEHICLE_PARENTS)
@@ -990,7 +992,8 @@ def main():
                                allow_stock_ai=True, restored_members=restored,
                                reviewed_ai_members={**native_ai_members, **(reviewed_ai_members or {})},
                                forced_external=forced_external,
-                               rhs=rhs_database, local_aliases=local_groups, restored_rosters=restored_rosters)
+                               rhs=rhs_database, uk=uk_database, local_aliases=local_groups,
+                               restored_rosters=restored_rosters)
 
         def resolve_crew_config(resource, path):
             return vehicle_crew.verified_crew_config(source_units, resource, path, locally_owned)

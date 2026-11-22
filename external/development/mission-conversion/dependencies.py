@@ -101,7 +101,7 @@ def dependency_catalogue(checkouts, databases):
     return local, installed
 
 
-def dependency_selection(target, checkouts, databases):
+def dependency_selection(target, checkouts, databases, *, additional_roots=()):
     """Return reachable checkout and installed providers in dependency order."""
     root, requires = checkout_project(target)
     local, installed = dependency_catalogue(checkouts, databases)
@@ -114,7 +114,7 @@ def dependency_selection(target, checkouts, databases):
     base_project = database_project(databases[0])
     if base_project and base_project[0] == BASE_GAME:
         base_requires = base_project[1]
-    pending = list(reversed((*base_requires, *requires)))
+    pending = list(reversed((*base_requires, *requires, *additional_roots)))
     while pending:
         guid = pending.pop()
         if guid in seen:
@@ -133,9 +133,10 @@ def dependency_selection(target, checkouts, databases):
     return selected_checkouts, selected, sorted(unavailable)
 
 
-def dependency_resources(target, checkouts, databases):
+def dependency_resources(target, checkouts, databases, *, additional_roots=()):
     """Use each supplied checkout in preference to the installed copy of the same addon."""
-    selected_checkouts, selected, unavailable = dependency_selection(target, checkouts, databases)
+    selected_checkouts, selected, unavailable = dependency_selection(
+        target, checkouts, databases, additional_roots=additional_roots)
     resources = defaultdict(list)
     for _, snapshot in selected_checkouts:
         for resource, paths in snapshot.resources.items():

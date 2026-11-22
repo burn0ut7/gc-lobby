@@ -79,6 +79,19 @@ BASE_CHARACTER = ('37578B1666981FCE', 'Prefabs/Characters/Core/Character_Base.et
 UK_CHARACTER_BASE = ('542CBB6908CA71D8', 'Prefabs/Characters/Factions/BLUFOR/UK_Army/Character_UK_Base.et')
 UK_PROVIDER = 'BritishForces_5AE50EC5B8D6F4AE'
 UK_REGULAR_DIRECTORY = 'Prefabs/Characters/Factions/BLUFOR/UK_Army/1989/Regulars/'
+UK_FIRETEAM = 'D1BA6BC45BDCA015'
+UK_GROUP_DIRECTORY = 'Prefabs/Groups/BLUFOR/British Forces/'
+UK_FIRETEAM_PATH = UK_GROUP_DIRECTORY + '1989/Group_UK_1989_Regulars_FireTeam.et'
+UK_FIRETEAM_PARENTS = (
+    ('6521AB6151C0A7C8', UK_GROUP_DIRECTORY + '1989/Group_UK_1989_Regulars_Base.et'),
+    ('FA77FB102E05692C', UK_GROUP_DIRECTORY + 'Group_UK_Base.et'),
+)
+UK_FIRETEAM_ROLES = (
+    ('7D7C6FBCBA40F45D', 'SectionCommander'),
+    ('B10659FFD99279DC', 'Rifleman_LAT_LAW80'),
+    ('B10659FFD99279DC', 'Rifleman_LAT_LAW80'),
+    ('D0F124C1610D3232', 'LSW'),
+)
 UK_1983_AI_ROLES = {
     'FFB42452E9AD5FFC': 'SectionCommander', 'A6D0DBFAC6349E22': 'Rifleman',
     'F5B9FF92DBFB520C': 'Rifleman_LAT', '2C69231254D1AEDB': 'Section2IC',
@@ -124,15 +137,43 @@ def verified_uk_forced_roles(workshop, owned):
 def uk_ai_characters(workshop):
     registry = workshop / UK_PROVIDER / 'resourceDatabase.rdb'
     if not registry.is_file():
-        return {}
+        return {}, None
     database = StockPrefabs(registry)
     if not database.contains(*UK_CHARACTER_BASE):
-        return {}
+        return {}, None
     prefix = 'Prefabs/Characters/Factions/BLUFOR/UK_Army/1983/Regulars/Character_UK_1983_Regulars_'
     if not database.contains('4A29AE1848437792', prefix + 'BaseLoadout.et'):
-        return {}
+        return {}, database
     roles = {guid: prefix + role + '.et' for guid, role in UK_1983_AI_ROLES.items()}
-    return {guid: path for guid, path in roles.items() if database.contains(guid, path)}
+    return {guid: path for guid, path in roles.items() if database.contains(guid, path)}, database
+
+
+def verified_uk_fireteam(path, stock, uk, locally_owned, source_units, dev_units):
+    if path != UK_FIRETEAM_PATH or not uk or not stock:
+        return None
+    group_refs = ((UK_FIRETEAM, path), *UK_FIRETEAM_PARENTS)
+    if any(not uk.contains(*entry) for entry in group_refs) or not stock.contains(
+            '000CD338713F2B5A', 'Prefabs/AI/Groups/Group_Base.et'):
+        return None
+    if any(guid in locally_owned or guid in source_units.resources or guid in dev_units.resources
+           for guid, _ in group_refs):
+        return None
+    slots, overlays = [], {}
+    for guid, role in UK_FIRETEAM_ROLES:
+        original = f'{UK_REGULAR_DIRECTORY}Character_UK_1989_Regulars_{role}.et'
+        if guid in locally_owned or not uk.contains(guid, original):
+            return None
+        old_path, new_path = source_units.resources.get(guid), dev_units.resources.get(guid)
+        if old_path or new_path:
+            overlay = original.replace('/Regulars/', '/Light Infantry/')
+            if (role != 'SectionCommander' or old_path != [overlay] or new_path != [overlay]
+                    or not reviewed_native_ancestry(inheritance(source_units, guid),
+                                                    inheritance(dev_units, guid), dev_units)):
+                return None
+            original = overlay
+            overlays[guid] = overlay
+        slots.append((guid, original))
+    return {'path': path, 'slots': slots, 'normalizeInheritedSlots': True, 'slotOverlays': overlays}
 
 
 def verified_rhs_forced_roles(registry, owned, source_units, dev_units):
@@ -1019,13 +1060,20 @@ def convert_registered_group(lines, guid, source_units, dev_units, stock, locall
             raise ValueError('forced playable native group needs a complete authored roster')
         return convert_instance(lines, guid, '', '', source_units, dev_units, stock, locally_owned,
                                 forced_external=forced_external)
+    if not rosters and stock_group.get('normalizeInheritedSlots'):
+        if any(line.strip().startswith('m_aUnitPrefabSlots ') for line in lines):
+            raise ValueError('native group has an additive override of the reviewed roster')
+        indent = lines[0][:len(lines[0]) - len(lines[0].lstrip())] if lines else ' '
+        lines = [*lines, indent + 'm_aUnitPrefabSlots {',
+                 *(f'{indent} "{{{resource}}}{path}"' for resource, path in stock_group['slots']), indent + '}']
+        reviewed_ai_members = {**(reviewed_ai_members or {}), **stock_group['slotOverlays']}
     return convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai,
                                stock_group=stock_group, reviewed_ai_members=reviewed_ai_members)
 
 
 def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_callsigns=frozenset(),
                 reviewed_members=None, external_ai=None, allow_stock_ai=False, restored_members=None,
-                reviewed_ai_members=None, forced_external=None, *, rhs=None, depth=0, local_aliases=None,
+                reviewed_ai_members=None, forced_external=None, *, rhs=None, uk=None, depth=0, local_aliases=None,
                 restored_rosters=None):
     if not re.search(r'^(?:\$grp )?SCR_AIGroup\b', text, re.M):
         return None
@@ -1050,7 +1098,7 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
             return [*body, *fields[start:]], int(members > 0), members
         children = group_layer(nested, source_units, dev_units, stock, locally_owned, reviewed_callsigns,
                                reviewed_members, external_ai, allow_stock_ai, restored_members,
-                               reviewed_ai_members, forced_external, rhs=rhs, depth=depth + 1,
+                               reviewed_ai_members, forced_external, rhs=rhs, uk=uk, depth=depth + 1,
                                local_aliases=local_aliases, restored_rosters=restored_rosters)
         if children is None:
             raise ValueError('unsupported child entity on a group')
@@ -1074,12 +1122,14 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
         if guid in locally_owned and (not local or REF.search(lines[i])[2] != local[0]):
             raise ValueError('mission-owned group ' + guid)
         spec = WRAPPERS['groups'].get(guid) if guid not in source_units.resources and stock else None
-        native_group = allow_stock_ai and (guid in STOCK_AI_GROUPS or guid in RHS_AI_GROUPS)
+        native_group = allow_stock_ai and (guid in STOCK_AI_GROUPS or guid in RHS_AI_GROUPS or guid == UK_FIRETEAM)
         stock_group = None
         if native_group and guid not in source_units.resources and guid not in dev_units.resources:
             path = REF.search(lines[i])[2]
-            stock_group = verified_stock_ai_group(guid, path, stock, locally_owned, source_units, dev_units,
-                                                  rhs, inherited_slots=False)
+            stock_group = (verified_uk_fireteam(path, stock, uk, locally_owned, source_units, dev_units)
+                           if guid == UK_FIRETEAM else
+                           verified_stock_ai_group(guid, path, stock, locally_owned, source_units, dev_units,
+                                                   rhs, inherited_slots=False))
             if not stock_group:
                 raise ValueError('unverified native AI group ancestry ' + guid)
         if spec:

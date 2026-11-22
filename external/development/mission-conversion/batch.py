@@ -292,6 +292,16 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/arc/UrbanTroubles.conf': (
+        '44c5ff26490d165afbcaab0a572682cb99679a57',
+        (('worlds/arc/UrbanTroubles/UrbanTroubles_Layers/playersCIV.layer',
+          'a43c1088d778b3e3f5a4a0248fcab32a4963297d'),
+         ('worlds/arc/UrbanTroubles/UrbanTroubles_Layers/playersIRA.layer',
+          '5942013d9033e51abfe00b290ba22887dc5e4041'),
+         ('worlds/arc/UrbanTroubles/UrbanTroubles_Layers/playersUK.layer',
+          'da8502c0627c7a7996270c53a0b756dd843960f8')),
+        60, 61,
+    ),
     'Missions/Til/DaybreakDiplomacy.conf': (
         '83caf41bad5cbdd497a9809a7cff64982cfa0dac',
         (('worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy_Layers/extr.layer',

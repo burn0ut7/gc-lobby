@@ -14,13 +14,35 @@ from scenery import StockPrefabs
 from terrain_parents import has_reviewed_longmoor, is_longmoor_subscene
 
 
+def installation_pins(path, body):
+    if path.lower().startswith('missions/') and path.lower().endswith('.conf'):
+        return required_addon_versions(authored_header_text(body.decode('utf-8-sig')))
+    return ()
+
+
 def unresolved_resources(files, target, checkouts, databases):
-    dependencies, providers, _ = dependency_resources(target, checkouts, databases)
+    scopes = {installation_pins(path, body) for path, body in files.items()
+              if path.lower().startswith('missions/') and path.lower().endswith('.conf')} or {()}
+    return set().union(*(unresolved_resources_in_scope(files, target, checkouts, databases, pins)
+                         for pins in scopes))
+
+
+def unresolved_resources_in_scope(files, target, checkouts, databases, pins):
+    dependencies, providers, unavailable = dependency_resources(
+        target, checkouts, databases, additional_roots=tuple(dict(pins)))
+    if pins:
+        mounted = {project[0]: db for db in providers if (project := database_project(db))}
+        for addon, version in pins:
+            if addon not in mounted or installed_version(mounted[addon], addon) != version:
+                raise ValueError(f'installation requires addon {addon}={version} in the installation graph')
+        if unavailable:
+            _, _, baseline = dependency_resources(target, checkouts, databases)
+            if newly_missing := set(unavailable) - set(baseline):
+                raise ValueError('pinned installation has unavailable dependencies: ' + ', '.join(sorted(newly_missing)))
     available = {(guid, path) for resources in (target.resources, dependencies)
                  for guid, paths in resources.items() for path in paths}
     refs = set()
     longmoor = None
-    mounted = None
     for path, body in files.items():
         if path.endswith('.meta'):
             meta = META_NAME.search(body.decode('utf-8-sig'))
@@ -30,13 +52,6 @@ def unresolved_resources(files, target, checkouts, databases):
             text = body.decode('utf-8-sig')
             if path.lower().endswith('.conf'):
                 text = authored_header_text(text)
-                if path.lower().startswith('missions/'):
-                    pins = required_addon_versions(text)
-                    if pins and mounted is None:
-                        mounted = {project[0]: db for db in providers if (project := database_project(db))}
-                    for addon, version in pins:
-                        if addon not in mounted or installed_version(mounted[addon], addon) != version:
-                            raise ValueError(f'{path} requires addon {addon}={version} in the installation graph')
             if is_longmoor_subscene(path, text.replace('\r\n', '\n')):
                 if longmoor is None:
                     longmoor = has_reviewed_longmoor(providers)
@@ -182,8 +197,12 @@ def main():
             writes[target] = body
         if args.base_database:
             databases = resource_databases(args.base_database, args.workshop_addons)
-            missing = unresolved_resources(files, Snapshot(root, inventory['target']),
-                                           [Snapshot(path, 'HEAD') for path in args.dependency], databases)
+            target = Snapshot(root, inventory['target'])
+            checkouts = [Snapshot(path, 'HEAD') for path in args.dependency]
+            # Validate pinned missions against their own dependency graph.
+            cohorts = [{path: files[path] for path in entry['files']} for entry in candidates.values()
+                       ] if any(installation_pins(path, body) for path, body in files.items()) else [files]
+            missing = set().union(*(unresolved_resources(cohort, target, checkouts, databases) for cohort in cohorts))
             if missing:
                 raise ValueError('unresolved references: ' + ', '.join(f'{{{guid}}}{path}' for guid, path in sorted(missing)))
         if not args.dry_run:

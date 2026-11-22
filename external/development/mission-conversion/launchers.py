@@ -31,6 +31,11 @@ GENERATED = re.compile(r' m_GC_GeneratedMetadata GC_GeneratedMissionMetadata(?: 
 ADDON_VERSIONS_FIELD = re.compile(r'^ m_aRequiredAddonVersions\b', re.M)
 ADDON_VERSION = re.compile(r'"([\da-fA-F]{16})=([0-9]+(?:\.[0-9]+){1,3})"')
 REVIEWED_VERSION_PINS = {
+    'Missions/arc/UrbanTroubles.conf': (
+        '44c5ff26490d165afbcaab0a572682cb99679a57',
+        'worlds/arc/UrbanTroubles/UrbanTroubles_Layers/props.layer', 'a20ad2c82ffd839ee41b6f2e3aa53fa5e2f96be8',
+        '59EAA899751805DF=1.3.0',
+    ),
     'Missions/Huska/WindyGoat.conf': (
         'd7598feec3f1abf731fe149ea80be2fde129c041',
         'Missions/Huska/Prefabs/Gabe_P.et', '76c5a6c7b1d5255aee20fabc0221fb85df347e64',
@@ -131,7 +136,7 @@ def launcher(source, dev, header):
     if header in REVIEWED_VERSION_PINS:
         header_blob, asset, asset_blob, pin = REVIEWED_VERSION_PINS[header]
         if source.files[header] == header_blob and source.files.get(asset) == asset_blob:
-            # The later archive with the original registrations fails to compile on the current engine.
+            # Keep the package version verified for these authored resources.
             body = body.rstrip().removesuffix('}') + f' m_aRequiredAddonVersions {{\n  "{pin}"\n }}\n}}\n'
     files = {
         header: body,

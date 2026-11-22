@@ -1,4 +1,15 @@
 {
+  "7A43006F3F254FB2": {
+    "path": "Prefabs/Groups/BLUFOR/RHS_USAF/RHS_USAF_MARSOC/Group_USAF_USMC_MARSOC_SentryTeam.et",
+    "sha256": "8c6b3adf77d302073eb53d5b9ba1cce55caf20042eec37c1af1c5b2fe139c2d4",
+    "inheritedGroups": [
+      ["FEC5D37685D045FE", "Prefabs/Groups/BLUFOR/RHS_USAF/RHS_USAF_MARSOC/Group_USAF_USMC_MARSOC_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["844936B168DFAB8E", "Prefabs/Characters/Factions/BLUFOR/RHS_USAF/RHS_USAF_MARSOC/RandomSoldiers/Character_RHS_USMC_MARSOC_Rifleman_Random.et"]
+    ]
+  },
   "EE8D60FCE6D3B856": {
     "path": "Prefabs/Groups/BLUFOR/RHS_USAF/RHS_USAF_USMC_MEF/Group_USAF_USMC_MEF_Base.et",
     "sha256": "f457c1281c726a08d7420d121ff75a7c411183c6e842a9ecd48ff7d018827a12",

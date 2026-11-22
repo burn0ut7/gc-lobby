@@ -76,9 +76,10 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
     base_project = database_project(databases[0])
     if base_project and base_project[0] == BASE_GAME:
         installed[BASE_GAME] = databases[0], base_project[1]
-    selected, scope, excluded_addons = capture_dependencies(
-        dev_dependencies if omit else base_scope, local, installed, omit
-    )
+    pinned = {guid for header in requested for guid, _ in required_addon_versions(dev.read(header))}
+    roots = dev_dependencies if omit else base_scope
+    roots = (*roots, *sorted(pinned - set(roots)))
+    selected, scope, excluded_addons = capture_dependencies(roots, local, installed, omit)
     if not set(base_scope) <= scope:
         raise ValueError('capture requires Base and Lobby Dev')
     providers = [databases[0], *(db for guid, (db, _) in installed.items()

@@ -691,7 +691,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         startup_actions.add('TILW_DeleteEntitiesInstruction')
     if pregame and (notices or assignments or (delayed_areas and not pregame_extraction)
                     or messages or (pregame_start and not converted_actions)
-                    or (sample_before_match and (direct_control or any(delay != 0 for delay in actions)))
+                    or (sample_before_match and direct_control)
                     or any(action['instruction'] not in startup_actions
                            for action in converted_actions)):
         raise ValueError('unsupported pregame action')

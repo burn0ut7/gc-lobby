@@ -557,7 +557,8 @@ def main():
                 if pins:
                     try:
                         chosen = pinned_databases(databases, args.historical_workshop, pins)
-                        chosen_dependencies, chosen_providers, missing = dependency_resources(target, checkouts, chosen)
+                        chosen_dependencies, chosen_providers, missing = dependency_resources(
+                            target, checkouts, chosen, additional_roots=tuple(dict(pins)))
                         mounted = {project[0] for path in chosen_providers if (project := database_project(path))}
                         if inactive := set(dict(pins)) - mounted:
                             raise ValueError('pinned addon outside the reachable dependency graph: ' + ', '.join(sorted(inactive)))
