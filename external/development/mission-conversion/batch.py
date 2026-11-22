@@ -981,6 +981,8 @@ STOCK_RESOURCE_REKEYS = {
 }
 
 STOCK_RESOURCE_ALIASES = {
+    ('D0BD7A55306FC46B', 'Prefabs/Props/Furniture/Faucet_01.et'):
+        'Prefabs/Props/Furniture/Faucet_01/Faucet_01.et',
     ('407A7B6D0444D05B', 'PrefabLibrary/Vegetation/Plants/b_urtica_dioica_0s.et'):
         'PrefabLibrary/DefaultLibrary/Vegetation/Plants/b_urtica_dioica_0s.et',
     ('531BB93086610CA1', 'PrefabLibrary/Vegetation/Trees/t_betula_pendula_0.et'):
@@ -3323,9 +3325,13 @@ def passive_asset(source, path):
     if suffix == '.nmn' and source.files[path] == OBSOLETE_NAVMESH.get(path):
         tiles = len(source.navmesh_tiles(path))
         detail = f'Workbench rejected the compiled navmesh as obsolete. Found {tiles} original tile files'
-        if region := source.legacy_navmesh_region(path):
+        if observed := source.legacy_navmesh_region(path):
+            region, bounds = observed
             min_x, max_x, min_y, max_y, count = region
             detail += f' and {count} populated grid cells at X {min_x}–{max_x}, Y {min_y}–{max_y}'
+            if bounds:
+                from_x, from_z, to_x, to_z = bounds
+                detail += f', world X/Z ({from_x:g}, {from_z:g}) to ({to_x:g}, {to_z:g})'
         raise ValueError(detail + '. Regeneration needed.')
     if suffix == '.emat':
         body = source.read(path)

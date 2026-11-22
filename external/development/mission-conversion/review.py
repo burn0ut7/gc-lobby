@@ -158,6 +158,8 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
     for mesh, blob in OBSOLETE_NAVMESH.items():
         if mesh in outgoing and target.files[mesh] == blob:
             issues.append('Dev still references an obsolete compiled navigation mesh: ' + mesh)
+        if mesh in outgoing and not target.rebuilt_navmesh_is_complete(mesh):
+            issues.append('Dev regenerated navigation mesh is missing matching tile data: ' + mesh)
     local_refs = []
     missing = []
     path_resolved_parents = []

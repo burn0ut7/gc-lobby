@@ -1,6 +1,7 @@
 """Compare committed mission resources without touching either checkout."""
 from collections import Counter, defaultdict
 from functools import cached_property, lru_cache
+from math import isclose, isfinite
 from pathlib import PurePosixPath
 import re
 from struct import iter_unpack, unpack_from
@@ -17,6 +18,14 @@ SOURCE_TEXT = {'.ent', '.layer', '.et', '.conf', '.layout', '.ptc', '.emat', '.i
 OBSOLETE_NAVMESH = {
     'worlds/Perfk/NavMesh/Ruha_Power_Plant/PK_Ruha_Power_Plant.nmn':
         'cc346c28b8bc3c04e3ee72eb31de4afa8d483321',
+}
+# The engine reads every container in the archive, including the empty ones.
+REBUILT_NAVMESH_TILES = {
+    'ea59b8f7bde97bfc75b2611e05e9b68d4ba3393e': (
+        '72fd52f0a8660f747d6db7d229601e49f7a6205b',
+        *('d227a66417c645e184b733c094041fa29718ff31',) * 1161,
+        '5d365217328029b9076753dad810225ec2ae66cc',
+    ),
 }
 GC_HEADER_NAMES = r'GC_(?:MissionHeader|ScenarioFrameworkMissionHeader)'
 GC_HEADER = re.compile(r'\A\s*' + GC_HEADER_NAMES + r'(?=\s*\{)')
@@ -71,8 +80,14 @@ class Snapshot:
         prefix = f'{resource.parent}/.NavData/{resource.stem}/'
         return sorted(file for file in self.files if file.startswith(prefix) and file.endswith('.ntile'))
 
+    def rebuilt_navmesh_is_complete(self, path):
+        tiles = REBUILT_NAVMESH_TILES.get(self.files[path], ())
+        resource = PurePosixPath(path)
+        prefix = f'{resource.parent}/.NavData/{resource.stem}/'
+        return all(self.files.get(f'{prefix}navData_{index}.ntile') == blob for index, blob in enumerate(tiles))
+
     def legacy_navmesh_region(self, path):
-        """Read the tile bounds from a reviewed obsolete navmesh header."""
+        """Read grid and world bounds from a reviewed obsolete navmesh."""
         if OBSOLETE_NAVMESH.get(path) != self.files[path]:
             return None
         data = self.read_raw(path)
@@ -83,11 +98,51 @@ class Snapshot:
         start = chunk + 12
         if size % 16 or start + size > len(data):
             return None
-        cells = {(x, y) for x, y, _, _ in iter_unpack('<4I', data[start:start + size]) if x or y}
+        records = [(x, z, container, index) for x, z, container, index
+                   in iter_unpack('<4I', data[start:start + size]) if x or z]
+        cells = {(x, z) for x, z, _, _ in records}
         if not cells:
             return None
-        x, y = zip(*cells)
-        return min(x), max(x), min(y), max(y), len(cells)
+        x, z = zip(*cells)
+        region = (min(x), max(x), min(z), max(z), len(cells))
+        origin_x, _, origin_z, width, depth = unpack_from('<5f', data, 8)
+        if not all(isfinite(value) for value in (origin_x, origin_z, width, depth)) or min(width, depth) <= 0:
+            return region, None
+        resource = PurePosixPath(path)
+        containers = {}
+        for x, z, container, index in records:
+            if container not in containers:
+                tile = f'{resource.parent}/.NavData/{resource.stem}/navData_{container}.ntile'
+                if tile not in self.files:
+                    return region, None
+                body = self.read_raw(tile)
+                if len(body) < 20 or not body.startswith(b'FORM') or body[8:16] != b'NAVDTIHE':
+                    return region, None
+                table_size, = unpack_from('>I', body, 16)
+                payload = 20 + table_size + 8
+                if table_size % 16 or payload > len(body) or body[payload - 8:payload - 4] != b'DATA':
+                    return region, None
+                containers[container] = body, table_size // 16, payload
+            body, count, payload = containers[container]
+            if index >= count:
+                return region, None
+            length, _, offset, _ = unpack_from('<4I', body, 20 + index * 16)
+            tile = payload + offset
+            if length < 100 or tile + length > len(body) or body[tile:tile + 4] != b'VAND':
+                return region, None
+            if unpack_from('<3I', body, tile + 4) != (7, x, z):
+                return region, None
+            # The embedded Detour v7 mesh header stores its world-space AABB here.
+            x0, _, z0, x1, _, z1 = unpack_from('<6f', body, tile + 72)
+            expected = (origin_x + x * width, origin_z + z * depth,
+                        origin_x + (x + 1) * width, origin_z + (z + 1) * depth)
+            if any(not isclose(actual, target, rel_tol=0, abs_tol=0.001)
+                   for actual, target in zip((x0, z0, x1, z1), expected)):
+                return region, None
+        min_x, max_x, min_z, max_z, _ = region
+        bounds = (origin_x + min_x * width, origin_z + min_z * depth,
+                  origin_x + (max_x + 1) * width, origin_z + (max_z + 1) * depth)
+        return region, bounds
 
     @cached_property
     def layers(self):
