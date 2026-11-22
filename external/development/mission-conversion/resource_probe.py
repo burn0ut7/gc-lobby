@@ -100,17 +100,33 @@ def prepare(stage, references, addons):
         path.write_text(contents, encoding='utf-8', newline='\n')
 
 
-def read_results(console, references):
+def read_results(console, references, *, diagnostics=False):
     observed = {reference: set() for reference in references}
+    wrong_names = set()
+    invalid_replication_ids = set()
     for line in console.read_text(encoding='utf-8-sig', errors='replace').splitlines():
         if match := re.search(r'\bSCRIPT\s+:\s+GC asset lookup \| (.+?) \| (.+)$', line):
             original, result = (part.strip() for part in match.groups())
             if original in observed and (result == 'INVALID' or PREFAB.fullmatch(result)):
                 observed[original].add(result)
+        elif diagnostics:
+            if match := re.search(r'\bRESOURCES\s+\(E\): Wrong GUID/name for resource @"([^"]+)"', line):
+                wrong_names.add(match[1])
+            elif match := re.search(r'\bRPL\s+\(E\): Attempting to insert an entity with invalid '
+                                    r'prefab resource GUID @"\{([\da-fA-F]{16})\}"', line):
+                invalid_replication_ids.add(match[1].upper())
     incomplete = [reference for reference, results in observed.items() if len(results) != 1]
     if incomplete:
         raise ValueError('missing or inconsistent Workbench results: ' + ', '.join(incomplete))
-    return {reference: next(iter(results)) for reference, results in observed.items()}
+    resolved = {reference: next(iter(results)) for reference, results in observed.items()}
+    if not diagnostics:
+        return resolved
+    return {reference: {
+        'resolved': result,
+        'wrongGuidOrName': reference in wrong_names or result in wrong_names,
+        'invalidReplicationGuid': any(key[1:17].upper() in invalid_replication_ids
+                                      for key in (reference, result) if PREFAB.fullmatch(key)),
+    } for reference, result in resolved.items()}
 
 
 def main():
@@ -119,11 +135,15 @@ def main():
     command = parser.add_mutually_exclusive_group(required=True)
     command.add_argument('--stage', type=Path, help='new test addon directory')
     command.add_argument('--console', type=Path, help='console.log from the probe session')
+    parser.add_argument('--diagnostics', action='store_true',
+                        help='include resource identity and replication errors observed in the console')
     parser.add_argument('--addon', type=str, action='append', default=[],
                         help='additional installed dependency GUID for the staged project')
     args = parser.parse_args()
     if any(not ADDON_ID.fullmatch(addon) for addon in args.addon):
         parser.error('additional dependencies must be 16-digit addon GUIDs')
+    if args.diagnostics and not args.console:
+        parser.error('--diagnostics requires --console')
     try:
         plan = json.loads(args.plan.read_text(encoding='utf-8-sig'))
         references = sorted({record['reference'] for record in plan['resourceRecoveryQueue']
@@ -134,7 +154,7 @@ def main():
             prepare(args.stage, references, [addon.upper() for addon in args.addon])
             print(f'Staged {len(references)} prefab lookups in {args.stage / WORLD}')
         else:
-            print(json.dumps(read_results(args.console, references), indent=2))
+            print(json.dumps(read_results(args.console, references, diagnostics=args.diagnostics), indent=2))
     except (OSError, KeyError, ValueError) as exc:
         parser.error(str(exc))
 
