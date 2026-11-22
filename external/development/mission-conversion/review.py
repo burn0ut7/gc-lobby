@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 from copy import copy
 from difflib import unified_diff
 from functools import lru_cache
-from hashlib import sha1, sha256
+from hashlib import file_digest, sha1, sha256
 import json
 from pathlib import Path, PurePosixPath
 import re
@@ -16,11 +16,17 @@ from install_batch import resource_databases, unregistered_references
 from launchers import META_NAME, WORLD_REF, authored_header_text, launcher, registered_identity, required_addon_versions
 from scenery import StockPrefabs
 from terrain_parents import LONGMOOR_PARENT, LONGMOOR_PROVIDER, has_reviewed_longmoor, is_longmoor_subscene
+from vehicle_crew import ZAGORIA_BMP2
 
 LEGACY = re.compile(r'^(?:TILW|PS)_')
 UNRESOLVED_OUTCOME_FLAG = re.compile(r'unresolved or unsupported outcome flag ("[^"]*")')
 SERIALIZED_FLAG_FIELD = re.compile(r'(m_\w*[Ff]lag\w*) ("[^"]+")')
 MISSION_OWNED_SLOT = re.compile(r'mission-owned slot ([0-9A-F]{16})')
+ZAGORIA_DRIVETRAIN_FAILURE = {
+    'b2dbad72f17557b06f7b933aa21b2c1bacccca0b36094fb4e022697bcc0c43ae': '1.0.23',
+    '37898175d32ccab770d122a90c35183cd0009a56d9411303974401e55d823ab6': '1.0.25',
+}
+ENGINE_19037_DATABASE = 'd65ebb14b5c9b2baaef1dfafd9b653f51a6ce11f9815585cf8b5ada88dd4e58a'
 LEGACY_PRESENTATION_RESOURCES = {
     ('3136BE42592F3B1B', 'PrefabsEditable/MissionDescription/EditableMissionDescription.et'),
     ('CD85ADE9E0F54679', 'PrefabsEditable/Markers/EditableMarker.et'),
@@ -43,6 +49,18 @@ def closure(snapshot, world, header):
         files.add(header)
     files.update(path + '.meta' for path in list(files) if path + '.meta' in snapshot.files)
     return files
+
+
+def known_zagoria_failure(stock, providers):
+    if sha256(stock.data).hexdigest() != ENGINE_19037_DATABASE:
+        return None
+    for database in providers:
+        package = database.with_name('data.pak')
+        if database.parent.name != 'Zagoria89BMP2_6730D59067916E3D' or not package.is_file():
+            continue
+        with package.open('rb') as native:
+            return ZAGORIA_DRIVETRAIN_FAILURE.get(file_digest(native, 'sha256').hexdigest())
+    return None
 
 
 @lru_cache(maxsize=16384)
@@ -76,7 +94,7 @@ def inspect(snapshot, paths):
 
 
 def compare_mission(source, target, header, notes, dependencies, stock, unresolved=None, longmoor=False,
-                    provider_issue=None):
+                    provider_issue=None, zagoria_failure=None):
     issues = [provider_issue] if provider_issue else []
     try:
         world, resource, _ = launcher(source, target, header)
@@ -127,6 +145,25 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
         issues.append('Mission-owned resource identities or paths need review')
     if missing:
         issues.append('Unresolved external resource references')
+    failed_vehicle_refs = []
+    if zagoria_failure:
+        for owner in sorted(refs.get(ZAGORIA_BMP2, ())):
+            lines = target.read(owner).splitlines()
+            for index, text in enumerate(lines):
+                if not any((guid.upper(), path) == ZAGORIA_BMP2 for guid, path in REF.findall(text)):
+                    continue
+                field = text.lstrip()
+                placed = owner.endswith(('.layer', '.ent')) and re.match(r'^(?:\$grp )?(?:Vehicle|Tank)\b', field)
+                spawned = False
+                if field.startswith('m_sPrefab '):
+                    indent = len(text) - len(field)
+                    parent = next((row.strip() for row in reversed(lines[:index])
+                                   if row.strip() and len(row) - len(row.lstrip()) < indent), '')
+                    spawned = re.match(r'm_Spawn GC_(?:PrefabSpawn|CrewedVehicleSpawn)\b', parent)
+                if placed or spawned:
+                    failed_vehicle_refs.append({'file': owner, 'line': index + 1})
+        if failed_vehicle_refs:
+            issues.append(f'Zagoria BMP-2 {zagoria_failure} fails the verified drivetrain test on Reforger 1.9.0.37')
     shared = incoming & outgoing
     files = {
         'same': sorted(p for p in shared if source.files[p] == target.files[p]),
@@ -158,6 +195,7 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
         'unresolvedExternalReferences': missing,
         'launcherMetadata': metadata,
         **({'pathResolvedTerrainParents': path_resolved_parents} if path_resolved_parents else {}),
+        **({'failedVehicleRuntimeReferences': failed_vehicle_refs} if failed_vehicle_refs else {}),
         'areas': {area: {'source': before.get(area, {}), 'dev': after.get(area, {})}
                   for area in AREAS if area in before or area in after},
         'documentedGaps': [
@@ -464,9 +502,12 @@ def main():
                     {(guid, path) for guid, path in references
                      if path not in (target.resources.get(guid) or chosen_dependencies.get(guid, []))}, chosen_providers)
                 longmoor = LONGMOOR_PARENT in unresolved and has_reviewed_longmoor(chosen_providers)
+                zagoria_failure = None
+                if ZAGORIA_BMP2 in references and ZAGORIA_BMP2 not in unresolved:
+                    zagoria_failure = known_zagoria_failure(stock, chosen_providers)
                 for header in group:
                     missions[header] = compare_mission(source, target, header, notes, chosen_dependencies, stock,
-                                                       unresolved, longmoor, provider_issue)
+                                                       unresolved, longmoor, provider_issue, zagoria_failure)
                     if pins and not provider_issue:
                         missions[header]['auditedAddonVersions'] = dict(pins)
         except (OSError, ValueError) as exc:
