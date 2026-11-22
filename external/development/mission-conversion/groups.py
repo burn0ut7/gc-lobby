@@ -21,6 +21,7 @@ NATIVE_GROUP_FIELD = re.compile(r'm_faction "[\w.-]+"|m_iGroupRadioFrequency \d+
                                 r'm_b(?:DeleteWhenEmpty|DeleteIfNoPlayer) [01]|m_iMaxMembers \d{1,4}|'
                                 rf'(?:DangerEventRange|{DYNAMIC_LOD_DISTANCE}) \d+(?:\.\d+)?')
 STATIC_LINK_FIELDS = {'m_aStaticWaypoints {', 'm_aStaticVehicles {'}
+STATIC_VEHICLE_NAME = r'"([^"\\\r\n]*)"'
 COLOR_TEAM_ARRAY = 'm_aUnitPrefabColorTeams {'
 COLOR_TEAM_VALUES = {'""', '"None"', '"Red"', '"Blue"', '"Yellow"', '"Green"'}
 FORMATION = re.compile(r'AIFormationComponent "\{[\da-fA-F]{16}\}" \{')
@@ -74,6 +75,11 @@ STOCK_FORCED_CALLSIGNS = {
 VERIFIED_PLACED_CALLSIGNS = {
     '651367042C5F047E', '657D06A2A8998A83', '68D0CC3F0387DDD0',
     '68D0CC3F2FF116CA', '68D0CC3F63B3DF75',
+    # Hephaestus Forge uses the placed assigners ahead of the disabled Core default.
+    '68D74C07102B6C8A', '68D74C076E825395', '68D74C0770419430', '68D74C070C8AA8F5',
+    '68D74C07206D7388', '68D5742656B2AEF6', '68D74C0732A7B51A', '68D74C07C8D285F6',
+    '68D74C07E948D7D1', '68D74C078E19625B', '68D74C07967BE508', '68D74C079E1B8FB5',
+    '68D74C06A410BF04', '68D74C06AD11E047', '68D74C06B3490544', '68D74C069DF4A0D8',
 }
 BASE_CHARACTER = ('37578B1666981FCE', 'Prefabs/Characters/Core/Character_Base.et')
 UK_CHARACTER_BASE = ('542CBB6908CA71D8', 'Prefabs/Characters/Factions/BLUFOR/UK_Army/Character_UK_Base.et')
@@ -477,7 +483,8 @@ def native_group_field_end(lines, index):
     if field in STATIC_LINK_FIELDS:
         end = block_end(lines, index)
         # An empty name is a serialized placeholder. All nonempty names remain in order.
-        if any(not re.fullmatch(r'\s*(?:"[\w.-]*"\s*)+', entry) for entry in lines[index + 1:end]):
+        name = STATIC_VEHICLE_NAME if field == 'm_aStaticVehicles {' else r'"[\w.-]*"'
+        if any(not re.fullmatch(rf'\s*(?:{name}\s*)+', entry) for entry in lines[index + 1:end]):
             raise ValueError('unsupported static group link')
         return end
     if field == COLOR_TEAM_ARRAY:

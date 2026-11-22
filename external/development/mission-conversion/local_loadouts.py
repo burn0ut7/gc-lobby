@@ -35,6 +35,8 @@ MOVED_AI_PARENTS = {
         'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/2020/Character_SEP_SL.et',
 }
 REVIEWED_FORCED_CHARACTERS = {
+    # Hephaestus Forge explicitly makes these six pilot groups playable.
+    '0BC9FB2D45681163': '5572741758b8e7afafcfa397690e07ba0647b6969a55ecb360183edb351f2c34',
     # Kunar's player squads use these inventory-only wrappers on unchanged USMC roles.
     '115E7D87A3F770B7': 'f200810784a6eb7d465c8ef9c2a14dcc9b33f5df2dfe81bf09da9f37bd390df6',
     '573DF3DA110269E9': '1bb50ede66c68ffe2a5cdccceb78eb6698917e86c60e3219b64b45209da66de9',

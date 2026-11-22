@@ -22,7 +22,7 @@ from vehicle_crew import (CREW_CONFIG_FIELD, FLORA_CREW_CONFIG, VERIFIED_DEFAULT
                           split_crew_block, verified_core_btr70_transfer)
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
-from groups import (CALL, COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, INDEX, SLOTS,
+from groups import (CALL, COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, INDEX, SLOTS, STATIC_VEHICLE_NAME,
                     UK_1983_AI_ROLES, UK_GROUP_DIRECTORY, UK_PROVIDER,
                     compare_ai_parents, inheritance,
                     legacy_member, reviewed_ai_member_ancestry, reviewed_native_ancestry,
@@ -908,6 +908,12 @@ REVIEWED_MISSING_SPAWN_WAYPOINTS = {
     KHANDAR_AI_LAYER: (KHANDAR_AI_BLOB, {'defnorth': 1, 'top': 4}),
 }
 REVIEWED_MISSING_STATIC_VEHICLES = {
+    'worlds/chllboy/Hephaestus Forge/Hephaestus Forge_Layers/Blufor.layer': (
+        '5f48590ff9f7209224c3ce7e22311c72112cb2c6', (
+            '#AH6M-Vehicle_AH6M_Name - #WCS-Weapon_M134_Name/#WCS-Weapon_M260_Name',
+            '#AR-Vehicle_UH60_Transport_Name1', '#AR-Vehicle_UH60_Transport_Name',
+        ),
+    ),
     'worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/OPFOR.layer':
         ('9a5b8ff212d1ba8c484e8e17dfed060b9baff796', {'T72A_1'}),
     'worlds/TheLocalPub/SD01_ConvoyChaos/SD01_ConvoyChaos_Layers/Opfor/Players.layer':
@@ -1413,6 +1419,32 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/chllboy/Hephaestus Forge/Prefabs/AUS_UH60_armed1_EW.et':
+        '24b130cf49808656d5d1ae0aff3e2f6fb1345253aa5925adda880c290bb21787',
+    'worlds/chllboy/Hephaestus Forge/Prefabs/AUS_UH60_unarmed_EW.et':
+        '668dadddeb114cb6650274f8955645a4ecc3bee2bf60789d2053744c067372a0',
+    'worlds/chllboy/Hephaestus Forge/Prefabs/M107IR.et':
+        'dd7b812de41c17ef03876ef612b8caa729ffa5c4a458b95eb183c50f9ab6547f',
+    'worlds/chllboy/Hephaestus Forge/Prefabs/Props/Cartridge_545x39.et':
+        '7e08bfb1b97ae1046f1bbe4097fec969536f3ae72f69fc68bd7ff188ccc1779a',
+    'worlds/chllboy/Hephaestus Forge/Prefabs/Props/Cartridge_762x39_PS.et':
+        '8617eea03a8dc0a4fbf9152d273c3bac128be02aae48f6ffd4b9ae6bb48847c0',
+    'worlds/chllboy/Hephaestus Forge/Prefabs/Props/Cartridge_762x51.et':
+        'f784feaf3210e9c981ad69bd30901d96fecacc4cad9f08f9c61b61526a1c3b65',
+    'worlds/chllboy/Hephaestus Forge/Prefabs/Props/Cartridge_9x18.et':
+        '1b7f7b2f381afe3bf9ff3e7eabd98bbe46d302b91b144757261a00e5bd056093',
+    'worlds/chllboy/Hephaestus Forge/Prefabs/Props/Cartridge_9x19.et':
+        'b691e18790bb3d01e7be8b658efaada9fe299b0670abed3505ba05f74da731ab',
+    'worlds/chllboy/Hephaestus Forge/Prefabs/Props/Firebarrel.et':
+        '880d6c8fea8300590e220973531da31bcf3b072ae1fd7d81bb9eabd2cdaa2080',
+    'worlds/chllboy/Hephaestus Forge/Prefabs/Props/Pouch.et':
+        '9a88b76d0c7753b3d930a325cbabb41f9d8cc81b4acbf1f8550fdb10e4e8ee09',
+    'worlds/chllboy/Hephaestus Forge/Prefabs/Props/Tire_fire.et':
+        '139d7d110eecbb7a6da18c2f2fc97c6960407dc54c585c4cf12c156e307c21b2',
+    'worlds/chllboy/Hephaestus Forge/Prefabs/Props/Tire_fire_large.et':
+        '3d77dc4534932792998ac38c4bccf7d45de2436af02a7c3f2a696c1cf9160308',
+    'worlds/chllboy/Hephaestus Forge/Prefabs/Props/Tripod_6T5.et':
+        'e5ccda04571298143b1e6e84891a7f44ba8177ced11489867dff33a95d1d8814',
     'worlds/Til/RouteTremaux/Prefabs/blockers/abatis_1.et':
         '4c85ef09b8fa042f302061b88607c9a55aa836c6fde8cbe8cabc13b0c7cb0601',
     'worlds/Til/RouteTremaux/Prefabs/blockers/bridge_wrecks.et':
@@ -2975,7 +3007,8 @@ def static_link_gaps(layers, named):
     gaps = []
     for layer, text in layers.items():
         for field, targets in re.findall(r'(?m)^ +(?P<field>m_aStatic(?:Waypoints|Vehicles)) \{\n((?: +"[^\n]*\n)*)', text):
-            for target in set(re.findall(r'"([\w.-]+)"', targets)):
+            name = STATIC_VEHICLE_NAME if field == 'm_aStaticVehicles' else r'"([\w.-]+)"'
+            for target in set(filter(None, re.findall(name, targets))):
                 matches = named.get(target, [])
                 if len(matches) != 1 or not re.fullmatch(fields[field], matches[0][0]):
                     gaps.append((layer, field, target))
@@ -4595,6 +4628,40 @@ def stock_library_aliases(source, stock, occupied):
     return aliases
 
 
+WCS_COLLIMATOR_RENAMES = (
+    ('1D595DCB97075A58', 'Optic_TrijiconRMR/Collim_RMR.et',
+     'Trijicon_RMR/Collim_Trijicon_RMR.et'),
+    ('2C1CA987E4304D9E', 'Optic_AcroP2/Collim_AcroP2_Black.et',
+     'Aimpoint_ACRO_P2/Collim_Aimpoint_ACRO_P2_BLK.et'),
+    ('2C1E9900B1F3FDE5', 'Optic_AimpointCompM5/Collim_AimpointCompM5_BLK.et',
+     'Aimpoint_CompM5/Collim_Aimpoint_CompM5_BLK.et'),
+    ('3D4B54552E600505', 'Optic_EotechEXPS3/Collim_EXPS3_BLK.et',
+     'EOTech_EXPS3/Collim_EOTech_EXPS3_BLK.et'),
+    ('3E048957C94835DB', 'Optic_AimpointCompM5/Collim_AimpointCompM5_FDE.et',
+     'Aimpoint_CompM5/Collim_Aimpoint_CompM5_FDE.et'),
+    ('3EE60991BBA7BC35', 'Optic_TrijiconRMR/Collim_RMR_FDE.et',
+     'Trijicon_RMR/Collim_Trijicon_RMR_FDE.et'),
+    ('40937549C55B8372', 'Optic_AcroP2/Collim_AcroP2_FDE.et',
+     'Aimpoint_ACRO_P2/Collim_Aimpoint_ACRO_P2_FDE.et'),
+    ('586EE7AA31738D92', 'Optic_SIGRomeo/Collim_SIGRomeo_BLK.et',
+     'SIG_ROMEO4T/Collim_SIG_ROMEO4T_BLK.et'),
+    ('648E66F8FA240BA6', 'Optic_AimpointCompM4s/Collim_AimpointCompM4s_BLK.et',
+     'Aimpoint_CompM4s/Collim_Aimpoint_CompM4s_BLK.et'),
+    ('769476AF829FC398', 'Optic_AimpointCompM4s/Collim_AimpointCompM4s_FDE.et',
+     'Aimpoint_CompM4s/Collim_Aimpoint_CompM4s_FDE.et'),
+    ('7BB2A49CD128753E', 'Optic_TrijiconMRO/Collim_MRO.et',
+     'Trijicon_MRO/Collim_Trijicon_MRO.et'),
+    ('9A609B24E6040FC9', 'Optic_TrijiconSRS/Collim_SRS.et',
+     'Trijicon_SRS/Collim_Trijicon_SRS.et'),
+    ('9BA30971E84691EA', 'Optic_EotechEXPS3/Collim_EXPS3_FDE.et',
+     'EOTech_EXPS3/Collim_EOTech_EXPS3_FDE.et'),
+    ('EE6C2C52B77E53D1', 'Optic_AimpointPRO/Collim_AIMPOINT-PRO_FDE.et',
+     'Aimpoint_PRO/Collim_Aimpoint_PRO_FDE.et'),
+    ('FC763C05CFC59BEF', 'Optic_AimpointPRO/Collim_AIMPOINT-PRO_blk.et',
+     'Aimpoint_PRO/Collim_Aimpoint_PRO_BLK.et'),
+)
+
+
 def resource_aliases(workshop, units, stock):
     aliases = {(guid, old): (guid, new) for (guid, old), new in STOCK_RESOURCE_ALIASES.items()
                if stock and stock.contains(guid, new)}
@@ -4602,6 +4669,16 @@ def resource_aliases(workshop, units, stock):
                     if stock and not stock.registered_paths(old) and stock.contains(new, path)})
     databases = {}
     if workshop:
+        collimator_prefix = 'Prefabs/Weapons/Attachments/Optics/Collimators/'
+        collimators = {(resource, collimator_prefix + current) for resource, _, current in WCS_COLLIMATOR_RENAMES}
+        registered_collimators = workshop_resources(workshop, {
+            'WCS_Scopes_62A668F513428630': (
+                '2d4b23fe7c8f5ee505c595bb34f84544fdfa377d9903a95b28a15137bd65581b', collimators),
+        })
+        for resource, old, current in WCS_COLLIMATOR_RENAMES:
+            reference = (resource, collimator_prefix + current)
+            if reference in registered_collimators:
+                aliases[resource, collimator_prefix + old] = reference
         hind_path = 'Prefabs/Vehicles/Helicopters/Mi24/'
         hind = ('65ED07118C75B32F', hind_path + 'Mi24V_Armed_UPK23_X2.et')
         hind_refs = (hind, ('A8C732BE755F8BD0', hind_path + 'Mi24V_Base.et'),
