@@ -76,6 +76,8 @@ NATIVE = re.compile(r'^(?:\$grp )?(?:Vehicle|Tank|RHS_Tank|Turret|SCR_AIWorld|Ga
                     r'SCR_\w*(?:Waypoint|BuildingEntity|EnvironmentalEntity|RestrictionZoneEntity)|'
                     r'AIWaypointCycle|PolylineShapeEntity|SCR_MapEntity|ACE_TacticalLadderEntity|LightEntity|Projectile|CommentEntity)\b')
 INACTIVE_DOOR_LAYER = 'worlds/TheLocalPub/RailroadReactions/RailroadReactions_Layers/PROPS/TrainArea.layer'
+INTERSECTING_FIXTURES = 'worlds/Corax/IntercectingForces/IntersectingForces_Layers/Fixtures.layer'
+INTERSECTING_FIXTURES_BLOB = 'c86b8774a4db1d2c3706d8c296dbb996f4d22596'
 INACTIVE_DOOR = [
     'GenericEntity : "{212D8A2CE34F802E}Prefabs/Utils/Other/TILW_DoorOpenerEntity.et" {',
     ' coords 6430.397 59.368 6007.69',
@@ -5173,6 +5175,18 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                       and block == INACTIVE_DOOR and 'TILW_DoorOpenerComponent' not in script_text(source)):
                     # The released TilW prefab still names the component removed in c47df35.
                     inactive_placements.append('The original TrainArea door opener has no runtime component in the published legacy addon.')
+                elif layer == INTERSECTING_FIXTURES and source.files[layer] == INTERSECTING_FIXTURES_BLOB and line == 1:
+                    # The bare turret has no compartment manager. The published crew component returns without boarding.
+                    component = block.index('        TILW_VehicleCrewComponent "{6520BB55CAC5BA93}" {')
+                    fields = [*block[:component], *block[block_end(block, component) + 1:]]
+                    converted = native_placement(fields)
+                    if converted is None:
+                        blockers.append({'rule': kind, 'file': layer, 'line': line,
+                                         'detail': 'inactive turret fixture has an unconverted component'})
+                    else:
+                        result.append(converted)
+                        inactive_placements.append(
+                            'The bare turret has no compartment manager and the original crew component never boards it.')
                 elif FRAMEWORK.fullmatch(head) and framework_supported and (represented or outcome.get('startupSamples')):
                     fields = block[1:-1]
                     if ((script_flags and layer == SUPPLY_OUTCOME_LAYER and source.files[layer] == SUPPLY_OUTCOME_BLOB)
