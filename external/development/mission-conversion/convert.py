@@ -590,6 +590,7 @@ def main():
                 meta_dividers_audit = {}
                 discovery_resets_audit = []
                 startup_samples_audit = []
+                route_graph_audit = {}
                 match_only_flags = {flag for candidate in row.get('damageFlagCandidates', {}).values()
                                     for flag in candidate.get('placedDestructionFlags', [])}
                 if delayed:
@@ -617,7 +618,8 @@ def main():
                                               for field in ('teleportRequiredFlags', 'interactionRequiredFlags')
                                               for flag in placement.get(field, [])),
                     spawner_reads=batch.placed_spawner_flag_reads(source, source.layers[world.lower()])
-                    if args.batch else None, derived_spawners_audit=derived_spawners_audit if args.batch else None)
+                    if args.batch else None, derived_spawners_audit=derived_spawners_audit if args.batch else None,
+                    route_graph_audit=route_graph_audit if args.batch else None)
                 outcome = {'events': outcome_audit}
                 if derived_audit:
                     outcome['derivedFlags'] = derived_audit
@@ -631,6 +633,8 @@ def main():
                     outcome['discoveryResetFlags'] = discovery_resets_audit
                 if startup_samples_audit:
                     outcome['startupSamples'] = startup_samples_audit
+                if route_graph_audit:
+                    outcome['orderedRouteFlags'] = route_graph_audit
                 if gap:
                     outcome['gap'] = gap
                 if rules:

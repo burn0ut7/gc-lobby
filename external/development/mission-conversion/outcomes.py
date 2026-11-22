@@ -15,6 +15,12 @@ from events import EVENT, LITERAL, MESSAGE, message, peak_flags
 FRAMEWORK = re.compile(r'^TILW_MissionFrameworkEntity(?: [\w.-]+)? : "\{8F846D0FD5D6EA51\}[^"]+" \{$')
 INTERSECTING_DEFAULT = 'worlds/Corax/IntercectingForces/IntersectingForces_Layers/default.layer'
 INTERSECTING_DEFAULT_BLOB = '72085fa3221eaf3c6200c21b1add35ead489c8e5'
+ROUTE_FRAMEWORK = 'worlds/Til/RouteTremaux/RouteTremaux_Layers/default.layer'
+ROUTE_SCORING_LAYERS = {
+    ROUTE_FRAMEWORK: 'fa2adef3fe12ad9a1841b94d678c3abf456dcd9c',
+    ROUTE_FRAMEWORK.replace('default.layer', 'node_triggers.layer'): 'defdd5e4bb24597a6b0aaa1b19220447f1bfce20',
+    ROUTE_FRAMEWORK.replace('default.layer', 'obstacles_removable.layer'): '06f0036f9a45d0989f462285e56011e0a6fdaee5',
+}
 ENDING = re.compile(r'^    TILW_EndGameInstruction "\{([\da-fA-F]{16})\}" \{$')
 WAYPOINTS = re.compile(r'^    TILW_AssignWaypointsInstruction "\{([\da-fA-F]{16})\}" \{$')
 EVENT_CONTROL = re.compile(r'\bTILW_(RunEvents|ReactivateEvents|DeactivateEvents)Instruction\b')
@@ -448,7 +454,7 @@ def event_control(kind, lines, key, named_events, *, direct, inactive_targets=()
 
 
 def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0, *,
-              allow_dormant=False, derived=None, negate=False, inactive=()):
+              allow_dormant=False, derived=None, negate=False, inactive=(), flag_expression=False):
     match = TERM.fullmatch(lines[0])
     # Leave room for native condition wrappers within the runtime's depth limit of 16.
     if not match or depth > 12:
@@ -463,6 +469,8 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
             resolved = read_term(derived[flag], flags, captures, ai, objective_flags, event_flags, depth + 1,
                                  derived=derived, negate=invert == '1', inactive=inactive)
             return {**resolved, 'requiresMatch': True, 'derivedFlag': flag[1:-1]}
+        if flag_expression and flag == '""' and invert in ('0', '1'):
+            return {'trigger': 'constant', 'value': invert == '1'}
         if flag == '""' and invert == '1' and depth == 0:
             return {'trigger': 'Match start'}
         if flag == '""' and invert == '0' and allow_dormant and depth == 0:
@@ -521,7 +529,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
                 # A one-operand wrapper preserves the inverted empty literal's constant true result.
                 return {'trigger': 'Match start'}
         operands.append(read_term(lines[index:end + 1], flags, captures, ai, objective_flags, event_flags,
-                                  depth + 1, derived=derived, inactive=inactive))
+                                  depth + 1, derived=derived, inactive=inactive, flag_expression=flag_expression))
         index = end + 1
     if not 1 <= len(operands) <= 64:
         raise ValueError('unsupported number of outcome operands')
@@ -1109,6 +1117,49 @@ def render_startup_samples(world, samples):
     return [*lines, '     }', '    }']
 
 
+def route_flag_graph(world, definitions, samples, captures):
+    """Build the reviewed route graph without expanding its stateful cycles."""
+    areas = {f'"_{node}"' for node in 'ABCDEFGHO'} | {f'"obst_{index:02d}"' for index in range(1, 27)}
+    fixed_false = {'"block_AC"', '"block_EF"', '"block_GH"'}
+    sampled = {f'"{name}"' for sample in samples for name in sample['flags']}
+    references = set().union(*(literal_flag_reads(definition) for definition in definitions.values()))
+    if not areas <= captures.keys() or references - definitions.keys() != areas | fixed_false | sampled:
+        raise ValueError('route flag graph has an unverified upstream flag')
+    values = {flag[1:-1] for flag in definitions.keys() | areas | fixed_false | sampled}
+
+    def expression(key, term, prefix):
+        identity = guid(key)
+        kind = term['trigger']
+        header = [f'{prefix}GC_RuleCondition "{{{identity}}}" {{']
+        indent = prefix.split('m_Expression')[0] + ' '
+        if kind == 'event flag':
+            fields = ['m_iCheck 1', f'm_sFlagName "{term["flag"]}"']
+        elif kind == 'constant':
+            fields = ['m_iCheck 2', f'm_bTestAnswer {int(term["value"])}']
+        elif kind in ('all', 'any'):
+            fields = [f'm_eGroupNeeds {int(kind == "any")}']
+        else:
+            raise ValueError('unsupported route flag expression ' + kind)
+        if term.get('inverted'):
+            fields.append('m_bReverseAnswer 1')
+        header.extend(indent + field for field in fields)
+        if kind in ('all', 'any'):
+            header.append(indent + 'm_aChecks {')
+            for index, child in enumerate(term['operands']):
+                header.extend(expression(f'{key}/{index}', child, indent + ' '))
+            header.append(indent + '}')
+        return [*header, indent[:-1] + '}']
+
+    rendered = []
+    for flag, definition in definitions.items():
+        key = f'{world}/derived flag/{flag}'
+        term = read_term(definition, {}, {}, {}, (), values, flag_expression=True)
+        rendered.extend([f'    GC_DerivedMissionFlag "{{{guid(key)}}}" {{',
+                         f'     m_sName {flag}', *expression(key + '/expression', term, '     m_Expression '), '    }'])
+    return {'areas': sorted(flag[1:-1] for flag in areas),
+            'outputs': [flag[1:-1] for flag in definitions], 'containers': rendered}
+
+
 def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
     review = []
     for index, field in enumerate(fields):
@@ -1136,7 +1187,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                      extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None,
                      derived_audit=None, identity_flags_audit=None, meta_dividers_audit=None, discovery_resets_audit=None,
                      match_only_flags=(), startup_samples_audit=None,
-                     interaction_reads=None, spawner_reads=None, derived_spawners_audit=None):
+                     interaction_reads=None, spawner_reads=None, derived_spawners_audit=None, route_graph_audit=None):
     captures = captures or {}
     notification_audit = notification_audit or {}
     extraction_spawns = extraction_spawns or {}
@@ -1213,6 +1264,18 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     sampled_flags = {flag for sample in samples for flag in sample['flags']}
     sampled_pregame_flags = {f'"{flag}"' for sample in samples for flag in sample.get('pregameFlags', ())}
     event_flags = {*event_flags, *sampled_flags}
+    event_captures = captures
+    spawner_definitions = derived
+    if (route_graph_audit is not None and path == ROUTE_FRAMEWORK
+            and all(source.files.get(layer) == blob for layer, blob in ROUTE_SCORING_LAYERS.items())
+            and all(layer in layers for layer in ROUTE_SCORING_LAYERS) and not controls):
+        graph = route_flag_graph(world, definitions, samples, captures)
+        route_areas = set(graph['areas'])
+        event_captures = {flag: check for flag, check in captures.items() if flag[1:-1] not in route_areas}
+        event_flags.update((*graph['outputs'], *route_areas))
+        route_graph_audit.update(graph)
+        derived = {}
+        derived_gap = None
     if supply_comparison:
         event_flags.update(SUPPLY_COUNT_FLAGS)
     if depot_supply_calls:
@@ -1220,11 +1283,11 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     inactive = inactive_flags(source, world, path, body, scripts) if compound else ()
     match_only_flags = {*match_only_flags, *sampled_flags}
     derived_spawners = {}
-    for flag, definition in derived.items():
+    for flag, definition in spawner_definitions.items():
         if not spawner_reads.get(flag[1:-1]):
             continue
         try:
-            term = read_term(definition, flags, captures, ai, objective_flags, event_flags, derived=derived)
+            term = read_term(definition, flags, captures, ai, objective_flags, event_flags, derived=spawner_definitions)
             for item in leaves(term):
                 if item['trigger'] in ('event flag', 'interaction flag', 'AI loss'):
                     continue
@@ -1289,7 +1352,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         name = name[1:-1]
         try:
             term, actions, details = read_event(
-                fields, world + '/' + event[1], flags, captures, ai, compound, objective_flags, event_flags, spawns,
+                fields, world + '/' + event[1], flags, event_captures, ai, compound, objective_flags, event_flags, spawns,
                 resolve_spawn, resolve_crew, startup, hidden_briefings,
                 DORMANT_NOTICES.get((source.commit, path, event[1])) if compound else None, derived,
                 log_only=log_only, named_events=source_names, inactive=inactive, binary_startup=binary_startup,

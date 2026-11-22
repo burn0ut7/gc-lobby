@@ -13,6 +13,9 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 	[Attribute("", UIWidgets.Object, "Optional ordered area observers that publish flag changes during staging and Match.", category: "GC Lobby")]
 	protected ref array<ref GC_AreaFlagObserver> m_aAreaFlagObservers;
 
+	[Attribute("", UIWidgets.Object, "Optional ordered definitions that compute mission flags from other flags.", category: "GC Lobby")]
+	protected ref array<ref GC_DerivedMissionFlag> m_aDerivedMissionFlags;
+
 	[Attribute("", UIWidgets.Object, "Server-authoritative briefing definitions", category: "GC Lobby")]
 	protected ref array<ref GC_Briefing> m_aBriefings;
 
@@ -280,7 +283,8 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 		GC_CasualtySnapshot casualties;
 		if (m_MissionCasualties)
 			casualties = m_MissionCasualties.GetSnapshot();
-		m_MissionRuleEngine.Start(runtimeRules, m_aMissionFlags, GetLobbyPhase(), eventNames, casualties, GetGame().GetWorld(), this, m_aAreaFlagObservers);
+		m_MissionRuleEngine.Start(runtimeRules, m_aMissionFlags, GetLobbyPhase(), eventNames, casualties, GetGame().GetWorld(), this,
+			m_aAreaFlagObservers, m_aDerivedMissionFlags);
 		if (m_MissionRuleEngine.IsRunning())
 			GetGame().GetCallqueue().CallLater(TickMissionRules, 100, true);
 	}

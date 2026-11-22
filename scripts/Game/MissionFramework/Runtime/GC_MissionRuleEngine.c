@@ -96,13 +96,14 @@ class GC_MissionRuleEngine
 	protected ref array<GC_RuleCondition> m_aDamageConditions = {};
 	protected ref array<ref GC_AreaFlagObservation> m_aAreaFlagObservations = {};
 	protected ref set<string> m_aDiscoveryResetFlags = new set<string>();
+	protected ref GC_DerivedFlagRuntime m_DerivedFlags;
 	protected float m_fDiscoveryRecheck = -1;
 	protected int m_iRuns;
 	protected int m_iInvalidRules;
 	protected bool m_bEventLimitReached;
 
 	//------------------------------------------------------------------------------------------------
-	void Start(array<ref GC_CompiledMissionRule> rules, array<ref GC_MissionFlag> flags = null, SCR_EGameModeState initialState = -1, array<string> authoredEventNames = null, GC_CasualtySnapshot casualties = null, BaseWorld damageWorld = null, GC_LobbyManager areaManager = null, array<ref GC_AreaFlagObserver> areaFlagObservers = null)
+	void Start(array<ref GC_CompiledMissionRule> rules, array<ref GC_MissionFlag> flags = null, SCR_EGameModeState initialState = -1, array<string> authoredEventNames = null, GC_CasualtySnapshot casualties = null, BaseWorld damageWorld = null, GC_LobbyManager areaManager = null, array<ref GC_AreaFlagObserver> areaFlagObservers = null, array<ref GC_DerivedMissionFlag> derivedFlags = null)
 	{
 		Stop();
 		m_ActionManager = areaManager;
@@ -152,6 +153,17 @@ class GC_MissionRuleEngine
 				m_mFlags.Set(flag.m_sName, flag.GetStartCallCount() > 0);
 			}
 		}
+		if (derivedFlags && !derivedFlags.IsEmpty())
+		{
+			m_DerivedFlags = new GC_DerivedFlagRuntime();
+			if (!m_DerivedFlags.Configure(derivedFlags, m_mFlags))
+			{
+				m_DerivedFlags = null;
+				m_iInvalidRules = 1;
+				Print("GC | Mission Framework | Invalid or duplicate derived mission flag; rules not started.", LogLevel.ERROR);
+				return;
+			}
+		}
 		if (!rules || rules.Count() > 256)
 		{
 			m_iInvalidRules = 1;
@@ -193,6 +205,8 @@ class GC_MissionRuleEngine
 		else
 		{
 			// Historical interpreter callers without a live state retain match-start semantics.
+			if (!RecheckDerivedFlags())
+				return;
 			m_aEvents.Insert(new GC_MissionRuleEvent(GC_ERuleEvent.MATCH_BEGINS, ""));
 			DrainEvents();
 		}
@@ -312,6 +326,8 @@ class GC_MissionRuleEngine
 			m_aScheduledActions.Clear();
 		ResetRandomConditions();
 		SampleAreas(true);
+		if (!m_bRunning || !RecheckDerivedFlags())
+			return;
 		SampleScripts();
 		RefreshAIGroups();
 		if (state == SCR_EGameModeState.GAME)
@@ -381,6 +397,7 @@ class GC_MissionRuleEngine
 		m_Areas = null;
 		m_aAreaFlagObservations.Clear();
 		m_aDiscoveryResetFlags.Clear();
+		m_DerivedFlags = null;
 		m_fDiscoveryRecheck = -1;
 		m_aEvents.Clear();
 		m_aScheduledActions.Clear();
@@ -452,6 +469,8 @@ class GC_MissionRuleEngine
 			ClearDiscoveryFlags();
 		m_mFlagCounts.Set(name, GetFlagCallCount(name) + 1);
 		m_mFlags.Set(name, true);
+		if (!RecheckDerivedFlags())
+			return;
 		m_aEvents.Insert(new GC_MissionRuleEvent(GC_ERuleEvent.FLAG_ON, name));
 	}
 
@@ -472,7 +491,7 @@ class GC_MissionRuleEngine
 	//------------------------------------------------------------------------------------------------
 	bool SetFlag(string name, bool answer)
 	{
-		if (!m_bRunning || name.IsEmpty())
+		if (!m_bRunning || name.IsEmpty() || (m_DerivedFlags && m_DerivedFlags.Owns(name)))
 			return false;
 		if (!answer)
 			return ResetFlag(name);
@@ -495,7 +514,7 @@ class GC_MissionRuleEngine
 	//! Reset is queued in action order. Per-chain call guards remain intact to prevent feedback loops.
 	bool ResetFlag(string name)
 	{
-		if (!m_bRunning || name.IsEmpty())
+		if (!m_bRunning || name.IsEmpty() || (m_DerivedFlags && m_DerivedFlags.Owns(name)))
 			return false;
 		if (m_aEvents.Count() >= 256)
 		{
@@ -530,6 +549,8 @@ class GC_MissionRuleEngine
 		m_mFlags.Set(name, GetFlagCallCount(name) > 0);
 		if (silent)
 			return true;
+		if (!discovery && !RecheckDerivedFlags())
+			return false;
 		GC_ERuleEvent kind = GC_ERuleEvent.FLAG_OFF;
 		if (answer)
 			kind = GC_ERuleEvent.FLAG_ON;
@@ -558,8 +579,44 @@ class GC_MissionRuleEngine
 			}
 		}
 		if (!watched)
+		{
+			if (m_DerivedFlags)
+				DrainEvents();
 			return true;
+		}
 		return QueueEvent(kind, name);
+	}
+
+	protected bool RecheckDerivedFlags()
+	{
+		if (!m_DerivedFlags)
+			return true;
+		map<string, bool> changed = new map<string, bool>();
+		if (!m_DerivedFlags.Evaluate(m_mFlags, changed))
+		{
+			Stop();
+			Print("GC | Mission Framework | Derived mission flags did not settle; stopped.", LogLevel.ERROR);
+			return false;
+		}
+		if (m_aEvents.Count() + changed.Count() > 256)
+		{
+			StopEventLoop();
+			return false;
+		}
+		// Publish the complete projection before any event reads it.
+		foreach (string name, bool answer : changed)
+		{
+			m_mFlags.Set(name, answer);
+			int count;
+			if (answer)
+				count = 1;
+			m_mFlagCounts.Set(name, count);
+			GC_ERuleEvent kind = GC_ERuleEvent.FLAG_OFF;
+			if (answer)
+				kind = GC_ERuleEvent.FLAG_ON;
+			m_aEvents.Insert(new GC_MissionRuleEvent(kind, name));
+		}
+		return true;
 	}
 
 	protected void ClearDiscoveryFlags()
@@ -627,6 +684,8 @@ class GC_MissionRuleEngine
 		{
 			m_fDiscoveryRecheck = -1;
 			ClearDiscoveryFlags();
+			if (!RecheckDerivedFlags())
+				return;
 		}
 		if (m_eGameModeState == SCR_EGameModeState.GAME)
 			AdvanceScheduledActions();
@@ -848,7 +907,8 @@ class GC_MissionRuleEngine
 			GC_RuleCondition check;
 			if (observer && observer.m_Area && !observer.m_Area.m_Capture)
 				check = observer.m_Area.BuildCheck();
-			if (!check || observer.m_sFlag.IsEmpty() || m_mFlagDefinitions.Contains(observer.m_sFlag) || !m_Areas.Register(check))
+			if (!check || observer.m_sFlag.IsEmpty() || m_mFlagDefinitions.Contains(observer.m_sFlag)
+				|| (m_DerivedFlags && m_DerivedFlags.Owns(observer.m_sFlag)) || !m_Areas.Register(check))
 			{
 				Print("GC | Mission Framework | Invalid area flag observer skipped.", LogLevel.ERROR);
 				continue;
@@ -1559,6 +1619,8 @@ class GC_MissionRuleEngine
 			ClearDiscoveryFlags();
 		m_mFlagCounts.Set(name, after);
 		m_mFlags.Set(name, after > 0);
+		if (!RecheckDerivedFlags())
+			return false;
 		GC_ERuleEvent kind = GC_ERuleEvent.FLAG_OFF;
 		if (after > 0)
 			kind = GC_ERuleEvent.FLAG_ON;

@@ -5079,7 +5079,8 @@ def mode_children(lines, disable_photo=False, lock_editor=False):
 
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None,
                 *, dynamic_respawn_factions=(), area_flag_observers=(), cache_supply_depot=False,
-                inherited_immediate_release=False, capture_phase_entities=False, source_blob=None):
+                inherited_immediate_release=False, capture_phase_entities=False, source_blob=None,
+                derived_flag_containers=()):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, environment, freeze = '', '', 0
@@ -5317,9 +5318,11 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         events = f'   m_aMissionEvents + {{\n{additional_rules}   }}\n' if additional_rules else ''
         observers = ('   m_aAreaFlagObservers {\n' + '\n'.join(area_flag_observers) + '\n   }\n'
                      if area_flag_observers else '')
+        derived = ('   m_aDerivedMissionFlags {\n' + '\n'.join(derived_flag_containers) + '\n   }\n'
+                   if derived_flag_containers else '')
         settings += f'''
   GC_LobbyManager "{{6A137A39106A4973}}" {{
-{flags}{events}{observers}{respawn_fields}{reconnect_fields}  }}
+{flags}{events}{observers}{derived}{respawn_fields}{reconnect_fields}  }}
 '''
     if cache_supply_depot:
         settings += f'  GC_MissionSupplyDepotComponent "{{{guid(world + "/supply depot")}}}" {{\n  }}\n'
@@ -5362,6 +5365,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'respawn', 'file': world, 'detail': str(exc)})
     outcome = row.get('outcomeCandidate', {})
     rules = outcome.get('events', {})
+    route_graph = outcome.get('orderedRouteFlags', {})
+    route_flags = set(route_graph.get('areas', ()))
+    route_observers = {}
     shared_writers = [record for area in row.get('captureCandidate', {}).values() for record in area.values()
                       if isinstance(record, dict) and 'areaFlagObserver' in record]
     shared_flags = {record['writesFlag'] for record in shared_writers}
@@ -5462,7 +5468,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     cleared_event_flags = {action['clearsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
                            if 'clearsFlag' in action}
     required_event_flags = {term['flag'] for term in terms if term['trigger'] == 'event flag'} | cleared_event_flags
-    unresolved_event_flags = required_event_flags - event_flags
+    unresolved_event_flags = required_event_flags - event_flags - route_flags - set(route_graph.get('outputs', ()))
     if unresolved_event_flags:
         blockers.append({'rule': 'framework events', 'file': world,
                          'detail': {'missingConvertedFlagProducers': sorted(unresolved_event_flags)}})
@@ -5631,7 +5637,21 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
                 elif (layer, line) in area_placements:
                     checks, areas = area_placements[(layer, line)]
-                    status_checks = {flag: check for flag, check in checks.items() if flag[1:-1] not in used_flags}
+                    status_checks = {}
+                    for flag, check in checks.items():
+                        name = flag[1:-1]
+                        if name not in route_flags:
+                            if name not in used_flags:
+                                status_checks[flag] = check
+                            continue
+                        record = row.get('captureCandidate', {}).get(f'{layer}:{line}', {}).get(name, {})
+                        if (name in route_observers or not record.get('area') or record.get('seconds') != 0
+                                or not record.get('stopsAfterFirstChange') or record.get('skipDiscovery')
+                                or any('m_Messages ' in item for item in check)):
+                            blockers.append({'rule': 'route scoring', 'file': layer, 'line': line,
+                                             'detail': 'route flag needs one immediate area observer: ' + flag})
+                            continue
+                        route_observers[name] = render_area_flag_observer(world, record['area'], flag, check, True)
                     if status_checks:
                         if flag_references is None:
                             flag_references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
@@ -5807,6 +5827,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if mode is None:
         blockers.append({'rule': 'mode placement', 'file': world})
     else:
+        if route_flags != route_observers.keys():
+            blockers.append({'rule': 'route scoring', 'file': world,
+                             'detail': 'not all route scoring area observers could be placed'})
         mode_name = mode[0].split(' : ', 1)[0].removeprefix('PS_GameModeCoop').strip()
         deletion_targets = {name for event in rules.values() for action in event.get('convertedActions', [])
                             if action['instruction'] == 'TILW_DeleteEntitiesInstruction'
@@ -5828,8 +5851,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                        depot_layer == layer == FOOD_MARKET_OUTCOME_LAYER),
                                    capture_phase_entities=phase_entity_capture,
                                    source_blob=source.files[layer],
-                                   area_flag_observers=[line for record in shared_writers
-                                                        for line in record['areaFlagObserver']])
+                                   derived_flag_containers=route_graph.get('containers', ()),
+                                   area_flag_observers=[line for observer in route_observers.values() for line in observer]
+                                   + [line for record in shared_writers for line in record['areaFlagObserver']])
             if preset:
                 parts[layer][index] = rendered
         except ValueError as exc:
