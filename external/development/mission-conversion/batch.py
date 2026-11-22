@@ -2393,8 +2393,23 @@ SCREENING_AREA_LAYER = ('worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Laye
                         'BLUFOR/BLU_AI_EXTERIOR_CachedAI.layer')
 SCREENING_AREA_BLOB = '2fd93fe71c5cbe9fcde680e6ba61c3ada8d9fac2'
 SCREENING_AREA_FLAGS = {'SouthExterior1': 1, 'WestExterior2': 1, 'SouthExterior2': 2}
+CONCRETE_CRUSHERS_LAYERS = 'worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/'
+CONCRETE_EXTRACTION_WRITERS = {
+    'Lamentin': '2d32007d8fc2d7f4513da1cba6710845a6576459',
+    'Montignac': '1fb7cf66c2ebc8163867d70ddf2c2d392497103c',
+    'Morton': '1de19a7b3d43a972e3b08fb0d6493971d7c52e70',
+    'StPhilipe': '50848ae50530a27b7fbd293ec4eee83f5ea57015',
+    'StPierre': '23d608db5c2d1d7be648d476f10b75b18473fb09',
+}
+DESERT_SENTINEL_LAYERS = 'worlds/anteante101/Operation Desert Sentinel/Operation Desert Sentinel_Layers/'
+DESERT_SENTINEL_MARKERS = DESERT_SENTINEL_LAYERS + 'markers.layer'
+DESERT_SENTINEL_MARKERS_BLOB = '90a3debf2867d1f7236d725165135fa213f69a3e'
 REVIEWED_AREA_FLAG_WRITERS = {
     SCREENING_AREA_LAYER: (SCREENING_AREA_BLOB, SCREENING_AREA_FLAGS),
+    **{f'{CONCRETE_CRUSHERS_LAYERS}PhaseTwoRedfor/{location}.layer':
+       (blob, {'Phase 1 Delete Units Flag': 1}) for location, blob in CONCRETE_EXTRACTION_WRITERS.items()},
+    DESERT_SENTINEL_LAYERS + 'trigger.layer':
+        ('d746de66b64f2048cdc41dcffec4e415e9e7d2be', {'extract': 3}),
     'worlds/Huska/WindyGoat/WindyGoat_Layers/Triggers.layer':
         ('c939b15d295709f83d2008d87cc90766388b2c0f', {'HVT_Extracted': 2}),
     'worlds/Perfk/PowerPlay/PowerPlay_Layers/OPFOR/Players/Players.layer':
@@ -2404,6 +2419,10 @@ REVIEWED_AREA_FLAG_WRITERS = {
        for index, blob in enumerate(NAGALAM_AMBUSH_BLOBS, 1)},
 }
 REVIEWED_AREA_FLAG_READERS = {
+    CONCRETE_CRUSHERS_LAYERS + 'default.layer':
+        ('2f142b3b9ff66a1dff96c07d077256ff3a402cec', 'event', {'Phase 1 Delete Units Flag': 'Phase 1 Delete Units'}),
+    DESERT_SENTINEL_LAYERS + 'default.layer':
+        ('63b3243cf54d619b68e4f16724fb2cdd9970d7d3', 'event', {'extract': 'Mission Victory'}),
     'worlds/Huska/WindyGoat/WindyGoat_Layers/default.layer':
         ('7cef76758a05e016aefe225413d201f04ecdb443', 'event', {'HVT_Extracted': 'All_HVTs_Extracted'}),
     'worlds/Perfk/PowerPlay/PowerPlay_Layers/default.layer':
@@ -3971,6 +3990,14 @@ def reviewed_area_flag_readers(source, world):
     return readers
 
 
+def reviewed_area_flag_reference_text(source, path):
+    text = source.read(path)
+    if path == DESERT_SENTINEL_MARKERS and source.files[path] == DESERT_SENTINEL_MARKERS_BLOB:
+        # These three marker descriptions are display text, not flag consumers.
+        return re.sub(r'(?m)^ +m_sDescription "extract"$', '', text)
+    return text
+
+
 def checked_area_flag_reads(flag, readers, events, derived):
     if flag not in readers:
         return 0
@@ -4126,32 +4153,29 @@ def area_rules(source, world, dev=None):
                         if (name and name in scripts) or flag[1:-1] in scripts:
                             raise ValueError('presence trigger may be controlled by mission scripts')
                         rule, area, details = presence_rule(world, area_name, flag, fields)
-                        capture_details[flag[1:-1]] = {'area': area_name, **details}
                     elif trigger['kind'] == 'Extraction' and trigger['guid'] == '192ABD6B9232E064':
                         if scripts is None:
                             scripts = script_text(source)
                         if (name and f'"{name}"' in scripts) or flag in scripts:
                             raise ValueError('extraction trigger may be controlled by mission scripts')
                         rule, area, details = extraction_rule(world, area_name, flag, fields, polygon=bool(shape))
-                        capture_details[flag[1:-1]] = {'area': area_name, **details}
                     elif trigger['kind'] == 'Faction' and trigger['guid'] == '8C576D46F6579229':
                         built, area, details = capture_instance(world, area_name, fields, polygon=bool(shape))
-                        if shared_writer:
-                            if (shape or attached or details['seconds'] or details.get('skipDiscovery')
-                                    or 'm_Messages' in '\n'.join(built[flag])):
-                                raise ValueError('shared area writer must be an immediate silent radius')
-                            observer = render_area_flag_observer(world, area_name, flag, built[flag],
-                                                                 details['stopsAfterFirstChange'])
-                            capture_details[area_name] = {'area': area_name, **details, 'writesFlag': flag[1:-1],
-                                                          'areaFlagObserver': observer}
-                            areas.append(area)
-                            continue
-                        capture_details[flag[1:-1]] = {'area': area_name, **details}
-                        if status_only:
-                            capture_details[flag[1:-1]]['statusOnly'] = True
                         rule = built[flag]
                     else:
                         raise ValueError('inconsistent trigger identity')
+                    if shared_writer:
+                        if (shape or attached or details['seconds'] or details.get('skipDiscovery')
+                                or any('m_Messages ' in item for item in rule)):
+                            raise ValueError('shared area writer must be an immediate silent radius')
+                        observer = render_area_flag_observer(world, area_name, flag, rule, details['stopsAfterFirstChange'])
+                        capture_details[area_name] = {'area': area_name, **details, 'writesFlag': flag[1:-1],
+                                                      'areaFlagObserver': observer}
+                        areas.append(area)
+                        continue
+                    capture_details[flag[1:-1]] = {'area': area_name, **details}
+                    if status_only:
+                        capture_details[flag[1:-1]]['statusOnly'] = True
                     unused_presence = (layer == NAGALAM_HILLTOP_LAYER
                                        and source.files[layer] == '2a7bc142928320aff39efbec9bc0ec2214a3e57d'
                                        and trigger['kind'] == 'Presence'
@@ -4780,7 +4804,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                       if isinstance(record, dict) and 'areaFlagObserver' in record]
     shared_flags = {record['writesFlag'] for record in shared_writers}
     if shared_writers:
-        closure = '\n'.join(source.read(path) for path in source.closure(world)
+        closure = '\n'.join(reviewed_area_flag_reference_text(source, path) for path in source.closure(world)
                             if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
         readers = placed_spawner_flag_reads(source, source.layers[world.lower()])
         writers = Counter(record['writesFlag'] for record in shared_writers)
@@ -4794,7 +4818,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         reviewed_reads = {flag: checked_area_flag_reads(flag, reviewed_readers, rules, derived) for flag in writers}
         scripts = script_text(source)
         unresolved = sorted(flag for flag, count in writers.items()
-                            if not (readers[flag] or reviewed_reads[flag]) or flag in scripts
+                            if not (readers[flag] or reviewed_reads[flag]) or f'"{flag}"' in scripts
                             or closure.count(f'"{flag}"') != count + readers[flag] + reviewed_reads[flag])
         if unresolved or writers != expected_writers or any(api in scripts for api in SCRIPT_FLAG_APIS):
             detail = 'expected all reviewed writers and only reviewed event or placed spawner readers'
