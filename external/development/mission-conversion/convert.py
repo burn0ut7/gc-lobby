@@ -267,6 +267,7 @@ def main():
                                 or not (local_loadouts.unchanged_units_parent(source_units, dev_units, member)
                                         or unchanged_disabled_playability(source_units, dev_units, member))):
                             return None
+                    break
             except ValueError:
                 return None
             return path

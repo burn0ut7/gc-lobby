@@ -608,11 +608,14 @@ def convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, ext
             checked.add(resource)
         return '"{' + resource + '}' + only_path(dev_units, resource) + '"'
 
-    if not replaces_playable_roster:
+    if not replaces_playable_roster and not any(line.strip() == 'm_aUnitPrefabSlots {' for line in lines):
         for parent in old_chain:
+            if re.search(r'^ m_aUnitPrefabSlots \+ ?\{', parent, re.M):
+                raise ValueError('inherited additive AI slot roster requires review')
             slots = SLOTS.search(parent)
             if slots:
                 REF.sub(member, slots[1])
+                break
 
     result = []
     index = 0

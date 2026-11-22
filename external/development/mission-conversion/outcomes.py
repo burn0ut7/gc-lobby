@@ -1177,13 +1177,15 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         try:
             term = read_term(definition, flags, captures, ai, objective_flags, event_flags, derived=derived)
             for item in leaves(term):
-                if item['trigger'] in ('event flag', 'interaction flag'):
+                if item['trigger'] in ('event flag', 'interaction flag', 'AI loss'):
+                    continue
+                if item['trigger'] == 'peak player loss' and not item.get('inverted'):
                     continue
                 check = captures.get(f'"{item.get("flag", "")}"', ())
                 if (item['trigger'] != 'area capture' or item.get('inverted')
                         or 'm_bStopAfterFirstChange 1' not in {line.strip() for line in check}
                         or any(line.strip().startswith('m_Messages ') for line in check)):
-                    raise ValueError('requires a verified first-change area or mission flag')
+                    raise ValueError('requires a verified first-change area, positive casualty check or mission flag')
         except ValueError as exc:
             derived_gap = derived_gap or f'meta flag {flag} cannot gate a placed spawner: {exc}'
             continue

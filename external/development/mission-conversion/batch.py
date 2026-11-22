@@ -229,7 +229,8 @@ WORKSHOP_SPAWN_PREFABS = {
         (('1A486F1C4D22A32A', 'Prefabs/Vehicles/Tracked/T14/VehParts/Seats/T14_seat.et'),
          ('EDD3E14E481BDA62', 'Prefabs/Vehicles/Airplanes/FA18A/FA18A_GBU_CAS.et'),
          ('EAD777F4CDA11F16', 'Prefabs/Vehicles/Airplanes/F22/F22_Flyby.et'),
-         ('FDD01BF3CEAB37E3', 'Prefabs/Vehicles/Airplanes/SU57/SU57_Flyby.et')),
+         ('FDD01BF3CEAB37E3', 'Prefabs/Vehicles/Airplanes/SU57/SU57_Flyby.et'),
+         ('123595894023C474', 'Prefabs/Vehicles/Wheeled/LAV25/LAV25_RHS_D.et')),
     ),
     GMFX_PROVIDER: (
         GMFX_DIGEST,
@@ -3480,7 +3481,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             elif derived_conditions and flag[1:-1] in derived_conditions:
                 term = derived_conditions[flag[1:-1]]
                 if any(item['flag'] not in flags for item in leaves(term)
-                       if item['trigger'] != 'area capture'):
+                       if item['trigger'] in ('event flag', 'interaction flag')):
                     raise ValueError('spawner meta flag lacks converted producers: ' + flag)
             elif flag[1:-1] in flags and re.fullmatch(FLAG_NAME, flag):
                 term = {'trigger': 'interaction flag', 'flag': flag[1:-1]}
@@ -4967,6 +4968,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         used_flags.update(entry['flag'] for entry in spawner_audit if entry['trigger'] == 'area capture')
         used_flags.update(item['flag'] for entry in spawner_audit if entry.get('derivedFlag')
                           for item in leaves(entry))
+        if not ai_faction:
+            ai_faction = next((item['faction'] for entry in spawner_audit if entry.get('derivedFlag')
+                               for item in leaves(entry) if item['trigger'] == 'AI loss'), None)
     unused_flags = []
     status_areas = {}
     flag_references = None

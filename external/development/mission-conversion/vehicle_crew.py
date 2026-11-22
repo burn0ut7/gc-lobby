@@ -163,6 +163,7 @@ VERIFIED_DEFAULT_CREW = {
     ('B47110AA1A806556', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_FIA.et'),
     ('C00B26E6C8808EF8', 'Prefabs/Vehicles/Wheeled/M998/CRX_M1025_armed_M2HB_gunshield_DESERT.et'),
     ('E9BEA9042617CAAD', 'Prefabs/Vehicles/Tracked/M113/M113A2_APC_MERDC.et'),
+    ('123595894023C474', 'Prefabs/Vehicles/Wheeled/LAV25/LAV25_RHS_D.et'),
 }
 NVA_BTR70_LEAF = 'ac360b5e120fa0f5ba97deee2e1ee68ef6d415fd9e856710c5104efdd8ea551f'
 NVA_T72A_LEAF = '30fdb038e061492f404c19340d7b0e1da08746c49abd8f57faf46fb7264d38a2'
