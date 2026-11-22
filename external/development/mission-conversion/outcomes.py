@@ -78,20 +78,35 @@ REVIEWED_INACTIVE_FLAGS = {
 }
 
 
-def inactive_flags(source, world, path, scripts):
+def inactive_flags(source, world, path, body, scripts):
+    """Prove that literal-only flags have no authored writer."""
+    if scripts is None or any(api in scripts for api in SCRIPT_FLAG_APIS):
+        return set()
+    references = '\n'.join(source.read(p) for p in sorted(source.closure(world))
+                           if PurePosixPath(p).suffix.lower() in SOURCE_TEXT)
+    reads = Counter()
+    for start, line in enumerate(body):
+        term = TERM.fullmatch(line)
+        if not term or term[1] != 'Literal':
+            continue
+        fields = body[start + 1:block_end(body, start)]
+        names = [match[1] for field in fields if (match := FLAG_FIELD.fullmatch(field))]
+        if len(names) == 1 and all(field.strip() in ('m_invertTerm 0', 'm_invertTerm 1')
+                                   or FLAG_FIELD.fullmatch(field) for field in fields):
+            reads[names[0]] += 1
+    # Arbitrary script instructions may write flags without a serialized name.
+    inactive = {flag for flag, count in reads.items() if flag not in scripts and references.count(flag) == count
+                and 'TILW_RunScriptInstruction' not in references}
     reference = REVIEWED_INACTIVE_FLAGS.get(path)
-    if not reference or scripts is None or any(api in scripts for api in SCRIPT_FLAG_APIS):
-        return ()
+    if not reference:
+        return inactive
     blob, flag, uses = reference
     if flag == '"Objective"':
         # The unrelated Roulette fields use this string as an editor category.
         scripts = re.sub(r'(?m)^[ \t]*\[Attribute\([^\r\n]*, category: "Objective"\)\][ \t]*\r?$', '', scripts)
-    if source.files[path] != blob or flag in scripts:
-        return ()
-    if sum(source.read(p).count(flag) for p in source.closure(world)
-           if PurePosixPath(p).suffix.lower() in SOURCE_TEXT) != uses:
-        return ()
-    return (flag,)
+    if source.files[path] == blob and flag not in scripts and references.count(flag) == uses:
+        inactive.add(flag)
+    return inactive
 
 
 def instruction_flags(source, world, framework_path, lines, scripts, flag_reads):
@@ -1008,7 +1023,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 startup = binary_startup or ()
     sampled_flags = {flag for sample in samples for flag in sample['flags']}
     event_flags = {*event_flags, *sampled_flags}
-    inactive = inactive_flags(source, world, path, scripts) if compound else ()
+    inactive = inactive_flags(source, world, path, body, scripts) if compound else ()
     match_only_flags = {*match_only_flags, *sampled_flags}
     derived_spawners = {}
     for flag, definition in derived.items():
