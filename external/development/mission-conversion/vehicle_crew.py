@@ -32,6 +32,7 @@ CREW_CONFIG_FIELD = 'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID
 CREW_CONFIG_REFERENCE = re.compile(CREW_CONFIG_FIELD + r' : ' + REF.pattern + r' \{')
 SEAT_TYPES = ('Pilot', 'Turret', 'Cargo')
 WORKSHOP_VEHICLES = {
+    '130214331292D6B5': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Weapons/Tripods/Tripod_SPG9.et'),
     ZAGORIA_BMP2[0]: ('Zagoria89BMP2_6730D59067916E3D', ZAGORIA_BMP2[1]),
     '0A17C0D659FA2473': ('TacticalFlava-Turrets_DEADC0DE00000007',
                          'Prefabs/Weapons/Tripods/6G10/Tripod_6G10_AGS17.et'),
@@ -113,6 +114,7 @@ NSV = ('29F0CC704A582154', 'Prefabs/Weapons/Tripods/6T7/Tripod_6T7_NSV.et')
 NSV_SPP = ('3EA26CFD7A202636', 'Prefabs/Weapons/Tripods/6T7/Tripod_6T7_NSV_SPP.et')
 SINGLE_SEAT_TURRETS = {
     PKM, NSV, NSV_SPP,
+    ('130214331292D6B5', 'Prefabs/Weapons/Tripods/Tripod_SPG9.et'),
     ('0A17C0D659FA2473', 'Prefabs/Weapons/Tripods/6G10/Tripod_6G10_AGS17.et'),
     ('73530808E4B455BA', 'Prefabs/Weapons/Tripods/Tripod_M3_M2HB.et'),
     ('887DB60486A18575', 'Prefabs/Weapons/Tripods/Tripod_M122_MG_M60.et'),

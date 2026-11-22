@@ -1298,6 +1298,12 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/FSM/Prefabs/Weapons/Magazines/FSM_Box_762x51_M240_100rnd_2Ball_1Tracer.et':
+        '676f8f91d9795922ddb9a37da90842d5e1ad37c5650202ccba29cfc9757efd00',
+    'worlds/Jub/OperationJaws/prefabs/JAWs_GC_M1151_armed_M2HB_MDO_OGPK+Cover_tan.et':
+        '2367afc084709214966caba3aa9876e6c2b36053d81a4513fb22b8e254730596',
+    'worlds/Jub/OperationJaws/prefabs/JAWs_M1151_armed_MK19_cover_Tan.et':
+        'd9b16ded48ce5d6dbb8518e747d0273dad7607a1f3c1eda4909243216ba09769',
     'worlds/anteante101/Prefabs/Weapons/MG_M60_empty_AA101.et':
         'b13396f1e6d2b266144ee6f661bbab573e5ce93447e6cbac7db9bee6250db598',
     'worlds/anteante101/Prefabs/Weapons/Rifle_MP5_empty_AA101.et':
@@ -4424,6 +4430,23 @@ def attached_trigger_map(fields, dev):
     return parent, output, amounts
 
 
+JAWS_OBJECTIVES = 'worlds/Jub/OperationJaws/OperationJaws_Layers/OBJs.layer'
+JAWS_OBJECTIVES_BLOB = '067bf721e4a21f0efd05beb7f753d76a1f8a3a8f'
+
+
+def omit_empty_capture_outline(fields):
+    """Remove a verified child that cannot draw its line without points."""
+    children = fields.index(' {')
+    start = next((index for index in range(children + 1, block_end(fields, children))
+                  if STANDALONE_SHAPE.fullmatch(fields[index].strip())), None)
+    if start is None:
+        raise ValueError('expected the reviewed empty outline')
+    stop = block_end(fields, start)
+    if any(line.strip().startswith(('Points ', 'm_drawArea 1')) for line in fields[start + 1:stop]):
+        raise ValueError('capture outline has authored geometry')
+    return [*fields[:start], *fields[stop + 1:]]
+
+
 def area_rules(source, world, dev=None):
     conditions, placements, audit = {}, {}, {}
     references = None
@@ -4472,6 +4495,7 @@ def area_rules(source, world, dev=None):
                     trigger = match
                     attached = []
                     pilot_spawn = None
+                    empty_outline = False
                     if shape:
                         if not any(TRIGGER.fullmatch(field.strip()) for field in fields):
                             parent, visual, amounts = attached_trigger_map(fields, dev)
@@ -4489,6 +4513,9 @@ def area_rules(source, world, dev=None):
                                 raise ValueError('polygon startup spawn needs a verified group and placement')
                             pilot_spawn = ('658EF768737FE0CE', guid(layer + '/startup-group'),
                                            f'"{{{LOST_AND_FOUND_PILOT_ID}}}{LOST_AND_FOUND_PILOT_GROUP}"')
+                        if layer == JAWS_OBJECTIVES and source.files[layer] == JAWS_OBJECTIVES_BLOB and line == 1:
+                            fields = omit_empty_capture_outline(fields)
+                            empty_outline = True
                         placement, (trigger, fields), vertices = polygon_capture.read(
                             fields, TRIGGER, startup_prefab=pilot_spawn)
                     elif ' {' in fields:
@@ -4557,6 +4584,8 @@ def area_rules(source, world, dev=None):
                         areas.append(area)
                         continue
                     capture_details[flag[1:-1]] = {'area': area_name, **details}
+                    if empty_outline:
+                        capture_details[flag[1:-1]]['omittedEmptyOutline'] = True
                     if status_only:
                         capture_details[flag[1:-1]]['statusOnly'] = True
                     unused_presence = (layer == NAGALAM_HILLTOP_LAYER

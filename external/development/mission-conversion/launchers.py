@@ -31,6 +31,11 @@ GENERATED = re.compile(r' m_GC_GeneratedMetadata GC_GeneratedMissionMetadata(?: 
 ADDON_VERSIONS_FIELD = re.compile(r'^ m_aRequiredAddonVersions\b', re.M)
 ADDON_VERSION = re.compile(r'"([\da-fA-F]{16})=([0-9]+(?:\.[0-9]+){1,3})"')
 REVIEWED_VERSION_PINS = {
+    'Missions/Jub/OperationJaws.conf': (
+        '7045bc4a9cb6949bf88d3d2815c9bafec58b95e3',
+        (('worlds/Jub/OperationJaws/OperationJaws_Layers/vehicles.layer',
+          '54aba909966dd13e2d2916230061aa398cd3f4d0', '5D1880C4AD410C14=2.1.25'),),
+    ),
     'Missions/arc/UrbanTroubles.conf': (
         '44c5ff26490d165afbcaab0a572682cb99679a57',
         (('worlds/arc/UrbanTroubles/UrbanTroubles_Layers/props.layer',
