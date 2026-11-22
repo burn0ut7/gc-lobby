@@ -1,10 +1,10 @@
 [BaseContainerProps(), BaseContainerCustomTitleField("m_sFlag")]
 class GC_AreaFlagObserver
 {
-	[Attribute("", UIWidgets.EditBox, "Flag to set on discovery and on changes. Multiple observers can write the same flag in list order.")]
+	[Attribute("", UIWidgets.EditBox, "Flag to set on discovery and on changes. Leave blank for a prefab-bound area that only sends capture notices.")]
 	string m_sFlag;
 
-	[Attribute("", UIWidgets.Object, "An immediate area condition. The observer samples from lobby startup through Match.")]
+	[Attribute("", UIWidgets.Object, "Flag observers require an immediate area condition. A prefab-bound notice-only area uses capture timing in Match.")]
 	ref GC_AreaCondition m_Area;
 
 	[Attribute("0", UIWidgets.CheckBox, "Stop after this area's first change during Match. Discovery and changes during staging do not stop it.")]

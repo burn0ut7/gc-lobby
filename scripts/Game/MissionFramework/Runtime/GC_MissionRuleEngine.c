@@ -929,9 +929,17 @@ class GC_MissionRuleEngine
 
 	protected bool AddAreaFlagObserver(GC_AreaFlagObserver observer, IEntity boundArea = null)
 	{
-		if (!observer || !observer.m_Area || observer.m_Area.m_Capture || observer.m_sFlag.IsEmpty()
-			|| m_mFlagDefinitions.Contains(observer.m_sFlag) || (m_DerivedFlags && m_DerivedFlags.Owns(observer.m_sFlag))
-			|| m_aAreaFlagObservations.Count() >= 256)
+		if (!observer || !observer.m_Area || m_aAreaFlagObservations.Count() >= 256)
+			return false;
+		if (observer.m_sFlag.IsEmpty())
+		{
+			// A spawned extraction area can send capture notices without writing a flag.
+			if (!boundArea || !observer.m_Area.m_Capture || !observer.m_Area.m_Capture.m_Messages
+				|| observer.m_bStopAfterMatchChange || observer.m_bResetAfterDiscovery)
+				return false;
+		}
+		else if (observer.m_Area.m_Capture || m_mFlagDefinitions.Contains(observer.m_sFlag)
+			|| (m_DerivedFlags && m_DerivedFlags.Owns(observer.m_sFlag)))
 			return false;
 		GC_RuleCondition check = observer.m_Area.BuildCheck();
 		if (!m_Areas.Register(check, boundArea))
@@ -956,7 +964,8 @@ class GC_MissionRuleEngine
 			return;
 		foreach (GC_AreaFlagObservation observer : m_aAreaFlagObservations)
 		{
-			if (observer.m_bStopped || (observer.m_bBoundToEntity && !observer.m_BoundArea) || !m_Areas.IsAvailable(observer.m_Check))
+			if (observer.m_sFlag.IsEmpty() || observer.m_bStopped
+				|| (observer.m_bBoundToEntity && !observer.m_BoundArea) || !m_Areas.IsAvailable(observer.m_Check))
 				continue;
 			bool answer = m_Areas.PassesCondition(observer.m_Check);
 			bool first = !observer.m_bDiscovered;

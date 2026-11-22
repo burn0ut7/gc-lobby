@@ -418,17 +418,17 @@ class GC_MissionAreaTracker
 	{
 		if (!check || !check.IsValid())
 			return false;
-		if (boundArea && (check.m_bAreaAnywhere || check.m_Capture || boundArea.GetWorld() != m_World
+		if (boundArea && (check.m_bAreaAnywhere || boundArea.GetWorld() != m_World
 			|| !GC_MissionAreaGeometry.SupportsEntity(boundArea)))
 			return false;
 		if (!boundArea)
 		{
-			if (check.m_Capture && !m_mCaptures.Contains(check))
-				m_mCaptures.Set(check, new GC_AreaCaptureState());
 			foreach (GC_MissionAreaObservation pair : m_aPairs)
 			{
 				if (!pair.m_bBoundToEntity && pair.Matches(check))
 				{
+					if (check.m_Capture && !m_mCaptures.Contains(check))
+						m_mCaptures.Set(check, new GC_AreaCaptureState());
 					m_mChecks.Set(check, pair);
 					return true;
 				}
@@ -479,6 +479,8 @@ class GC_MissionAreaTracker
 		observation.m_bBoundToEntity = boundArea != null;
 		m_aPairs.Insert(observation);
 		m_mChecks.Set(check, observation);
+		if (check.m_Capture && !m_mCaptures.Contains(check))
+			m_mCaptures.Set(check, new GC_AreaCaptureState());
 		return true;
 	}
 
@@ -492,6 +494,7 @@ class GC_MissionAreaTracker
 		m_mChecks.Remove(check);
 		m_mAnswers.Remove(check);
 		m_mAvailability.Remove(check);
+		m_mCaptures.Remove(check);
 	}
 
 	//------------------------------------------------------------------------------------------------

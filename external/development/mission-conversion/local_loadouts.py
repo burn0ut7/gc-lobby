@@ -35,6 +35,13 @@ MOVED_AI_PARENTS = {
         'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/2020/Character_SEP_SL.et',
 }
 REVIEWED_FORCED_CHARACTERS = {
+    # Trifecta explicitly enables the PATRIOT HQ group and its mission-local roles.
+    '970BD38C55D884C8': '0520df5340a21e9045ef5e6eedd96c684b9851bac4c6b14e6bdb9e91a5d07c19',
+    'C72F5743A033EAA7': 'bcade9706bd67072f699e95887ce9b723da79e8475b14c0e2039437962483a98',
+    '4B023F7E16C8D588': '5abea1a4e38eff232f79c3dbedd15ebdd687fc124faf6c51e7afde13742552cf',
+    '358B5AD651512010': '8d7000b8012fc5f82394ff6789631d2bb8ff77adca7880985c3b5812cb0a7491',
+    'F9F034704985BAB1': 'd068ac70cebca23f61b2e006f47a0b2b768bb5e0869c5f048fb341f2947085c0',
+    'CC3CFA6028544D1E': '1b72cdd8d99322a9f8d960854ef2cc0649448d518421d848876ce8b4dfcb10b5',
     # The Local Files explicitly enables both groups and names these roles.
     'DE94F9CA70A9C23B': '77b727fd2450b84a217b6c3ae6afa47585858caa6726ea77ec316edb745c1c3b',
     '53C0A621CB97E80D': 'ceb640e2ff498307d8cb1ea6ca1dc51a5a678c7610f61f93be3b221712a0f356',

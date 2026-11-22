@@ -42,6 +42,7 @@ from outcomes import (ASSAD_FRAMEWORK_BLOB, ASSAD_FRAMEWORK_LAYER, CONCRETE_COUN
                       RUHA_PHASE_BLOB, RUHA_PHASE_LAYER, RUHA_UNIT_NAMES, SCRIPT_FLAG_APIS,
                       SEEDER_REPLACEMENT_LAYER, SEEDER_REPLACEMENT_LAYER_BLOB,
                       SUPPLY_OUTCOME_BLOB, SUPPLY_OUTCOME_LAYER,
+                      TRIFECTA_FRAMEWORK, TRIFECTA_MARKER, TRIFECTA_ROOT, TRIFECTA_STM,
                       leaves, render as render_outcome, render_capture_trackers)
 import polygon_capture
 from respawns import authored_respawn_fields, read_respawns
@@ -983,6 +984,8 @@ STOCK_RESOURCE_ALIASES = {
         'Assets/Weapons/Ammo/Bullets/762x54/Cartridge_762x54_T46.xob',
     ('AED5759B653DF6D0', 'Prefabs/Vegetation/Bush/b_rosa_canina_1s_collision.et'):
         'Prefabs/Vegetation/Bush/b_rosa_canina_1s.et',
+    ('D6EC31A48403A52A', 'Prefabs/Vegetation/Bush/b_sambucus_nigra_1_collision.et'):
+        'Prefabs/Vegetation/Bush/b_sambucus_nigra_1.et',
     ('2D556E41F306336C', 'Configs/Destruction/MultiphaseDestruction/FX_Debris/FX_Debris_Snadbags_Plastic.conf'):
         'Configs/Destruction/MultiphaseDestruction/FX_Debris/FX_Debris_Sandbags_Plastic.conf',
     ('2B24356C351A2538', 'Prefabs/Props/Wrecks/M113_wreck.et'):
@@ -1093,6 +1096,9 @@ ZARICHNE_NAVMESH_ALIASES = {
 }
 
 WORKSHOP_RESOURCE_ALIASES = {
+    ('59769013F69B1DE9', 'Prefabs/Vehicles/Wheeled/S105/S105_rally_wcs.et'): (
+        'WCS_Armaments_629B2BA37EFFD577', '59769013F69B1DE9',
+        'Prefabs/Vehicles/Wheeled/S105/S105_rally_WCS.et'),
     ('3F0C718D8FA6E1AE', 'Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed_GUV8700.et'): (
         'WCS_Armaments_629B2BA37EFFD577', '3F0C718D8FA6E1AE',
         'Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_Armed_GUV8700_X2.et'),
@@ -1421,6 +1427,10 @@ UNITS_PREFAB_ALIASES = {
 }
 RASMAN_AA_GROUP = 'worlds/HotMic/Prefabs/Characters/Afghan/GC_INS_Afghan_Squad_WithAA_HotMIc.et'
 REVIEWED_NATIVE_ASSETS = {
+    TRIFECTA_ROOT + 'Prefabs/SafehouseV3.et': 'd196c18e73eceb95035902b1fd8daa3e9cdf1766c207d933f13cac4bf33c6fde',
+    TRIFECTA_ROOT + 'Prefabs/Solar_Panel.et': '87b5822c315917f2cbff304ad571639ac9d64bca8bef3987cc777a47724eb920',
+    TRIFECTA_ROOT + 'Prefabs/SVDM_Infratech.et': '7f39ee1ee6d296b8fbc6f1ecd6182eb29feef5ca93285ef51324795a992ebff3',
+    TRIFECTA_ROOT + 'Prefabs/SR_25_REAPir.et': '9eb5e863fa4e40aaf99d1fab0269739cb452f8da4016a3680a164cc427ca6a5b',
     RASMAN_AA_GROUP: 'ee9f8f696dbc3ee06ad5d2218082bf11703a4575b6ab5d75830d953c0ff9006d',
     'worlds/chllboy/Hephaestus Forge/Prefabs/AUS_UH60_armed1_EW.et':
         '24b130cf49808656d5d1ae0aff3e2f6fb1345253aa5925adda880c290bb21787',
@@ -1832,6 +1842,83 @@ def local_files_intel_marker(source, dev, stock):
     marker = marker.replace('   m_sDescription "HVT"\n',
                             '   m_sDescription "HVT"\n   m_sTrackedEntity "Intel"\n   m_iTrackingIntervalMs 600000\n')
     return {identity: {'path': path, 'body': body, 'trackingMarker': marker + '\n'}}
+
+
+TRIFECTA_EXTRACTS = {
+    '24B24161E870CE7B': ('ION_HARBOUR_EXTRACT', '570d6c851266dae8b245a9f36a67056fe59eff2e'),
+    '9C8ABD5BDB78B4E8': ('ION_BEACH_EXTRACT', '92b5f87fe479d35e11b5633ec118ddc2da415261'),
+    'E0CC1F1AECDAEDB3': ('AFRF_KERMOVAN_EX', 'c168547a028fae66bf7cb5e0b6d6f4ae9899b9da'),
+    'DFC65F8E60D54E83': ('AFRF_BOAT_EX', 'a06854088f6690f4d69c52d232c9996ce46f293d'),
+    'E214CD324D84F76E': ('FIA_MIL_EX', '3d0f0a48cf3b144043cfc1316ed8800090576e58'),
+}
+TRIFECTA_PLACED_EXTRACTS = {
+    'MIL': ('FIA_MIL_EX', '078244022733ebf34c5b4ff81bf6a4fb86bdb56d'),
+    'BEACH': ('ION_LESCREUX_BEACH_EX', 'db7046a9c61ae15ccc3b74949afb446b3639ebfb'),
+    'HARBOUR': ('ION_MEAUX_HARBOUR_EX', 'f1a6e95ba4a2bafd600b5270c58c10e5d4ad03b2'),
+    'BOAT': ('PATRIOT_BOAT_EX', 'ab90a3b13a2bd74b831fe35361802df5b70a570c'),
+    'KERMOVAN': ('PATRIOT_KERMOVAN_EX', 'b7efab6f881a5d6f93390ceec638a75b7a3bee6a'),
+}
+
+
+def trifecta_assets(source, dev):
+    if (source.files.get(TRIFECTA_FRAMEWORK[0]) != TRIFECTA_FRAMEWORK[1]
+            or source.files.get('scripts/game/arc/CommandosReforged/GC_CommandosManager.c')
+            != '6964da122cd0121fb80e9f3a8c7033c996bcf320'):
+        raise ValueError('Trifecta tracker or framework changed')
+    assets = {}
+
+    def checked_source(identity, path, blob):
+        if (source.files.get(path) != blob or source.resources.get(identity) != [path]
+                or dev.resources.get(identity) not in (None, [path])):
+            raise ValueError('Trifecta asset or registration changed: ' + path)
+        return source.read(path)
+
+    def remember(identity, path, body, **details):
+        if LEGACY.search(body) or (path in dev.files and body.strip() != dev.read(path).strip()):
+            raise ValueError('Trifecta has unconverted or differing asset: ' + path)
+        assets[identity] = {'path': path, 'body': body, **details}
+
+    identity, path = TRIFECTA_STM
+    lines = checked_source(identity, path, '43370cc6e12eec78a29d018e6eb1633ef17f5929').splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith('  GC_CommandosObjRegister '))
+    del lines[start:block_end(lines, start) + 1]
+    stm, names = convert_mission_names('\n'.join(lines) + '\n')
+    if names != 1:
+        raise ValueError('Trifecta STM needs one runtime name')
+    remember(identity, path, stm, trackerName='STMMARK')
+
+    identity, path = TRIFECTA_MARKER
+    text = checked_source(identity, path, 'd8775e8bf2be383bcf9d0ce785aa5ca22a0ff23b')
+    marker = seeder_named_marker(text.replace(' m_MarkerColor 0.251 0 0.502 1\n',
+                                               ' m_MarkerColor 0.5 0 1 1\n m_sDescription "STM"\n'))
+    marker = marker.replace('   m_sDescription "STM"\n',
+                            '   m_sDescription "STM"\n   m_sTrackedEntity "STM"\n   m_iTrackingIntervalMs 180000\n')
+    remember(identity, path, marker)
+
+    for identity, (name, blob) in TRIFECTA_EXTRACTS.items():
+        path = TRIFECTA_ROOT + f'Prefabs/{name}.et'
+        text = checked_source(identity, path, blob)
+        native, names = convert_mission_names(text)
+        block = native.splitlines()
+        fields, children = trigger_children(block[1:-1])
+        if names != 1 or len(children) != 1:
+            raise ValueError('Trifecta extraction needs one named polygon and one trigger')
+        _, child = children[0]
+        trigger = TRIGGER.fullmatch(child[0])
+        if not trigger or trigger['kind'] != 'Extraction' or any('m_flagName ' in line for line in child):
+            raise ValueError('Trifecta extraction requires a notice-only trigger')
+        trigger_fields = [line for line in child[1:-1] if not re.fullmatch(r' ID "[\dA-F]{16}"', line)]
+        check, _, details = extraction_rule(path, name, '""', trigger_fields, polygon=True)
+        if not details.get('statusMessages'):
+            raise ValueError('Trifecta extraction is missing its status notices')
+        observer = render_area_flag_observer(path, name, '""', check, False, status_only=True)
+        observer[0] = observer[0].replace('GC_AreaFlagObserver ', 'm_Observer GC_AreaFlagObserver ', 1)
+        component = [f'  GC_BoundAreaFlagComponent "{{{guid(path + "/notices")}}}" {{',
+                     *(line[1:] for line in observer), '  }']
+        stop = block_end(fields, fields.index(' components {'))
+        fields[stop:stop] = component
+        remember(identity, path, '\n'.join([block[0], *fields, block[-1], '']))
+    return assets
 BULGES = 'worlds/TheLocalPub/BattleOfTheBulges'
 LOST_AND_FOUND_DELTA_GROUP = ('worlds/FloridaMan/Prefabs/Groups/BLUFOR/US/Army_2010_DeltaForce/'
                               'Group_Delta_2010_Assault_m_P.et')
@@ -2868,11 +2955,17 @@ REVIEWED_AREA_FLAG_WRITERS = {
     'worlds/Perfk/PowerPlay/PowerPlay_Layers/OPFOR/Players/Players.layer':
         ('4789915b7734553a2e1ba6492a4bc5da95d3ac55', {'ReleaseOpfor': 6}),
     ZARICHNE_DEFAULT: (ZARICHNE_DEFAULT_BLOB, {'Compound': 2}),
+    **{f'{TRIFECTA_ROOT}Trifecta_Layers/EXTRACTS/{layer}.layer': (blob, {f'STM_IN_{suffix}': 1})
+       for suffix, (layer, blob) in TRIFECTA_PLACED_EXTRACTS.items()},
     **{f'{NAGALAM_AMBUSH_LAYERS}Ambush_{index:02}.layer':
        (blob, {f'Ambush_{index:02}_Trigger': 2})
        for index, blob in enumerate(NAGALAM_AMBUSH_BLOBS, 1)},
 }
 REVIEWED_AREA_FLAG_READERS = {
+    TRIFECTA_FRAMEWORK[0]: (TRIFECTA_FRAMEWORK[1], 'event with redundant clear', {
+        f'STM_IN_{suffix}': (f'STM_{suffix}_EX', f'STM_NOT_IN_{suffix}')
+        for suffix in TRIFECTA_PLACED_EXTRACTS
+    }),
     CONCRETE_CRUSHERS_LAYERS + 'default.layer':
         ('2f142b3b9ff66a1dff96c07d077256ff3a402cec', 'event', {'Phase 1 Delete Units Flag': 'Phase 1 Delete Units'}),
     DESERT_SENTINEL_LAYERS + 'default.layer':
@@ -5291,14 +5384,18 @@ PRESENCE_MESSAGES = (
 )
 
 
-def render_area_flag_observer(world, area, flag, check, stop, *, reset_after_discovery=False):
+def render_area_flag_observer(world, area, flag, check, stop, *, reset_after_discovery=False, status_only=False):
     key = f'{world}/area observer/{area}'
-    timer = next(i for i, line in enumerate(check) if line.lstrip().startswith('m_Capture '))
-    check = [*check[:timer], check[-1]]
+    if status_only:
+        check = check.copy()
+    else:
+        timer = next(i for i, line in enumerate(check) if line.lstrip().startswith('m_Capture '))
+        check = [*check[:timer], check[-1]]
     check[0] = check[0].replace('GC_AreaCondition ', 'm_Area GC_AreaCondition ', 1)
     check = [re.sub(r'"\{([A-F0-9]{16})\}"', lambda match: f'"{{{guid(key + "/" + match[1])}}}"',
                     line[1:]) for line in check]
-    return [f'    GC_AreaFlagObserver "{{{guid(key)}}}" {{', f'     m_sFlag {flag}',
+    return [f'    GC_AreaFlagObserver "{{{guid(key)}}}" {{',
+            *([] if status_only else [f'     m_sFlag {flag}']),
             *(['     m_bStopAfterMatchChange 1'] if stop else []),
             *(['     m_bResetAfterDiscovery 1'] if reset_after_discovery else []), *check, '    }']
 
@@ -5328,12 +5425,15 @@ def checked_area_flag_reads(flag, readers, events, derived):
     if flag not in readers:
         return 0
     kind, target = readers[flag]
-    if kind == 'event':
+    if kind in ('event', 'event with redundant clear'):
         uses = [event.get('name') for event in events.values() if 'gap' not in event
                 for term in leaves(event) if term.get('flag') == flag]
         expected = (target,) if isinstance(target, str) else target
         if Counter(uses) == Counter(expected):
-            return len(expected) + expected.count(flag)
+            clears = sum(action.get('omittedFalseClear') == flag for event in events.values()
+                         for action in event.get('convertedActions', ()))
+            if kind == 'event' or clears == 1:
+                return len(expected) + expected.count(flag) + clears
     elif sum(term.get('flag') == flag for term in leaves(derived.get(target, {}))) == 1:
         return 1
     return 0
@@ -5982,7 +6082,7 @@ def mode_children(lines, disable_photo=False, lock_editor=False):
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None,
                 *, dynamic_respawn_factions=(), area_flag_observers=(), cache_supply_depot=False,
                 inherited_immediate_release=False, capture_phase_entities=False, source_blob=None,
-                derived_flag_containers=(), local_files_tracker=False):
+                derived_flag_containers=(), replaced_tracker=None):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, environment, freeze = '', '', 0
@@ -6034,7 +6134,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
                 elif source_blob == ASSAD_FRAMEWORK_BLOB and component_lines == EMPTY_LEGACY_CUTSCENE:
                     # This mode inherits the disabled cutscene setting and has no cinematic entity.
                     pass
-                elif local_files_tracker and header == '  GC_CommandosManager "{66FA7E68E581F311}" {':
+                elif header == replaced_tracker:
                     # The native marker placement owns the reviewed Intel tracking behavior.
                     pass
                 else:
@@ -6270,6 +6370,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'respawn', 'file': world, 'detail': str(exc)})
     outcome = row.get('outcomeCandidate', {})
     local_files_tracker = spawned_assets.get(LOCAL_FILES_INTEL[0], {}).get('trackingMarker')
+    trifecta_tracker = spawned_assets.get(TRIFECTA_STM[0], {}).get('trackerName')
     rules = outcome.get('events', {})
     route_graph = outcome.get('orderedRouteFlags', {})
     route_flags = set(route_graph.get('areas', ()))
@@ -6447,6 +6548,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append('')
                 elif kind == 'PS_MissionDescription' and preset and not row['briefingGaps']:
                     continue
+                elif (kind == 'SCR_PowerPole' and layer == TRIFECTA_ROOT + 'Trifecta_Layers/OBJECTIVE/SATELLITEPARTS.layer'
+                      and source.files[layer] == 'f761f4c53d580b6f44fc58927f6f59aa991713df'
+                      and not LEGACY.search(body)):
+                    result.append(body)
                 elif kind == 'EditorCommentEntity':
                     try:
                         validate_editor_comments(block)
@@ -6768,7 +6873,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                        depot_layer == layer == FOOD_MARKET_OUTCOME_LAYER),
                                    capture_phase_entities=phase_entity_capture,
                                    source_blob=source.files[layer],
-                                   local_files_tracker=bool(local_files_tracker and layer == LOCAL_FILES_DEFAULT),
+                                   replaced_tracker=(
+                                       '  GC_CommandosManager "{66FA7E68E581F311}" {'
+                                       if local_files_tracker and layer == LOCAL_FILES_DEFAULT else
+                                       '  GC_CommandosManager "{691080D344BD9507}" {'
+                                       if trifecta_tracker and layer == TRIFECTA_FRAMEWORK[0] else None),
                                    derived_flag_containers=route_graph.get('containers', ()),
                                    area_flag_observers=[line for observer in route_observers.values() for line in observer]
                                    + [line for record in shared_writers for line in record['areaFlagObserver']])
@@ -7051,7 +7160,19 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     continue
             blockers.append({'rule': 'static group links', 'file': layer,
                              'detail': f'{field} requires a unique placed target named {target}'})
-        for gap in marker_edit_gaps(named, marker_edits):
+        marker_targets = named
+        if trifecta_tracker:
+            marker_spawns = [spawn for spawn in prefab_spawns if spawn['spawnName'] == trifecta_tracker]
+            marker_asset = spawned_assets.get(TRIFECTA_MARKER[0], {})
+            marker_ref = f'"{{{TRIFECTA_MARKER[0]}}}{TRIFECTA_MARKER[1]}"'
+            expected = {f'POS{i}' for i in range(1, 6)}
+            if (marker_asset and trifecta_tracker not in named and len(marker_spawns) == 5
+                    and {spawn['startupChoice'] for spawn in marker_spawns} == expected
+                    and all(spawn['prefab'] == marker_ref for spawn in marker_spawns)
+                    and len({draw_by_flag[choice] for choice in expected if choice in draw_by_flag}) == 1
+                    and expected <= draw_by_flag.keys()):
+                marker_targets = {**named, trifecta_tracker: [('GenericEntity', marker_asset['body'].splitlines())]}
+        for gap in marker_edit_gaps(marker_targets, marker_edits):
             blockers.append({'rule': 'marker visibility actions', 'file': world, 'detail': gap})
     for layer, converted in boundaries.items():
         sibling = layer.removesuffix('.layer') + '_GC_Boundaries.layer'

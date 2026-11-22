@@ -56,6 +56,10 @@ CONCRETE_SCRIPT_CALLS = {
                     (['     m_executionDelay 1', '     m_bAllowRerun 1'], '1', CONCRETE_COUNT, 2)),
 }
 CONCRETE_OUTPUTS = (CONCRETE_DONE, *(town + ' Spawn Flag' for town in CONCRETE_TOWNS))
+TRIFECTA_ROOT = 'worlds/chllboy/Trifecta/'
+TRIFECTA_FRAMEWORK = (TRIFECTA_ROOT + 'Trifecta_Layers/default.layer', '9a70e4e138cdfd4b72208aff367dd10aea2a251e')
+TRIFECTA_STM = ('75851785A28EBCA0', TRIFECTA_ROOT + 'Prefabs/STM.et')
+TRIFECTA_MARKER = ('8244C31CF993A0C7', TRIFECTA_ROOT + 'Prefabs/Module_marker.et')
 SUPPLY_OUTCOME_LAYER = 'worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/default.layer'
 SUPPLY_OUTCOME_BLOB = '01e9a0424825e574bf1439cbc9c1189fe85e226d'
 SUPPLY_COUNT_FLAG = 'GC_MigrationSupplyCountRequested'
@@ -618,7 +622,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                direct_control=False, empty_hint=None, missing_group_waypoint=None, sampled_pregame_flags=(),
                supply_comparison=False, reviewed_script_calls=None, reviewed_script_type=None,
                unused_vehicle_name=None, replacement_flag=None, clearable_flags=(), ordered_events=(),
-               inactive_control_targets=(), concrete_crushers=False):
+               inactive_control_targets=(), concrete_crushers=False, spawn_companions=None):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -711,8 +715,14 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 elif action_match:
                     delay, body, details = compile_action(action_match, fields[j + 1:last], key, hidden_briefings)
                     flag = details.get('setsFlag') or details.get('clearsFlag')
+                    if (spawn_companions and details.get('clearsFlag') and flag.startswith('STM_IN_')
+                            and flag in objective_flags and delay == 0):
+                        details['omittedFalseClear'] = flag
+                        details['reviewedExternalFlagClear'] = True
+                        body = []
                     if (flag and flag not in event_flags
                             and details.get('clearsFlag') not in clearable_flags
+                            and not details.get('omittedFalseClear')
                             and (not replacement_flag or details.get('clearsFlag') != replacement_flag)):
                         raise ValueError('flag has another producer or unsupported use: ' + flag)
                     if details.get('clearsFlag') and flag not in event_flags:
@@ -768,6 +778,16 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                         fields[j + 1:last], key + '/' + identity, resolver,
                         group=bool(group_match), missing_group_waypoint=missing_group_waypoint)
                     converted_actions.append({'instructionId': identity, **details})
+                    if spawn_companions and details['prefab'] in spawn_companions:
+                        resource, path, name = spawn_companions[details['prefab']]
+                        _, marker, record = prefab_spawn([
+                            f'     m_executionDelay {delay:f}',
+                            f'     m_prefab "{{{resource}}}{path}"',
+                            f'     m_locationName "{details["spawnAnchor"]}"',
+                            f'     m_setEntityName "{name}"',
+                        ], key + '/' + identity + '/marker', resolve_spawn)
+                        body.extend(marker)
+                        converted_actions.append({'instructionId': identity + '/marker', **record})
                 elif vehicle_match:
                     settings = fields[j + 1:last]
                     unused = f'     m_setEntityName "{unused_vehicle_name}"'
@@ -795,6 +815,10 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
     if not term or not (notices or assignments or converted_actions or delayed_areas or (compound and messages)
                         or log_only or empty_waypoints):
         raise ValueError('missing condition or supported framework instruction')
+    if any(action.get('omittedFalseClear') and (
+            term.get('flag') != action['omittedFalseClear'] or not term.get('inverted'))
+           for action in converted_actions):
+        raise ValueError('omitted area flag clear must check the same false flag')
     if compound and pregame and term['trigger'] == 'Match start':
         term = {'trigger': 'pregame start'}
     pregame_start = term['trigger'] == 'pregame start'
@@ -823,7 +847,6 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         startup_actions.add('TILW_DeleteEntitiesInstruction')
     if pregame and (notices or assignments or (delayed_areas and not pregame_extraction)
                     or messages or (pregame_start and not converted_actions)
-                    or (sample_before_match and direct_control)
                     or any(action['instruction'] not in startup_actions
                            for action in converted_actions)):
         raise ValueError('unsupported pregame action')
@@ -1413,6 +1436,10 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     path, text = owners[0]
     concrete_crushers = (compound and (path, source.files[path]) == CONCRETE_FRAMEWORK
                          and scripts is not None and not any(api in scripts for api in SCRIPT_FLAG_APIS))
+    spawn_companions = {}
+    if compound and (path, source.files[path]) == TRIFECTA_FRAMEWORK:
+        resource, asset = TRIFECTA_STM
+        spawn_companions[f'"{{{resource}}}{asset}"'] = (*TRIFECTA_MARKER, 'STMMARK')
     unused_vehicle_name = None
     if compound and (path, source.files[path]) == (ASSAD_FRAMEWORK_LAYER, ASSAD_FRAMEWORK_BLOB):
         # Seven QRF hulls receive the same name. No authored consumer looks it up.
@@ -1655,6 +1682,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 ordered_events=ordered_events,
                 inactive_control_targets=inactive_control_targets,
                 concrete_crushers=concrete_crushers,
+                spawn_companions=spawn_companions,
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
             if not term.get('pregameSample') and any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
@@ -1664,7 +1692,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 suffixes.add(' (0s)')
             if term['trigger'] not in ('Match start', 'startup choice', 'dormant'):
                 suffixes.add('')
-            if term.get('startupVehicles') or (direct_control and term['trigger'] not in ('startup choice', 'pregame start')):
+            if term.get('startupVehicles') or (direct_control and not term.get('pregameSample')
+                                                and term['trigger'] not in ('startup choice', 'pregame start')):
                 suffixes = {''}
             native_name = native_event_names.get(event[1], name)
             emitted_names = {native_name + suffix for suffix in suffixes}
@@ -1700,7 +1729,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         if not direct_control:
             excluded += ('Match start', 'dormant')
         trigger_names = {name for _, name, original, term, _ in parsed
-                         if (ordered_events or name == original) and term['trigger'] not in excluded}
+                         if (ordered_events or name == original) and term['trigger'] not in excluded
+                         and not term.get('pregameSample')}
         target_counts = Counter(name for _, name in ordered_events) if ordered_events else source_names
         control_fields = ('deactivatesEvents', 'reactivatesEvents', 'runsEvents')
         mapped = 0
@@ -1786,7 +1816,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             return [], audit, 'inline script conversion requires all reviewed calls'
     compiled.extend(render_capture_trackers(world, tracked_areas, captures, capture_messages))
     for identity, name, display_name, term, actions in parsed:
-        if direct_control and term['trigger'] not in ('startup choice', 'pregame start'):
+        if direct_control and term['trigger'] not in ('startup choice', 'pregame start') and not term.get('pregameSample'):
             compiled.extend(render_controlled_event(world + '/' + identity, name, term, actions, captures,
                                                     capture_messages, tracked_areas, display_name))
         else:
