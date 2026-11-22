@@ -263,8 +263,11 @@ class GC_BriefingMarkerLayer
 			}
 
 			ResourceName highlightImage = marker.GetHighlightImage();
+			bool textureHighlight = highlightImage.EndsWith(".edds");
 			bool highlightLoaded;
-			if (!highlightImage.IsEmpty())
+			if (textureHighlight)
+				highlightLoaded = markerGlow.LoadImageTexture(0, highlightImage);
+			else if (!highlightImage.IsEmpty())
 				highlightLoaded = markerGlow.LoadImageFromSet(0, highlightImage, marker.GetQuadName());
 			if (!highlightImage.IsEmpty() && !highlightLoaded)
 			{
@@ -293,7 +296,10 @@ class GC_BriefingMarkerLayer
 			markerImage.SetRotation(marker.GetRotation());
 			markerImage.SetColorInt(marker.GetColor());
 			markerGlow.SetRotation(marker.GetRotation());
-			markerGlow.SetColor(Color.FromSRGBA(226, 168, 79, 155));
+			if (textureHighlight)
+				markerGlow.SetColorInt(marker.GetColor());
+			else
+				markerGlow.SetColor(Color.FromSRGBA(226, 168, 79, 155));
 			markerDescription.SetText(marker.GetDescription());
 			markerDescription.SetColorInt(marker.GetTextColor());
 			m_aMarkerRoots.Insert(markerRoot);

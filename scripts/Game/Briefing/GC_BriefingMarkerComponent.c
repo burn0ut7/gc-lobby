@@ -14,7 +14,7 @@ class GC_BriefingMarkerComponent : ScriptComponent
 	[Attribute("", UIWidgets.ResourcePickerThumbnail, "Texture or image-set resource used by the briefing marker", params: "imageset edds png")]
 	protected ResourceName m_sImageSetOrImage;
 
-	[Attribute("", UIWidgets.ResourcePickerThumbnail, "Optional highlight imageset using the same quad as the marker image", params: "imageset")]
+	[Attribute("", UIWidgets.ResourcePickerThumbnail, "Optional highlight texture or image set. Image sets use the same quad as the marker image.", params: "imageset edds")]
 	protected ResourceName m_sHighlightImageSet;
 
 	[Attribute("", UIWidgets.EditBox, "Quad name used only when Image is an .imageset resource. Select the entity to preview its actual icon in the 3D viewport")]

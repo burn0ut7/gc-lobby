@@ -4686,10 +4686,12 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
             || !GC_LobbyPhase.IsValid(marker.GetShowAtGameModeState()))
             return false;
 
-        if ((marker.GetImage().EndsWith(".imageset") || !marker.GetHighlightImage().IsEmpty())
+        ResourceName highlightImage = marker.GetHighlightImage();
+        bool highlightUsesQuad = highlightImage.EndsWith(".imageset");
+        if ((marker.GetImage().EndsWith(".imageset") || highlightUsesQuad)
             && marker.GetQuadName().IsEmpty())
             return false;
-        if (!marker.GetHighlightImage().IsEmpty() && !marker.GetHighlightImage().EndsWith(".imageset"))
+        if (!highlightImage.IsEmpty() && !highlightUsesQuad && !highlightImage.EndsWith(".edds"))
             return false;
 
         return ValidateFactionKeys(marker.GetFactionKeys(), GC_BriefingMarker.MAX_FACTION_KEYS);
