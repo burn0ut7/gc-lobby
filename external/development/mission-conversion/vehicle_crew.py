@@ -36,6 +36,8 @@ WORKSHOP_VEHICLES = {
     ZAGORIA_BMP2[0]: ('Zagoria89BMP2_6730D59067916E3D', ZAGORIA_BMP2[1]),
     '0A17C0D659FA2473': ('TacticalFlava-Turrets_DEADC0DE00000007',
                          'Prefabs/Weapons/Tripods/6G10/Tripod_6G10_AGS17.et'),
+    'BC52FAAFB89D51AA': ('TacticalFlava-Turrets_DEADC0DE00000007',
+                         'Prefabs/Weapons/Tripods/6G10/Tripod_6G10_AGS17_PAG17.et'),
     '19A9036206E23B23': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/AGS/GAZ_TIGR_v2_AGS17_Tan.et'),
     '0144F571F1998FC4': ('WCS_BMP-1_5E524E4FEECCA92B', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_FIA.et'),

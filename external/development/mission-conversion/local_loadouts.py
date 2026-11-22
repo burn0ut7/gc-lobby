@@ -35,6 +35,8 @@ MOVED_AI_PARENTS = {
         'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/2020/Character_SEP_SL.et',
 }
 REVIEWED_FORCED_CHARACTERS = {
+    # Gunfighter inherits force-playability from the USMC platoon HQ.
+    '6249D34810999F63': '8b74873ea5a2cbb6a1673fbdcbc3b0f65d1606c3f98c02b4dfe4843e9dff574b',
     # Trifecta explicitly enables the PATRIOT HQ group and its mission-local roles.
     '970BD38C55D884C8': '0520df5340a21e9045ef5e6eedd96c684b9851bac4c6b14e6bdb9e91a5d07c19',
     'C72F5743A033EAA7': 'bcade9706bd67072f699e95887ce9b723da79e8475b14c0e2039437962483a98',

@@ -6,17 +6,20 @@ from briefings import block_end, properties
 
 SHAPE = re.compile(r'(?P<group>\$grp )?PolylineShapeEntity(?: (?P<name>[\w.-]+))? \{')
 MEMBER = re.compile(r' (?:([\w.-]+) )?\{')
+QUOTED_MEMBER = re.compile(r' ("[\w.-]+") \{')
 POINT = re.compile(r'ShapePoint "\{[\da-fA-F]{16}\}" \{')
 COMPONENT = re.compile(r'  (TILW_MapShapeComponent|RplComponent) "\{([\da-fA-F]{16})\}" \{')
 
 
-def members(block, grouped, name):
+def members(block, grouped, name, *, allow_quoted=False):
     if not grouped:
         return [(name, block[1:-1])]
     result = []
     start = 1
     while start < len(block) - 1:
         member = MEMBER.fullmatch(block[start])
+        if not member and allow_quoted:
+            member = QUOTED_MEMBER.fullmatch(block[start])
         if not member:
             raise ValueError('unsupported grouped area placement')
         end = block_end(block, start)

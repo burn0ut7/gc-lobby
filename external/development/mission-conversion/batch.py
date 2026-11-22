@@ -422,6 +422,12 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/Jub/OperationArrowheadMulladostPass.conf': (
+        'cb25c94860ef584a0110dc41ccfeb81c576bf4dd',
+        (('worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/players.layer',
+          '813e4a817cf1725869d94733a867f4e58c746da5'),),
+        47, 49,
+    ),
     'Missions/Til/Countdown.conf': (
         'ea0942570cfe1205ef4560f10a72c23a337f9a27',
         tuple((f'worlds/Til/Countdown/Countdown_Layers/players_{faction}.layer', blob) for faction, blob in (
@@ -2899,7 +2905,7 @@ def placed_spawner_flag_reads(source, layers):
             if not match:
                 continue
             try:
-                members = list(polygon_capture.members(block, match['group'], match['name']))
+                members = polygon_capture.members(block, match['group'], match['name'], allow_quoted=True)
             except ValueError:
                 continue
             for _, fields in members:
@@ -3114,6 +3120,7 @@ def unused_flag_sampling(source, world, path, line, framework):
 
 
 PLACED_ENTITY = re.compile(r'(?P<group>\$grp )?(?P<kind>\w+)(?: (?P<name>[\w.-]+))?(?: : "[^"]+")? \{')
+QUOTED_PLACED_ENTITY = re.compile(r'(?P<group>\$grp )?(?P<kind>\w+) "(?P<name>[\w.-]+)"(?: : "[^"]+")? \{')
 
 
 def named_placements(layers):
@@ -3129,18 +3136,18 @@ def named_placements(layers):
             visit(child)
 
     def visit(block):
-        head = PLACED_ENTITY.fullmatch(block[0])
+        head = PLACED_ENTITY.fullmatch(block[0]) or QUOTED_PLACED_ENTITY.fullmatch(block[0])
         if not head:
             return
         if head['name']:
             named.setdefault(head['name'], []).append((head['kind'], block))
         if head['group']:
             for index, line in enumerate(block[1:-1], 1):
-                member = re.fullmatch(r' (?:([\w.-]+) )?\{', line)
+                member = polygon_capture.MEMBER.fullmatch(line) or polygon_capture.QUOTED_MEMBER.fullmatch(line)
                 if member:
                     placement = block[index:block_end(block, index) + 1]
                     if member[1]:
-                        named.setdefault(member[1], []).append((head['kind'], placement))
+                        named.setdefault(member[1].strip('"'), []).append((head['kind'], placement))
                     visit_children([line[1:] for line in placement])
         else:
             visit_children(block)
@@ -4135,7 +4142,7 @@ def authored_spawn_references(source, world):
             for _, _, block in placed_spawner_entries(source, layer, source_layer):
                 if root := PLACED_SPAWNER.fullmatch(block[0]):
                     try:
-                        placements = list(polygon_capture.members(block, root['group'], root['name']))
+                        placements = polygon_capture.members(block, root['group'], root['name'], allow_quoted=True)
                     except ValueError:
                         # A later file check still reports unsupported placements. The
                         # reference count prevents partial coverage for a damage prefab.
@@ -4579,7 +4586,9 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
     placements, rules, audit = [], [], []
     paired_actions = defaultdict(list) if local_files_markers else None
     transform_fields = SPAWNER_TRANSFORM | {'scale'}
-    for index, (name, lines) in enumerate(polygon_capture.members(block, root['group'], root['name'])):
+    members = polygon_capture.members(block, root['group'], root['name'], allow_quoted=True)
+    for index, (authored_name, lines) in enumerate(members):
+        name = authored_name.strip('"') if authored_name else None
         children = []
         marker_actions = defaultdict(list) if local_files_markers else None
         key = f'{location}/spawner/{index}'
@@ -4676,7 +4685,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             raise ValueError('spawner waypoints need a verified AI group')
         anchor = name or 'GC_Spawner_' + guid(key)
         if flag in dormant_flags:
-            placements.extend([f'GenericEntity {anchor} {{', *(' ' + line for line in transform), *children, '}'])
+            placements.extend([f'GenericEntity {authored_name or anchor} {{',
+                               *(' ' + line for line in transform), *children, '}'])
             audit.append({'spawnAnchor': anchor, 'spawnName': '', 'prefab': data.get('m_prefab', ''),
                           'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in waypoints],
                           'trigger': 'inactive flag', 'flag': flag[1:-1],
@@ -4747,7 +4757,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                 rendered[3:3] = [f'      GC_GameModeStateCondition "{{{guid(key + "/match")}}}" {{',
                                  f'       m_eGameModeState {MATCH_PHASE_VALUE}', '      }']
             rules.extend(rendered)
-        placements.extend([f'GenericEntity {anchor} {{', *(' ' + line for line in transform), *children, '}'])
+        placements.extend([f'GenericEntity {authored_name or anchor} {{',
+                           *(' ' + line for line in transform), *children, '}'])
         audit.append({'spawnAnchor': anchor, 'spawnName': details['area'], 'prefab': details['prefab'],
                       'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in group_waypoints], **term})
         if startup_delay:
@@ -4789,7 +4800,8 @@ def shadowed_crew_names(source, world, layers):
             for _, block in blocks(text):
                 if not (root := PLACED_SPAWNER.fullmatch(block[0])):
                     continue
-                anchors.update(name for name, _ in polygon_capture.members(block, root['group'], root['name']) if name)
+                anchors.update(name.strip('"') for name, _ in polygon_capture.members(
+                    block, root['group'], root['name'], allow_quoted=True) if name)
                 referenced.update(re.findall(r'(?m)^ +m_entityName "([\w.-]+)"$', '\n'.join(block)))
     except ValueError:
         return set()
