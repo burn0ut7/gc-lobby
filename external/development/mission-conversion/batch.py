@@ -38,6 +38,7 @@ from outcomes import (ASSAD_FRAMEWORK_BLOB, ASSAD_FRAMEWORK_LAYER, DEPOT_SUPPLY_
                       INTERSECTING_DEFAULT, INTERSECTING_DEFAULT_BLOB, MATCH_PHASE_VALUE,
                       NAGALAM_AMBUSH_BLOBS, NAGALAM_AMBUSH_LAYERS, NAGALAM_LAYERS,
                       RUHA_PHASE_BLOB, RUHA_PHASE_LAYER, RUHA_UNIT_NAMES, SCRIPT_FLAG_APIS,
+                      SEEDER_REPLACEMENT_LAYER, SEEDER_REPLACEMENT_LAYER_BLOB,
                       SUPPLY_OUTCOME_BLOB, SUPPLY_OUTCOME_LAYER,
                       leaves, render as render_outcome, render_capture_trackers)
 import polygon_capture
@@ -198,13 +199,12 @@ SEEDER_REPLACEMENT_PARENTS = {
     ('A5647958579A4149', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_repair.et'),
     ('4C81D7ED8F8C0D87', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker.et'),
     ('1BABF6B33DA0AEB6', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_command.et'),
+    ('7BD282AF716ED639', 'Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed.et'),
 }
 SEEDER_RHS_REPLACEMENT_PARENTS = {
     ('00AED68EFBF251BA', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered_closed_camo1.et'),
     ('323B9051ED5C2F7A', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_engineer_camo1.et'),
 }
-SEEDER_REPLACEMENT_LAYER = 'worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_Layers/default.layer'
-SEEDER_REPLACEMENT_LAYER_BLOB = '1e76b3d650d08d9ba159b19ae3c2479e895ac32a'
 SEEDER_REPLACEMENT_DIR = 'worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/'
 SEEDER_TRUCK_BLOBS = {
     'Transports/Ural_Truck_1.et': 'e5b81108b638698b7f314ec836613b8abfbacd79',
@@ -221,9 +221,13 @@ SEEDER_TRUCK_BLOBS = {
 SEEDER_COMMAND_TRUCK = SEEDER_REPLACEMENT_DIR + 'Ural4320_command1.et'
 SEEDER_COMMAND_MARKER = SEEDER_REPLACEMENT_DIR + 'CommandTruckMarker.et'
 SEEDER_COMMAND_ANCHOR = SEEDER_REPLACEMENT_DIR + 'TPTruck.et'
-SEEDER_COMMAND_CHILDREN = {
+SEEDER_BUILDABLE_MI8 = SEEDER_REPLACEMENT_DIR.removesuffix('Respawn Vehicles/') + 'Buildable Vehicles/Mi8MT_armed_Domi.et'
+SEEDER_BUILDABLE_MI8_BLOB = 'c9a97e9b92959800a1d841f02d9d10f632f8bc66'
+SEEDER_MI8_MARKER = SEEDER_REPLACEMENT_DIR + 'Helicopter1Marker.et'
+SEEDER_VEHICLE_CHILDREN = {
     SEEDER_COMMAND_MARKER: 'b29d1cbfff1577e9e6a33e67ce5944a40845e9b1',
     SEEDER_COMMAND_ANCHOR: 'f2b93071267b1a2c01982db8a168648af90bd32e',
+    SEEDER_MI8_MARKER: 'e074713aeee9a3765db6fb47e491bcaebb404995',
 }
 SEEDER_CARGO_BLOBS = {
     'HTMEngineeringBox.et': '1b69602de123e1f107b734540d9f1cfc71af01cc',
@@ -2138,6 +2142,18 @@ def native_placement(block, *, reviewed_character=False):
         return None
     if any('m_bEnableMoveOnFreeze' in line for line in block):
         block = staging_vehicle_placement(block)
+    if ' components {' in block and any('TILW_SetNameComponent ' in line for line in block):
+        head = PLACED_ENTITY.fullmatch(block[0])
+        if head and head['name'] and not head['group']:
+            component_start = block.index(' components {')
+            component_end = block_end(block, component_start)
+            setters = [index for index in range(component_start + 1, component_end)
+                       if re.fullmatch(rf'  TILW_SetNameComponent {SERIALIZED_ID} \{{', block[index])]
+            if len(setters) == 1:
+                index = setters[0]
+                if block[index + 1:index + 3] == [f'   m_setName "{head["name"]}"', '  }']:
+                    # The authored entity name already performs the only mutation.
+                    block = [*block[:index], *block[index + 3:]]
     lines = block
     if any(rebuilt in line for line in block for rebuilt in
            ('TILW_NavmeshRegenComponent', 'PK_EntityProtectorComponent', 'TILW_NoGarbageComponent')):
@@ -3010,8 +3026,8 @@ def passive_asset(source, path):
             blob = SEEDER_CARGO_BLOBS.get(path.removeprefix(SEEDER_REPLACEMENT_DIR))
             if blob and source.files.get(path) == blob and not LEGACY.search(body):
                 return body
-        if path in SEEDER_COMMAND_CHILDREN:
-            return seeder_command_child(source, path)
+        if path in SEEDER_VEHICLE_CHILDREN:
+            return seeder_vehicle_child(source, path)
         if path == SKALISTY_FALLBACK_AO:
             return skalisty_fallback_ao(body)
         if path in REVIEWED_SPAWNED_MARKERS:
@@ -3351,9 +3367,9 @@ def spawned_damage_objective(block, stock, local_resources, workshop_targets, *,
     return '\n'.join(lines) + '\n', flag
 
 
-def seeder_command_child(source, path):
-    if source.files.get(path) != SEEDER_COMMAND_CHILDREN[path]:
-        raise ValueError('reviewed command truck child changed')
+def seeder_vehicle_child(source, path):
+    if source.files.get(path) != SEEDER_VEHICLE_CHILDREN[path]:
+        raise ValueError('reviewed replacement vehicle child changed')
     lines = source.read(path).splitlines()
     name = next(index for index, line in enumerate(lines) if 'TILW_SetNameComponent ' in line)
     naming = [lines[name].replace('TILW_SetNameComponent', 'GC_MissionEntityNameComponent'),
@@ -3366,24 +3382,30 @@ def seeder_command_child(source, path):
     marker = marker_instance(fields, '', draw_order=True).splitlines()
     component_end = block_end(marker, 2)
     marker[component_end:component_end] = ['   m_bTrackTransform 1']
-    marker[component_end + 2:component_end + 2] = naming
+    if path != SEEDER_MI8_MARKER:
+        marker[component_end + 2:component_end + 2] = naming
     marker.insert(1, lines[1])
     return '\n'.join(marker) + '\n'
 
 
 def reviewed_replacement_vehicle(source, resource, path, corpus):
     """Verify one initial placement and the complete destruction-to-replacement loop."""
-    if (not path.startswith(SEEDER_REPLACEMENT_DIR)
+    buildable = path == SEEDER_BUILDABLE_MI8
+    if (not (buildable or path.startswith(SEEDER_REPLACEMENT_DIR))
             or source.files.get(SEEDER_REPLACEMENT_LAYER) != SEEDER_REPLACEMENT_LAYER_BLOB):
         return None
     relative = path.removeprefix(SEEDER_REPLACEMENT_DIR)
     truck_blob = SEEDER_TRUCK_BLOBS.get(relative)
-    if truck_blob:
+    if buildable:
+        if (source.files.get(path) != SEEDER_BUILDABLE_MI8_BLOB
+                or source.files.get(SEEDER_MI8_MARKER) != SEEDER_VEHICLE_CHILDREN[SEEDER_MI8_MARKER]):
+            return None
+    elif truck_blob:
         if source.files.get(path) != truck_blob:
             return None
     elif not re.fullmatch(r'Transports/(?:UAZ|UAZ452_ambulance|UAZ452_transport)[1-3]\.et', relative):
         return None
-    name = PurePosixPath(path).stem
+    name = 'Mi8MT_armed1' if buildable else PurePosixPath(path).stem
     fields = re.findall(r'(?m)^   m_flagName "([\w.-]+)"$', source.read(path))
     if len(fields) != 1:
         return None
@@ -3392,7 +3414,8 @@ def reviewed_replacement_vehicle(source, resource, path, corpus):
     anchor = flag if flag.startswith('Resp') else 'Resp' + flag
     resource_ref = f'"{{{resource}}}{path}"'
     owner = f'Vehicle {name} : {resource_ref} {{'
-    if corpus.splitlines().count(owner) != 1 or corpus.count(resource_ref) != 2:
+    initial = f'           m_sEntityPrefab {resource_ref}' if buildable else owner
+    if corpus.splitlines().count(initial) != 1 or corpus.count(resource_ref) != 2:
         return None
     events = source.read(SEEDER_REPLACEMENT_LAYER).splitlines()
     # The flags UAZ1 through UAZ3 also occur as the entity names in the
@@ -3402,6 +3425,8 @@ def reviewed_replacement_vehicle(source, resource, path, corpus):
         entity_uses = events.count(f'      "{flag}"') + events.count(f'     m_setEntityName "{flag}"')
     if anchor == flag:
         entity_uses += events.count(f'     m_locationName "{anchor}"')
+    if buildable:
+        entity_uses += source.read(SEEDER_MI8_MARKER).splitlines().count(f'   m_setName "{flag}"')
     if corpus.count(f'"{flag}"') != literal_flag_reads(corpus, flag) + 2 + entity_uses:
         return None
     for start, line in enumerate(events):
@@ -3415,9 +3440,12 @@ def reviewed_replacement_vehicle(source, resource, path, corpus):
                 and fields.count(f'      "{event_name}"') == 1):
             replacement = {'replacementEntity': name, 'replacementEvent': event_name, 'flag': flag}
             if path == SEEDER_COMMAND_TRUCK:
-                if any(source.files.get(child) != blob for child, blob in SEEDER_COMMAND_CHILDREN.items()):
+                if any(source.files.get(child) != SEEDER_VEHICLE_CHILDREN[child]
+                       for child in (SEEDER_COMMAND_MARKER, SEEDER_COMMAND_ANCHOR)):
                     return None
                 replacement['attachedTeleportDestination'] = 'TPTruck'
+            if buildable:
+                replacement['initialBuildCatalog'] = True
             return replacement
     return None
 
@@ -3477,10 +3505,11 @@ def spawned_objectives(source, dev, world, stock, local_resources, workshop_targ
                         corpus = '\n'.join(source.read(owner) for owner in sorted(source.closure(world))
                                            if PurePosixPath(owner).suffix.lower() in SOURCE_TEXT)
                     replacement = reviewed_replacement_vehicle(source, resource, path, corpus)
+                reviewed_overrides = (replacement and (path == SEEDER_BUILDABLE_MI8
+                    or path.removeprefix(SEEDER_REPLACEMENT_DIR) in SEEDER_TRUCK_BLOBS))
                 native, flag = spawned_damage_objective(block, stock, local_resources, workshop_targets,
                                                         vehicle=vehicle, replacement=bool(replacement), rhs=rhs,
-                                                        reviewed_overrides=bool(replacement and path.removeprefix(
-                                                            SEEDER_REPLACEMENT_DIR) in SEEDER_TRUCK_BLOBS))
+                                                        reviewed_overrides=bool(reviewed_overrides))
                 kind = {'destroyed': True, **({'vehicle': True} if vehicle else {})}
                 if replacement:
                     if flag != replacement['flag']:
@@ -3489,6 +3518,9 @@ def spawned_objectives(source, dev, world, stock, local_resources, workshop_targ
                     if 'attachedTeleportDestination' in replacement:
                         native = native.replace(SEEDER_REPLACEMENT_DIR + 'CommandTruckMarkers.et',
                                                 SEEDER_COMMAND_MARKER, 1)
+                    if replacement.get('initialBuildCatalog'):
+                        native = native.replace('worlds/HitTheMan/Seeder Domination/Prefabs/Respawn Vehicles/Helicopter1Markers.et',
+                                                SEEDER_MI8_MARKER, 1)
                     attachment = re.search(r'(?m)^ m_sAttachmentGroupName "([^"\n]+)"$', text)
                     if attachment:
                         kind['legacyAttachmentGroup'] = attachment[1]

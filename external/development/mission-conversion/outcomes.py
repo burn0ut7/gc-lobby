@@ -23,6 +23,8 @@ ROUTE_SCORING_LAYERS = {
 }
 ASSAD_FRAMEWORK_LAYER = 'worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/framework.layer'
 ASSAD_FRAMEWORK_BLOB = 'bdd7db4625b168d6954457d5337ea54ef84ff00f'
+SEEDER_REPLACEMENT_LAYER = 'worlds/HitTheMan/Seeder Cold War Domination/ColdWarDomination_Layers/default.layer'
+SEEDER_REPLACEMENT_LAYER_BLOB = '1e76b3d650d08d9ba159b19ae3c2479e895ac32a'
 ENDING = re.compile(r'^    TILW_EndGameInstruction "\{([\da-fA-F]{16})\}" \{$')
 WAYPOINTS = re.compile(r'^    TILW_AssignWaypointsInstruction "\{([\da-fA-F]{16})\}" \{$')
 EVENT_CONTROL = re.compile(r'\bTILW_(RunEvents|ReactivateEvents|DeactivateEvents)Instruction\b')
@@ -410,7 +412,7 @@ def waypoint_trigger(term):
     return term['trigger'] in ('Match start', 'dormant', 'area capture', 'interaction flag', 'event flag')
 
 
-def event_control(kind, lines, key, named_events, *, direct, inactive_targets=()):
+def event_control(kind, lines, key, named_events, *, direct, inactive_targets=(), reset_without_check=False):
     allowed = {'m_eventNames', 'm_executionDelay'}
     if kind == 'RunEvents':
         allowed.add('m_allowRerun')
@@ -431,6 +433,8 @@ def event_control(kind, lines, key, named_events, *, direct, inactive_targets=()
         'ReactivateEvents': (4, 'reactivatesEvents'),
         'RunEvents': (5 + int(rerun), 'runsEvents'),
     }[kind]
+    if reset_without_check:
+        operation = 2
     if direct:
         order = {name: index for index, name in enumerate(named_events)}
         targets.sort(key=lambda name: order.get(name[1:-1], len(order)))
@@ -646,7 +650,10 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                         inactive_targets = ('Phase 2 Flag',)
                     delay, body, details = event_control(kind, fields[j + 1:last], key + '/' + identity,
                                                          named_events, direct=direct_control,
-                                                         inactive_targets=inactive_targets)
+                                                         inactive_targets=inactive_targets,
+                                                         reset_without_check=(direct_control
+                                                             and replacement_flag == 'Helo1'
+                                                             and identity == '687B646FFB0D7242'))
                     converted_actions.append(details)
                 elif action_match:
                     delay, body, details = compile_action(action_match, fields[j + 1:last], key, hidden_briefings)
@@ -1248,6 +1255,14 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     if controls and (not compound or set(controls) != {path}):
         return [], {}, 'has legacy event control instructions'
     direct_control = bool(controls and set(controls[path]) - {'DeactivateEvents'})
+    dormant_helo = False
+    if compound and (path, source.files[path]) == (SEEDER_REPLACEMENT_LAYER, SEEDER_REPLACEMENT_LAYER_BLOB):
+        closure = '\n'.join(source.read(item) for item in source.closure(world)
+                            if PurePosixPath(item).suffix.lower() in SOURCE_TEXT)
+        dormant_helo = (scripts is not None and not any(api in scripts for api in (*SCRIPT_FLAG_APIS, 'EvalExpression'))
+                        and 'Helo2' not in scripts and '434AE06DF71DDAE3' not in source.resources
+                        and closure.count('"Helo2"') == 2 and closure.count('"Respawn Helo2"') == 2
+                        and closure.count('{434AE06DF71DDAE3}') == 1)
     lines = text.splitlines()
     roots = [i for i, line in enumerate(lines) if FRAMEWORK.fullmatch(line)]
     if len(roots) != 1:
@@ -1366,6 +1381,10 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         fields = body[i + 1:block_end(body, i)]
         loc = f'{path}:{i + base + 2}'
         label = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
+        if dormant_helo and event[1] == '687B646FB4D615D8':
+            audit[loc] = {'name': 'Respawn Helo2', 'trigger': 'dormant', 'flag': 'Helo2',
+                          'reason': 'no producer or external event activation, and no registered spawn prefab'}
+            continue
         if (compound and not fields and event[1] == '66A9271774862F8E'
                 and path == 'worlds/Perfk/PowerPlay/PowerPlay_Layers/default.layer'
                 and source.files[path] == '327c5cf20c9bbcfdf16a8456e2d0b5aa0812d2eb'):
@@ -1459,7 +1478,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             if missing:
                 bad_targets = True
                 event['gap'] = 'event control targets require unique converted triggers: ' + ', '.join(missing)
-        if mapped != len(controls[path]) or bad_targets:
+        if mapped != len(controls[path]) - int(dormant_helo) or bad_targets:
             operation = 'control' if direct_control else 'deactivation'
             return [], audit, f'event {operation} target mapping is incomplete'
     used_choices = [f'"{term["flag"]}"' for _, _, _, term, _ in parsed if term['trigger'] == 'startup choice']
