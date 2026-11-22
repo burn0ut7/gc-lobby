@@ -19,7 +19,7 @@ from vehicle_crew import (CREW_CONFIG_FIELD, VERIFIED_DEFAULT_CREW, ZAGORIA_BMP2
                           split_crew_block, verified_core_btr70_transfer)
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
-from groups import (COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, SLOTS, compare_ai_parents, inheritance, legacy_member,
+from groups import (CALL, COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, SLOTS, compare_ai_parents, inheritance, legacy_member,
                     reviewed_native_ancestry, unchanged_explicit_playability)
 from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_prefab
 from interactions import convert_block as convert_interaction_block, convert_object
@@ -1339,8 +1339,64 @@ REVIEWED_NATIVE_ASSETS = {
         'efff8807508bb0a3fb00cae6895f03e7540f250f97aa4b728a7e95fabaa9f989',
     'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Grenades/M18/Smoke_M18_Red_USSR.et':
         '507aae83ddab9061a017e74cd170e793add20bda88e2cadd4de0cc3813017efe',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01_cover_BLUE.et':
+        '73b2b79fe2318441eea3c2917fe0e345e9a66cfbf98f80b5e745f177d882a325',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Characters/HeadGear/Helmet_SSh68_01/Helmet_SSh68_01_net_RED.et':
+        '1e363cb4d578331dc39baa1be64443487b4f08fa6f303d3d64bb87006409a710',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Characters/Uniforms/VKPO/Undershorts_VKPO_RED.et':
+        'e6d627735791bd86888f62920f8c46bf729bccaffbf41b1b054fbc8917647545',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Characters/Uniforms/VKPO/Undershorts_VKPO_blue.et':
+        'abf5938b6d91f249913ffcd2a90d6eabc3c773c1de4ff58e8ec8b99fd223ed51',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Items/Equipment/Backpacks/MedBag.et':
+        '6ab532670799685f49ef4f28a17f30ce0be79269f16e84eb04138ffc88c01931',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Props/Fabric/Flags/Flag_blue1.et':
+        '720a2abf5310286fd418bf2cd3f04d45a8020a936ac4a452d38f2cb6617d5c77',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Props/Fabric/Flags/Flag_blue2.et':
+        '1b7c61ff1982f6ffbbb74e3d03a2e7f97e914b0f687a65c0a11c2813492a13c2',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Props/Fabric/Flags/Flag_blue3.et':
+        '351e932e8f9c804ab7a59de7791fd6a51206fe507e0b61e043bcd068f29e50ed',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Props/Fabric/Flags/Flag_red1.et':
+        '29524f0be37dabfd93d241c21a7111ca7ee96b6ead49954c881f2fc59084f5a1',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Props/Fabric/Flags/Flag_red2.et':
+        'c678e467ff01a12d6da037a8b03c00a4487f4d1db45e8ab916efb992d77cecc7',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Props/Fabric/Flags/Flag_red3.et':
+        '5e7601e00775bf46c4d229ab3757f9114d7717ad78399cf7afa258b0810b82c9',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Rifles/AK74/REDBANNER1.et':
+        'c843d898d92b39741f822a368956c412f8e9cfbaf1afb0473ae54da654a69e93',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Rifles/AK74/REDBANNER2.et':
+        'cff0f4494163f6b53d8d76b7fcf63858ad2dddc47bbfd318935ac27086b8c002',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Rifles/AK74/REDBANNER3.et':
+        '00d3382b339a4fbcb35c180c0c9850c3dd2ac8fc26e70f821a6d86bc80e20372',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Rifles/AK74/Rifle_AK74_RED.et':
+        '61a775f19f442fd52bc9bde042bc2607b532b0d4bf1dc3174779815353a82522',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Rifles/M16/BLUBANNER1.et':
+        '94402fd57c42485e7fb846717a942d1b2291734e639af8ac2fb7928c469878ad',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Rifles/M16/BLUBANNER2.et':
+        '63567168ec2f8e3e3599345b84f096bce823929a708d9861c6157cb920c6afb8',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Rifles/M16/BLUBANNER3.et':
+        '006c5af93054adcad1a80415eca7cccd4deaabb6bd82c472fe4b14b110ff8d02',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Rifles/M16/Rifle_M16A2_blue,.et':
+        '2ba0dad4f29f8ea1bcbb855938794e79393231bd904134041919cb190cd936a6',
 }
 ROCKY_CIVILIANS = 'worlds/Burn0ut7/Rocky Road/Prefabs/CiV_Group.et'
+BULGES = 'worlds/TheLocalPub/BattleOfTheBulges'
+BULGES_RED_MATERIAL = (
+    '196D8860670DE1B9',
+    'Assets/Props/Fabric/Flags/Data/Flagcolourred1.emat',
+    f'{BULGES}/Assets/Props/Fabric/Flags/Data/Flagcolourred1.emat',
+    'Assets/Props/Fabric/Flags/Data/Flagred1.emat',
+)
+# The legacy engine selected these indices on all three placements of each prefab.
+REVIEWED_GROUP_CALLSIGNS = {
+    f'{BULGES}/Prefabs/Groups/BLUFOR/Group_BLUE_RIFLE_P.et': (
+        '166c62b096beca9d5cc75efc4ae122f3742b92ae',
+        f'{BULGES}/BattleOfTheBulges_Layers/BLUFOR_PLAYERS.layer',
+        '53120d90d0b513254d90068d7acb85849da733f5', 3),
+    f'{BULGES}/Prefabs/Groups/OPFOR/Group_RED_RIFLES_P.et': (
+        'ca3a2abb657a82d2bb34058659e7c4991ab8aac6',
+        f'{BULGES}/BattleOfTheBulges_Layers/OPFOR_PLAYERS.layer',
+        'b5002cd92179dbd5983a04681ca172b8a5f7179e', 1),
+}
 REVIEWED_PLAYABLE_GROUPS = {
     ROCKY_CIVILIANS: '6ab575e5895921c869d63aa3c896bd59f52a4b809317a1c80f3717514a4de117',
     'worlds/FSM/Prefabs/Groups/OPFOR/Seperatists/P/FSM_Playable_Seperatists_HQ.et':
@@ -2522,6 +2578,8 @@ def passive_asset(source, path):
             if any(source.files.get(file) != blob for file, blob in BLOODY_GARRISON_BLOBS.items()):
                 raise ValueError('garrison resource or placement changed')
             return garrison_anchors(body.splitlines(), 1)
+        if path in REVIEWED_GROUP_CALLSIGNS:
+            return reviewed_callsign_group(source, path)
         if path in REVIEWED_PLAYABLE_GROUPS:
             return playable_group_prefab(body, path)
         if path == BLACKBOX[1]:
@@ -2539,6 +2597,29 @@ def passive_asset(source, path):
                         and '{' not in line and '}' not in line for line in [lines[1], *lines[7:-1]])):
             return body
     raise ValueError('requires a resource conversion rule')
+
+
+def remove_legacy_callsigns(lines):
+    result = []
+    index = 0
+    while index < len(lines):
+        if CALL.fullmatch(lines[index]):
+            index = block_end(lines, index) + 1
+        else:
+            result.append(lines[index])
+            index += 1
+    return '\n'.join(result) + '\n'
+
+
+def reviewed_callsign_group(source, path):
+    prefab_blob, layer, layer_blob, squad = REVIEWED_GROUP_CALLSIGNS[path]
+    if source.files.get(path) != prefab_blob or source.files.get(layer) != layer_blob:
+        raise ValueError('reviewed callsign prefab or placement changed')
+    body = remove_legacy_callsigns(source.read(path).splitlines())
+    body = body.replace('\n m_sCustomNameSet ', '\n m_sGC_Description ', 1)
+    fields = [' m_bPlayable 1', ' m_iGC_CallsignCompany "0"', ' m_iGC_CallsignPlatoon "0"',
+              f' m_iGC_CallsignSquad "{squad}"']
+    return '\n'.join([*body.splitlines()[:-1], *fields, '}', ''])
 
 
 def playable_group_prefab(body, path):
@@ -2606,18 +2687,24 @@ def reviewed_rocky_civilian(source, dev, source_units, dev_units, stock, guid, p
 
 def reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed_members):
     aliases = {}
-    for path, digest in (REVIEWED_NATIVE_ASSETS | REVIEWED_PLAYABLE_GROUPS).items():
+    for path, digest in (REVIEWED_NATIVE_ASSETS | REVIEWED_PLAYABLE_GROUPS | REVIEWED_GROUP_CALLSIGNS).items():
         if path not in source.files or path + '.meta' not in source.files:
             continue
         body = source.read(path)
-        playable = path in REVIEWED_PLAYABLE_GROUPS
+        playable = path in REVIEWED_PLAYABLE_GROUPS or path in REVIEWED_GROUP_CALLSIGNS
         if not playable and not re.fullmatch(r'SCR_AIGroup : "\{[\dA-Fa-f]{16}\}[^"\n]+" \{\n ID "[\dA-Fa-f]{16}"\n\}\s*', body):
             continue
-        if sha256(body.strip().encode()).hexdigest() != digest:
+        try:
+            if path in REVIEWED_GROUP_CALLSIGNS:
+                native = reviewed_callsign_group(source, path)
+            elif sha256(body.strip().encode()).hexdigest() == digest:
+                native = playable_group_prefab(body, path) if playable else body
+            else:
+                continue
+        except ValueError:
             continue
         identity = META_NAME.search(source.read(path + '.meta'))
         parent, parent_path = REF.search(body.partition('\n')[0]).groups()
-        native = playable_group_prefab(body, path) if playable else body
         if (not identity or source.resources.get(identity[2].upper()) != [path]
                 or any(identity[2].upper() in item.resources for item in (source_units, dev_units))
                 or dev.resources.get(identity[2].upper()) not in (None, [path])
@@ -3629,9 +3716,9 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
                 canonical = paths[0]
                 meta = canonical + '.meta'
                 identity = META_NAME.search(source.read(meta))
-                moved_material = (identity and canonical.endswith('.emat')
-                                  and PurePosixPath(path).name == PurePosixPath(canonical).name
-                                  == PurePosixPath(identity[3]).name)
+                moved_material = (identity and canonical.endswith('.emat') and (
+                    PurePosixPath(path).name == PurePosixPath(canonical).name == PurePosixPath(identity[3]).name
+                    or (resource, path, canonical, identity[3]) == BULGES_RED_MATERIAL))
                 if (not identity or identity[2].upper() != resource
                         or (path != canonical and identity[3] not in (path, canonical) and not moved_material)):
                     raise ValueError('resource path disagrees with metadata')
@@ -4556,8 +4643,15 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     try:
                         members = {identity: asset for identity, asset in roster_assets.items()
                                    if asset['placement'] == f'{layer}:{line}'}
+                        group_body = interaction_placements.get((layer, line), body)
+                        ref = REF.search(block[0])
+                        if ref and ref[2] in REVIEWED_GROUP_CALLSIGNS:
+                            _, expected_layer, layer_blob, _ = REVIEWED_GROUP_CALLSIGNS[ref[2]]
+                            if layer != expected_layer or source.files.get(layer) != layer_blob:
+                                raise ValueError('callsign placement differs from runtime evidence')
+                            group_body = remove_legacy_callsigns(group_body.splitlines())
                         converted, count, slots = convert_group_block(
-                            interaction_placements.get((layer, line), body),
+                            group_body,
                             {identity: asset['path'] for identity, asset in members.items() if not asset.get('playable')},
                             {identity: asset['path'] for identity, asset in members.items() if asset.get('playable')})
                         result.append(converted)
