@@ -232,6 +232,9 @@ def main():
             asset = objectives.get(resource, {})
             return path if asset.get('vehicle') and asset['path'] == path else None
         if group:
+            if name := batch.NAGALAM_AI_GROUPS.get(resource):
+                if path in (f'Prefabs/Groups/{name}', f'worlds/Perfk/Prefabs/Groups/{name}'):
+                    path = f'worlds/Perfk/Prefabs/Groups/{name}'
             owners = (locally_owned, source_units.resources, dev_units.resources)
             if (resource, path) in workshop_spawn_groups and not any(resource in owner for owner in owners):
                 return path

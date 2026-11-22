@@ -192,7 +192,8 @@ WORKSHOP_SPAWN_PREFABS = {
     ),
     'ArmaTerrainCore_60B524F7A5AE96A8': (
         '28574b99f5d6a12a7199a29d94194081b196b8ca37d854895fe296763cba778c',
-        (('6650B2B969248F4C', 'Prefabs/Structures/Rock/Afghan_Rock/GraniteCliff_Afghan_03.et'),),
+        (('6650B2B969248F4C', 'Prefabs/Structures/Rock/Afghan_Rock/GraniteCliff_Afghan_03.et'),
+         ('B67A4797AED7B3BC', 'Prefabs/Structures/Wreck/ikarus.et')),
     ),
     'Motorbike_61B84088181A8FA4': (
         '685d9beda81c9a52b79650a5ad42341cd7341370e5f4f77db5db6d49f55901ed',
@@ -720,6 +721,8 @@ REVIEWED_MISSING_STATIC_VEHICLES = {
             'Ural4320_ammo1', 'Ural4320_ammo2', 'Ural4320_command1',
             'Ural4320_repair1', 'Ural4320_repair2', 'Ural4320_tanker1',
         }),
+    'worlds/Perfk/NagalamTrafficJam/NagalamTrafficJam_Layers/Blufor_Convoy/Blufor_Convoy_Vehicles.layer':
+        ('a1ea4653b6b39ea66debf7e91d35f5a7fd714314', {'LAV25_GulfWar1'}),
 }
 MATERIAL_OVERRIDE = re.compile(
     rf'SCR_DestructibleBuildingEntity : "\{{[\da-fA-F]{{16}}\}}Prefabs/Structures/[^"\n]+\.et" \{{\n'
@@ -1198,6 +1201,12 @@ REVIEWED_NATIVE_ASSETS = {
         '7375d119e66768daf4d1bf9959d3c1593396b714258459b0076e5dfdaf6ee41b',
     'worlds/Perfk/Prefabs/Groups/PK_MUJ_04_Fighters.et':
         '3b919002ce6916b5cb8bed6f284d34344dc32013b8f85190e927474e6240279d',
+    'worlds/Perfk/Prefabs/Groups/PK_MUJ_03_AT_Fighters.et':
+        '87058deab8acd463db439ce499d2794409dc568fcad095a2522e1425429adb7b',
+    'worlds/Perfk/Prefabs/Groups/PK_MUJ_03_MG_Fighters.et':
+        '9a73cdc93d8d1e25d82db2f285b511c509c7268f028e17cbcf982154ad22ea07',
+    'worlds/Perfk/PrefabsEditable/EffectsModules/Mine/PK_EffectModule_MineField_Single_USSR.et':
+        '0fe010cc26fab16cde911abed109c7e8b04f04dfc62ae0cc2284824997adc679',
     # These supply containers keep their authored capacity, fill, and decay settings.
     'worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/HTMRepairingBox.et':
         'f2b3f512ef0977f2970103d0acb48292362a366871af235f29711b8bc4e08854',
@@ -2352,7 +2361,7 @@ def placed_spawner_flag_reads(source, layers):
         text = source.read(path)
         if 'm_conditionFlag ' not in text or 'TILW_PrefabSpawnerEntity ' not in text:
             continue
-        for _, _, block in placed_spawner_entries(text):
+        for _, _, block in placed_spawner_entries(source, path, text):
             match = PLACED_SPAWNER.fullmatch(block[0])
             if not match:
                 continue
@@ -2445,12 +2454,28 @@ def nested_placement_blocks(block, pattern):
         yield index, stop, indent, [row[indent:] for row in block[index:stop + 1]]
 
 
-def placed_spawner_entries(text):
+NAGALAM_TOWN_SPAWN_LAYER = NAGALAM_LAYERS + 'AI_Phase_One_Convoy_Attack/AI_Convoy_WPs.layer'
+NAGALAM_TOWN_SPAWN_BLOB = '7982a8e55ee1d4f891307e8aaabb76178f1696e8'
+NAGALAM_HILLTOP_LAYER = NAGALAM_LAYERS + 'AI_Phase_One_Convoy_Attack/HiltopWave.layer'
+NAGALAM_AI_GROUPS = {
+    '23DFFD3FDEECE9D7': 'PK_MUJ_04_Fighters.et',
+    '247DB5CD3CBA7418': 'PK_MUJ_03_AT_Fighters.et',
+    '6FD18265B1F81D25': 'PK_MUJ_03_MG_Fighters.et',
+}
+
+
+def reviewed_spawner_container(source, layer, block):
+    return (layer == NAGALAM_TOWN_SPAWN_LAYER and source.files[layer] == NAGALAM_TOWN_SPAWN_BLOB
+            and block[0] == '$grp GenericEntity {'
+            and any(PLACED_SPAWNER.fullmatch(row.lstrip(' ')) for row in block[1:-1]))
+
+
+def placed_spawner_entries(source, layer, text):
     """Yield root spawners and spawners under supported area placements."""
     for line, block in blocks(text):
         if re.match(r'^(?:\$grp )?TILW_PrefabSpawnerEntity\b', block[0]):
             yield line, False, block
-        elif block[0] == SCENARIO_AREA_GROUP:
+        elif block[0] == SCENARIO_AREA_GROUP or reviewed_spawner_container(source, layer, block):
             for _, _, _, child in nested_placement_blocks(block, PLACED_SPAWNER):
                 yield line, True, child
         elif root := TRIGGER.fullmatch(block[0]):
@@ -2781,10 +2806,17 @@ def verified_local_ai_group(source, dev, source_units, dev_units, stock, resourc
                 compare_ai_parents(source_units, dev_units, guid)
             except ValueError:
                 return False
-        elif (not source_units.read(asset).startswith('SCR_ChimeraCharacter')
-              or legacy_member(source_units, guid, False)
-              or not reviewed_native_ancestry(inheritance(source_units, guid), inheritance(dev_units, guid), dev_units)):
-            return False
+        else:
+            before = inheritance(source_units, guid)
+            after = inheritance(dev_units, guid)
+            if path.endswith('/PK_MUJ_03_AT_Fighters.et') and guid == '6A2B87B94BFDCA65':
+                # Units Dev added an editor icon to the AI RPG assistant.
+                icon = ('    Icon "{FB48FAD32DA8BC91}UI/Textures/Editor/EditableEntities/Characters/'
+                        'EditableEntity_Character_AmmoBearer.edds"\n')
+                after = (after[0].replace(icon, '', 1), *after[1:])
+            if (not before[0].startswith('SCR_ChimeraCharacter') or legacy_member(source_units, guid, False)
+                    or not reviewed_native_ancestry(before, after, dev_units)):
+                return False
     return True
 
 
@@ -2955,7 +2987,7 @@ def authored_spawn_references(source, world):
         source_layer = source.read(layer)
         lines = source_layer.splitlines()
         if 'TILW_PrefabSpawnerEntity ' in source_layer:
-            for _, _, block in placed_spawner_entries(source_layer):
+            for _, _, block in placed_spawner_entries(source, layer, source_layer):
                 if root := PLACED_SPAWNER.fullmatch(block[0]):
                     try:
                         placements = list(polygon_capture.members(block, root['group'], root['name']))
@@ -3495,7 +3527,7 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                 if sum(len(token.findall(source.read(p))) for p in source.closure(world)
                        if PurePosixPath(p).suffix.lower() in SOURCE_TEXT) == 1:
                     missing_waypoint = name
-            for line, nested, block in placed_spawner_entries(text):
+            for line, nested, block in placed_spawner_entries(source, layer, text):
                 if nested and (layer, line) not in area_placements:
                     continue
                 location = f'{layer}:{line}'
@@ -4115,14 +4147,21 @@ def area_rules(source, world, dev=None):
                         rule = built[flag]
                     else:
                         raise ValueError('inconsistent trigger identity')
-                    if (trigger['kind'] == 'Faction' and not name and not shape and not attached
-                            and not any('m_Messages ' in item for item in rule)):
+                    unused_presence = (layer == NAGALAM_HILLTOP_LAYER
+                                       and source.files[layer] == '2a7bc142928320aff39efbec9bc0ec2214a3e57d'
+                                       and trigger['kind'] == 'Presence'
+                                       and flag == '"Group_hilltop_is_not_present"')
+                    if ((unused_presence or trigger['kind'] == 'Faction' and not name)
+                            and not shape and not attached and not any('m_Messages ' in item for item in rule)):
                         if references is None:
                             references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
                                                    if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+                        if scripts is None:
                             scripts = script_text(source)
                         if references.count(flag) == 1 and flag[1:-1] not in scripts:
                             capture_details[flag[1:-1]]['unused'] = True
+                            if unused_presence:
+                                areas.append(area)
                             continue
                     if shape:
                         child = []
@@ -4832,6 +4871,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     spawners, spawner_audit = {}, []
     if row['serializedTypes'].get('TILW_PrefabSpawnerEntity'):
         captures, placed_areas, _ = area_rules(source, world, dev)
+        if NAGALAM_TOWN_SPAWN_LAYER in source.layers[world.lower()]:
+            for line, block in blocks(source.read(NAGALAM_TOWN_SPAWN_LAYER)):
+                if reviewed_spawner_container(source, NAGALAM_TOWN_SPAWN_LAYER, block):
+                    placed_areas[(NAGALAM_TOWN_SPAWN_LAYER, line)] = ({}, '\n'.join(block) + '\n')
         area_placements = {**placed_areas, **area_placements}
         spawners, schedules, spawner_audit, attached = world_spawners(source, world, resolve_spawn, captures,
                                                            set(objective_flags) | event_flags | shared_flags, used_flags, blockers,
@@ -4839,8 +4882,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                                            outcome.get('derivedSpawnerConditions'), area_placements)
         for location, (checks, areas) in area_placements.items():
             layer, line = location
-            building = areas.startswith(SCENARIO_AREA_GROUP + '\n')
             area_lines = areas.splitlines()
+            native_container = (areas.startswith(SCENARIO_AREA_GROUP + '\n')
+                                or reviewed_spawner_container(source, layer, area_lines))
             for original, native in attached.get(location, ()):
                 matches = [(start, stop, indent) for start, stop, indent, child
                            in nested_placement_blocks(area_lines, PLACED_SPAWNER) if child == original]
@@ -4854,11 +4898,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             if re.search(r'(?m)^ +(?:\$grp )?TILW_PrefabSpawnerEntity\b', areas):
                 blockers.append({'rule': 'placed spawner layer', 'file': layer, 'line': line,
                                  'detail': 'area has an unconverted spawner child'})
-            elif building:
+            elif native_container:
                 converted = native_placement(area_lines)
                 if converted is None:
-                    blockers.append({'rule': 'building areas', 'file': layer, 'line': line,
-                                     'detail': 'building area has an unconverted legacy component'})
+                    blockers.append({'rule': 'placed spawner layer', 'file': layer, 'line': line,
+                                     'detail': 'spawner container has an unconverted legacy component'})
                 else:
                     areas = converted
             area_placements[location] = checks, areas
