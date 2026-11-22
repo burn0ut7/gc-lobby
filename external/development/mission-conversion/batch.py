@@ -354,6 +354,7 @@ WORKSHOP_SPAWN_PREFABS = {
          ('4BE47BA2B7E3877E', 'Prefabs/Systems/Fire/Wrapper_Fire_Large_Damage.et'),
          ('93FC2145F05A1EEE', 'Prefabs/Systems/Sound/sound_airraidsiren.et'),
          ('30263B4F1FB2A0F2', 'Prefabs/Systems/Artillery/ArtilleryWrapper_WTF.et'),
+         ('FC359D25E07FB239', 'Prefabs/Systems/Explosions/BombWarhead_TacNuke_Init.et'),
          ('2D854F52D8D6B31E', 'Prefabs/Systems/Smoke/Wrapper_Smoke_Purple.et'),
          ('6BDBEFF5CE6E2F28', 'Prefabs/Systems/Smoke/Wrapper_Smoke_Green.et'), GMFX_AP_MINE),
     ),
@@ -421,6 +422,15 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/Til/Countdown.conf': (
+        'ea0942570cfe1205ef4560f10a72c23a337f9a27',
+        tuple((f'worlds/Til/Countdown/Countdown_Layers/players_{faction}.layer', blob) for faction, blob in (
+            ('civ', '5c6f75ed36b83f67431860cea74911b4d73c8399'),
+            ('sep', '514a44275b4df2160b20b88ad52c18e9d8663b5d'),
+            ('us', '39f94f05d58ca89a237aa71928eb6d2cf24ce1c5'),
+        )),
+        53, 50,
+    ),
     'Missions/HitTheMan/Seeder Cold War Domination/ColdWarDomination.conf': (
         'bc6197c01e5c71e08c4a6ca62b7e7fc090a8202f',
         ((SEEDER_PLAYER_VEHICLES, 'c3da94fe6583b635ef99a100b023a5fe2be32393'),

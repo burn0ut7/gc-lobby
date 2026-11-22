@@ -74,6 +74,10 @@ STOCK_FORCED_CHARACTERS = {
     resource: f'Prefabs/Characters/Factions/CIV/Dockworker/Character_CIV_Dockworker_{index}.et'
     for index, resource in enumerate(('C6FAF52907A544AC', '2CDFBF355F3410DD', '2366B9D00B40D3C7'), 1)
 }
+RANDOMIZED_CIVILIAN = (
+    '22E43956740A6794', 'Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized.et',
+)
+CIVILIAN_GROUP_OF_THREE = 'A6E7FBD99B47CC72'
 # These overrides were resolved by spawning the source component layouts
 # and looking up the assigner the same way the legacy playable manager does.
 VERIFIED_PLACED_CALLSIGNS = {
@@ -902,6 +906,16 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
             old, new, stock, (locally_owned, source_units.resources, dev_units.resources))
     forced_external = (forced_external or {}) if force else {}
     approved_external = set()
+    # The legacy lobby overlay supplies PS_PlayableComponent on Character_Base.
+    # The placed force switch enables it for all three inherited civilian slots.
+    if (guid == CIVILIAN_GROUP_OF_THREE and explicit_force and not authored and stock
+            and inheritance(source_units, guid) == inheritance(dev_units, guid)
+            and not REF.sub('', SLOTS.search(old)[1]).strip()
+            and REF.findall(SLOTS.search(old)[1]) == [RANDOMIZED_CIVILIAN] * 3
+            and stock.contains(*RANDOMIZED_CIVILIAN)
+            and all(RANDOMIZED_CIVILIAN[0] not in owned for owned in
+                    (locally_owned, source_units.resources, dev_units.resources))):
+        approved_external.add(RANDOMIZED_CIVILIAN[0])
     out = []
     metadata = []
     depth = len(lines[0]) - len(lines[0].lstrip()) if lines else 1
