@@ -1136,6 +1136,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/HitTheMan/2nd Break The Line/HTM_EffectModule_Zoned_MortarBarrage_Creeping.et':
+        '730b92d721c0fb153f471e346b1fe2368f347e96b9f4e95e0471eda1e1625ff9',
     'worlds/Perfk/Prefabs/Crates/pk_MedicalCrate.et':
         'f52ff16de37f38ddfe97d2b655a3a9e86fffe38aaaf5572c4ca3585ea32a8484',
     'worlds/Perfk/Prefabs/Groups/PK_MUJ_02_Fighters.et':
@@ -2232,6 +2234,14 @@ REVIEWED_BUILDING_AREAS = {
     '31f8d038b181f0a8a3021ad08cae9713dc7e5df1',
     '27ce0a37a17a119bc53ccf9257df2a09a76679bf',
 }
+REVIEWED_DORMANT_SPAWNER_FLAGS = {
+    **dict.fromkeys(REVIEWED_BUILDING_AREAS, (('SpawnTwo', 2), ('US_Trigger_Right_3', 1))),
+    '9dfaedf4beacd04c9260e63be23dc6194ce4d9be': (('Counter_Trigger_2', 2),),
+}
+BREAK_THE_LINE_EFFECTS = {
+    'A7E0C1FAD9FFAB46': 'HTM_EffectModule_Zoned_MortarBarrage_Creeping.et',
+    '189D347F759C07DF': 'HTM_EffectModule_Zoned_Smoke_MortarBarrage_Creeping.et.et',
+}
 ARCHIVED_VOLHA = ('BD1F07D0C32629AF', 'Prefabs/Structures/Wreck/volha.et')
 VOLHA_MESH = ('6AF0EEA50424149A', 'Assets/ME_Wreck/Volha.xob')
 VOLHA_STOCK_PARENT = ('84CBCE9163176B3E', 'Prefabs/Props/Wrecks/S105_wreck/S105_wreck.et')
@@ -3083,6 +3093,15 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             raise ValueError('multiple spawns have success-dependent entity naming')
         waypoints = target_names(data['m_waypointNames'], skip_blank=True) if data.get('m_waypointNames') else []
         ref = REF.fullmatch(data.get('m_prefab', ''))
+        ignored_effect_waypoints = []
+        if ref and (effect := BREAK_THE_LINE_EFFECTS.get(ref[1].upper())):
+            destination = f'worlds/HitTheMan/2nd Break The Line/{effect}'
+            if (ref[2] in (destination, f'worlds/HitTheMan/3rd Break The Line/{effect}')
+                    and reviewed_spawn_type(source, ref[1].upper(), destination, 'GenericEntity : ')):
+                data['m_prefab'] = f'"{{{ref[1]}}}{destination}"'
+                ref = REF.fullmatch(data['m_prefab'])
+                # The legacy spawner passes waypoints only to spawned AI groups.
+                ignored_effect_waypoints, waypoints = waypoints, []
         group = bool(ref and (ref[2].startswith('Prefabs/Groups/') or
                               reviewed_spawn_type(source, ref[1].upper(), ref[2], 'SCR_AIGroup : ')))
         absent = f'"{missing_waypoint}"' if missing_waypoint else None
@@ -3166,6 +3185,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             audit[-1]['anchorScale'] = data['scale']
         if absent:
             audit[-1]['missingGroupWaypoint'] = absent[1:-1]
+        if ignored_effect_waypoints:
+            audit[-1]['ignoredEffectWaypoints'] = [point[1:-1] for point in ignored_effect_waypoints]
         if self_waypoint:
             audit[-1]['selfGroupWaypoint'] = name
         if config is not None:
@@ -3212,7 +3233,7 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
     shadowed = shadowed_crew_names(source, world, layers) if any('m_entityName ' in text for text in layers.values()) else ()
     for layer, text in layers.items():
         try:
-            dormant = dormant_building_spawner_flags(source, world, layer)
+            dormant = dormant_spawner_flags(source, world, layer)
             reviewed = REVIEWED_MISSING_SPAWN_WAYPOINTS.get(layer)
             missing_waypoint = None
             if reviewed and source.files[layer] == reviewed[0] and reviewed[1] not in script_text(source):
@@ -3259,15 +3280,16 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
     return placements, ''.join(schedules), audit, attached
 
 
-def dormant_building_spawner_flags(source, world, layer):
-    if source.files[layer] not in REVIEWED_BUILDING_AREAS:
+def dormant_spawner_flags(source, world, layer):
+    authored = REVIEWED_DORMANT_SPAWNER_FLAGS.get(source.files[layer])
+    if not authored:
         return set()
     references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
                            if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
     scripts = script_text(source)
     if any(api in scripts for api in SCRIPT_FLAG_APIS):
         return set()
-    return {f'"{flag}"' for flag, readers in (('SpawnTwo', 2), ('US_Trigger_Right_3', 1))
+    return {f'"{flag}"' for flag, readers in authored
             if flag not in scripts and references.count(f'"{flag}"') == readers
             and len(re.findall(rf'^ +m_conditionFlag "{flag}"\s*$', references, re.M)) == readers}
 

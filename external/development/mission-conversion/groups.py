@@ -734,6 +734,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     restored_playable = False
 
     def playable_member(resource, path):
+        if resource in reviewed_members:
+            return True
         if legacy_member(source_units, resource, False):
             return True
         if all(resource not in owned for owned in (locally_owned, source_units.resources, dev_units.resources)):
