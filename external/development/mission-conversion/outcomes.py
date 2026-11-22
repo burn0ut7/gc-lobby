@@ -71,6 +71,10 @@ REVIEWED_INACTIVE_FLAGS = {
         ('7fecb24882a1c6a5b22b7ab2e78d8c6b0685f040', '"23"', 2),
     'worlds/Wade/NightSeizure/NightSeizure_Layers/default.layer':
         ('1db6432dc54bc23c48b8c94d1d310657fc473ee2', '"Intel"', 2),
+    'worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/default.layer':
+        ('4168c2d93063db3291d03b9e5b81f37f55477e4d', '"Objective"', 1),
+    'worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR_Layers/default.layer':
+        ('d26f053367424f03d59a3f205719fcbb8ee90e7b', '"Objective"', 1),
 }
 
 
@@ -79,6 +83,9 @@ def inactive_flags(source, world, path, scripts):
     if not reference or scripts is None or any(api in scripts for api in SCRIPT_FLAG_APIS):
         return ()
     blob, flag, uses = reference
+    if flag == '"Objective"':
+        # The unrelated Roulette fields use this string as an editor category.
+        scripts = re.sub(r'(?m)^[ \t]*\[Attribute\([^\r\n]*, category: "Objective"\)\][ \t]*\r?$', '', scripts)
     if source.files[path] != blob or flag in scripts:
         return ()
     if sum(source.read(p).count(flag) for p in source.closure(world)
@@ -1030,7 +1037,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         label = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
         if 'notificationDelaysSeconds' in notification_audit.get(loc, {}):
             continue
-        if compound and len(fields) == 1 and re.fullmatch(r'   m_name "-{3,}"', fields[0]):
+        if compound and len(fields) == 1 and re.fullmatch(r'   m_name "(?:-{3,}|={3,} [\w ]+ ={3,})"', fields[0]):
             audit[loc] = {'name': fields[0].strip().removeprefix('m_name ')[1:-1], 'trigger': 'editor divider'}
             continue
         spawns = {child.split('/')[1]: detail for child, detail in extraction_spawns.items()

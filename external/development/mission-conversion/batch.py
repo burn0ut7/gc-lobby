@@ -1136,6 +1136,18 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/Perfk/Prefabs/Crates/pk_MedicalCrate.et':
+        'f52ff16de37f38ddfe97d2b655a3a9e86fffe38aaaf5572c4ca3585ea32a8484',
+    'worlds/Perfk/Prefabs/Groups/PK_MUJ_02_Fighters.et':
+        '1d9d5c3dbefc0eaa86ad7398bbe90607a75bbd287ee892d010866b1e9ebd95d1',
+    'worlds/Perfk/Prefabs/Groups/PK_MUJ_03_Fighters.et':
+        '8c810ae694d1f6d566c04b7b8f6e00de9750b02135c106f999990dbcac7b26c0',
+    'worlds/Perfk/Prefabs/Groups/PK_MUJ_07_Fighters.et':
+        'c4a1547a97ab19afea92c1613fbbdc9fb9992eb7d99928d4dd8274eb81739fd2',
+    'worlds/Perfk/Prefabs/Groups/PK_MUJ_11_Fighters.et':
+        '672813fbb0f03f92ced2d3978ca4c485dd84d2f9a0c4edecad583c5401a9637b',
+    'worlds/Perfk/Prefabs/Groups/PK_MUJ_13_Fighters.et':
+        '7375d119e66768daf4d1bf9959d3c1593396b714258459b0076e5dfdaf6ee41b',
     'worlds/Perfk/Prefabs/Groups/PK_MUJ_04_Fighters.et':
         '3b919002ce6916b5cb8bed6f284d34344dc32013b8f85190e927474e6240279d',
     # These supply containers keep their authored capacity, fill, and decay settings.
@@ -2215,11 +2227,34 @@ def trigger_children(fields):
     return fields[:start], list(blocks('\n'.join(line[2:] for line in fields[start + 1:-1])))
 
 
+SCENARIO_AREA_GROUP = '$grp GenericEntity : "{C72F956E4AC6A6E7}Prefabs/Systems/ScenarioFramework/Components/Area.et" {'
+REVIEWED_BUILDING_AREAS = {
+    '31f8d038b181f0a8a3021ad08cae9713dc7e5df1',
+    '27ce0a37a17a119bc53ccf9257df2a09a76679bf',
+}
+ARCHIVED_VOLHA = ('BD1F07D0C32629AF', 'Prefabs/Structures/Wreck/volha.et')
+VOLHA_MESH = ('6AF0EEA50424149A', 'Assets/ME_Wreck/Volha.xob')
+VOLHA_STOCK_PARENT = ('84CBCE9163176B3E', 'Prefabs/Props/Wrecks/S105_wreck/S105_wreck.et')
+
+
+def nested_placement_blocks(block, pattern):
+    for index, line in enumerate(block[1:-1], 1):
+        body = line.lstrip(' ')
+        if body == line or not pattern.fullmatch(body):
+            continue
+        indent = len(line) - len(body)
+        stop = block_end(block, index)
+        yield index, stop, indent, [row[indent:] for row in block[index:stop + 1]]
+
+
 def placed_spawner_entries(text):
-    """Yield top-level spawners and named direct children of supported triggers."""
+    """Yield root spawners and spawners under supported area placements."""
     for line, block in blocks(text):
         if re.match(r'^(?:\$grp )?TILW_PrefabSpawnerEntity\b', block[0]):
             yield line, False, block
+        elif block[0] == SCENARIO_AREA_GROUP:
+            for _, _, _, child in nested_placement_blocks(block, PLACED_SPAWNER):
+                yield line, True, child
         elif root := TRIGGER.fullmatch(block[0]):
             try:
                 members = list(polygon_capture.members(block, root['group'], root['name']))
@@ -2725,7 +2760,8 @@ def spawned_objectives(source, dev, world, stock, local_resources, workshop_targ
                     continue
                 flag = objectives[0]['flag']
                 kind = {'singleUse': objectives[0]['singleUse']}
-            if LEGACY.search(native) or (path in dev.files and native.strip() != dev.read(path).strip()):
+            if LEGACY.search(native) or (not kind.get('destroyed') and path in dev.files
+                                         and native.strip() != dev.read(path).strip()):
                 continue
         except ValueError:
             continue
@@ -2994,7 +3030,7 @@ def reviewed_spawn_type(source, resource, path, types):
 
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
                  resolve_crew_config=None, shadowed_names=(), missing_waypoint=None, self_waypoints=(),
-                 capture_latches=None, single_draw_flags=(), derived_conditions=None):
+                 capture_latches=None, single_draw_flags=(), derived_conditions=None, dormant_flags=()):
     root = PLACED_SPAWNER.fullmatch(block[0])
     if not root:
         raise ValueError('unverified placed spawner prefab')
@@ -3067,6 +3103,12 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             raise ValueError('spawner waypoints need a verified AI group')
         key = f'{location}/spawner/{index}'
         anchor = name or 'GC_Spawner_' + guid(key)
+        if flag in dormant_flags:
+            placements.extend([f'GenericEntity {anchor} {{', *(' ' + line for line in transform), *children, '}'])
+            audit.append({'spawnAnchor': anchor, 'spawnName': '', 'prefab': data.get('m_prefab', ''),
+                          'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in waypoints],
+                          'trigger': 'inactive flag', 'flag': flag[1:-1]})
+            continue
         details = spawn_details({
             'm_prefab': data.get('m_prefab', ''), 'm_locationName': f'"{anchor}"',
             'm_setEntityName': spawned_name, 'm_executionDelay': '0',
@@ -3170,6 +3212,7 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
     shadowed = shadowed_crew_names(source, world, layers) if any('m_entityName ' in text for text in layers.values()) else ()
     for layer, text in layers.items():
         try:
+            dormant = dormant_building_spawner_flags(source, world, layer)
             reviewed = REVIEWED_MISSING_SPAWN_WAYPOINTS.get(layer)
             missing_waypoint = None
             if reviewed and source.files[layer] == reviewed[0] and reviewed[1] not in script_text(source):
@@ -3183,7 +3226,8 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                     continue
                 location = f'{layer}:{line}'
                 if nested:
-                    location += '/' + PLACED_SPAWNER.fullmatch(block[0])['name']
+                    name = PLACED_SPAWNER.fullmatch(block[0])['name']
+                    location += '/' + (name or guid('\n'.join(block)))
                 try:
                     self_waypoints = set()
                     if source.files[layer] == 'b5b00eae008bf41c803dd4469a54a34b93199767':
@@ -3193,7 +3237,7 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                         source=source, resolve_crew_config=resolve_crew_config, shadowed_names=shadowed,
                         missing_waypoint=missing_waypoint, self_waypoints=self_waypoints,
                         capture_latches=capture_latches, single_draw_flags=single_draw_flags,
-                        derived_conditions=derived_conditions)
+                        derived_conditions=derived_conditions, dormant_flags=dormant)
                 except ValueError as exc:
                     blockers.append({'rule': 'TILW_PrefabSpawnerEntity', 'file': layer, 'line': line,
                                      'detail': str(exc)})
@@ -3213,6 +3257,19 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
     if latches:
         schedules.insert(0, '\n'.join(render_capture_trackers(world, latches, captures, set())) + '\n')
     return placements, ''.join(schedules), audit, attached
+
+
+def dormant_building_spawner_flags(source, world, layer):
+    if source.files[layer] not in REVIEWED_BUILDING_AREAS:
+        return set()
+    references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                           if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+    scripts = script_text(source)
+    if any(api in scripts for api in SCRIPT_FLAG_APIS):
+        return set()
+    return {f'"{flag}"' for flag, readers in (('SpawnTwo', 2), ('US_Trigger_Right_3', 1))
+            if flag not in scripts and references.count(f'"{flag}"') == readers
+            and len(re.findall(rf'^ +m_conditionFlag "{flag}"\s*$', references, re.M)) == readers}
 
 
 def spawn_capture_latches(source, world, layers, captures, used_flags):
@@ -3254,6 +3311,11 @@ def resource_aliases(workshop, units, stock):
                     if stock and not stock.registered_paths(old) and stock.contains(new, path)})
     databases = {}
     if workshop:
+        if stock.contains(*VOLHA_STOCK_PARENT) and VOLHA_MESH in workshop_resources(workshop, {
+            'ArmaTerrainCore_60B524F7A5AE96A8': (
+                '28574b99f5d6a12a7199a29d94194081b196b8ca37d854895fe296763cba778c', (VOLHA_MESH,)),
+        }):
+            aliases[VOLHA_MESH] = VOLHA_MESH
         zarichne = workshop_resources(workshop, {
             'Zarichne2025_65EA8C9C25882838': (
                 'd72a1e7c7420d2a91313e0b13c0861902e31782e9a8590eff9d52b8c333cb261',
@@ -3432,6 +3494,32 @@ def fsm_orange_tracer_assets(source, dev, aliases):
     return files
 
 
+def archived_volha_assets(source, dev, path, identity):
+    if path in source.files or identity in source.resources or dev.resources.get(identity) not in (None, [path]):
+        raise ValueError('archived wreck prefab identity collision')
+    parent, parent_path = VOLHA_STOCK_PARENT
+    mesh, mesh_path = VOLHA_MESH
+    # ArmaTerrainCore 1.1.7 used this stock wreck inheritance and mesh override.
+    # The installed provider retains the original mesh but replaced the template.
+    body = f'''GenericEntity : "{{{parent}}}{parent_path}" {{
+ ID "F0DBA538AC2A0552"
+ components {{
+  MeshObject "{{5872F0EB7FA40561}}" {{
+   Object "{{{mesh}}}{mesh_path}"
+  }}
+ }}
+ coords 2863.265 2.499 2303.186
+ angleY 157
+}}
+'''
+    metadata = replace_reference(source.read('worlds/Perfk/Prefabs/Groups/PK_MUJ_04_Fighters.et.meta'),
+                                 META_NAME, identity, path)
+    files = {path: body, path + '.meta': metadata}
+    if any(name in dev.files and dev.read(name).strip() != text.strip() for name, text in files.items()):
+        raise ValueError('archived wreck prefab would overwrite different Dev content')
+    return {name: text for name, text in files.items() if name not in dev.files}
+
+
 def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets, faction_assets):
     files = list(draft)
     blockers = set()
@@ -3441,6 +3529,15 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
 
         def relocate(ref):
             resource, path = ref[1].upper(), ref[2]
+            if (resource, path) == ARCHIVED_VOLHA and VOLHA_MESH in asset_aliases:
+                try:
+                    destination = 'worlds/Perfk/Prefabs/Scenery/GC_ArchivedVolhaWreck.et'
+                    identity = guid(destination)
+                    draft.update(archived_volha_assets(source, dev, destination, identity))
+                except ValueError as exc:
+                    blockers.add((owner, path, str(exc)))
+                    return ref[0]
+                return f'"{{{identity}}}{destination}"'
             if ((resource, path) == ('8554ED3F088BADA6', WIRECUTTER_PREFAB[1])
                     and owner == GRAVETTE_WIRECUTTER_ROLE
                     and source.files.get(owner) == '0c1bdbf6239721b499105469fed6b5520a4ee099'
@@ -3581,6 +3678,15 @@ def area_rules(source, world, dev=None):
                         audit[f'{layer}:{line}'] = records
                 continue
             if not match and not shape:
+                if block[0] == SCENARIO_AREA_GROUP and source.files[layer] in REVIEWED_BUILDING_AREAS:
+                    try:
+                        checks, converted, records = building_area_captures(source, world, block, conditions)
+                    except (ArithmeticError, KeyError, ValueError) as exc:
+                        audit[f'{layer}:{line}'] = {'gap': str(exc)}
+                    else:
+                        conditions.update(checks)
+                        placements[(layer, line)] = checks, converted
+                        audit[f'{layer}:{line}'] = records
                 continue
             if shape and not any(TRIGGER.fullmatch(field.strip()) for field in block):
                 continue
@@ -3691,6 +3797,32 @@ def area_rules(source, world, dev=None):
             if capture_details:
                 audit[f'{layer}:{line}'] = capture_details
     return conditions, placements, audit
+
+
+def building_area_captures(source, world, block, known_conditions):
+    checks, records = {}, {}
+    scripts = script_text(source)
+    references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                           if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+    converted = block.copy()
+    for start, stop, indent, child in reversed(list(nested_placement_blocks(block, TRIGGER))):
+        trigger = TRIGGER.fullmatch(child[0])
+        name = trigger['name']
+        if (trigger['kind'] != 'Faction' or trigger['guid'] != '8C576D46F6579229'
+                or trigger['group'] or not name or name in scripts):
+            raise ValueError('unverified building capture trigger')
+        built, area, details = capture_instance(world, name, child[1:-1])
+        flag, = built
+        if not LEGACY_FLAG.fullmatch(flag) or flag in known_conditions or flag in checks or flag[1:-1] in scripts:
+            raise ValueError('invalid, duplicate or scripted building capture flag ' + flag)
+        checks.update(built)
+        records[flag[1:-1]] = {'area': name, **details}
+        if (references.count(flag) == 1 and not any(api in scripts for api in SCRIPT_FLAG_APIS)
+                and not any('m_Messages ' in row for row in built[flag])):
+            del checks[flag]
+            records[flag[1:-1]]['unused'] = True
+        converted[start:stop + 1] = [' ' * indent + row for row in area.splitlines()]
+    return checks, '\n'.join(converted) + '\n', records
 
 
 def nested_map_areas(source, world, block, known_conditions):
@@ -4300,19 +4432,29 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                                            resolve_crew, resolve_crew_config, single_draw_flags,
                                                            outcome.get('derivedSpawnerConditions'), area_placements)
         for location, (checks, areas) in area_placements.items():
+            layer, line = location
+            building = areas.startswith(SCENARIO_AREA_GROUP + '\n')
+            area_lines = areas.splitlines()
             for original, native in attached.get(location, ()):
-                before = '\n'.join('  ' + line for line in original) + '\n'
-                after = '\n'.join('  ' + line for line in native) + '\n'
-                if areas.count(before) != 1:
-                    layer, line = location
+                matches = [(start, stop, indent) for start, stop, indent, child
+                           in nested_placement_blocks(area_lines, PLACED_SPAWNER) if child == original]
+                if len(matches) != 1:
                     blockers.append({'rule': 'placed spawner layer', 'file': layer, 'line': line,
                                      'detail': 'attached spawner does not have a unique converted parent'})
                 else:
-                    areas = areas.replace(before, after, 1)
-            if re.search(r'(?m)^ +TILW_PrefabSpawnerEntity\b', areas):
-                layer, line = location
+                    (start, stop, indent), = matches
+                    area_lines[start:stop + 1] = [' ' * indent + row for row in native]
+            areas = '\n'.join(area_lines) + '\n' if attached.get(location) else areas
+            if re.search(r'(?m)^ +(?:\$grp )?TILW_PrefabSpawnerEntity\b', areas):
                 blockers.append({'rule': 'placed spawner layer', 'file': layer, 'line': line,
                                  'detail': 'area has an unconverted spawner child'})
+            elif building:
+                converted = native_placement(area_lines)
+                if converted is None:
+                    blockers.append({'rule': 'building areas', 'file': layer, 'line': line,
+                                     'detail': 'building area has an unconverted legacy component'})
+                else:
+                    areas = converted
             area_placements[location] = checks, areas
         rule_text += schedules
         used_flags.update(entry['flag'] for entry in spawner_audit if entry['trigger'] == 'area capture')
@@ -4588,6 +4730,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 body = asset['body'].replace(field, field + '   m_bClearOnMismatch 1\n'
                                             '   m_bDeferInitialSample 1\n', 1)
                 spawned_assets[resource] = {**asset, 'body': body}
+            path = asset['path']
+            if path in dev.files:
+                body = replace_registered_paths(spawned_assets[resource]['body'], source, dev, asset_aliases)
+                if body.strip() != dev.read(path).strip():
+                    blockers.append({'rule': 'spawned objective', 'file': path,
+                                     'detail': 'existing Dev prefab differs from the verified spawn policy'})
     extraction_spawns = [item for event in rules.values() for item in event.get('extractionSpawns', [])]
     if delayed:
         flag_uses = Counter(term.get('flag') for term in terms if term['trigger'] == 'area capture')
