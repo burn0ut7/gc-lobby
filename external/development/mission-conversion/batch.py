@@ -2860,6 +2860,22 @@ def playable_objectives(source, dev, world, stock, local_resources, source_units
     return reviewed
 
 
+def named_ai_rosters(text, prefab):
+    head = re.compile(r'(?P<group>\$grp )?SCR_AIGroup(?: (?P<name>[\w.-]+))? : "'
+                      + re.escape(prefab) + r'" \{')
+    for line, group in blocks(text):
+        root = head.fullmatch(group[0])
+        if not root:
+            continue
+        try:
+            members = polygon_capture.members(group, root['group'], root['name'])
+        except ValueError:
+            continue
+        for name, fields in members:
+            if name:
+                yield line, fields
+
+
 def ai_objectives(source, dev, world, stock, local_resources, source_units, dev_units):
     """Convert named objective characters instantiated by the reviewed civilian AI group."""
     reviewed = {}
@@ -2878,9 +2894,7 @@ def ai_objectives(source, dev, world, stock, local_resources, source_units, dev_
     for layer in source.layers[world.lower()]:
         if 'SCR_AIGroup ' not in originals[layer]:
             continue
-        for line, group in blocks(originals[layer]):
-            if not re.fullmatch(r'SCR_AIGroup [\w.-]+ : "' + re.escape(f'{{{civ[0]}}}{civ[1]}') + r'" \{', group[0]):
-                continue
+        for line, group in named_ai_rosters(originals[layer], f'{{{civ[0]}}}{civ[1]}'):
             slots = [i for i, field in enumerate(group) if field == ' m_aUnitPrefabSlots {']
             if len(slots) != 1 or any('m_bPlayable' in field or 'm_bSetPlayable' in field for field in group):
                 continue
