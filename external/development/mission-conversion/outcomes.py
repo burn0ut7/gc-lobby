@@ -38,6 +38,24 @@ WAYPOINTS = re.compile(r'^    TILW_AssignWaypointsInstruction "\{([\da-fA-F]{16}
 EVENT_CONTROL = re.compile(r'\bTILW_(RunEvents|ReactivateEvents|DeactivateEvents)Instruction\b')
 CONTROL_INSTRUCTION = re.compile(r'^    ' + EVENT_CONTROL.pattern + r' "\{([\da-fA-F]{16})\}" \{$')
 SCRIPT_INSTRUCTION = re.compile(r'^    TILW_RunScriptInstruction "\{([\dA-F]{16})\}" \{$')
+CONCRETE_FRAMEWORK = (
+    'worlds/HotMic/OperationConcreteCrushers/OperationConcreteCrushers_Layers/default.layer',
+    '2f142b3b9ff66a1dff96c07d077256ff3a402cec',
+)
+CONCRETE_INTEL = ('Chotain_Intel', 'ChotainMilitarySite_Intel', 'Laruns_Intel', 'Levie_Intel', 'MilitarySite_Intel')
+CONCRETE_TOWNS = ('Lamentin', 'Montignac', 'Morton', 'StPierre', 'StPhillipe')
+CONCRETE_CLEANUP = 'GC_MigrationIntelCleanup'
+CONCRETE_COUNT = 'GC_MigrationIntelCount'
+CONCRETE_REVEAL = 'GC_MigrationCommanderReveal'
+CONCRETE_DONE = 'Phase 1 Done Flag'
+CONCRETE_SCRIPT_CALLS = {
+    '669153F5E43B311F': (['     m_executionDelay 0.5', '     m_iScriptNumber 3'], '0.5', CONCRETE_CLEANUP, 1),
+    '665766ABA6FD5DAE': (['     m_executionDelay 10', '     m_iScriptNumber 2'], '10', CONCRETE_REVEAL, 1),
+    **dict.fromkeys(('665643AB299C015D', '665643AB3940E34C', '665643AB362B4723',
+                    '665643AB375BCAC6', '665643AB347483BF'),
+                    (['     m_executionDelay 1', '     m_bAllowRerun 1'], '1', CONCRETE_COUNT, 2)),
+}
+CONCRETE_OUTPUTS = (CONCRETE_DONE, *(town + ' Spawn Flag' for town in CONCRETE_TOWNS))
 SUPPLY_OUTCOME_LAYER = 'worlds/HotMic/SupplySecureAtMontignac/SupplySecureAtMontignac_Layers/default.layer'
 SUPPLY_OUTCOME_BLOB = '01e9a0424825e574bf1439cbc9c1189fe85e226d'
 SUPPLY_COUNT_FLAG = 'GC_MigrationSupplyCountRequested'
@@ -600,7 +618,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                direct_control=False, empty_hint=None, missing_group_waypoint=None, sampled_pregame_flags=(),
                supply_comparison=False, reviewed_script_calls=None, reviewed_script_type=None,
                unused_vehicle_name=None, replacement_flag=None, clearable_flags=(), ordered_events=(),
-               inactive_control_targets=()):
+               inactive_control_targets=(), concrete_crushers=False):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -649,7 +667,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 waypoint_match = WAYPOINTS.fullmatch(fields[j]) if compound else None
                 control_match = CONTROL_INSTRUCTION.fullmatch(fields[j]) if compound else None
                 action_match = recognized(fields[j]) if compound else None
-                script_match = SCRIPT_INSTRUCTION.fullmatch(fields[j]) if supply_comparison or reviewed_script_calls else None
+                script_match = (SCRIPT_INSTRUCTION.fullmatch(fields[j])
+                                if supply_comparison or reviewed_script_calls or concrete_crushers else None)
                 spawn_match = SPAWN.fullmatch(fields[j]) if extraction_spawns or resolve_spawn else None
                 group_match = GROUP_SPAWN.fullmatch(fields[j]) if resolve_spawn else None
                 vehicle_match = VEHICLE_SPAWN.fullmatch(fields[j]) if resolve_spawn and resolve_crew else None
@@ -702,7 +721,18 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 elif script_match:
                     identity = script_match[1]
                     action_key = key + '/' + identity
-                    if supply_comparison:
+                    if concrete_crushers:
+                        entry = CONCRETE_SCRIPT_CALLS.get(identity)
+                        if not entry or fields[j + 1:last] != entry[0]:
+                            raise ValueError('unreviewed Concrete Crushers inline script call')
+                        _, delay_text, flag, operation = entry
+                        body = render_flag_write(action_key, flag, operation)
+                        details = {'setsFlag': flag}
+                        if flag == CONCRETE_COUNT:
+                            details['producesFlags'] = (CONCRETE_DONE,)
+                        elif flag == CONCRETE_REVEAL:
+                            details['producesFlags'] = CONCRETE_OUTPUTS[1:]
+                    elif supply_comparison:
                         delay_text = SUPPLY_SCRIPT_CALLS.get(identity)
                         if not delay_text or fields[j + 1:last] != [f'     m_executionDelay {delay_text}']:
                             raise ValueError('unreviewed inline supply comparison call')
@@ -779,6 +809,9 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
         raise ValueError('pregame event requires a reviewed startup selection')
     startup_actions = ({'TILW_SetFlagInstruction'} if pregame_start
                        else {'TILW_SpawnPrefabInstruction', 'TILW_EditMapItemInstruction'})
+    if concrete_crushers and pregame_start and converted_actions and all(
+            action.get('setsFlag') == CONCRETE_CLEANUP for action in converted_actions):
+        startup_actions.add('TILW_RunScriptInstruction')
     startup_vehicles = pregame_start and converted_actions and all(
         action['instruction'] == 'TILW_SpawnVehicleInstruction' for action in converted_actions)
     if startup_vehicles:
@@ -1027,7 +1060,8 @@ def startup_flags(source, world, owner, body, scripts, identity_flags=()):
     return tuple(flags)
 
 
-def startup_samples(source, world, owner, body, scripts, spawner_reads, definitions, identity_flags=()):
+def startup_samples(source, world, owner, body, scripts, spawner_reads, definitions, identity_flags=(),
+                    reviewed_readers=()):
     """Read isolated draws used by verified event conditions or placed spawners."""
     roots = [i for i, line in enumerate(body) if line == ' m_randomFlags {']
     if len(roots) != 1 or any(api in scripts for api in SCRIPT_FLAG_APIS):
@@ -1098,7 +1132,7 @@ def startup_samples(source, world, owner, body, scripts, spawner_reads, definiti
         expected = 1 + reads[flag] + labels[flag] + spawner_count + spawn_anchors[flag] + 2 * (flag in identity_flags)
         if flag[1:-1] in scripts or authored.count(flag) + outside.count(flag) != expected:
             return []
-        if not (reads[flag] or spawner_count):
+        if not (reads[flag] or spawner_count or flag[1:-1] in reviewed_readers):
             unused.add(flag[1:-1])
     if len(unused) == len(sampled) or (unused and 'TILW_RunScriptInstruction' in authored + outside):
         return []
@@ -1187,6 +1221,54 @@ def render_startup_samples(world, samples):
         lines.extend(['       m_aFlags {', *(f'        "{flag}"' for flag in sample['flags']),
                       '       }', '      }'])
     return [*lines, '     }', '    }']
+
+
+def render_flag_write(key, flag, operation=1):
+    return [f'      GC_FlagAction "{{{guid(key)}}}" {{', f'       m_sFlagName "{flag}"',
+            f'       m_iOperation {operation}', '       m_iAmount 1', '      }']
+
+
+def render_concrete_events(world):
+    """Resolve the reviewed inline scripts through existing mission rule actions."""
+    def flag_check(key, flag, inverted=False):
+        term = {'trigger': 'event flag', 'flag': flag, 'inverted': inverted}
+        return render_check(term, key, {}, None, {})
+
+    def event(key, name, conditions, actions):
+        return [f'    GC_Event "{{{guid(key)}}}" {{', f'     m_sName "{name}"',
+                '     m_aConditions {', *conditions, '     }',
+                '     m_aActions {', *actions, '     }', '    }']
+
+    key = world + '/intel phase gate'
+    match = [f'      GC_GameModeStateCondition "{{{guid(key + "/phase")}}}" {{',
+             f'       m_eGameModeState {MATCH_PHASE_VALUE}', '      }']
+    compiled = event(key, 'Complete intel collection', [
+        *match,
+        f'      GC_ConditionCount "{{{guid(key + "/count")}}}" {{',
+        '       m_bCountFlagCalls 1', '       m_iComparison 2', '       m_iRequiredCount 2',
+        f'       m_sFlagName "{CONCRETE_COUNT}"', '      }',
+    ], render_flag_write(key + '/flag', CONCRETE_DONE))
+    for intel in CONCRETE_INTEL:
+        key = world + '/unselected intel/' + intel
+        compiled.extend(event(key, 'Remove unselected ' + intel, [
+            *flag_check(key + '/cleanup gate', CONCRETE_CLEANUP),
+            *flag_check(key + '/selected flag', intel, inverted=True),
+        ], [
+            f'      GC_DeleteEntitiesAction "{{{guid(key + "/delete")}}}" {{',
+            '       m_aEntities {', f'        "{intel}" "{intel}_Marker"', '       }', '      }',
+        ]))
+    for town in CONCRETE_TOWNS:
+        key = world + '/commander reveal/' + town
+        _, notice = message([
+            '     m_messageTitle "Enemy Commander Located!"',
+            f'     m_messageBody "The Commander is located at {town}"',
+            '     m_factionKeys {', '      "RHS_USAF"', '     }',
+        ], key + '/message')
+        compiled.extend(event(key, 'Reveal commander in ' + town, [
+            *flag_check(key + '/reveal gate', CONCRETE_REVEAL),
+            *flag_check(key + '/selected town', town + ' Flag'),
+        ], [*render_flag_write(key + '/spawn', town + ' Spawn Flag'), *notice]))
+    return compiled
 
 
 def route_flag_graph(world, definitions, samples, captures):
@@ -1329,6 +1411,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     if len(owners) != 1:
         return [], {}, 'requires one reviewed framework owner'
     path, text = owners[0]
+    concrete_crushers = (compound and (path, source.files[path]) == CONCRETE_FRAMEWORK
+                         and scripts is not None and not any(api in scripts for api in SCRIPT_FLAG_APIS))
     unused_vehicle_name = None
     if compound and (path, source.files[path]) == (ASSAD_FRAMEWORK_LAYER, ASSAD_FRAMEWORK_BLOB):
         # Seven QRF hulls receive the same name. No authored consumer looks it up.
@@ -1427,7 +1511,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         identity_flags_audit.extend(flag[1:-1] for flag in sorted(identity_flags))
     samples, startup, binary_startup = [], (), None
     if compound and resolve_spawn:
-        samples = startup_samples(source, world, path, body, scripts or '', spawner_reads, definitions, identity_flags)
+        samples = startup_samples(source, world, path, body, scripts or '', spawner_reads, definitions, identity_flags,
+                                  reviewed_readers=CONCRETE_INTEL if concrete_crushers else ())
         if not samples:
             startup = startup_flags(source, world, path, body, scripts or '', identity_flags)
             if not startup:
@@ -1450,6 +1535,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         derived_gap = None
     if supply_comparison:
         event_flags.update(SUPPLY_COUNT_FLAGS)
+    if concrete_crushers:
+        event_flags.update(CONCRETE_OUTPUTS)
     if depot_supply_calls:
         event_flags.update(flag for _, _, _, output in depot_supply_calls.values() for flag in output)
     inactive = inactive_flags(source, world, path, body, scripts) if compound else ()
@@ -1542,7 +1629,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         if not spawns and not log_only and not any(
                 ENDING.fullmatch(item) or (compound and (
                     WAYPOINTS.fullmatch(item) or MESSAGE.fullmatch(item) or recognized(item) or CONTROL_INSTRUCTION.fullmatch(item)
-                    or ((supply_comparison or reviewed_script_calls) and SCRIPT_INSTRUCTION.fullmatch(item))
+                    or ((supply_comparison or reviewed_script_calls or concrete_crushers)
+                        and SCRIPT_INSTRUCTION.fullmatch(item))
                     or (resolve_spawn and (SPAWN.fullmatch(item) or GROUP_SPAWN.fullmatch(item)))
                     or (resolve_crew and VEHICLE_SPAWN.fullmatch(item))))
                 for item in fields):
@@ -1566,6 +1654,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 clearable_flags=clearable_flags,
                 ordered_events=ordered_events,
                 inactive_control_targets=inactive_control_targets,
+                concrete_crushers=concrete_crushers,
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
             if not term.get('pregameSample') and any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
@@ -1639,6 +1728,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         used_samples = {item.get('flag') for _, _, _, term, _ in parsed for item in leaves(term)}
         used_samples.update(spawner_reads)
         used_samples.update(item.get('flag') for term in derived_spawners.values() for item in leaves(term))
+        if concrete_crushers:
+            used_samples.update((*CONCRETE_INTEL, *(town + ' Flag' for town in CONCRETE_TOWNS)))
         unconsumed = {flag for sample in samples for flag in sample.get('unconsumedFlags', ())}
         if not sampled_flags <= used_samples | unconsumed:
             return [], audit, 'startup sampled flag still has an unconverted consumer'
@@ -1663,6 +1754,14 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     compiled = render_startup_selection(world, startup) if used_choices else []
     if samples:
         compiled.extend(render_startup_samples(world, samples))
+    if concrete_crushers:
+        calls = {action['instructionId'] for entry in audit.values() for action in entry.get('convertedActions', ())
+                 if action.get('instruction') == 'TILW_RunScriptInstruction'}
+        expected = [(set(CONCRETE_INTEL), 2, False), ({town + ' Flag' for town in CONCRETE_TOWNS}, 1, False)]
+        if (calls != CONCRETE_SCRIPT_CALLS.keys() or
+                [(set(s['flags']), s['drawCount'], s['withReplacement']) for s in samples] != expected):
+            return [], audit, 'Concrete Crushers requires both startup draws and all seven reviewed schedules'
+        compiled.extend(render_concrete_events(world))
     if supply_comparison:
         calls = {action['instructionId'] for entry in audit.values() for action in entry.get('convertedActions', ())
                  if action.get('setsFlag') == SUPPLY_COUNT_FLAG}

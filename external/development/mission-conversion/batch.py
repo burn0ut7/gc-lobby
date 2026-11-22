@@ -34,7 +34,8 @@ from local_loadouts import unchanged_units_parent
 from markers import (ALLOWED as MARKER_FIELDS, DEST as MAP_MARKER_PREFAB, LEGACY as LEGACY_MARKER,
                      BASE as LEGACY_MARKER_BASE, convert_baked_marker_generator, convert_hover_camera,
                      convert_layer, convert_wall_markers, instance as marker_instance)
-from outcomes import (ASSAD_FRAMEWORK_BLOB, ASSAD_FRAMEWORK_LAYER, DEPOT_SUPPLY_REVISIONS,
+from outcomes import (ASSAD_FRAMEWORK_BLOB, ASSAD_FRAMEWORK_LAYER, CONCRETE_COUNT, CONCRETE_DONE,
+                      CONCRETE_FRAMEWORK, CONCRETE_INTEL, CONCRETE_TOWNS, DEPOT_SUPPLY_REVISIONS,
                       FOOD_MARKET_OUTCOME_LAYER, FRAMEWORK, INTERDICTION_OUTCOME_LAYER,
                       INTERSECTING_DEFAULT, INTERSECTING_DEFAULT_BLOB, MATCH_PHASE_VALUE,
                       NAGALAM_AMBUSH_BLOBS, NAGALAM_AMBUSH_LAYERS, NAGALAM_LAYERS,
@@ -3477,6 +3478,30 @@ def seeder_native_assets(source, dev, source_units, dev_units, prefabs):
     return assets
 
 
+CONCRETE_COMMANDER = 'worlds/HotMic/Prefabs/Characters/Objectives/RHS_RF_Commander.et'
+CONCRETE_COMMANDER_BLOB = '783f8662c5733dbd27709998c4c75ad5e5de8a48'
+CONCRETE_COMMANDER_ID = 'C36FA3DD3507C03E'
+CONCRETE_COMMANDER_FLAG = 'RHS RF Commander Killed Flag'
+
+
+def concrete_commander(source, dev, rhs):
+    path = CONCRETE_COMMANDER
+    resource = CONCRETE_COMMANDER_ID
+    if (source.files.get(path) != CONCRETE_COMMANDER_BLOB or source.resources.get(resource) != [path]
+            or dev.resources.get(resource) not in (None, [path])):
+        raise ValueError('Concrete Crushers commander identity changed')
+    block = source.read(path).splitlines()
+    parent = REF.search(block[0])
+    if not rhs or not parent or not rhs.contains(*parent.groups()):
+        raise ValueError('Concrete Crushers commander parent is unavailable')
+    lines, flag = damage_state_flag_placement(block)
+    body = '\n'.join(lines) + '\n'
+    if (flag != CONCRETE_COMMANDER_FLAG or LEGACY.search(body)
+            or (path in dev.files and body.strip() != dev.read(path).strip())):
+        raise ValueError('Concrete Crushers commander damage state needs review')
+    return {resource: {'path': path, 'body': body}}
+
+
 @lru_cache(maxsize=4)
 def seeder_recon_flags_unused(source):
     if (source.files.get(SEEDER_REPLACEMENT_LAYER) != SEEDER_REPLACEMENT_LAYER_BLOB
@@ -6177,6 +6202,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                    if 'setsFlag' in action}
     script_flags = {flag for event in rules.values() for action in event.get('convertedActions', [])
                     for flag in action.get('producesFlags', ())}
+    concrete_layer, concrete_blob = CONCRETE_FRAMEWORK
+    concrete_crushers = (CONCRETE_COUNT in event_flags and concrete_layer in source.layers[world.lower()]
+                         and source.files[concrete_layer] == concrete_blob)
     depot_layer = next((path for path in source.layers[world.lower()]
                         if path in DEPOT_SUPPLY_REVISIONS and source.files[path] == DEPOT_SUPPLY_REVISIONS[path][0]), None)
     cache_supply_depot = bool(script_flags) and framework_supported and depot_layer is not None
@@ -6314,7 +6342,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     fields = block[1:-1]
                     if ((script_flags and layer == SUPPLY_OUTCOME_LAYER and source.files[layer] == SUPPLY_OUTCOME_BLOB)
                             or (cache_supply_depot and layer == depot_layer)
-                            or (phase_entity_capture and layer == RUHA_PHASE_LAYER)):
+                            or (phase_entity_capture and layer == RUHA_PHASE_LAYER)
+                            or (concrete_crushers and layer == concrete_layer)):
                         # The reviewed prefix contains the replaced scripts and optional unused coordinates.
                         fields = fields[fields.index(' m_missionEvents {'):]
                     root_fields = [field.strip() for field in fields
@@ -6689,9 +6718,23 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     placed_crew_names = Counter(name for crew in placed_crew_fields
                                 for name in re.findall(r'(?m)^ +m_sGroupName "([\w.-]+)"$', crew))
     if not blockers and (assignments or marker_edits or prefab_spawns or extraction_spawns or area_names or teleport_targets
+                         or concrete_crushers
                          or damage_flags or roster_assets or crew_waypoints
                          or any('m_aStatic' in body for body in draft.values())):
         named = named_placements(draft.values())
+        if concrete_crushers:
+            intel_targets = [name for intel in CONCRETE_INTEL for name in (intel, intel + '_Marker')]
+            if any(len(named.get(target, ())) != 1 for target in intel_targets):
+                blockers.append({'rule': 'framework events', 'file': concrete_layer,
+                                 'detail': 'startup intel cleanup needs exactly one pickup and marker per choice'})
+            commander_ref = f'"{{{CONCRETE_COMMANDER_ID}}}{CONCRETE_COMMANDER}"'
+            commander_spawns = [spawn for spawn in spawner_audit if spawn.get('prefab') == commander_ref]
+            expected_towns = Counter(frozenset((town + ' Flag', CONCRETE_DONE)) for town in CONCRETE_TOWNS)
+            actual_towns = Counter(frozenset(term['flag'] for term in leaves(spawn) if term['trigger'] == 'event flag')
+                                   for spawn in commander_spawns if spawn['trigger'] == 'all' and spawn['requiresMatch'])
+            if len(commander_spawns) != len(CONCRETE_TOWNS) or actual_towns != expected_towns:
+                blockers.append({'rule': 'spawned objective', 'file': CONCRETE_COMMANDER,
+                                 'detail': 'expected one commander spawn condition per exclusive town'})
         for resource, asset in roster_assets.items():
             reference = f'"{{{resource}}}{asset["path"]}"'
             occurrences = sum(body.count(reference) for body in draft.values())
@@ -6945,6 +6988,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare the cargo selection, selected van refill, depot initialization and repeated exact-supply check.')
     elif cache_supply_depot:
         remaining.append('Compare the two ordered supply thresholds, including a first reading above both thresholds.')
+    elif concrete_crushers:
+        remaining.append('Compare the two retained intel pickups, command reveal and commander death in Match. '
+                         'The reveal uses the native notification display duration.')
     elif script_flags:
         remaining.append('Compare depot measurement after either authored deadline, including ties, missing depots and one-shot delivery.')
     for target in sorted({spawn['missingGroupWaypoint'] for spawn in prefab_spawns if 'missingGroupWaypoint' in spawn}):

@@ -520,6 +520,15 @@ def main():
         bound_area_flags = set()
         bound_damage_flags = set()
         bound_spawner_reads = Counter()
+        if (args.batch and batch.CONCRETE_FRAMEWORK[0] in source.layers[world.lower()]
+                and source.files[batch.CONCRETE_FRAMEWORK[0]] == batch.CONCRETE_FRAMEWORK[1]):
+            try:
+                objectives.update(batch.concrete_commander(source, dev, rhs_database))
+                objective_flags = set(objective_flags) | {batch.CONCRETE_COMMANDER_FLAG}
+                batch_interactions[world] = (objective_flags, interaction_placements)
+                spawned_assets[world] = objectives
+            except ValueError as exc:
+                row['spawnedObjectivePrefabs'] = {'gap': str(exc)}
         if args.batch and world == batch.SEEDER_WORLD:
             try:
                 prefabs = batch.seeder_objective_prefabs(source)

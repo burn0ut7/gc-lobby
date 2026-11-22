@@ -59,7 +59,7 @@ def capture_dependencies(project, local, installed, omit):
 
 
 def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=frozenset(), only_authored=False,
-            headers=()):
+            headers=(), full_graph=False):
     if audit['target'] != dev.commit:
         raise ValueError('rerun the mission audit against the current Dev commit')
     launcher_metadata = audit['committedLauncherMetadata']
@@ -77,7 +77,7 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
     if base_project and base_project[0] == BASE_GAME:
         installed[BASE_GAME] = databases[0], base_project[1]
     pinned = {guid for header in requested for guid, _ in required_addon_versions(dev.read(header))}
-    roots = dev_dependencies if omit else base_scope
+    roots = dev_dependencies if omit or full_graph else base_scope
     roots = (*roots, *sorted(pinned - set(roots)))
     selected, scope, excluded_addons = capture_dependencies(roots, local, installed, omit)
     if not set(base_scope) <= scope:
@@ -167,6 +167,8 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
             }
         files.update(paths)
         eligible[header] = world
+    if full_graph and eligible:
+        files.update(path for path in dev.files if path.startswith('Scripts/') and path.endswith('.c'))
 
     destination = destination.resolve()
     if any(destination.is_relative_to(repo.repo.resolve()) for repo in (dev, lobby)):
@@ -204,7 +206,10 @@ def main():
     parser.add_argument('--base-database', type=Path, required=True)
     parser.add_argument('--workshop', type=Path)
     parser.add_argument('--dependency-checkout', type=Path, action='append', default=[])
-    parser.add_argument('--exclude-addon', action='append', default=[], help='omit addon GUID and all dependents')
+    scope = parser.add_mutually_exclusive_group()
+    scope.add_argument('--exclude-addon', action='append', default=[], help='omit addon GUID and all dependents')
+    scope.add_argument('--full-graph', action='store_true',
+                       help='stage the declared Missions dependencies and committed game scripts')
     parser.add_argument('--only-authored-catalogues', action='store_true',
                         help='stage catalogue review fixtures and report their exact asset owners')
     parser.add_argument('--header', action='append', default=[],
@@ -217,7 +222,7 @@ def main():
         resource_databases(args.base_database, args.workshop), audit, args.stage,
         [Snapshot(repo, 'HEAD') for repo in args.dependency_checkout],
         {guid.upper() for guid in args.exclude_addon},
-        only_authored=args.only_authored_catalogues, headers=args.header,
+        only_authored=args.only_authored_catalogues, headers=args.header, full_graph=args.full_graph,
     )
     print(json.dumps(report, indent=2))
 
