@@ -266,6 +266,14 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/TheLocalPub/BarnyardBashers.conf': (
+        '045f48cbb044d096c67f9700fe54e32e291314a1',
+        (('worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_Layers/BLUFOR/Players.layer',
+          'de8d2200b9d045879dfc67ef7aabbeac2cb941d9'),
+         ('worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_Layers/OPFOR/Players.layer',
+          '116ac725b1f73bb63c234aa961de80de448f0aa4')),
+        36, 35,
+    ),
     'Missions/Til/OwlsPrey.conf': (
         '4f5817d0d3f1824f202cc6e0722dfffe2b99751b',
         (('worlds/Til/OwlsPrey/OwlsPrey_Layers/players.layer', '927a4841ce88685181a781b1f26c6c1838504977'),),
@@ -3094,7 +3102,7 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
     placements, schedules, audit = {}, [], []
     layers = {path: text for path in source.layers[world.lower()]
               if 'TILW_PrefabSpawnerEntity' in (text := source.read(path))}
-    capture_latches = reversible_spawn_captures(source, world, layers, captures)
+    capture_latches = spawn_capture_latches(source, world, layers, captures, used_flags)
     shadowed = shadowed_crew_names(source, world, layers) if any('m_entityName ' in text for text in layers.values()) else ()
     for layer, text in layers.items():
         try:
@@ -3135,25 +3143,32 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
     return placements, ''.join(schedules), audit
 
 
-def reversible_spawn_captures(source, world, layers, captures):
+def spawn_capture_latches(source, world, layers, captures, used_flags):
     reads = placed_spawner_flag_reads(source, layers)
-    candidates = [
-        flag for flag, check in captures.items()
-        if reads[flag[1:-1]] and not any(
-            line.strip().startswith(('m_bStopAfterFirstChange ', 'm_Messages ')) for line in check)
-    ]
+    candidates = {}
+    for quoted, check in captures.items():
+        flag = quoted[1:-1]
+        fields = [line.strip() for line in check]
+        has_stop_override = any(line.startswith('m_bStopAfterFirstChange ') for line in fields)
+        has_messages = any(line.startswith('m_Messages ') for line in fields)
+        if reads[flag] and not has_stop_override and not has_messages:
+            candidates[quoted] = False
+        elif reads[flag] and 'm_bStopAfterFirstChange 1' in fields and has_messages and flag not in used_flags:
+            candidates[quoted] = True
     if not candidates:
         return {}
     scripts = script_text(source)
     references = '\n'.join(damage_flag_reference_text(source.read(path)) for path in sorted(source.closure(world))
                            if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
     latches = {}
-    for quoted in candidates:
+    for quoted, owns_messages in candidates.items():
         flag = quoted[1:-1]
         # The spawner schedules once on the first positive observation. Other
         # literal consumers can continue to observe the area's reversible state.
+        # A first-change tracker can own the notice when every consumer is a spawner.
+        other_reads = 0 if owns_messages else literal_flag_reads(references, flag)
         if (flag not in scripts
-                and references.count(quoted) == 1 + reads[flag] + literal_flag_reads(references, flag)):
+                and references.count(quoted) == 1 + reads[flag] + other_reads):
             name = 'GC_MigrationSpawnCapture_' + guid(world + '/spawn capture/' + flag)
             if name not in references and name not in scripts:
                 latches[flag] = name
@@ -4055,8 +4070,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
         settings += '  GC_LobbyFreezeComponent "{E81E75BC287148D0}" {\n'
         if freeze:
             authored = ('m_fAuthoredCountdownSeconds' if isinstance(freeze, Decimal) else 'm_iAuthoredCountdownSeconds')
-            duration = str(freeze) if restrict_staging_combat else f'{freeze:f}'
-            settings += f'   {authored} {duration}\n'
+            settings += f'   {authored} {freeze}\n'
         if lock_editor:
             settings += '   m_bLockLimitedEditorAfterStaging 1\n'
         if restrict_staging_combat:

@@ -45,7 +45,15 @@ EMPTY_VARIANT = re.compile(r'm_VariantData SCR_EditableEntityVariantData "\{[\da
 EDITABLE_UI_FIELD = re.compile(r'(?:Name|Description) "[^"\n]*"|(?:m_sFaction|IconSetName) "[\w.-]+"|m_Image ' + REF.pattern)
 GROUP_IDENTITY = 'SCR_GroupIdentityComponent "{56366C5C50AD3CF2}" {'
 MILITARY_SYMBOL = re.compile(r'm_MilitarySymbol SCR_MilitarySymbol "\{[\dA-Fa-f]{16}\}" \{')
-MILITARY_IDENTITY = re.compile(r'm_Identity (BLUFOR|OPFOR|INDFOR|CIVILIAN)')
+MILITARY_SYMBOL_FIELDS = {
+    'm_Identity': re.compile(r'BLUFOR|OPFOR|INDFOR|CIVILIAN'),
+    'm_Dimension': re.compile(r'LAND|AIR'),
+    'm_Icons': re.compile(r'SUPPLY|\d{1,10}'),
+    'm_Amplifier': re.compile(r'TEAM'),
+}
+GROUP_BUDGETS = {'m_EntityBudgetCost {', 'm_EntityChildrenBudgetCost {'}
+GROUP_BUDGET_ENTRY = re.compile(r'SCR_EntityBudgetValue "\{[\da-fA-F]{16}\}" \{')
+GROUP_BUDGET_TYPE = re.compile(r'm_BudgetType (CAMPAIGN|AI_SERVER|AI)')
 WRAPPERS = json.loads(Path(__file__).with_name('stock_wrappers.json').read_text(encoding='utf-8'))
 STOCK_AI_GROUPS = json.loads(Path(__file__).with_name('stock_ai_groups.json').read_text(encoding='utf-8'))
 RHS_AI_GROUPS = json.loads(Path(__file__).with_name('rhs_ai_groups.json').read_text(encoding='utf-8'))
@@ -419,9 +427,32 @@ def native_group_field_end(lines, index):
 
 
 def native_group_symbol(lines, start, end):
-    return (end == start + 2 and MILITARY_SYMBOL.fullmatch(lines[start].strip())
-            and (MILITARY_IDENTITY.fullmatch(lines[start + 1].strip())
-                 or lines[start + 1].strip() == 'm_Dimension AIR'))
+    if end < start + 2 or not MILITARY_SYMBOL.fullmatch(lines[start].strip()):
+        return False
+    seen = set()
+    for line in lines[start + 1:end]:
+        key, _, value = line.strip().partition(' ')
+        pattern = MILITARY_SYMBOL_FIELDS.get(key)
+        if key in seen or not pattern or not pattern.fullmatch(value):
+            return False
+        if key == 'm_Icons' and value.isdecimal() and int(value) > 0x7fffffff:
+            return False
+        seen.add(key)
+    return True
+
+
+def native_group_budget(lines, start, end):
+    seen = set()
+    for index in range(start + 1, end, 4):
+        if index + 3 >= end or not GROUP_BUDGET_ENTRY.fullmatch(lines[index].strip()):
+            return False
+        budget_type = GROUP_BUDGET_TYPE.fullmatch(lines[index + 1].strip())
+        if (not budget_type or budget_type[1] in seen
+                or not re.fullmatch(r'm_Value \d+', lines[index + 2].strip())
+                or lines[index + 3].strip() != '}'):
+            return False
+        seen.add(budget_type[1])
+    return bool(seen)
 
 
 def editor_group_preview(lines, start, end):
@@ -479,9 +510,10 @@ def native_group_component(lines, start, end):
         return False
     index = start + 2
     found_labels = found_auto_labels = found_symbol = False
+    budgets = set()
     while index < end - 1:
         token = lines[index].strip()
-        if token == 'm_aAuthoredLabels {' and not found_labels:
+        if token in ('m_aAuthoredLabels {', 'm_aAuthoredLabels +{') and not found_labels:
             stop = block_end(lines, index)
             labels = ' '.join(line.strip() for line in lines[index + 1:stop]).split()
             if stop >= end - 1 or any(not re.fullmatch(r'ENTITYTYPE_GROUP|FACTION_[A-Z0-9_]+', label)
@@ -489,12 +521,18 @@ def native_group_component(lines, start, end):
                 return False
             found_labels = True
             index = stop + 1
-        elif (token == 'm_aAutoLabels {' and not found_auto_labels
+        elif (token in ('m_aAutoLabels {', 'm_aAutoLabels +{') and not found_auto_labels
               and lines[index + 1].strip() == '}'):
             found_auto_labels = True
             index += 2
-        elif EDITABLE_UI_FIELD.fullmatch(token):
+        elif EDITABLE_UI_FIELD.fullmatch(token) or token in ('m_bUseUIInfoName 0', 'm_bUseUIInfoName 1'):
             index += 1
+        elif token in GROUP_BUDGETS and token not in budgets:
+            stop = block_end(lines, index)
+            if stop >= end - 1 or not native_group_budget(lines, index, stop):
+                return False
+            budgets.add(token)
+            index = stop + 1
         elif MILITARY_SYMBOL.fullmatch(token) and not found_symbol:
             stop = block_end(lines, index)
             if stop >= end - 1 or not native_group_symbol(lines, index, stop):
@@ -668,6 +706,12 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
     override = next((l.strip()[-1] for l in lines if l.strip().startswith('m_bSetPlayable ')), None)
     force = (override == '1' if override is not None else
              (scalar((old,), 'm_bSetPlayable') == 1 or scalar(inheritance(source_units, guid), 'm_bSetPlayable') == 1))
+    if (native_override == '0' and not force and replace_slots and len(authored) == 1
+            and sum(line.strip().startswith('m_bPlayable ') for line in lines) == 1):
+        # Both runtimes see the explicit AI override. Validate the complete replacement
+        # roster instead of the playable slots inherited from the group prefab.
+        return convert_ai_instance(lines, guid, source_units, dev_units, locally_owned, external_ai or {},
+                                   reviewed_ai_members=reviewed_ai_members, replaces_playable_roster=True)
     if native_playable and native_override is None and not force and len(authored) == 1 and replace_slots:
         entries = '\n'.join(lines[slots_start + 1:block_end(lines, slots_start)])
         slots = [(resource.upper(), path) for resource, path in REF.findall(entries)]

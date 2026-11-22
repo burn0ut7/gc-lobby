@@ -58,9 +58,14 @@ def capture_dependencies(project, local, installed, omit):
     return retained, scoped, full - scoped
 
 
-def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=frozenset(), only_authored=False):
+def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=frozenset(), only_authored=False,
+            headers=()):
     if audit['target'] != dev.commit:
         raise ValueError('rerun the mission audit against the current Dev commit')
+    launcher_metadata = audit['committedLauncherMetadata']
+    requested = set(headers)
+    if missing := requested - launcher_metadata.keys():
+        raise ValueError('these launchers did not clear the file audit: ' + ', '.join(sorted(missing)))
     lobby_id, lobby_dependencies = checkout_project(lobby)
     mission_id, dev_dependencies = checkout_project(dev)
     base_scope = (BASE_GAME, lobby_id)
@@ -95,8 +100,10 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
     candidates = {}
     excluded = {}
     authored_catalogues = {}
-    for header, checks in audit['committedLauncherMetadata'].items():
-        if not checks['gcMissionHeader'] or checks['generatedSnapshot']:
+    for header, checks in launcher_metadata.items():
+        if requested and header not in requested:
+            continue
+        if not checks['gcMissionHeader'] or (checks['generatedSnapshot'] and not requested):
             continue
         world = WORLD_REF.search(dev.read(header))[3]
         paths = closure(dev, world, header)
@@ -184,6 +191,8 @@ def main():
     parser.add_argument('--exclude-addon', action='append', default=[], help='omit addon GUID and all dependents')
     parser.add_argument('--only-authored-catalogues', action='store_true',
                         help='stage catalogue review fixtures and report their exact asset owners')
+    parser.add_argument('--header', action='append', default=[],
+                        help='stage this exact file-cleared header, including an existing snapshot')
     parser.add_argument('--stage', type=Path, required=True)
     args = parser.parse_args()
     audit = json.loads(args.audit.read_text(encoding='utf-8'))
@@ -192,7 +201,7 @@ def main():
         resource_databases(args.base_database, args.workshop), audit, args.stage,
         [Snapshot(repo, 'HEAD') for repo in args.dependency_checkout],
         {guid.upper() for guid in args.exclude_addon},
-        only_authored=args.only_authored_catalogues,
+        only_authored=args.only_authored_catalogues, headers=args.header,
     )
     print(json.dumps(report, indent=2))
 
