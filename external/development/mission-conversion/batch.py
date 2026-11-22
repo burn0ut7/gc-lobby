@@ -3226,6 +3226,80 @@ def seeder_objective_markers(source, block):
     return markers, count
 
 
+def seeder_objective_spawners(block, path):
+    """Replace legacy spawner members in place, keeping their child waypoint trees."""
+    root = placed_spawner_root(block[0], allow_bare=False)
+    if not root or not root['group']:
+        raise ValueError('unexpected objective spawner container: ' + path)
+    result = ['$grp GenericEntity {']
+    review = []
+    for index, (name, lines) in enumerate(polygon_capture.members(block, True, '')):
+        key = f'{path}/spawner/{index}'
+        retained, authored, crew = [], [], None
+        cursor = 0
+        while cursor < len(lines):
+            line = lines[cursor]
+            end = block_end(lines, cursor) if line.endswith('{') else cursor
+            chunk = lines[cursor:end + 1]
+            if line.startswith(' m_crewConfig '):
+                if crew is not None:
+                    raise ValueError('duplicate objective crew configuration: ' + key)
+                crew = crew_config_contents(chunk)
+            elif line.startswith(' m_'):
+                authored.extend(chunk)
+            else:
+                retained.extend(chunk)
+            cursor = end + 1
+        data = properties(authored, {'m_prefab', 'm_conditionFlag', 'm_spawnTimings',
+                                     'm_setEntityNames', 'm_waypointNames'})
+        prefab = REF.fullmatch(data.get('m_prefab', ''))
+        flag = data.get('m_conditionFlag')
+        delays = data.get('m_spawnTimings', '').split()
+        entity_name = data.get('m_setEntityNames', '""')
+        waypoints = target_names(data['m_waypointNames'], skip_blank=True) if data.get('m_waypointNames') else []
+        if (not prefab or flag not in ('"VehicleSpawner"', '"SpawnReinforcements"')
+                or len(delays) > 128
+                or any(not re.fullmatch(NUMBER, delay) or not 0 <= Decimal(delay) <= 86400 for delay in delays)
+                or not re.fullmatch(SPAWN_NAME, entity_name) or (len(delays) > 1 and entity_name != '""')):
+            raise ValueError('unsupported objective spawner: ' + key)
+        fields = []
+        crew_groups = []
+        if crew is not None:
+            kind = 'GC_CrewedVehicleSpawn'
+            # The draft retains the original references for subsequent active-graph review.
+            fields, crew_groups = render_crew_config(
+                crew, key, lambda resource, path: f'"{{{resource}}}{path}"', use_available_initial_waypoints=True)
+            fields = ['    ' + line[8:] for line in fields]
+        elif prefab[2].startswith('Prefabs/Groups/'):
+            kind = 'GC_AIGroupSpawn'
+            if waypoints:
+                fields = ['    m_aWaypoints {', *('     ' + point for point in waypoints), '    }']
+        else:
+            raise ValueError('unverified objective spawn type: ' + key)
+        component = [f'  GC_MissionAnchorSpawnerComponent "{{{guid(key)}}}" {{',
+                     '   m_sRequiredFlag ' + flag]
+        if delays:
+            component.extend(['   m_aDelaySeconds {', '    ' + ' '.join(delays), '   }'])
+        component.extend([f'   m_Spawn {kind} "{{{guid(key + "/spawn")}}}" {{',
+                          '    m_sPrefab ' + prefab[0]])
+        if entity_name != '""':
+            component.append('    m_sEntityName ' + entity_name)
+        component.extend([*fields, '   }', '  }'])
+        if ' components {' in retained:
+            start = retained.index(' components {')
+            stop = block_end(retained, start)
+            retained[stop:stop] = component
+        else:
+            start = retained.index(' {') if ' {' in retained else len(retained)
+            retained[start:start] = [' components {', *component, ' }']
+        result.extend([f' {name} {{' if name else ' {', *(' ' + line for line in retained), ' }'])
+        review.append({'anchor': name, 'flag': flag[1:-1], 'spawnDelaysSeconds': delays or ['0'],
+                       'prefab': prefab[0], 'spawnName': entity_name[1:-1],
+                       'waypoints': [] if crew is not None else [point[1:-1] for point in waypoints],
+                       'crewGroups': crew_groups})
+    return [*result, '}'], review
+
+
 def seeder_objective_prefabs(source):
     """Prepare the shared authored geometry and observations for the seven rotating objectives."""
     assets = {}
@@ -3268,6 +3342,7 @@ def seeder_objective_prefabs(source):
             lines[start:stop + 1] = [' ' * indent + field for field in native]
             markers += count
         cleanup_members = []
+        objective_spawners = []
         for start, stop, indent, spawners in reversed(list(nested_placement_blocks(lines, PLACED_SPAWNER))):
             if not spawners[0].startswith('$grp '):
                 continue
@@ -3284,7 +3359,9 @@ def seeder_objective_prefabs(source):
                     raise ValueError('unverified objective cleanup spawner')
                 cleanup_members.append(next(field.strip() for field in fields if field.startswith('  ID ')))
                 del spawners[index:end + 1]
-            lines[start:stop + 1] = [' ' * indent + field for field in spawners]
+            native, spawner_review = seeder_objective_spawners(spawners, path)
+            objective_spawners.extend(spawner_review)
+            lines[start:stop + 1] = [' ' * indent + field for field in native]
         areas = []
         for start, stop, indent, trigger in reversed(list(nested_placement_blocks(lines, SEEDER_FACTION_AREA))):
             native, details = seeder_objective_area(path, trigger)
@@ -3299,8 +3376,8 @@ def seeder_objective_prefabs(source):
                         'damageFlags': sorted(damage_flags), 'areas': areas, 'overlayVertices': overlays,
                         'markers': markers,
                         'omittedCleanupMembers': cleanup_members,
-                        'spawnerFlagReaders': dict(sorted(Counter(
-                            re.findall(r'(?m)^ +m_conditionFlag "([^"]+)"$', body)).items())),
+                        'spawners': objective_spawners,
+                        'spawnerFlagReaders': dict(sorted(Counter(item['flag'] for item in objective_spawners).items())),
                         'remainingLegacy': dict(sorted(remaining.items()))}
     return assets
 

@@ -2,7 +2,7 @@
 class GC_WaypointOrders
 {
 	//------------------------------------------------------------------------------------------------
-	protected static bool Resolve(array<string> names, array<AIWaypoint> waypoints)
+	protected static bool Resolve(array<string> names, array<AIWaypoint> waypoints, bool skipUnavailable = false)
 	{
 		if (!names)
 			return true;
@@ -10,7 +10,11 @@ class GC_WaypointOrders
 		{
 			AIWaypoint waypoint = AIWaypoint.Cast(GetGame().GetWorld().FindEntityByName(name));
 			if (!waypoint)
-				return false;
+			{
+				if (!skipUnavailable)
+					return false;
+				continue;
+			}
 			waypoints.Insert(waypoint);
 		}
 		return true;
@@ -24,12 +28,12 @@ class GC_WaypointOrders
 	}
 
 	//------------------------------------------------------------------------------------------------
-	static bool Apply(AIGroup group, array<string> names, bool replaceExisting = false)
+	static bool Apply(AIGroup group, array<string> names, bool replaceExisting = false, bool skipUnavailable = false)
 	{
 		if (!group)
 			return false;
 		array<AIWaypoint> waypoints = {};
-		if (!Resolve(names, waypoints))
+		if (!Resolve(names, waypoints, skipUnavailable))
 			return false;
 		if (replaceExisting)
 		{

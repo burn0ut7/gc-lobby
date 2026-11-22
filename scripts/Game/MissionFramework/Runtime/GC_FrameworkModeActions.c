@@ -49,6 +49,12 @@ modded class GC_LobbyManager
 	}
 
 	//------------------------------------------------------------------------------------------------
+	bool GC_SpawnFromMissionAnchor(GC_PrefabSpawn spawn, IEntity anchor)
+	{
+		return GC_HasFrameworkSource(m_MissionRuleEngine) && spawn && anchor && spawn.ExecuteAt(anchor, m_MissionRuleEngine, true);
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! Shared dispatch for script actions and sampled conditions; false means unavailable, not a false answer.
 	bool GC_RunFrameworkScript(GC_MissionRuleEngine source, GC_MissionScript script, out bool result)
 	{

@@ -417,7 +417,8 @@ def split_crew_block(lines, field):
 
 
 def render_crew_config(config, key, resolve_character, *, shadowed_names=(), placed=False,
-                       allow_default_crew=False, placed_names=(), missing_waypoints=()):
+                       allow_default_crew=False, placed_names=(), missing_waypoints=(),
+                       use_available_initial_waypoints=False):
     groups, fields = split_crew_block(config, 'm_crewGroups')
     settings = properties(fields, {'m_noTurretDismount', 'm_useIdleGroups'})
     seated = settings.get('m_noTurretDismount', '0')
@@ -476,6 +477,8 @@ def render_crew_config(config, key, resolve_character, *, shadowed_names=(), pla
         if seated == '1':
             output.append('          m_bKeepGunnersSeated 1')
         if route:
+            if use_available_initial_waypoints:
+                output.append('          m_bUseAvailableInitialWaypoints 1')
             if idle == '1':
                 output.append('          m_bSeparateOrderedGunners 1')
             output.extend(['          m_fWaypointDelay ' + delay, '          m_aWaypoints {',

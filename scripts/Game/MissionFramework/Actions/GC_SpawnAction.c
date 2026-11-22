@@ -35,7 +35,13 @@ class GC_PrefabSpawn
 	//------------------------------------------------------------------------------------------------
 	bool IsValid()
 	{
-		return !m_sPrefab.IsEmpty() && !m_sLocation.IsEmpty();
+		return !m_sLocation.IsEmpty() && IsValidAtAnchor();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	bool IsValidAtAnchor()
+	{
+		return !m_sPrefab.IsEmpty();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -63,13 +69,26 @@ class GC_PrefabSpawn
 	//! Called through the manager's current-engine/server authority gate.
 	bool Execute(GC_MissionRuleEngine source = null)
 	{
-		if (!IsValid())
+		if (m_sLocation.IsEmpty())
+			return false;
+		return ExecuteAt(GetGame().GetWorld().FindEntityByName(m_sLocation), source);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Used by the active framework with a directly owned placement.
+	bool ExecuteAt(IEntity location, GC_MissionRuleEngine source, bool allowAnchorName = false)
+	{
+		if (!location || !IsValidAtAnchor())
 			return false;
 		BaseWorld world = GetGame().GetWorld();
-		IEntity location = world.FindEntityByName(m_sLocation);
-		if (!location || (!m_sEntityName.IsEmpty() && world.FindEntityByName(m_sEntityName)
-			&& !GC_PhaseEntitySet.AllowsNameReuse(m_sEntityName)))
+		if (location.GetWorld() != world)
 			return false;
+		if (!m_sEntityName.IsEmpty())
+		{
+			IEntity existing = world.FindEntityByName(m_sEntityName);
+			if (existing && !(allowAnchorName && m_sEntityName == location.GetName()) && !GC_PhaseEntitySet.AllowsNameReuse(m_sEntityName))
+				return false;
+		}
 		Resource resource = Resource.Load(m_sPrefab);
 		if (!resource || !resource.IsValid() || !Prepare(resource.GetResource().ToEntitySource()))
 			return false;
@@ -102,9 +121,9 @@ class GC_AIGroupSpawn : GC_PrefabSpawn
 	ref array<string> m_aWaypoints;
 
 	//------------------------------------------------------------------------------------------------
-	override bool IsValid()
+	override bool IsValidAtAnchor()
 	{
-		return super.IsValid() && GC_RuleAction.ValidTargetNames(m_aWaypoints);
+		return super.IsValidAtAnchor() && GC_RuleAction.ValidTargetNames(m_aWaypoints);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -134,9 +153,9 @@ class GC_CrewedVehicleSpawn : GC_PrefabSpawn
 	bool m_bReserveNextCrewSeat;
 
 	//------------------------------------------------------------------------------------------------
-	override bool IsValid()
+	override bool IsValidAtAnchor()
 	{
-		if (!super.IsValid())
+		if (!super.IsValidAtAnchor())
 			return false;
 		if (!m_aCrewGroups)
 			return true;
@@ -305,6 +324,8 @@ class GC_SpawnCrewGroup : GC_SpawnCrewStation
 	ref array<string> m_aWaypoints;
 	[Attribute("0", UIWidgets.EditBox, "Seconds after boarding before assigning this group's orders.", params: "0 86400")]
 	float m_fWaypointDelay;
+	[Attribute("0", UIWidgets.CheckBox, "Give a group without existing orders the waypoints present when the delay expires. Useful for routes shared by rotating compositions.")]
+	bool m_bUseAvailableInitialWaypoints;
 	[Attribute("0", UIWidgets.CheckBox, "Keep this group's gunners in their turrets rather than voluntarily dismounting to fight.")]
 	bool m_bKeepGunnersSeated;
 	[Attribute("0", UIWidgets.CheckBox, "Put each gunner in a separate AI group if waypoints are assigned.")]
@@ -332,7 +353,7 @@ class GC_SpawnCrewGroup : GC_SpawnCrewStation
 
 	override bool Prepare()
 	{
-		if (!GC_WaypointOrders.Check(m_aWaypoints))
+		if (!m_bUseAvailableInitialWaypoints && !GC_WaypointOrders.Check(m_aWaypoints))
 			return false;
 		if (!m_aStations || m_aStations.IsEmpty())
 			return super.Prepare();
@@ -387,12 +408,12 @@ class GC_SpawnCrewGroup : GC_SpawnCrewStation
 				namedGroup.SetName(m_sGroupName);
 			if (shadowingAnchor && GetGame().GetWorld().FindEntityByName(m_sGroupName) != shadowingAnchor)
 				return false;
-			attempt.QueueInitialOrders(group, m_aWaypoints, m_fWaypointDelay);
+			attempt.QueueInitialOrders(group, m_aWaypoints, m_fWaypointDelay, m_bUseAvailableInitialWaypoints);
 			return true;
 		}
-		if (group && attempt.m_bPlacedCrew)
+		if (group && (attempt.m_bPlacedCrew || m_bUseAvailableInitialWaypoints))
 		{
-			attempt.QueueInitialOrders(group, m_aWaypoints, m_fWaypointDelay);
+			attempt.QueueInitialOrders(group, m_aWaypoints, m_fWaypointDelay, m_bUseAvailableInitialWaypoints);
 			return true;
 		}
 		return !group || attempt.AssignOrders(group, m_aWaypoints, m_fWaypointDelay);
@@ -404,6 +425,7 @@ class GC_InitialCrewOrders
 	AIGroup m_Group;
 	ref array<string> m_aWaypoints;
 	float m_fDelay;
+	bool m_bSkipUnavailable;
 }
 
 //! Local attempt bookkeeping only; native groups own members after success.
@@ -447,7 +469,7 @@ class GC_SpawnAttempt
 		return true;
 	}
 
-	void QueueInitialOrders(AIGroup group, array<string> waypoints, float delay)
+	void QueueInitialOrders(AIGroup group, array<string> waypoints, float delay, bool skipUnavailable = false)
 	{
 		if (!waypoints || waypoints.IsEmpty())
 			return;
@@ -455,6 +477,7 @@ class GC_SpawnAttempt
 		orders.m_Group = group;
 		orders.m_aWaypoints = waypoints;
 		orders.m_fDelay = delay;
+		orders.m_bSkipUnavailable = skipUnavailable;
 		m_aInitialOrders.Insert(orders);
 	}
 
@@ -473,12 +496,12 @@ class GC_SpawnAttempt
 		foreach (GC_InitialCrewOrders orders : m_aInitialOrders)
 		{
 			GetGame().GetCallqueue().CallLater(ApplyDelayedOrders, Math.Round(orders.m_fDelay * 1000), false,
-				manager, m_RuleSource, orders.m_Group, orders.m_aWaypoints, true);
+				manager, m_RuleSource, orders.m_Group, orders.m_aWaypoints, true, orders.m_bSkipUnavailable);
 		}
 	}
 
 	protected static void ApplyDelayedOrders(GC_LobbyManager manager, GC_MissionRuleEngine source, AIGroup group,
-		array<string> waypoints, bool initialOnly)
+		array<string> waypoints, bool initialOnly, bool skipUnavailable = false)
 	{
 		if (!group || !manager || manager != GC_LobbyManager.GetManager() || !manager.GC_HasFrameworkSource(source)
 			|| manager.GetLobbyPhase() != SCR_EGameModeState.GAME)
@@ -490,7 +513,7 @@ class GC_SpawnAttempt
 			if (!existing.IsEmpty())
 				return;
 		}
-		GC_WaypointOrders.Apply(group, waypoints);
+		GC_WaypointOrders.Apply(group, waypoints, false, skipUnavailable);
 	}
 
 	//------------------------------------------------------------------------------------------------

@@ -153,7 +153,7 @@ class GC_VehicleCrewComponent : ScriptComponent
 		foreach (GC_InitialCrewOrders orders : attempt.GetInitialOrders())
 		{
 			GetGame().GetCallqueue().CallLater(AssignOrders, Math.Round(orders.m_fDelay * 1000),
-				false, orders.m_Group, orders.m_aWaypoints, true);
+				false, orders.m_Group, orders.m_aWaypoints, true, orders.m_bSkipUnavailable);
 		}
 	}
 
@@ -163,7 +163,7 @@ class GC_VehicleCrewComponent : ScriptComponent
 			&& m_Manager.GetLobbyPhase() == SCR_EGameModeState.GAME;
 	}
 
-	protected void AssignOrders(AIGroup group, array<string> waypoints, bool initialOnly)
+	protected void AssignOrders(AIGroup group, array<string> waypoints, bool initialOnly, bool skipUnavailable = false)
 	{
 		if (!group || !IsActiveMatch())
 			return;
@@ -174,7 +174,7 @@ class GC_VehicleCrewComponent : ScriptComponent
 			if (!existing.IsEmpty())
 				return;
 		}
-		GC_WaypointOrders.Apply(group, waypoints);
+		GC_WaypointOrders.Apply(group, waypoints, false, skipUnavailable);
 	}
 
 	protected bool AllowsSeat(ECompartmentType type)
