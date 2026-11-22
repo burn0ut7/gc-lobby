@@ -13,6 +13,8 @@ from event_actions import (FLAG_NAME, GROUP_SPAWN, SPAWN, VEHICLE_SPAWN, compile
 from events import EVENT, LITERAL, MESSAGE, message, peak_flags
 
 FRAMEWORK = re.compile(r'^TILW_MissionFrameworkEntity(?: [\w.-]+)? : "\{8F846D0FD5D6EA51\}[^"]+" \{$')
+INTERSECTING_DEFAULT = 'worlds/Corax/IntercectingForces/IntersectingForces_Layers/default.layer'
+INTERSECTING_DEFAULT_BLOB = '72085fa3221eaf3c6200c21b1add35ead489c8e5'
 ENDING = re.compile(r'^    TILW_EndGameInstruction "\{([\da-fA-F]{16})\}" \{$')
 WAYPOINTS = re.compile(r'^    TILW_AssignWaypointsInstruction "\{([\da-fA-F]{16})\}" \{$')
 EVENT_CONTROL = re.compile(r'\bTILW_(RunEvents|ReactivateEvents|DeactivateEvents)Instruction\b')
@@ -212,11 +214,11 @@ def instruction_flags(source, world, framework_path, lines, scripts, flag_reads)
                         and corpus.count(flag) == known_uses[flag] + flag_reads.get(flag[1:-1], 0)))
 
 
-def meta_flag_definitions(source, world, body, scripts):
+def meta_flag_definitions(source, world, path, body, scripts):
     """Read meta definitions, including self-assignments and unused editor dividers."""
     starts = [i for i, line in enumerate(body) if line == ' m_metaFlags {']
     if not starts:
-        return {}, set(), {}
+        return {}, set(), {}, []
     if len(starts) != 1 or scripts is None or any(api in scripts for api in SCRIPT_FLAG_APIS):
         raise ValueError('meta flag ownership requires review')
     start = starts[0]
@@ -224,12 +226,19 @@ def meta_flag_definitions(source, world, body, scripts):
     definitions = {}
     identities = set()
     dividers = Counter()
+    discovery_resets = []
     cursor = start + 1
     while cursor < end:
         if not META_FLAG.fullmatch(body[cursor]):
             raise ValueError('unsupported meta flag placement')
         stop = block_end(body, cursor)
         fields = body[cursor + 1:stop]
+        if ((path, source.files[path]) == (INTERSECTING_DEFAULT, INTERSECTING_DEFAULT_BLOB)
+                and fields == ['   m_flagName "reinforce"',
+                               '   m_definition TILW_BaseTerm "{6520BB572CF3E852}" {', '   }']):
+            discovery_resets.append('reinforce')
+            cursor = stop + 1
+            continue
         terms = [i for i, line in enumerate(fields)
                  if line.startswith('   m_definition ') and TERM.fullmatch(line)]
         if len(terms) != 1:
@@ -268,7 +277,7 @@ def meta_flag_definitions(source, world, body, scripts):
     except CycleError as exc:
         cycle = ' -> '.join(exc.args[1])
         raise ValueError('cyclic meta flag definitions: ' + cycle) from exc
-    return definitions, identities, {flag[1:-1]: count for flag, count in dividers.items()}
+    return definitions, identities, {flag[1:-1]: count for flag, count in dividers.items()}, discovery_resets
 
 
 def derived_flags_with_known_readers(source, world, framework_path, body, definitions, spawner_reads):
@@ -1098,7 +1107,7 @@ def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
 
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
                      extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None,
-                     derived_audit=None, identity_flags_audit=None, meta_dividers_audit=None,
+                     derived_audit=None, identity_flags_audit=None, meta_dividers_audit=None, discovery_resets_audit=None,
                      match_only_flags=(), startup_samples_audit=None,
                      interaction_reads=None, spawner_reads=None, derived_spawners_audit=None):
     captures = captures or {}
@@ -1148,9 +1157,11 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     definitions, derived, identity_flags, derived_gap = {}, {}, set(), None
     if compound:
         try:
-            definitions, identities, dividers = meta_flag_definitions(source, world, body, scripts)
+            definitions, identities, dividers, discovery_resets = meta_flag_definitions(source, world, path, body, scripts)
             if meta_dividers_audit is not None:
                 meta_dividers_audit.update(dividers)
+            if discovery_resets_audit is not None:
+                discovery_resets_audit.extend(discovery_resets)
             derived, unverified = derived_flags_with_known_readers(
                 source, world, path, body, definitions,
                 spawner_reads if derived_spawners_audit is not None else {})

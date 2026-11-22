@@ -30,7 +30,8 @@ from launchers import META_NAME, launcher, replace_reference
 from local_loadouts import unchanged_units_parent
 from markers import (DEST as MAP_MARKER_PREFAB, LEGACY as LEGACY_MARKER, convert_baked_marker_generator, convert_hover_camera,
                      convert_layer, convert_wall_markers)
-from outcomes import (DEPOT_SUPPLY_REVISIONS, FOOD_MARKET_OUTCOME_LAYER, FRAMEWORK, INTERDICTION_OUTCOME_LAYER, MATCH_PHASE_VALUE,
+from outcomes import (DEPOT_SUPPLY_REVISIONS, FOOD_MARKET_OUTCOME_LAYER, FRAMEWORK, INTERDICTION_OUTCOME_LAYER,
+                      INTERSECTING_DEFAULT, INTERSECTING_DEFAULT_BLOB, MATCH_PHASE_VALUE,
                       NAGALAM_AMBUSH_BLOBS, NAGALAM_AMBUSH_LAYERS, NAGALAM_LAYERS,
                       RUHA_PHASE_BLOB, RUHA_PHASE_LAYER, RUHA_UNIT_NAMES, SCRIPT_FLAG_APIS,
                       SUPPLY_OUTCOME_BLOB, SUPPLY_OUTCOME_LAYER,
@@ -822,6 +823,16 @@ STOCK_RESOURCE_REKEYS = {
 }
 
 STOCK_RESOURCE_ALIASES = {
+    ('407A7B6D0444D05B', 'PrefabLibrary/Vegetation/Plants/b_urtica_dioica_0s.et'):
+        'PrefabLibrary/DefaultLibrary/Vegetation/Plants/b_urtica_dioica_0s.et',
+    ('531BB93086610CA1', 'PrefabLibrary/Vegetation/Trees/t_betula_pendula_0.et'):
+        'PrefabLibrary/DefaultLibrary/Vegetation/Trees/t_betula_pendula_0.et',
+    ('670F3221F5114B42', 'PrefabLibrary/Vegetation/Debris/BranchTrash_dec_01.et'):
+        'PrefabLibrary/DefaultLibrary/Vegetation/Debris/BranchTrash_dec_01.et',
+    ('7BEC4D46FABA042E', 'PrefabLibrary/Vegetation/Trees/t_carpinus_betulus_branch_01.et'):
+        'PrefabLibrary/DefaultLibrary/Vegetation/Trees/t_carpinus_betulus_branch_01.et',
+    ('A35E15EBC6033C07', 'PrefabLibrary/Vegetation/Bushes/b_corylus_avellana_1.et'):
+        'PrefabLibrary/DefaultLibrary/Vegetation/Bushes/b_corylus_avellana_1.et',
     ('F62AA8E7B8EA9D26', 'configs/ResourceTypes/PS5/MeshObjectCommon.conf'):
         'Configs/System/ResourceTypes/PS5/MeshObjectCommon.conf',
     ('0B1562B127AF6116', 'Configs/Weapons/AIBallisiticTables/AIBT_545x39_Tracer_7T3.conf'):
@@ -942,6 +953,9 @@ ZARICHNE_NAVMESH_ALIASES = {
 }
 
 WORKSHOP_RESOURCE_ALIASES = {
+    ('051A6522307D9476', 'Prefabs/Compositions/Misc/FreeRoamBuilding/ACE_TrenchHalf_01_long.et'): (
+        'ACETrenchesDev_65AD7CE59E8DB349', '051A6522307D9476',
+        'Prefabs/Compositions/Misc/FreeRoamBuilding/ACE_TrenchSegment_01_short.et'),
     ('B9E3B9B143A43A79', 'Prefabs/Weapons/Magazines/AKM/Magazine_AK_762x39_AK55_30rnd.et'): (
         'TacticalFlava-Weapons_DEADC0DE00000001', 'B9E3B9B143A43A79',
         'Prefabs/Weapons/Magazines/AKM/Magazine_AK_762x39_Steel_30rnd_Ball.et'),
@@ -1257,6 +1271,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/Corax/IntercectingForces/EffectModule_Zoned_MortarBarrage_Larger.et':
+        '1c43b6578d12fd59e1d7c04ea36ef87054d9ad0604b97938e65e0abd4ad37f44',
     'worlds/James/KhandarClearance/EffectModule_Zoned_BM21Barrage.et':
         '3d5e01e2ce8c84f17f1462bdaf81f1ee5b357c3b695c13ea7ea263043689d78f',
     'worlds/James/KhandarClearance/Ammo_Rocket_9M22_HE_EffectModule.et':
@@ -2499,6 +2515,7 @@ ZARICHNE_CREW_NAMES = ('LAVCrew1', 'LAVCrew2')
 ZARICHNE_MINE = 'worlds/HitTheMan/Battle For Zarichne/Mine_M15AT_EffectModuleEntity_HTM.et'
 ZARICHNE_WARHEAD = 'worlds/HitTheMan/Battle For Zarichne/Warhead_Mine_M15AT_HTM.et'
 REVIEWED_AREA_FLAG_WRITERS = {
+    INTERSECTING_DEFAULT: (INTERSECTING_DEFAULT_BLOB, {'reinforce': 2}),
     SCREENING_AREA_LAYER: (SCREENING_AREA_BLOB, SCREENING_AREA_FLAGS),
     **{f'{CONCRETE_CRUSHERS_LAYERS}PhaseTwoRedfor/{location}.layer':
        (blob, {'Phase 1 Delete Units Flag': 1}) for location, blob in CONCRETE_EXTRACTION_WRITERS.items()},
@@ -4139,7 +4156,7 @@ PRESENCE_MESSAGES = (
 )
 
 
-def render_area_flag_observer(world, area, flag, check, stop):
+def render_area_flag_observer(world, area, flag, check, stop, *, reset_after_discovery=False):
     key = f'{world}/area observer/{area}'
     timer = next(i for i, line in enumerate(check) if line.lstrip().startswith('m_Capture '))
     check = [*check[:timer], check[-1]]
@@ -4147,7 +4164,8 @@ def render_area_flag_observer(world, area, flag, check, stop):
     check = [re.sub(r'"\{([A-F0-9]{16})\}"', lambda match: f'"{{{guid(key + "/" + match[1])}}}"',
                     line[1:]) for line in check]
     return [f'    GC_AreaFlagObserver "{{{guid(key)}}}" {{', f'     m_sFlag {flag}',
-            *(['     m_bStopAfterMatchChange 1'] if stop else []), *check, '    }']
+            *(['     m_bStopAfterMatchChange 1'] if stop else []),
+            *(['     m_bResetAfterDiscovery 1'] if reset_after_discovery else []), *check, '    }']
 
 
 def reviewed_area_flag_readers(source, world):
@@ -4343,9 +4361,13 @@ def area_rules(source, world, dev=None):
                         if (shape or attached or details['seconds'] or details.get('skipDiscovery')
                                 or any('m_Messages ' in item for item in rule)):
                             raise ValueError('shared area writer must be an immediate silent radius')
-                        observer = render_area_flag_observer(world, area_name, flag, rule, details['stopsAfterFirstChange'])
+                        reset = layer == INTERSECTING_DEFAULT and flag == '"reinforce"'
+                        observer = render_area_flag_observer(world, area_name, flag, rule, details['stopsAfterFirstChange'],
+                                                             reset_after_discovery=reset)
                         capture_details[area_name] = {'area': area_name, **details, 'writesFlag': flag[1:-1],
                                                       'areaFlagObserver': observer}
+                        if reset:
+                            capture_details[area_name]['resetAfterDiscovery'] = True
                         areas.append(area)
                         continue
                     capture_details[flag[1:-1]] = {'area': area_name, **details}
@@ -4998,10 +5020,17 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         reviewed_readers = reviewed_area_flag_readers(source, world)
         derived = outcome.get('derivedSpawnerConditions', {})
         reviewed_reads = {flag: checked_area_flag_reads(flag, reviewed_readers, rules, derived) for flag in writers}
+        reset_flags = {record['writesFlag'] for record in shared_writers if record.get('resetAfterDiscovery')}
+        if reset_flags != set(outcome.get('discoveryResetFlags', ())):
+            blockers.append({'rule': 'shared area flags', 'file': world,
+                             'detail': 'discovery reset must match a verified legacy meta definition'})
         scripts = script_text(source)
         unresolved = sorted(flag for flag, count in writers.items()
                             if not (readers[flag] or reviewed_reads[flag]) or f'"{flag}"' in scripts
-                            or closure.count(f'"{flag}"') != count + readers[flag] + reviewed_reads[flag])
+                            or closure.count(f'"{flag}"') != count + readers[flag] + reviewed_reads[flag] + (flag in reset_flags)
+                            or (flag in reset_flags and (readers[flag] != 3
+                                or source.files.get(INTERSECTING_DEFAULT.replace('default.layer', 'Opfor.layer'))
+                                != '42a0e55cfa0d5197e995e1474a814e0a09e5ae5c')))
         if unresolved or writers != expected_writers or any(api in scripts for api in SCRIPT_FLAG_APIS):
             detail = 'expected all reviewed writers and only reviewed event or placed spawner readers'
             if unresolved:
@@ -5199,7 +5228,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     roots = [field.split()[0] for field in root_fields]
                     # The legacy framework uses named placements and flag data, not its own transform.
                     unsupported = set(roots) - {'m_missionEvents', 'm_casualtyFlags', 'm_suppressGameEnd'}
-                    if any(outcome.get(field) for field in ('derivedFlags', 'identityFlags', 'omittedMetaDividers')):
+                    if any(outcome.get(field) for field in
+                           ('derivedFlags', 'identityFlags', 'omittedMetaDividers', 'discoveryResetFlags')):
                         unsupported.discard('m_metaFlags')
                     for field in root_fields:
                         name = field.split()[0]

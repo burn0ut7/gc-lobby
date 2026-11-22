@@ -95,6 +95,8 @@ class GC_MissionRuleEngine
 	protected ref map<GC_RuleCondition, bool> m_mDamageAvailability = new map<GC_RuleCondition, bool>();
 	protected ref array<GC_RuleCondition> m_aDamageConditions = {};
 	protected ref array<ref GC_AreaFlagObservation> m_aAreaFlagObservations = {};
+	protected ref set<string> m_aDiscoveryResetFlags = new set<string>();
+	protected float m_fDiscoveryRecheck = -1;
 	protected int m_iRuns;
 	protected int m_iInvalidRules;
 	protected bool m_bEventLimitReached;
@@ -304,6 +306,8 @@ class GC_MissionRuleEngine
 			m_fNow = elapsedSeconds;
 		bool initialObservation = !GC_LobbyPhase.IsValid(m_eGameModeState);
 		m_eGameModeState = state;
+		if (!m_aDiscoveryResetFlags.IsEmpty() && (initialObservation || state == SCR_EGameModeState.GAME))
+			m_fDiscoveryRecheck = m_fNow + 0.01;
 		if (state != SCR_EGameModeState.GAME)
 			m_aScheduledActions.Clear();
 		ResetRandomConditions();
@@ -376,6 +380,8 @@ class GC_MissionRuleEngine
 		m_DamageWorld = null;
 		m_Areas = null;
 		m_aAreaFlagObservations.Clear();
+		m_aDiscoveryResetFlags.Clear();
+		m_fDiscoveryRecheck = -1;
 		m_aEvents.Clear();
 		m_aScheduledActions.Clear();
 		ResetPulses();
@@ -442,6 +448,8 @@ class GC_MissionRuleEngine
 		if (!CanCallFlag(name))
 			return;
 		m_aCalledFlags.Insert(name);
+		if (!GetFlag(name))
+			ClearDiscoveryFlags();
 		m_mFlagCounts.Set(name, GetFlagCallCount(name) + 1);
 		m_mFlags.Set(name, true);
 		m_aEvents.Insert(new GC_MissionRuleEvent(GC_ERuleEvent.FLAG_ON, name));
@@ -502,12 +510,18 @@ class GC_MissionRuleEngine
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected bool ApplyFlagValue(string name, bool answer, bool silent = false)
+	protected bool ApplyFlagValue(string name, bool answer, bool silent = false, bool discovery = false)
 	{
 		if (!m_bRunning || name.IsEmpty())
 			return false;
 		if (GetFlag(name) == answer)
 			return true;
+		if (!discovery)
+		{
+			ClearDiscoveryFlags();
+			if (m_aDiscoveryResetFlags.Contains(name))
+				return true;
+		}
 		// Evaluation receives a boolean projection; the successful-call count owns the value.
 		if (answer)
 			m_mFlagCounts.Set(name, 1);
@@ -546,6 +560,17 @@ class GC_MissionRuleEngine
 		if (!watched)
 			return true;
 		return QueueEvent(kind, name);
+	}
+
+	protected void ClearDiscoveryFlags()
+	{
+		foreach (string flag : m_aDiscoveryResetFlags)
+		{
+			if (!GetFlag(flag))
+				continue;
+			m_mFlagCounts.Set(flag, 0);
+			m_mFlags.Set(flag, false);
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -598,6 +623,11 @@ class GC_MissionRuleEngine
 		// conditions against a partially completed respawn wave.
 		if (m_bWaitingForRespawnWave)
 			return;
+		if (m_fDiscoveryRecheck >= 0 && m_fNow >= m_fDiscoveryRecheck)
+		{
+			m_fDiscoveryRecheck = -1;
+			ClearDiscoveryFlags();
+		}
 		if (m_eGameModeState == SCR_EGameModeState.GAME)
 			AdvanceScheduledActions();
 		if (!m_bRunning || m_bWaitingForRespawnWave)
@@ -827,6 +857,9 @@ class GC_MissionRuleEngine
 			state.m_sFlag = observer.m_sFlag;
 			state.m_Check = check;
 			state.m_bStopAfterMatchChange = observer.m_bStopAfterMatchChange;
+			state.m_bResetAfterDiscovery = observer.m_bResetAfterDiscovery;
+			if (state.m_bResetAfterDiscovery)
+				m_aDiscoveryResetFlags.Insert(state.m_sFlag);
 			m_aAreaFlagObservations.Insert(state);
 		}
 	}
@@ -847,7 +880,7 @@ class GC_MissionRuleEngine
 			observer.m_bDiscovered = true;
 			observer.m_bLastAnswer = answer;
 			observer.m_bStopped = !first && observer.m_bStopAfterMatchChange && m_eGameModeState == SCR_EGameModeState.GAME;
-			ApplyFlagValue(observer.m_sFlag, answer, first);
+			ApplyFlagValue(observer.m_sFlag, answer, first && !observer.m_bResetAfterDiscovery, first);
 			if (!m_bRunning || m_bWaitingForRespawnWave || m_eGameModeState == SCR_EGameModeState.POSTGAME)
 				return;
 		}
@@ -1522,6 +1555,8 @@ class GC_MissionRuleEngine
 		}
 		if (after == before)
 			return true;
+		if ((before > 0) != (after > 0))
+			ClearDiscoveryFlags();
 		m_mFlagCounts.Set(name, after);
 		m_mFlags.Set(name, after > 0);
 		GC_ERuleEvent kind = GC_ERuleEvent.FLAG_OFF;

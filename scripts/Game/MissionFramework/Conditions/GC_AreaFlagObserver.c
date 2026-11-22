@@ -9,6 +9,9 @@ class GC_AreaFlagObserver
 
 	[Attribute("0", UIWidgets.CheckBox, "Stop after this area's first change during Match. Discovery and changes during staging do not stop it.")]
 	bool m_bStopAfterMatchChange;
+
+	[Attribute("0", UIWidgets.CheckBox, "Only discovery can set the flag. Clear it on ordinary flag changes and after the Match-entry check.")]
+	bool m_bResetAfterDiscovery;
 }
 
 class GC_AreaFlagObservation
@@ -16,6 +19,7 @@ class GC_AreaFlagObservation
 	string m_sFlag;
 	ref GC_RuleCondition m_Check;
 	bool m_bStopAfterMatchChange;
+	bool m_bResetAfterDiscovery;
 	bool m_bDiscovered;
 	bool m_bStopped;
 	bool m_bLastAnswer;
