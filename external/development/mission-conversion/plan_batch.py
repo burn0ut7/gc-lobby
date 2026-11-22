@@ -99,7 +99,7 @@ def dependency_recovery_queue(resources, held):
 
 
 def historical_provider_candidates(plan, roots):
-    """Find archived registrations without changing the active provider graph."""
+    """Find exact and alternate archived registrations for held draft references."""
     references = {entry['reference']: entry['worlds'] for entry in plan['resourceRecoveryQueue']}
     if not references:
         return []
@@ -112,8 +112,18 @@ def historical_provider_candidates(plan, roots):
     candidates = []
     for database in sorted(databases):
         stock = StockPrefabs(database)
-        matched = {ref for ref in references if stock.contains(ref[1:17], ref[18:])}
-        if not matched:
+        matched = set()
+        alternates = []
+        for ref in sorted(references):
+            identity, path = ref[1:17], ref[18:]
+            if stock.contains(identity, path):
+                matched.add(ref)
+                continue
+            paths = stock.registered_paths(identity)
+            identities = stock.registered_ids(path)
+            if paths or identities:
+                alternates.append({'reference': ref, 'sameIdPaths': paths, 'samePathIds': identities})
+        if not matched and not alternates:
             continue
         provider = database_project(database)
         if not provider:
@@ -121,12 +131,14 @@ def historical_provider_candidates(plan, roots):
         addon_id, dependencies = provider
         if not (version := installed_version(database, addon_id)):
             continue
-        worlds = {world for ref in matched for world in references[ref]}
+        exact_worlds = {world for ref in matched for world in references[ref]}
+        review_worlds = {world for entry in alternates for world in references[entry['reference']]}
         candidates.append({
             'addonId': addon_id, 'version': version, 'projectDirectory': str(database.parent),
             'databaseSha256': sha256(stock.data).hexdigest(), 'directDependencies': list(dependencies),
-            'exactReferences': sorted(matched), 'worlds': sorted(worlds),
-            'onlyMissingPackage': sorted(world for world in worlds if held[world] <= matched),
+            'exactReferences': sorted(matched), 'worlds': sorted(exact_worlds),
+            'alternateRegistrations': alternates, 'reviewWorlds': sorted(review_worlds),
+            'onlyMissingPackage': sorted(world for world in exact_worlds if held[world] <= matched),
         })
     return sorted(candidates, key=lambda row: (
         -len(row['onlyMissingPackage']), -len(row['worlds']), row['addonId'],
@@ -443,13 +455,21 @@ def markdown(plan):
                          f"{len(entry['worlds'])} | {registered} |")
     if archives := plan.get('historicalAddonAlternatives'):
         lines.extend(['', '## Historical addon versions for held drafts', '',
-                      'Each row checks the exact resource IDs and paths from the held drafts. '
+                      'Package coverage counts exact resource IDs and paths. '
+                      'Alternate registrations require asset comparison. '
                       'Audit the full dependency graph with the selected version before delivery.', '',
-                      '| Addon | Version | Drafts with all blockers covered | Held worlds | Exact references |',
-                      '| --- | --- | ---: | ---: | ---: |'])
+                      '| Addon | Version | Drafts with all blockers covered | Worlds with exact matches | Exact references | Alternatives to verify |',
+                      '| --- | --- | ---: | ---: | ---: | ---: |'])
         for entry in archives:
             lines.append(f"| `{entry['addonId']}` | {entry['version']} | {len(entry['onlyMissingPackage'])} | "
-                         f"{len(entry['worlds'])} | {len(entry['exactReferences'])} |")
+                         f"{len(entry['worlds'])} | {len(entry['exactReferences'])} | "
+                         f"{len(entry['alternateRegistrations'])} |")
+        for entry in archives:
+            for alternate in entry['alternateRegistrations']:
+                label = f"`{entry['addonId']} {entry['version']}` for `{alternate['reference']}`"
+                details = [f"original ID at `{path}`" for path in alternate['sameIdPaths']]
+                details.extend(f"original path under ID `{identity}`" for identity in alternate['samePathIds'])
+                lines.extend(['', f"- {label} has " + ', '.join(details) + '.'])
     if comparison := plan.get('providerComparison'):
         lines.extend(['', '## File clearance compared with the baseline provider graph', ''])
         for key, label in (('committedGains', 'Committed launchers cleared'),
