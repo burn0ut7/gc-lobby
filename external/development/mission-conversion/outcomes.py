@@ -20,6 +20,7 @@ CONTROL_INSTRUCTION = re.compile(r'^    ' + EVENT_CONTROL.pattern + r' "\{([\da-
 NATIVE_ACTION = re.compile(r'      GC_\w+ "\{[\da-fA-F]{16}\}" \{')
 KEY = r'"[\w.-]+"'
 EVENT_LABEL = r'"[^"\\\x00-\x1f]+"'
+MATCH_PHASE_VALUE = '1'
 RESULT = {'EDITOR_FACTION_VICTORY': 1, 'EDITOR_FACTION_DEFEAT': 2, 'EDITOR_FACTION_DRAW': 3}
 # The legacy suppressed ending uses only the title, which is the same for
 # the timed and editor variants in BaseGameOverScreensConfig.
@@ -505,12 +506,16 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
     if not term or not (notices or assignments or converted_actions or delayed_areas or (compound and messages)
                         or log_only or empty_waypoints):
         raise ValueError('missing condition or supported framework instruction')
-    if pregame != (term['trigger'] == 'startup choice'):
+    if compound and pregame and term['trigger'] == 'Match start':
+        term = {'trigger': 'pregame start'}
+    pregame_start = term['trigger'] == 'pregame start'
+    if pregame != (term['trigger'] in ('startup choice', 'pregame start')):
         raise ValueError('pregame event requires a reviewed startup selection')
-    startup_actions = {'TILW_SpawnPrefabInstruction', 'TILW_EditMapItemInstruction'}
-    if binary_startup:
+    startup_actions = ({'TILW_SetFlagInstruction'} if pregame_start
+                       else {'TILW_SpawnPrefabInstruction', 'TILW_EditMapItemInstruction'})
+    if binary_startup and not pregame_start:
         startup_actions.add('TILW_DeleteEntitiesInstruction')
-    if pregame and (notices or assignments or delayed_areas or messages
+    if pregame and (notices or assignments or delayed_areas or messages or (pregame_start and not converted_actions)
                     or any(action['instruction'] not in startup_actions
                            for action in converted_actions)):
         raise ValueError('unsupported pregame action')
@@ -551,7 +556,7 @@ def render_check(term, key, captures, capture_messages, tracked_areas):
     trigger = term['trigger']
     if trigger == 'inactive flag':
         return [f'      GC_GameModeStateCondition "{{{guid(key + "/inactive flag")}}}" {{',
-                '       m_eGameModeState GAME', '       m_bRequireOtherState 1', '      }']
+                f'       m_eGameModeState {MATCH_PHASE_VALUE}', '       m_bRequireOtherState 1', '      }']
     if trigger in ('interaction flag', 'event flag'):
         check = [f'      GC_MissionFlagCondition "{{{guid(key + "/objective")}}}" {{',
                  f'       m_sFlagName "{term["flag"]}"']
@@ -620,18 +625,21 @@ def render(key, name, term, actions, captures, capture_messages, tracked_areas, 
             return []
         # A false flag is already true as a negated condition during Lobby.
         return [f'      GC_GameModeStateCondition "{{{guid(identity + "/match phase")}}}" {{',
-                '       m_eGameModeState GAME', '      }']
+                f'       m_eGameModeState {MATCH_PHASE_VALUE}', '      }']
 
     latch = 'GC_MigrationChoice_' + term['flag'] if startup else name
     result = []
     if condition and not startup:
-        if term['trigger'] == 'area capture' and capture_messages is None and term['flag'] not in tracked_areas:
-            check = captures['"' + term['flag'] + '"']
+        if term['trigger'] == 'pregame start':
+            conditions = startup_conditions(key)
         else:
-            check = render_check(term, key, captures, capture_messages, tracked_areas)
+            if term['trigger'] == 'area capture' and capture_messages is None and term['flag'] not in tracked_areas:
+                check = captures['"' + term['flag'] + '"']
+            else:
+                check = render_check(term, key, captures, capture_messages, tracked_areas)
+            conditions = ['     m_aConditions {', *match_condition(key), *check, '     }']
         result.extend([
-            f'    GC_Event "{{{guid(key + "/trigger")}}}" {{', f'     m_sName "{name}"',
-            '     m_aConditions {', *match_condition(key), *check, '     }',
+            f'    GC_Event "{{{guid(key + "/trigger")}}}" {{', f'     m_sName "{name}"', *conditions,
             '     m_aActions {', f'      GC_MessageAction "{{{guid(key + "/log")}}}" {{',
             f'       m_sMessage "{display_name or name}"', '       m_iDelivery 2', '      }', '     }', '    }',
         ])
@@ -663,7 +671,7 @@ def render_controlled_event(key, name, term, actions, captures, capture_messages
     # Later controls can rearm the event without cancelling any scheduled delivery.
     result = [f'    GC_Event "{{{guid(key + "/trigger")}}}" {{', f'     m_sName "{name}"',
               '     m_aConditions {', f'      GC_GameModeStateCondition "{{{guid(key + "/match phase")}}}" {{',
-              '       m_eGameModeState GAME', '      }']
+              f'       m_eGameModeState {MATCH_PHASE_VALUE}', '      }']
     if term['trigger'] == 'dormant':
         result.extend(render_check({'trigger': 'inactive flag'}, key, captures, capture_messages, tracked_areas))
     elif term['trigger'] != 'Match start':
@@ -1009,7 +1017,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 suffixes.add(' (0s)')
             if term['trigger'] not in ('Match start', 'startup choice', 'dormant'):
                 suffixes.add('')
-            if direct_control and term['trigger'] != 'startup choice':
+            if direct_control and term['trigger'] not in ('startup choice', 'pregame start'):
                 suffixes = {''}
             native_name = name
             emitted_names = {name + suffix for suffix in suffixes}
@@ -1029,10 +1037,17 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 spawns_for_review = review_prefab_spawns(fields, world + '/' + event[1], resolve_spawn, resolve_crew)
                 if spawns_for_review:
                     audit[loc]['prefabSpawnCandidates'] = spawns_for_review
+    pregame_writes = {action['setsFlag'] for entry in audit.values() if entry.get('trigger') == 'pregame start'
+                      for action in entry['convertedActions']}
+    for term in [item[3] for item in parsed] + [entry for entry in audit.values() if 'gap' not in entry]:
+        if term.get('trigger') and any(item.get('flag') in pregame_writes for item in leaves(term)):
+            term['requiresMatch'] = True
     if controls:
         # Disable the condition latch only. The legacy instruction leaves any
         # already scheduled deliveries in the call queue.
-        excluded = ('startup choice',) if direct_control else ('Match start', 'startup choice', 'dormant')
+        excluded = ('startup choice', 'pregame start')
+        if not direct_control:
+            excluded += ('Match start', 'dormant')
         trigger_names = {name for _, name, original, term, _ in parsed
                          if name == original and term['trigger'] not in excluded}
         control_fields = ('deactivatesEvents', 'reactivatesEvents', 'runsEvents')
@@ -1085,7 +1100,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         compiled.extend(render_startup_samples(world, samples))
     compiled.extend(render_capture_trackers(world, tracked_areas, captures, capture_messages))
     for identity, name, display_name, term, actions in parsed:
-        if direct_control and term['trigger'] != 'startup choice':
+        if direct_control and term['trigger'] not in ('startup choice', 'pregame start'):
             compiled.extend(render_controlled_event(world + '/' + identity, name, term, actions, captures,
                                                     capture_messages, tracked_areas, display_name))
         else:

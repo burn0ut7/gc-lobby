@@ -25,7 +25,7 @@ from interactions import convert_block as convert_interaction_block, convert_obj
 from launchers import META_NAME, launcher, replace_reference
 from markers import (DEST as MAP_MARKER_PREFAB, convert_baked_marker_generator, convert_hover_camera,
                      convert_layer, convert_wall_markers)
-from outcomes import FRAMEWORK, SCRIPT_FLAG_APIS, leaves, render as render_outcome, render_capture_trackers
+from outcomes import FRAMEWORK, MATCH_PHASE_VALUE, SCRIPT_FLAG_APIS, leaves, render as render_outcome, render_capture_trackers
 import polygon_capture
 from respawns import authored_respawn_fields, read_respawns
 import teleports
@@ -2902,14 +2902,20 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             'm_prefab', 'm_conditionFlag', 'm_spawnTimings', 'm_setEntityNames', 'm_waypointNames', 'm_pregameSpawn',
         })
         transform = [f'{key} {value}' for key, value in data.items() if key in transform_fields]
-        if ('coords' not in data or any(not FIELD.fullmatch(line) for line in transform)
-                or data.get('m_pregameSpawn', '0') != '0'):
-            raise ValueError('spawner needs a placed Match-only transform')
+        if 'coords' not in data or any(not FIELD.fullmatch(line) for line in transform):
+            raise ValueError('spawner needs a placed transform')
+        pregame = data.get('m_pregameSpawn', '0')
+        if pregame not in ('0', '1'):
+            raise ValueError('invalid placed spawner phase')
+        flag = data.get('m_conditionFlag', '""')
+        if pregame == '1' and flag != '""':
+            raise ValueError('pregame spawner needs a verified pregame flag producer')
         if 'scale' in data and (not isfinite(scale := float(data['scale'])) or scale <= 0):
             raise ValueError('spawner scale must be positive and finite')
         timings = data.get('m_spawnTimings', '').split() or ['0']
+        startup_delay = 1 if pregame == '1' else 0
         if not 1 <= len(timings) <= 128 or any(
-                not re.fullmatch(NUMBER, delay) or Decimal(delay) > 86400 for delay in timings):
+                not re.fullmatch(NUMBER, delay) or Decimal(delay) + startup_delay > 86400 for delay in timings):
             raise ValueError('invalid placed spawner schedule')
         spawned_name = data.get('m_setEntityNames') or '""'
         if not re.fullmatch(SPAWN_NAME, spawned_name) or (spawned_name != '""' and len(timings) != 1):
@@ -2940,8 +2946,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             'm_prefab': data.get('m_prefab', ''), 'm_locationName': f'"{anchor}"',
             'm_setEntityName': spawned_name, 'm_executionDelay': '0',
         }, lambda resource, path: resolve_resource(resource, path, group=group))
-        flag = data.get('m_conditionFlag', '""')
-        term = {'trigger': 'Match start'}
+        term = {'trigger': 'pregame start' if startup_delay else 'Match start'}
         if flag != '""':
             check = captures.get(flag, ())
             if capture_latches and flag[1:-1] in capture_latches:
@@ -2967,17 +2972,20 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                                                          shadowed_names=shadowed_names,
                                                          allow_default_crew=(ref[1].upper(), ref[2]) in VERIFIED_DEFAULT_CREW)
                 kind = 'GC_CrewedVehicleSpawn'
-            seconds, action = render_spawn({**details, 'delay': delay}, spawn_key, kind, fields)
+            scheduled = str(Decimal(delay) + startup_delay) if startup_delay else delay
+            seconds, action = render_spawn({**details, 'delay': scheduled}, spawn_key, kind, fields)
             actions[seconds].extend(action)
         label = 'GC_MigratedSpawn_' + guid(key)
         rendered = render_outcome(key, label, term, actions, captures, {flag}, capture_latches or {})
         if term['trigger'] == 'interaction flag':
             rendered[3:3] = [f'      GC_GameModeStateCondition "{{{guid(key + "/match")}}}" {{',
-                             '       m_eGameModeState GAME', '      }']
+                             f'       m_eGameModeState {MATCH_PHASE_VALUE}', '      }']
         rules.extend(rendered)
         placements.extend([f'GenericEntity {anchor} {{', *(' ' + line for line in transform), *children, '}'])
         audit.append({'spawnAnchor': anchor, 'spawnName': details['area'], 'prefab': details['prefab'],
                       'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in group_waypoints], **term})
+        if startup_delay:
+            audit[-1]['startupInitializationSeconds'] = startup_delay
         if 'scale' in data:
             audit[-1]['anchorScale'] = data['scale']
         if absent:
@@ -3208,6 +3216,11 @@ def replace_registered_paths(text, source, dev, aliases):
     return REF.sub(lambda ref: registered_alias(ref[1].upper(), ref[2], source, dev, aliases) or ref[0], text)
 
 
+SYMBOLIC_MATCH_CONDITION = re.compile(
+    r'(?m)^(?P<prefix>(?P<indent> +)GC_GameModeStateCondition "\{[\da-fA-F]{16}\}" \{\n'
+    r'(?P=indent) m_eGameModeState )GAME$')
+
+
 def repair_existing_layers(source, dev, world, aliases):
     """Stage verified changes to existing layers with the original file hash."""
     repairs, original_hashes = {}, {}
@@ -3227,6 +3240,7 @@ def repair_existing_layers(source, dev, world, aliases):
             except ValueError:
                 # Layers with unknown or independently edited markers need a file comparison.
                 pass
+        updated = SYMBOLIC_MATCH_CONDITION.sub(lambda match: match['prefix'] + MATCH_PHASE_VALUE, updated)
         if updated != original:
             repairs[path] = updated
             original_hashes[path] = sha256(original.encode()).hexdigest()
