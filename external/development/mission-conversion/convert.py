@@ -190,6 +190,7 @@ def main():
             '98EB9CDD85B8C92C': 'Unarmed', '928DC9882A0AC79D': 'Sergeant',
             'AB9726163EC1BD81': 'Medic',
             '612F43A4D5AE765F': 'RTO', 'BA010C4C82F3DE92': 'CC', '96C784C502AC37DA': 'MG',
+            '9FFEF10757E742EB': 'Crew',
             '5117311FB822FD1F': 'Officer', '976AC400219898FA': 'Sharpshooter',
         }.items()
     })

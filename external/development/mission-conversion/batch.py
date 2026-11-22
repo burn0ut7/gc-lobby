@@ -148,6 +148,8 @@ GMFX_AMMO_TARGETS = (
 )
 GMFX_PROVIDER = 'GameMasterFX_5994AD5A9F33BE57'
 GMFX_DIGEST = '09a2e7a14300b916b1eaea43446d39d1d3334209e692e50d29406233962f7c80'
+COBRA_PROVIDER = 'WCS_AH-1S_64CB39E57377C861'
+COBRA_DIGEST = '683b318ce93cabf75ae5b3b2fe0a1ce49f30e76a693e3c959e353a6bc51da3f4'
 GMFX_AP_MINE = ('E1BBAB7F28FE8B0B', 'Prefabs/Systems/Mines/Mine_AP.et')
 WORKSHOP_DAMAGE_TARGETS = {
     GMFX_PROVIDER: (
@@ -183,11 +185,15 @@ WORKSHOP_SPAWN_PREFABS = {
         '685d9beda81c9a52b79650a5ad42341cd7341370e5f4f77db5db6d49f55901ed',
         (('F22B338BFAC1FD68', 'Prefabs/Vehicles/Wheeled/Motorbike/motorbike.et'),),
     ),
+    'M113APC_5E5C154FEE1094BB': (
+        'cbe2ae6f2454452f819c58d9becf0d2321add8e85f1a5c40172d08917d4a0cb1',
+        (('0A41E8DF1F680496', 'Prefabs/Vehicles/Tracked/M113/M113A2_APC.et'),),
+    ),
     'BritishForces_5AE50EC5B8D6F4AE': (
         None, (('775DFB7F4529A122', 'Prefabs/Weapons/Rifles/L42A1/Rifle_L42A1.et'),),
     ),
-    'WCS_AH-1S_64CB39E57377C861': (
-        '683b318ce93cabf75ae5b3b2fe0a1ce49f30e76a693e3c959e353a6bc51da3f4',
+    COBRA_PROVIDER: (
+        COBRA_DIGEST,
         (('C8C37964483452EA', 'Prefabs/Vehicles/Helicopters/AH1S/Army/AH1S_Army_M261_X4.et'),),
     ),
     'RHS-StatusQuo_595F2BF2F44836FB': (
@@ -200,8 +206,14 @@ WORKSHOP_SPAWN_PREFABS = {
     GMFX_PROVIDER: (
         GMFX_DIGEST,
         (('DDDDBEC77B49A995', 'Prefabs/Systems/Explosions/Wrapper_Bomb_Huge.et'),
-         ('30263B4F1FB2A0F2', 'Prefabs/Systems/Artillery/ArtilleryWrapper_WTF.et'), GMFX_AP_MINE),
+         ('30263B4F1FB2A0F2', 'Prefabs/Systems/Artillery/ArtilleryWrapper_WTF.et'),
+         ('2D854F52D8D6B31E', 'Prefabs/Systems/Smoke/Wrapper_Smoke_Purple.et'),
+         ('6BDBEFF5CE6E2F28', 'Prefabs/Systems/Smoke/Wrapper_Smoke_Green.et'), GMFX_AP_MINE),
     ),
+}
+CORE_TO_UNITS_SPAWN_OVERRIDES = {
+    ('1C5FE7B7FF49BB8D', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_Base.et'):
+        'ae982b43b504904f7b97947e7fc45c83f584e46ce5f7fa8d7c08c05e386eee74',
 }
 RHS_DAMAGE_PATHS = {
     '52B13341B4A2F012': 'Prefabs/Vehicles/Tracked/2S1/Tank_2S1_Green.et',
@@ -792,6 +804,8 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Scenarios/SP01/SP01_UAZ469_USSR.et',
 }
 MARINE_COBRA = ('0174CF72FDB6B805', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Marines.et')
+MARINE_M299 = ('B8D8076535277E61', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Marines_M299.et')
+MARINE_M299_CURRENT = (MARINE_M299[0], 'Prefabs/Vehicles/Helicopters/AH1S/Marines/AH1S_Marines_M299_X2.et')
 
 ZARICHNE_NAVMESH_ALIASES = {
     ('4C5DC23B33285CBA', 'NavMesh/Soldiers.nmn'): ('26764981146D437B', 'NavMesh/Zarichne_Soldiers.nmn'),
@@ -2795,6 +2809,9 @@ def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, obje
         return None
     before = source_units.resources.get(guid)
     after = dev_units.resources.get(guid)
+    if (not before and after == [path] and (digest := CORE_TO_UNITS_SPAWN_OVERRIDES.get((guid, path)))
+            and stock.contains(guid, path) and sha256(dev_units.read(path).strip().encode()).hexdigest() == digest):
+        return path
     if before or after:
         if before != [path] or after != [path]:
             return None
@@ -3044,6 +3061,10 @@ def resource_aliases(workshop, units, stock):
         })
         if len(zarichne) == len(ZARICHNE_NAVMESH_ALIASES) + 1:
             aliases.update(ZARICHNE_NAVMESH_ALIASES)
+        if MARINE_M299_CURRENT in workshop_resources(workshop, {
+            COBRA_PROVIDER: (COBRA_DIGEST, (MARINE_M299_CURRENT,)),
+        }):
+            aliases[MARINE_M299] = MARINE_M299_CURRENT
         for original, (provider, guid, path) in WORKSHOP_RESOURCE_ALIASES.items():
             if provider not in databases:
                 registry = workshop / provider / 'resourceDatabase.rdb'
@@ -4632,6 +4653,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare the registered Army Cobra rocket loadout against the legacy scenario.')
     if any(isinstance(body, str) and '{0174CF72FDB6B805}' in body for body in draft.values()):
         remaining.append('Compare the Marine Cobra pylons, disabled stations and AO exemption.')
+    if any(isinstance(body, str) and f'{{{MARINE_M299[0]}}}' in body for body in draft.values()):
+        remaining.append('Compare the Marine Cobra flight handling, sight and cockpit controls in the current WCS release.')
     if any(isinstance(body, str) and '{2FA364D8E326CB3C}' in body for body in draft.values()):
         remaining.append('Compare the Mi-24P control, pylon selection and turret in the current WCS release.')
     if any(isinstance(body, str) and '{F4D545DC6824850D}' in body for body in draft.values()):
