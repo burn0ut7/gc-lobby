@@ -199,6 +199,12 @@ UNITS_CREW_PREFABS = {
         (NVA_T72A_LEAF, '44d169d2260f456352926fd245aa50f787083ee2a43a23eb76ebed0b61e0e38d'),
         (NVA_T72A_LEAF, '2ec90305fa151423829093e490029d2a994c655b6b70b47ef1291b2b1207674d'),
     ),
+    'BC07885176C7FF8A': (
+        'Prefabs/Vehicles/Tracked/T-72A/T72A_base.et',
+        ('8A883ABED22B6E27', 'Prefabs/Vehicles/Core/Tracked_Base.et'),
+        ('44d169d2260f456352926fd245aa50f787083ee2a43a23eb76ebed0b61e0e38d',),
+        ('2ec90305fa151423829093e490029d2a994c655b6b70b47ef1291b2b1207674d',),
+    ),
     'EC4811AC7C17DC7E': (
         'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2_NVA.et',
         ('254289B9C09904AB', 'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2.et'),

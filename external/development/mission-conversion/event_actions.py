@@ -183,15 +183,14 @@ def prefab_spawn(lines, key, resolve_resource, group=False, missing_group_waypoi
 
 def vehicle_spawn(lines, key, resolve_resource, resolve_character):
     kind = 'GC_CrewedVehicleSpawn'
+    legacy_fields = {'m_customCrew', 'm_waypointNames', 'm_waypointDelay', 'm_idleGroup',
+                     *('m_spawn' + position for position in SEAT_TYPES)}
     structured = any(line.strip().startswith('m_crewConfig ') for line in lines)
     if structured:
         config, spawn = split_crew_block(lines, 'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID)
-        data = properties(spawn, SPAWN_FIELDS)
+        data = properties(spawn, SPAWN_FIELDS | legacy_fields)
     else:
-        data = properties(lines, SPAWN_FIELDS | {
-            'm_customCrew', 'm_waypointNames', 'm_waypointDelay', 'm_idleGroup',
-            *('m_spawn' + position for position in SEAT_TYPES),
-        })
+        data = properties(lines, SPAWN_FIELDS | legacy_fields)
         if all(data.get('m_spawn' + position) == '0' for position in SEAT_TYPES):
             # The deprecated event instruction passes an empty seat filter, so
             # AddCrew never selects an occupant or obtains a group to route.
@@ -209,6 +208,10 @@ def vehicle_spawn(lines, key, resolve_resource, resolve_character):
         fields, groups = render_crew_config(config, key, resolve_character,
                                             allow_default_crew=bool(reviewed_vehicle))
         crew = {'crewGroups': groups, 'crewWaypoints': [point for group in groups for point in group['waypoints']]}
+        # The legacy instruction returns after passing the vehicle to the config.
+        # The deprecated seat filters and waypoint settings are only in its fallback.
+        if ignored := sorted(legacy_fields & data.keys()):
+            crew['ignoredDeprecatedCrewFields'] = {field: data[field] for field in ignored}
     details = spawn_details(data, resolve_resource)
     seconds, body = render_spawn(details, key, kind, fields)
     return seconds, body, {'instruction': 'TILW_SpawnVehicleInstruction', 'delaySeconds': details['delay'],
