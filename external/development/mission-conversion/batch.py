@@ -19,8 +19,8 @@ from vehicle_crew import (CREW_CONFIG_FIELD, VERIFIED_DEFAULT_CREW, ZAGORIA_BMP2
                           split_crew_block, verified_core_btr70_transfer)
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
-from groups import (COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, SLOTS, inheritance, reviewed_native_ancestry,
-                    unchanged_explicit_playability)
+from groups import (COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, SLOTS, compare_ai_parents, inheritance, legacy_member,
+                    reviewed_native_ancestry, unchanged_explicit_playability)
 from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_prefab
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
@@ -1136,6 +1136,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/Perfk/Prefabs/Groups/PK_MUJ_04_Fighters.et':
+        '3b919002ce6916b5cb8bed6f284d34344dc32013b8f85190e927474e6240279d',
     # These supply containers keep their authored capacity, fill, and decay settings.
     'worlds/HitTheMan/Seeder Cold War Domination/Prefabs/Respawn Vehicles/HTMRepairingBox.et':
         'f2b3f512ef0977f2970103d0acb48292362a366871af235f29711b8bc4e08854',
@@ -2191,7 +2193,7 @@ def placed_spawner_flag_reads(source, layers):
         text = source.read(path)
         if 'm_conditionFlag ' not in text or 'TILW_PrefabSpawnerEntity ' not in text:
             continue
-        for _, block in blocks(text):
+        for _, _, block in placed_spawner_entries(text):
             match = PLACED_SPAWNER.fullmatch(block[0])
             if not match:
                 continue
@@ -2204,6 +2206,30 @@ def placed_spawner_flag_reads(source, layers):
                     if flag := re.fullmatch(r' m_conditionFlag (' + FLAG_NAME + ')', line):
                         flags[flag[1][1:-1]] += 1
     return flags
+
+
+def trigger_children(fields):
+    start = fields.index(' {')
+    if block_end(fields, start) != len(fields) - 1:
+        raise ValueError('custom placement after trigger children')
+    return fields[:start], list(blocks('\n'.join(line[2:] for line in fields[start + 1:-1])))
+
+
+def placed_spawner_entries(text):
+    """Yield top-level spawners and named direct children of supported triggers."""
+    for line, block in blocks(text):
+        if re.match(r'^(?:\$grp )?TILW_PrefabSpawnerEntity\b', block[0]):
+            yield line, False, block
+        elif root := TRIGGER.fullmatch(block[0]):
+            try:
+                members = list(polygon_capture.members(block, root['group'], root['name']))
+                children = [child for _, fields in members if ' {' in fields
+                            for _, child in trigger_children(fields)[1]]
+            except ValueError:
+                continue
+            for child in children:
+                if (head := PLACED_SPAWNER.fullmatch(child[0])) and not head['group'] and head['name']:
+                    yield line, True, child
 
 
 def unused_flag_sampling(source, world, path, line, framework):
@@ -2479,11 +2505,27 @@ def verified_local_ai_group(source, dev, source_units, dev_units, stock, resourc
             or sha256(body.strip().encode()).hexdigest() != REVIEWED_NATIVE_ASSETS[path]
             or (path in dev.files and body != dev.read(path))):
         return False
-    refs = set(REF.findall(body))
-    refs.add(('000CD338713F2B5A', 'Prefabs/AI/Groups/Group_Base.et'))
-    return all((stock.contains(guid, asset) or external_ai.get(guid) == asset)
-               and all(guid not in snapshot.resources for snapshot in (source, dev, source_units, dev_units))
-               for guid, asset in refs)
+    parent = REF.search(body.partition('\n')[0])
+    refs = {*REF.findall(body), ('000CD338713F2B5A', 'Prefabs/AI/Groups/Group_Base.et')}
+    for guid, asset in refs:
+        if guid in source.resources or guid in dev.resources:
+            return False
+        if guid not in source_units.resources and guid not in dev_units.resources:
+            if not (stock.contains(guid, asset) or external_ai.get(guid) == asset):
+                return False
+            continue
+        if source_units.resources.get(guid) != [asset] or dev_units.resources.get(guid) != [asset]:
+            return False
+        if parent and parent.groups() == (guid, asset):
+            try:
+                compare_ai_parents(source_units, dev_units, guid)
+            except ValueError:
+                return False
+        elif (not source_units.read(asset).startswith('SCR_ChimeraCharacter')
+              or legacy_member(source_units, guid, False)
+              or not reviewed_native_ancestry(inheritance(source_units, guid), inheritance(dev_units, guid), dev_units)):
+            return False
+    return True
 
 
 def reviewed_rocky_civilian(source, dev, source_units, dev_units, stock, guid, path):
@@ -2630,7 +2672,7 @@ def authored_spawn_references(source, world):
         source_layer = source.read(layer)
         lines = source_layer.splitlines()
         if 'TILW_PrefabSpawnerEntity ' in source_layer:
-            for _, block in blocks(source_layer):
+            for _, _, block in placed_spawner_entries(source_layer):
                 if root := PLACED_SPAWNER.fullmatch(block[0]):
                     try:
                         placements = list(polygon_capture.members(block, root['group'], root['name']))
@@ -3042,7 +3084,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                     raise ValueError('capture-gated spawner needs a shared status-message owner')
             elif derived_conditions and flag[1:-1] in derived_conditions:
                 term = derived_conditions[flag[1:-1]]
-                if any(item['flag'] not in flags for item in leaves(term)):
+                if any(item['flag'] not in flags for item in leaves(term)
+                       if item['trigger'] != 'area capture'):
                     raise ValueError('spawner meta flag lacks converted producers: ' + flag)
             elif flag[1:-1] in flags and re.fullmatch(FLAG_NAME, flag):
                 term = {'trigger': 'interaction flag', 'flag': flag[1:-1]}
@@ -3118,8 +3161,9 @@ def shadowed_crew_names(source, world, layers):
 
 
 def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, blockers, resolve_crew, resolve_crew_config,
-                   single_draw_flags, derived_conditions):
+                   single_draw_flags, derived_conditions, area_placements):
     placements, schedules, audit = {}, [], []
+    attached = defaultdict(list)
     layers = {path: text for path in source.layers[world.lower()]
               if 'TILW_PrefabSpawnerEntity' in (text := source.read(path))}
     capture_latches = spawn_capture_latches(source, world, layers, captures, used_flags)
@@ -3134,15 +3178,18 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                 if sum(len(token.findall(source.read(p))) for p in source.closure(world)
                        if PurePosixPath(p).suffix.lower() in SOURCE_TEXT) == 1:
                     missing_waypoint = name
-            for line, block in blocks(text):
-                if not re.match(r'^(?:\$grp )?TILW_PrefabSpawnerEntity\b', block[0]):
+            for line, nested, block in placed_spawner_entries(text):
+                if nested and (layer, line) not in area_placements:
                     continue
+                location = f'{layer}:{line}'
+                if nested:
+                    location += '/' + PLACED_SPAWNER.fullmatch(block[0])['name']
                 try:
                     self_waypoints = set()
                     if source.files[layer] == 'b5b00eae008bf41c803dd4469a54a34b93199767':
                         self_waypoints = {f'AI_Spawn_Sector2_{i}' for i in range(1, 15)}
                     native, scheduled, info = placed_spawn(
-                        block, f'{layer}:{line}', resolve_spawn, captures, flags, used_flags, resolve_crew,
+                        block, location, resolve_spawn, captures, flags, used_flags, resolve_crew,
                         source=source, resolve_crew_config=resolve_crew_config, shadowed_names=shadowed,
                         missing_waypoint=missing_waypoint, self_waypoints=self_waypoints,
                         capture_latches=capture_latches, single_draw_flags=single_draw_flags,
@@ -3150,9 +3197,13 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                 except ValueError as exc:
                     blockers.append({'rule': 'TILW_PrefabSpawnerEntity', 'file': layer, 'line': line,
                                      'detail': str(exc)})
-                    placements[(layer, line)] = ''
+                    if not nested:
+                        placements[(layer, line)] = ''
                     continue
-                placements[(layer, line)] = native
+                if nested:
+                    attached[(layer, line)].append((block, native.splitlines()))
+                else:
+                    placements[(layer, line)] = native
                 schedules.append(scheduled)
                 audit.extend({'file': layer, 'line': line, 'startupChoice': None, **entry} for entry in info)
         except ValueError as exc:
@@ -3161,7 +3212,7 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
     latches = {flag: name for flag, name in capture_latches.items() if flag in used_captures}
     if latches:
         schedules.insert(0, '\n'.join(render_capture_trackers(world, latches, captures, set())) + '\n')
-    return placements, ''.join(schedules), audit
+    return placements, ''.join(schedules), audit, attached
 
 
 def spawn_capture_latches(source, world, layers, captures, used_flags):
@@ -3473,13 +3524,9 @@ PRESENCE_MESSAGES = (
 
 
 def attached_trigger_map(fields, dev):
-    start = fields.index(' {')
-    if block_end(fields, start) != len(fields) - 1:
-        raise ValueError('custom placement after trigger children')
-    children = '\n'.join(line[2:] for line in fields[start + 1:-1])
-    parent = fields[:start]
+    parent, children = trigger_children(fields)
     output, amounts = [], Counter()
-    for _, block in blocks(children):
+    for _, block in children:
         child = '\n'.join(block) + '\n'
         if block[0].startswith(('PS_ManualMarker ', '$grp PS_ManualMarker ')):
             rendered, count = convert_layer(child, dev, draw_order=True)
@@ -3492,6 +3539,16 @@ def attached_trigger_map(fields, dev):
                 gap = next((row['gap'] for row in audit.values() if 'gap' in row), 'no converted shape')
                 raise ValueError('attached map shape: ' + gap)
             amounts['attachedMapShapes'] += len(audit)
+        elif (spawner := PLACED_SPAWNER.fullmatch(block[0])) and not spawner['group'] and spawner['name']:
+            # The spawner pass replaces this child after its flags and prefab resolve.
+            rendered = child
+            amounts['attachedSpawners'] += 1
+        elif ((head := PLACED_ENTITY.fullmatch(block[0])) and head['name'] and not head['group']
+              and re.fullmatch(WAYPOINT_CLASS, head['kind']) and REF.search(block[0])
+              and all(FIELD.fullmatch(field.strip()) or re.fullmatch(rf' CompletionRadius {NUMBER}', field)
+                      for field in block[1:-1])):
+            rendered = child
+            amounts['attachedWaypoints'] += 1
         else:
             raise ValueError('unsupported trigger child: ' + block[0].removeprefix('$grp ').split()[0])
         output.extend('  ' + line for line in rendered.splitlines())
@@ -4238,10 +4295,25 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if row['serializedTypes'].get('TILW_PrefabSpawnerEntity'):
         captures, placed_areas, _ = area_rules(source, world, dev)
         area_placements = {**placed_areas, **area_placements}
-        spawners, schedules, spawner_audit = world_spawners(source, world, resolve_spawn, captures,
+        spawners, schedules, spawner_audit, attached = world_spawners(source, world, resolve_spawn, captures,
                                                            set(objective_flags) | event_flags, used_flags, blockers,
                                                            resolve_crew, resolve_crew_config, single_draw_flags,
-                                                           outcome.get('derivedSpawnerConditions'))
+                                                           outcome.get('derivedSpawnerConditions'), area_placements)
+        for location, (checks, areas) in area_placements.items():
+            for original, native in attached.get(location, ()):
+                before = '\n'.join('  ' + line for line in original) + '\n'
+                after = '\n'.join('  ' + line for line in native) + '\n'
+                if areas.count(before) != 1:
+                    layer, line = location
+                    blockers.append({'rule': 'placed spawner layer', 'file': layer, 'line': line,
+                                     'detail': 'attached spawner does not have a unique converted parent'})
+                else:
+                    areas = areas.replace(before, after, 1)
+            if re.search(r'(?m)^ +TILW_PrefabSpawnerEntity\b', areas):
+                layer, line = location
+                blockers.append({'rule': 'placed spawner layer', 'file': layer, 'line': line,
+                                 'detail': 'area has an unconverted spawner child'})
+            area_placements[location] = checks, areas
         rule_text += schedules
         used_flags.update(entry['flag'] for entry in spawner_audit if entry['trigger'] == 'area capture')
         used_flags.update(item['flag'] for entry in spawner_audit if entry.get('derivedFlag')

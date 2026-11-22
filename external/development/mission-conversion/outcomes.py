@@ -171,18 +171,28 @@ def meta_flag_definitions(body, scripts):
     return definitions, identities
 
 
-def verify_derived_flag_readers(source, world, framework_path, body, definitions, spawner_reads):
-    """Account for literal terms and direct placed-spawner readers of each flag."""
+def derived_flags_with_known_readers(source, world, framework_path, body, definitions, spawner_reads):
+    """Return definitions with fully accounted readers and their first unresolved flag."""
     if not definitions:
-        return
+        return definitions, None
     literal_uses = literal_flag_reads(body)
     content = '\n'.join('\n'.join(line for line in source.read(path).splitlines()
                                   if not (path == framework_path and line.startswith('   m_name ')))
                         for path in sorted(source.closure(world))
                         if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
-    for flag in definitions:
-        if content.count(flag) != literal_uses[flag] + spawner_reads.get(flag[1:-1], 0) + 1:
-            raise ValueError('meta flag has another producer or unsupported use: ' + flag)
+    unverified = {flag for flag in definitions
+                  if content.count(flag) != literal_uses[flag] + spawner_reads.get(flag[1:-1], 0) + 1}
+    if not unverified:
+        return definitions, None
+    dependencies = {
+        flag: {match[1] for line in lines if (match := META_FLAG_FIELD.fullmatch(line)) and match[1] in definitions}
+        for flag, lines in definitions.items()
+    }
+    first = next(flag for flag in definitions if flag in unverified)
+    for flag in TopologicalSorter(dependencies).static_order():
+        if dependencies[flag] & unverified:
+            unverified.add(flag)
+    return {flag: lines for flag, lines in definitions.items() if flag not in unverified}, first
 
 
 def literal_flag_reads(body):
@@ -954,9 +964,12 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     if compound:
         try:
             definitions, identities = meta_flag_definitions(body, scripts)
-            verify_derived_flag_readers(source, world, path, body, definitions,
-                                        spawner_reads if derived_spawners_audit is not None else {})
-            derived, identity_flags = definitions, identities
+            derived, unverified = derived_flags_with_known_readers(
+                source, world, path, body, definitions,
+                spawner_reads if derived_spawners_audit is not None else {})
+            if unverified:
+                derived_gap = 'meta flag has another producer or unsupported use: ' + unverified
+            identity_flags = identities
         except ValueError as exc:
             derived_gap = str(exc)
     if derived and derived_audit is not None:
@@ -981,11 +994,17 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             continue
         try:
             term = read_term(definition, flags, captures, ai, objective_flags, event_flags, derived=derived)
-            if any(item['trigger'] not in ('event flag', 'interaction flag') for item in leaves(term)):
-                raise ValueError('requires a placed-spawner condition for a non-mission flag')
+            for item in leaves(term):
+                if item['trigger'] in ('event flag', 'interaction flag'):
+                    continue
+                check = captures.get(f'"{item.get("flag", "")}"', ())
+                if (item['trigger'] != 'area capture' or item.get('inverted')
+                        or 'm_bStopAfterFirstChange 1' not in {line.strip() for line in check}
+                        or any(line.strip().startswith('m_Messages ') for line in check)):
+                    raise ValueError('requires a verified first-change area or mission flag')
         except ValueError as exc:
-            derived_gap = f'meta flag {flag} cannot gate a placed spawner: {exc}'
-            break
+            derived_gap = derived_gap or f'meta flag {flag} cannot gate a placed spawner: {exc}'
+            continue
         derived_spawners[flag[1:-1]] = {**term, 'requiresMatch': True, 'derivedFlag': flag[1:-1]}
     parsed, audit = [], {}
     names = set()
@@ -1136,6 +1155,6 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         else:
             compiled.extend(render(world + '/' + identity, name, term, actions, captures, capture_messages,
                                    tracked_areas, display_name))
-    if derived_spawners_audit is not None and not derived_gap:
+    if derived_spawners_audit is not None:
         derived_spawners_audit.update(derived_spawners)
     return compiled, audit, derived_gap
