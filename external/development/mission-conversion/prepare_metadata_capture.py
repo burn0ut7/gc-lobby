@@ -7,9 +7,9 @@ import re
 
 from briefings import block_end
 from catalog import REF, SOURCE_TEXT, Snapshot
-from dependencies import BASE_GAME, DEPENDENCIES, checkout_project, database_project, dependency_catalogue
+from dependencies import BASE_GAME, DEPENDENCIES, checkout_project, database_project, dependency_catalogue, installed_version
 from install_batch import resource_databases, unregistered_references
-from launchers import WORLD_REF
+from launchers import WORLD_REF, required_addon_versions
 from review import closure, inspect
 from scenery import StockPrefabs
 from terrain_parents import LONGMOOR_PARENT, has_reviewed_longmoor, is_longmoor_subscene
@@ -99,13 +99,22 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
     files = set()
     candidates = {}
     excluded = {}
+    version_mismatches = {}
     authored_catalogues = {}
+
+    @cache
+    def capture_version(guid):
+        if guid not in scope or guid not in installed or guid in local:
+            return None
+        return installed_version(installed[guid][0], guid)
+
     for header, checks in launcher_metadata.items():
         if requested and header not in requested:
             continue
         if not checks['gcMissionHeader'] or (checks['generatedSnapshot'] and not requested):
             continue
-        world = WORLD_REF.search(dev.read(header))[3]
+        body = dev.read(header)
+        world = WORLD_REF.search(body)[3]
         paths = closure(dev, world, header)
         catalogue_paths = sorted(
             path for path in paths if PurePosixPath(path).suffix.lower() in SOURCE_TEXT
@@ -114,6 +123,11 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
         if catalogue_paths:
             authored_catalogues[header] = catalogue_paths
         if bool(catalogue_paths) != only_authored:
+            continue
+        mismatches = {guid: {'required': version, 'available': capture_version(guid)}
+                      for guid, version in required_addon_versions(body) if capture_version(guid) != version}
+        if mismatches:
+            version_mismatches[header] = mismatches
             continue
         candidates[header] = world, paths, inspect(dev, paths)[2]
     missing = unregistered_references({
@@ -175,6 +189,7 @@ def prepare(dev, lobby, databases, audit, destination, dependencies=(), omit=fro
         'excludedDependencies': sorted(excluded_addons),
         'eligible': eligible,
         'referencesOutsideScope': excluded,
+        'versionPinsOutsideScope': version_mismatches,
         'authoredCataloguesForReview': authored_catalogues,
         'authoredCatalogueEvidence': catalogue_evidence,
     }

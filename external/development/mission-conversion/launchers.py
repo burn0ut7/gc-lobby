@@ -7,7 +7,8 @@ import re
 import subprocess
 
 from briefings import block_end
-from catalog import GC_HEADER_NAMES, Snapshot
+from catalog import GC_HEADER, GC_HEADER_NAMES, Snapshot
+from dependencies import BASE_GAME
 
 
 def field(pattern):
@@ -27,6 +28,36 @@ NATIVE_TYPES = {
     b'SCR_MissionHeaderScenarioFramework': b'GC_ScenarioFrameworkMissionHeader',
 }
 GENERATED = re.compile(r' m_GC_GeneratedMetadata GC_GeneratedMissionMetadata(?: "[^"]+")? \{')
+ADDON_VERSIONS_FIELD = re.compile(r'^ m_aRequiredAddonVersions\b', re.M)
+ADDON_VERSION = re.compile(r'"([\da-fA-F]{16})=([0-9]+(?:\.[0-9]+){1,3})"')
+
+
+def authored_header_text(body):
+    if not GC_HEADER.match(body):
+        return body
+    lines = body.splitlines()
+    for start, line in enumerate(lines):
+        if GENERATED.fullmatch(line):
+            stop = block_end(lines, start)
+            # The snapshot also records diagnostic origins, which are not engine resource paths.
+            lines[start:stop + 1] = [''] * (stop - start + 1)
+    return '\n'.join(lines)
+
+
+def required_addon_versions(body):
+    declarations = list(ADDON_VERSIONS_FIELD.finditer(body))
+    if not declarations:
+        return ()
+    block = re.match(r'\s*\{([^{}]*)\}', body[declarations[0].end():])
+    if len(declarations) != 1 or not block or ADDON_VERSION.sub('', block[1]).strip():
+        raise ValueError('invalid required addon version block')
+    pins = {}
+    for resource, version in ADDON_VERSION.findall(block[1]):
+        guid = resource.upper()
+        if guid in (BASE_GAME, '5614BBCCBB55ED1C') or guid in pins:
+            raise ValueError(f'duplicate or stock addon pin {guid}')
+        pins[guid] = version
+    return tuple(sorted(pins.items()))
 
 
 def replace_reference(text, pattern, guid, path):

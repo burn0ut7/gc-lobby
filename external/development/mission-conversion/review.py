@@ -10,11 +10,10 @@ from pathlib import Path, PurePosixPath
 import re
 import subprocess
 
-from briefings import block_end
 from catalog import GC_HEADER, OBSOLETE_NAVMESH, REF, SOURCE_TEXT, Snapshot, TYPES
-from dependencies import dependency_resources
+from dependencies import database_project, dependency_resources, pinned_databases
 from install_batch import resource_databases, unregistered_references
-from launchers import GENERATED, META_NAME, WORLD_REF, launcher, registered_identity
+from launchers import META_NAME, WORLD_REF, authored_header_text, launcher, registered_identity, required_addon_versions
 from scenery import StockPrefabs
 from terrain_parents import LONGMOOR_PARENT, LONGMOOR_PROVIDER, has_reviewed_longmoor, is_longmoor_subscene
 
@@ -51,14 +50,8 @@ def facts(snapshot, path):
     if PurePosixPath(path).suffix.lower() not in SOURCE_TEXT:
         return {}, [], []
     text = snapshot.read(path)
-    if path.endswith('.conf') and GC_HEADER.match(text):
-        lines = text.splitlines()
-        for start, line in enumerate(lines):
-            if GENERATED.fullmatch(line):
-                stop = block_end(lines, start)
-                # Snapshot rows contain diagnostic resource origins as well as actual resources.
-                lines[start:stop + 1] = [''] * (stop - start + 1)
-        text = '\n'.join(lines)
+    if path.endswith('.conf'):
+        text = authored_header_text(text)
     categories = {}
     for no, line in enumerate(text.splitlines(), 1):
         line = line.strip()
@@ -82,8 +75,9 @@ def inspect(snapshot, paths):
     return areas, declarations, references
 
 
-def compare_mission(source, target, header, notes, dependencies, stock, unresolved=None, longmoor=False):
-    issues = []
+def compare_mission(source, target, header, notes, dependencies, stock, unresolved=None, longmoor=False,
+                    provider_issue=None):
+    issues = [provider_issue] if provider_issue else []
     try:
         world, resource, _ = launcher(source, target, header)
     except ValueError as exc:
@@ -391,6 +385,8 @@ def main():
     parser.add_argument('--dependency', action='append', type=Path, default=[], help='addon checkout at HEAD, such as Units')
     parser.add_argument('--base-database', type=Path, help='check stock resource aliases before reporting dependency mismatches')
     parser.add_argument('--workshop-addons', type=Path, help='report missing refs against the same provider databases as the installer')
+    parser.add_argument('--historical-workshop', action='append', type=Path, default=[],
+                        help='resolve declared version pins from an archived Workshop directory')
     parser.add_argument('--report', required=True, type=Path, help='JSON file with per-mission paths and line numbers')
     parser.add_argument('--summary', type=Path, help='optional Markdown table')
     parser.add_argument('--mission', action='append', help='exact legacy launcher path, repeat to select a batch')
@@ -403,6 +399,8 @@ def main():
         parser.error('--draft-stage requires the batch --inventory')
     if args.workshop_addons and not args.base_database:
         parser.error('--workshop-addons requires --base-database')
+    if args.historical_workshop and not args.workshop_addons:
+        parser.error('--historical-workshop requires --workshop-addons')
     source = Snapshot(args.missions, args.source)
     target = Snapshot(args.missions, args.dev)
     notes = {}
@@ -424,33 +422,62 @@ def main():
     dependencies = defaultdict(list)
     checkouts = [Snapshot(addon, 'HEAD') for addon in args.dependency]
     stock = StockPrefabs(args.base_database) if args.base_database else None
-    unresolved = None
-    longmoor = False
+    missions = {}
     if args.workshop_addons:
         try:
             databases = resource_databases(args.base_database, args.workshop_addons)
             dependencies, providers, unavailable = dependency_resources(target, checkouts, databases)
-            references = set()
+            cohorts = defaultdict(list)
             for header in selected:
                 try:
-                    world, _, _ = launcher(source, target, header)
-                except ValueError:
-                    continue
-                if header in target.files and world in target.files:
-                    for path in closure(target, world, header):
-                        references.update((guid.upper(), name) for guid, name in facts(target, path)[2])
-            unresolved = unregistered_references(
-                {(guid, path) for guid, path in references
-                 if path not in (target.resources.get(guid) or dependencies.get(guid, []))}, providers)
-            longmoor = LONGMOOR_PARENT in unresolved and has_reviewed_longmoor(providers)
+                    pins = required_addon_versions(target.read(header)) if header in target.files else ()
+                except ValueError as exc:
+                    missions[header] = compare_mission(source, target, header, notes, dependencies, stock,
+                                                       provider_issue=str(exc))
+                else:
+                    cohorts[pins].append(header)
+            for pins, group in sorted(cohorts.items()):
+                chosen_dependencies, chosen_providers = dependencies, providers
+                provider_issue = None
+                if pins:
+                    try:
+                        chosen = pinned_databases(databases, args.historical_workshop, pins)
+                        chosen_dependencies, chosen_providers, missing = dependency_resources(target, checkouts, chosen)
+                        mounted = {project[0] for path in chosen_providers if (project := database_project(path))}
+                        if inactive := set(dict(pins)) - mounted:
+                            raise ValueError('pinned addon outside the reachable dependency graph: ' + ', '.join(sorted(inactive)))
+                        if newly_missing := set(missing) - set(unavailable):
+                            raise ValueError('pinned graph has unavailable dependencies: ' + ', '.join(sorted(newly_missing)))
+                    except (OSError, ValueError) as exc:
+                        provider_issue = str(exc)
+                        chosen_dependencies, chosen_providers = dependencies, providers
+                references = set()
+                for header in group:
+                    try:
+                        world, _, _ = launcher(source, target, header)
+                    except ValueError:
+                        continue
+                    if header in target.files and world in target.files:
+                        for path in closure(target, world, header):
+                            references.update((guid.upper(), name) for guid, name in facts(target, path)[2])
+                unresolved = unregistered_references(
+                    {(guid, path) for guid, path in references
+                     if path not in (target.resources.get(guid) or chosen_dependencies.get(guid, []))}, chosen_providers)
+                longmoor = LONGMOOR_PARENT in unresolved and has_reviewed_longmoor(chosen_providers)
+                for header in group:
+                    missions[header] = compare_mission(source, target, header, notes, chosen_dependencies, stock,
+                                                       unresolved, longmoor, provider_issue)
+                    if pins and not provider_issue:
+                        missions[header]['auditedAddonVersions'] = dict(pins)
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
     else:
         for checkout in checkouts:
             for resource, paths in checkout.resources.items():
                 dependencies[resource].extend(path for path in paths if path not in dependencies[resource])
-    missions = {header: compare_mission(source, target, header, notes, dependencies, stock, unresolved, longmoor)
-                for header in sorted(selected)}
+        missions = {header: compare_mission(source, target, header, notes, dependencies, stock)
+                    for header in selected}
+    missions = dict(sorted(missions.items()))
     report = {'source': source.commit, 'target': target.commit, 'missions': missions}
     if notes:
         worlds = {mission['world'] for mission in missions.values() if mission.get('world')} if args.mission else notes

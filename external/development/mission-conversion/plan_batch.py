@@ -8,7 +8,7 @@ import re
 import subprocess
 import sys
 
-from dependencies import database_project
+from dependencies import database_project, installed_version
 from scenery import StockPrefabs
 
 
@@ -116,15 +116,11 @@ def historical_provider_candidates(plan, roots):
         if not matched:
             continue
         provider = database_project(database)
-        version_file = database.with_name('ServerData.json')
-        if not provider or not version_file.is_file():
+        if not provider:
             continue
-        data = json.loads(version_file.read_text(encoding='utf-8-sig'))
         addon_id, dependencies = provider
-        revision = data.get('revision') if isinstance(data, dict) else None
-        version = revision.get('version') if isinstance(revision, dict) else None
-        if not version or not isinstance(version, str) or str(data.get('id', '')).upper() != addon_id:
-            raise ValueError(f'cannot verify archived addon identity and version from {version_file}')
+        if not (version := installed_version(database, addon_id)):
+            continue
         worlds = {world for ref in matched for world in references[ref]}
         candidates.append({
             'addonId': addon_id, 'version': version, 'projectDirectory': str(database.parent),
@@ -317,6 +313,9 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         'committedLaunchersWithWorld': len(committed),
         'committedLaunchersCleared': cleared_committed,
         'committedLauncherMetadata': committed_metadata,
+        'auditedAddonVersionsByLauncher': {header: row['auditedAddonVersions']
+                                           for header, row in review['missions'].items()
+                                           if row['status'] == 'compare' and row.get('auditedAddonVersions')},
         'legacyLaunchers': len(inventory['headers']),
         'launcherFileChecks': dict(Counter(row['status'] for row in review['missions'].values())),
         'worldConversionChecks': migration['totals'],
@@ -367,6 +366,12 @@ def markdown(plan):
                       'The launcher resolves addon names in the snapshot to GUIDs and includes any manual catalogue IDs. '
                       'Portable files exported outside the checkout are counted by the exporter. '
                       'The published build still needs its own launch verification.'])
+    if pinned := plan.get('auditedAddonVersionsByLauncher'):
+        lines.extend(['', '## Audited launcher version pins', '',
+                      '| Launcher | Required addon versions |', '| --- | --- |'])
+        for header, versions in pinned.items():
+            values = ', '.join(f'`{addon}={version}`' for addon, version in versions.items())
+            lines.append(f'| `{header}` | {values} |')
     if plan['sharedConversionQueue']:
         lines.extend(['', '## Shared conversion work', '',
                       'Work down this list before taking on mission-specific ports. Each estimate '
@@ -571,7 +576,8 @@ def main():
         run_tool('convert', [*common, '--batch', '--units', args.units, '--units-source', args.units_source,
                              '--units-dev', args.units_dev, '--stage', stage, '--report', inventory])
         providers = [item for path in dependencies for item in ('--dependency', path)]
-        run_tool('review', [*common, *providers, '--inventory', inventory, '--draft-stage', stage,
+        archives = [item for path in args.historical_workshop for item in ('--historical-workshop', path)]
+        run_tool('review', [*common, *providers, *archives, '--inventory', inventory, '--draft-stage', stage,
                             '--report', review, '--summary', output / 'review.md'])
         inventory_bytes = inventory.read_bytes()
         inventory_data = json.loads(inventory_bytes)

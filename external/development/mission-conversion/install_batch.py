@@ -8,8 +8,8 @@ import subprocess
 from tempfile import NamedTemporaryFile
 
 from catalog import REF, SOURCE_TEXT, Snapshot
-from dependencies import dependency_resources
-from launchers import META_NAME
+from dependencies import database_project, dependency_resources, installed_version
+from launchers import META_NAME, authored_header_text, required_addon_versions
 from scenery import StockPrefabs
 from terrain_parents import has_reviewed_longmoor, is_longmoor_subscene
 
@@ -20,6 +20,7 @@ def unresolved_resources(files, target, checkouts, databases):
                  for guid, paths in resources.items() for path in paths}
     refs = set()
     longmoor = None
+    mounted = None
     for path, body in files.items():
         if path.endswith('.meta'):
             meta = META_NAME.search(body.decode('utf-8-sig'))
@@ -27,6 +28,15 @@ def unresolved_resources(files, target, checkouts, databases):
                 available.add((meta[2].upper(), meta[3]))
         elif PurePosixPath(path).suffix.lower() in SOURCE_TEXT:
             text = body.decode('utf-8-sig')
+            if path.lower().endswith('.conf'):
+                text = authored_header_text(text)
+                if path.lower().startswith('missions/'):
+                    pins = required_addon_versions(text)
+                    if pins and mounted is None:
+                        mounted = {project[0]: db for db in providers if (project := database_project(db))}
+                    for addon, version in pins:
+                        if addon not in mounted or installed_version(mounted[addon], addon) != version:
+                            raise ValueError(f'{path} requires addon {addon}={version} in the installation graph')
             if is_longmoor_subscene(path, text.replace('\r\n', '\n')):
                 if longmoor is None:
                     longmoor = has_reviewed_longmoor(providers)

@@ -1,5 +1,6 @@
 """Resolve resource providers reachable from a committed addon's manifest."""
 from collections import defaultdict
+import json
 import re
 
 
@@ -37,6 +38,48 @@ def database_project(database):
         project, = projects
         return read_project(project.read_bytes(), project)
     return None
+
+
+def installed_version(database, addon_id):
+    manifest = database.with_name('ServerData.json')
+    if not manifest.is_file():
+        return None
+    data = json.loads(manifest.read_text(encoding='utf-8-sig'))
+    revision = data.get('revision') if isinstance(data, dict) else None
+    version = revision.get('version') if isinstance(revision, dict) else None
+    if not isinstance(version, str) or not version or str(data.get('id', '')).upper() != addon_id:
+        raise ValueError(f'cannot verify addon identity and version from {manifest}')
+    return version
+
+
+def pinned_databases(databases, historical_roots, pins):
+    """Replace only the providers named by a launcher's version pins."""
+    replacements = dict(pins)
+    selected = []
+    for database in databases:
+        provider = database_project(database)
+        if not provider or provider[0] not in replacements:
+            selected.append(database)
+            continue
+        addon_id = provider[0]
+        if installed_version(database, addon_id) == replacements[addon_id]:
+            selected.append(database)
+            del replacements[addon_id]
+    if not replacements:
+        return selected
+    exact = defaultdict(set)
+    for root in historical_roots:
+        for database in root.glob('*/resourceDatabase.rdb'):
+            provider = database_project(database)
+            if provider and provider[0] in replacements:
+                addon_id = provider[0]
+                if installed_version(database, addon_id) == replacements[addon_id]:
+                    exact[addon_id].add(database.resolve())
+    for addon_id, version in replacements.items():
+        if len(exact[addon_id]) != 1:
+            raise ValueError(f'required addon {addon_id}={version} needs one exact archived provider')
+        selected.extend(exact[addon_id])
+    return selected
 
 
 def dependency_catalogue(checkouts, databases):
