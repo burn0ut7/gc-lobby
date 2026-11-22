@@ -27,7 +27,8 @@ from launchers import META_NAME, launcher, replace_reference
 from local_loadouts import unchanged_units_parent
 from markers import (DEST as MAP_MARKER_PREFAB, convert_baked_marker_generator, convert_hover_camera,
                      convert_layer, convert_wall_markers)
-from outcomes import (FRAMEWORK, MATCH_PHASE_VALUE, SCRIPT_FLAG_APIS, SUPPLY_OUTCOME_BLOB, SUPPLY_OUTCOME_LAYER,
+from outcomes import (FRAMEWORK, INTERDICTION_OUTCOME_BLOB, INTERDICTION_OUTCOME_LAYER, MATCH_PHASE_VALUE,
+                      SCRIPT_FLAG_APIS, SUPPLY_OUTCOME_BLOB, SUPPLY_OUTCOME_LAYER,
                       leaves, render as render_outcome, render_capture_trackers)
 import polygon_capture
 from respawns import authored_respawn_fields, read_respawns
@@ -4401,7 +4402,7 @@ def mode_children(lines, disable_photo=False, lock_editor=False):
 
 
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None,
-                *, dynamic_respawn_factions=(), area_flag_observers=()):
+                *, dynamic_respawn_factions=(), area_flag_observers=(), cache_supply_depot=False):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, environment, freeze = '', '', 0
@@ -4636,6 +4637,8 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
   GC_LobbyManager "{{6A137A39106A4973}}" {{
 {flags}{events}{observers}{respawn_fields}{reconnect_fields}  }}
 '''
+    if cache_supply_depot:
+        settings += f'  GC_MissionSupplyDepotComponent "{{{guid(world + "/supply depot")}}}" {{\n  }}\n'
     marker_fields = ' m_bBriefingLeaderMarkers 1\n' if briefing_leader_markers else ''
     return f'''GC_LobbyGameMode GC_MigratedMission : "{{{resource}}}{preset}" {{
  components {{
@@ -4727,6 +4730,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                    if 'setsFlag' in action}
     script_flags = {flag for event in rules.values() for action in event.get('convertedActions', [])
                     for flag in action.get('producesFlags', ())}
+    cache_supply_depot = (bool(script_flags) and framework_supported
+                          and source.files.get(INTERDICTION_OUTCOME_LAYER) == INTERDICTION_OUTCOME_BLOB
+                          and INTERDICTION_OUTCOME_LAYER in source.layers[world.lower()])
     event_flags.update(script_flags)
     supported_interactions = [record for record in row.get('interactionCandidate', {}).values()
                               if isinstance(record, dict)]
@@ -4839,8 +4845,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     inactive_placements.append('The original TrainArea door opener has no runtime component in the published legacy addon.')
                 elif FRAMEWORK.fullmatch(head) and framework_supported and (represented or outcome.get('startupSamples')):
                     fields = block[1:-1]
-                    if script_flags and layer == SUPPLY_OUTCOME_LAYER and source.files[layer] == SUPPLY_OUTCOME_BLOB:
-                        # The reviewed script is the only field preceding the event array.
+                    if ((script_flags and layer == SUPPLY_OUTCOME_LAYER and source.files[layer] == SUPPLY_OUTCOME_BLOB)
+                            or (cache_supply_depot and layer == INTERDICTION_OUTCOME_LAYER)):
+                        # The reviewed prefix contains the replaced scripts and optional unused coordinates.
                         fields = fields[fields.index(' m_missionEvents {'):]
                     root_fields = [field.strip() for field in fields
                                    if field.startswith(' ') and not field.startswith('  ') and field.strip() != '}']
@@ -5064,6 +5071,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             rendered = render_mode(world, mode, preset or '', rule_text, zones, ai_faction,
                                    set(objective_flags) | event_flags, damage_flags,
                                    dynamic_respawn_factions=edited_factions,
+                                   cache_supply_depot=cache_supply_depot,
                                    area_flag_observers=[line for record in shared_writers
                                                         for line in record['areaFlagObserver']])
             if preset:
@@ -5368,7 +5376,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                          'Historical damage thresholds and break physics remain unverified.')
     if converted_artillery:
         remaining.append('Compare the call-in menu, radio authorization, salvo timing and the late-join ammunition display.')
-    if script_flags:
+    if cache_supply_depot:
+        remaining.append('Compare the cargo selection, selected van refill, depot initialization and repeated exact-supply check.')
+    elif script_flags:
         remaining.append('Compare depot measurement after either authored deadline, including ties, missing depots and one-shot delivery.')
     for target in sorted({spawn['missingGroupWaypoint'] for spawn in prefab_spawns if 'missingGroupWaypoint' in spawn}):
         remaining.append(f'The original reinforcement waypoint {target} has no authored target.')
