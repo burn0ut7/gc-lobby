@@ -442,12 +442,14 @@ def group_members(lines, start, stop, root):
 
 
 def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, parent_yaw=0,
-                      *, marker=None, area_children=None, parent_scale=1):
+                      *, marker=None, area_children=None, parent_scale=1, tilted_parent=False):
     child_start = next((i for i, line in enumerate(lines) if line.strip() == '{'), None)
     # Only a brace at the root-property indent opens the entity's child list.
     if child_start is not None:
         indent = min(len(line) - len(line.lstrip()) for line in lines if line.strip())
         child_start = next((i for i, line in enumerate(lines) if line == ' ' * indent + '{'), None)
+    if tilted_parent and (not marker or child_start is not None):
+        raise ValueError('tilted map shape supports only leaf markers as children')
     field_end = child_start if options['extended_shapes'] else None
     if marker:
         body = render_marker(lines[:field_end], name, marker_fields(marker), draw_order=True)
@@ -465,20 +467,23 @@ def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, pa
     else:
         fields = [line.strip() for line in lines[:child_start] if line.startswith(' ' * indent)
                   and not line.startswith(' ' * (indent + 1))]
-    if any(field.startswith(('angleX ', 'angleZ ')) for field in fields):
-        raise ValueError('nested boundary requires a parent with yaw-only rotation')
     scales = [floats(field[6:], 1)[0] for field in fields if field.startswith('scale ')]
     if len(scales) > 1 or any(scale <= 0 for scale in scales):
         raise ValueError('invalid nested boundary scale')
     world_scale = parent_scale * (scales[0] if scales else 1)
-    yaw = 0
+    pitch = yaw = roll = 0
     for field in fields:
         if field.startswith('angles '):
             pitch, yaw, roll = floats(field[7:], 3)
-            if pitch or roll:
-                raise ValueError('nested boundary requires a parent with yaw-only rotation')
         elif field.startswith('angleY '):
             yaw, = floats(field[7:], 1)
+        elif field.startswith('angleX '):
+            pitch, = floats(field[7:], 1)
+        elif field.startswith('angleZ '):
+            roll, = floats(field[7:], 1)
+    tilted = bool(pitch or roll)
+    if tilted and (marker or not options['standalone']):
+        raise ValueError('nested boundary requires a parent with yaw-only rotation')
     position = [floats(field[7:], 3) for field in fields if field.startswith('coords ')]
     if not position and (options['standalone'] or depth > 0):
         position = [(0, 0, 0)]
@@ -510,10 +515,10 @@ def convert_hierarchy(lines, name, options, parent_origin=(0, 0, 0), depth=0, pa
                     lines[start + 1:end], child_name,
                     {**options, 'standalone': bool(standalone), 'passive_cover': bool(passive_cover), 'bare': False},
                     origin, depth + 1, yaw + parent_yaw, marker=child_marker, area_children=area_children,
-                    parent_scale=world_scale)
+                    parent_scale=world_scale, tilted_parent=tilted)
                 children.extend('  ' + line for line in child.splitlines())
                 count += vertices
-        elif area_children and name and options['standalone'] and 'IsClosed 0' not in fields:
+        elif not tilted and area_children and name and options['standalone'] and 'IsClosed 0' not in fields:
             if world_scale != 1:
                 raise ValueError('scaled boundary with gameplay children needs review')
             child_block = [line[indent + 1:] for line in lines[index:stop + 1]]

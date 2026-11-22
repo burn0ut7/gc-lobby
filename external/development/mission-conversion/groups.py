@@ -7,7 +7,7 @@ import re
 
 from briefings import QUOTED, block_end
 from catalog import REF
-from scenery import NUMBER, StockPrefabs
+from scenery import NUMBER, StockPrefabs, placements
 
 ROOT = re.compile(r'^(?P<group>\$grp )?SCR_AIGroup(?: [\w.\-]+)? : "\{(?P<guid>[A-Fa-f0-9]{16})\}[^"]+\.et" \{$')
 CALL = re.compile(r'^\s*PS_GroupCallsignAssigner "\{([\da-f]{16})\}" \{$', re.I)
@@ -994,6 +994,11 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
         if any(line.strip() and not line.startswith(child_prefix) for line in fields[start + 1:stop]):
             raise ValueError('invalid group child indentation')
         nested = '\n'.join(line[len(child_prefix):] for line in fields[start + 1:stop])
+        # Native waypoints keep their attachment, local transforms and serialized order.
+        native_children = placements(nested, stock, locally_owned) if stock else None
+        if native_children and native_children[0] == ['waypoints']:
+            body, members = convert(fields[:start])
+            return [*body, *fields[start:]], int(members > 0), members
         children = group_layer(nested, source_units, dev_units, stock, locally_owned, reviewed_callsigns,
                                reviewed_members, external_ai, allow_stock_ai, restored_members,
                                reviewed_ai_members, forced_external, rhs=rhs, depth=depth + 1,
