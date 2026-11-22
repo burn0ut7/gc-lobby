@@ -2087,6 +2087,12 @@ Company Team Counter Attack retains nine 120-second named-vehicle captures and n
 
 The group converter also accepts exact, reviewed mission-owned roles in a complete roster authored on a registered stock group. Company Team Counter Attack’s Maintenance Team keeps its two original playable roles attached to the repair truck. The Chief inherits playability from the mission’s Mechanic, and both Dev role prefabs retain their authored equipment. The NVA headquarters and Cobra’s Bite’s remaining roster, crew and event blockers stay in the audit.
 
+### Cobra’s Bite reinforcement rosters
+
+Units Dev commit `557c9461` updates the saved paths of eleven roles across the four AFRF 2025 groups used by Cobra’s Bite. The four group GUIDs and ordered rosters match the source, with two, six, four and three slots respectively. Each role’s only presentation change is the editable character name and icon. The inherited AFRF base overlay matches the published Core prefab from Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7`. The converter rejects other role or equipment changes.
+
+The audit now converts waves 1, 3, 4 and 5 and their eleven group spawns. Wave 2 is held on the K-17 AI Gunner variant. Units Dev has the original prefab and metadata blobs, but the metadata names a different path. The placed BMP-1 and TIGR crews and the retired USMC MAAW role also remain open. The full audit reviewed 277 launchers and reproduced all 330 existing draft files byte for byte. Live reinforcement and crew timing remain in the representative runtime queue.
+
 ### Combined Anti-Armor Team
 
 The converter verifies the source framework and spawner layers and binds the eight `UK_KIA` spawns to the same UK AI casualty threshold used by the authored events. All eight retain their 180.9-second delay after the threshold is met during Match and their original RHS effect prefab. Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7` verifies the prefab and trigger parent. The audit records 14 converted placed spawners.
