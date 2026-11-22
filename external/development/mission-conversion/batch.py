@@ -3922,6 +3922,15 @@ def resource_aliases(workshop, units, stock):
                     if stock and not stock.registered_paths(old) and stock.contains(new, path)})
     databases = {}
     if workshop:
+        hind_path = 'Prefabs/Vehicles/Helicopters/Mi24/'
+        hind = ('65ED07118C75B32F', hind_path + 'Mi24V_Armed_UPK23_X2.et')
+        hind_refs = (hind, ('A8C732BE755F8BD0', hind_path + 'Mi24V_Base.et'),
+                     ('8FCC897602A4BEB1', hind_path + 'VehParts/Weapons/Mi24V_Turret_9M120_X4.et'))
+        if workshop_resources(workshop, {
+            'WCS_Mi-24V_628933A0D3A0D700': (
+                'dd565719ee18758cc875dca490b3d05dd19a002df0a1a4e4af90767d9e91b4f8', hind_refs),
+        }) == set(hind_refs):
+            aliases[hind[0], hind_path + 'Mi24V_armed_UPK23.et'] = hind
         if stock.contains(*VOLHA_STOCK_PARENT) and VOLHA_MESH in workshop_resources(workshop, {
             'ArmaTerrainCore_60B524F7A5AE96A8': (
                 '28574b99f5d6a12a7199a29d94194081b196b8ca37d854895fe296763cba778c', (VOLHA_MESH,)),
