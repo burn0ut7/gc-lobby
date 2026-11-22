@@ -1918,3 +1918,11 @@ Missions Dev commit `891003b0` stores the updated snapshot. The portable manifes
 ### Terrain coverage across the catalog
 
 The saved-file reconciliation identified 154 snapshots whose subscenes use external terrain. It updated 56 native reference arrays in Missions Dev commit `e47350cd`. Each edit adds the exact addon name already present in the snapshot's loaded-addon table. Fifty launch manifests were missing that terrain provider. In six other cases an authored catalogue entry already supplied it. The affected terrain families are Anizay, Bad Orb, Bystrany, Goose Green, Kunar, Longmoor, Ruha and Zarichne.
+
+### Assad’s Last Stand V2 crew recovery
+
+The converter resolves placed crews and event-spawned crews through the same character lookup. For the reviewed Assad layers, it recovers the original Central Anizay AI rifleman and AT prefabs from the parent of Missions commit `7368f06f`. The original character data and resource GUIDs are preserved. The registration paths match the authored references. The exact RHS desert M1025 and ZU-23 Ural registrations were verified against their Workshop resource databases and native prefab ancestry.
+
+The file comparison retains 63 playable slots and converts both capture consumers and both four-vehicle QRF waves. The two pregame truck events still need eight gunner-only deliveries at the original 10- through 80-second offsets. The legacy events queue those deliveries before Match and the scheduled-action API in GC Lobby is Match-only. Keep this launcher pending until the startup lifetime and the original crew equipment are verified. The installed registries lack the green shemagh `1C7BF9EFC11B29D9` and black shirt `9802E1302FD7BA7A`. Units history contains the original radio wrapper `139770CBE58E0303`, which inherits the unresolved radio `D55C4F07EF14A878`.
+
+The comparison of all 277 launchers reproduced all 309 existing draft files and confirmed 234 committed launchers with native snapshots.

@@ -57,6 +57,13 @@ CONSTRUCTION_FIELDS = {
 }
 DEFAULT_BUILDING_MANAGER = '  SCR_CampaignBuildingManagerComponent "{61B4DDBF56BF1B48}" {'
 ASSAD_FRAMEWORK_BLOB = 'bdd7db4625b168d6954457d5337ea54ef84ff00f'
+ASSAD_LAYERS = 'worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/'
+ARCHIVED_AAS_CREW = {
+    'E417F82BEA7137D5': ('Rifleman', 'b9f7231eeac59fd931fcf4edb4b62be2b06c7197',
+                         '3003343eed710f717c2fd3c9786072fda13d3cc6'),
+    'C18E05B3F6ACAB13': ('AT', 'd2cbbfe146c86a98cb93444380e2ae7ce0258fcb',
+                         'daf412d61e6dc8a23318bcbd5b2d16f6adbd9e50'),
+}
 EMPTY_LEGACY_CUTSCENE = [
     '  PS_CutsceneManager "{60E6C661B81E7619}" {',
     '   m_aCutscenes {',
@@ -4257,7 +4264,38 @@ LOOSE_ENDS_IMAGE_ASSETS = {
 }
 
 
-def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets, faction_assets):
+def reviewed_archived_mission_crew(source, dev, stock):
+    """Restore the original AI-only crew assets removed with Central Anizay AAS."""
+    if (not stock or source.files.get(ASSAD_LAYERS + 'framework.layer') != ASSAD_FRAMEWORK_BLOB
+            or source.files.get(ASSAD_LAYERS + 'props.layer') != '15d7559e5c9b917375979b7d6f0090e5360771a8'):
+        return {}
+    restored = {}
+    for resource, (role, asset_blob, meta_blob) in ARCHIVED_AAS_CREW.items():
+        name = f'Character_GC_INSURGENT_AAS_{role}.et'
+        path = 'worlds/arc/AAS/CentralAnizay/Prefabs/' + name
+        archived_path = 'Prefabs/Characters/Factions/OPFOR/GC_INSURGENT/' + name
+        if resource in source.resources or dev.resources.get(resource, [path]) != [path]:
+            raise ValueError('archived AAS crew resource identity collision ' + resource)
+        data = []
+        for blob in (asset_blob, meta_blob):
+            data.append(check_output(['git', '-C', str(source.repo), 'cat-file', 'blob', blob])
+                        .decode('utf-8-sig').replace('\r\n', '\n'))
+        body, meta = data
+        identity = META_NAME.search(meta)
+        parent = REF.search(body.partition('\n')[0])
+        if (not identity or identity.groups()[1:3] != (resource, archived_path)
+                or not body.startswith('SCR_ChimeraCharacter : ') or LEGACY.search(body)
+                or not parent or not stock.contains(*parent.groups())):
+            raise ValueError('archived AAS crew registration or native parent changed ' + resource)
+        meta = replace_reference(meta, META_NAME, resource, path)
+        for relative, content in ((path, body), (path + '.meta', meta)):
+            if relative in dev.files and dev.read(relative) != content:
+                raise ValueError('Dev already has a different archived crew asset ' + relative)
+        restored[(resource, path)] = body, meta
+    return restored
+
+
+def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets, faction_assets, archived_crew):
     files = list(draft)
     blockers = set()
     for owner in files:
@@ -4266,6 +4304,11 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
 
         def relocate(ref):
             resource, path = ref[1].upper(), ref[2]
+            if crew := archived_crew.get((resource, path)):
+                if path not in draft and path not in dev.files:
+                    draft[path], draft[path + '.meta'] = crew
+                    files.append(path)
+                return ref[0]
             if ((resource, path) == ('B044199ADB2E7A7C', LOOSE_ENDS_COMPUTER_IMAGE)
                     and resource not in source.resources and resource not in dev.resources
                     and path not in draft):
@@ -5343,7 +5386,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
 
 def world_draft(source, dev, world, row, staged, area_placements, interactions, convert_group_block, asset_aliases,
                 local_loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew, resolve_crew_config, delayed=None,
-                faction_assets=None):
+                faction_assets=None, archived_crew=None):
     draft, blockers = {}, []
     reviewed_replacements = {}
     if row.get('playtestCandidate') or row.get('raceConversion'):
@@ -6142,7 +6185,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if delayed:
         draft.update(delayed.assets)
     blockers.extend(migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets,
-                                   faction_assets or {}))
+                                   faction_assets or {}, archived_crew or {}))
     for path, text in draft.items():
         if path not in dev.files:
             continue
@@ -6428,14 +6471,14 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
 
 def plan(source, dev, report, staged, area_placements, interactions, convert_group_block, asset_aliases,
          local_loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew, resolve_crew_config, delayed_extractions,
-         faction_assets=None):
+         faction_assets=None, archived_crew=None):
     results, emitted, totals, families = {}, {}, Counter(), Counter()
     for world, row in report['worlds'].items():
         draft, result = world_draft(source, dev, world, row, staged, area_placements.get(world, {}),
                                     interactions.get(world, ((), {})), convert_group_block, asset_aliases,
                                     local_loadouts, spawned_assets.get(world, {}), convert_crew,
                                     partial(resolve_spawn, spawned_assets.get(world, {})), resolve_crew,
-                                    resolve_crew_config, delayed_extractions.get(world), faction_assets)
+                                    resolve_crew_config, delayed_extractions.get(world), faction_assets, archived_crew)
         results[world] = result
         totals[result['status']] += 1
         families.update({blocker['rule'] for blocker in result.get('blockers', [])})

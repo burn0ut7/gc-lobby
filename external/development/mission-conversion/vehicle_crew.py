@@ -67,6 +67,8 @@ WORKSHOP_VEHICLES = {
     'AC12E5669B411D57': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/KORD/GAZ_TIGR_v2_KORD.et'),
     'AF1C02364D45CC5B': ('WCS_T-72_5E0AB16BEB16D6A4', 'Prefabs/Vehicles/Tracked/T72A/T72A_Desert.et'),
+    'B8C827A45C1347A4': ('RHS-StatusQuo_595F2BF2F44836FB',
+                         'Prefabs/Vehicles/Wheeled/M998/M1025_armed_M2HB_USAF_D.et'),
     'E9BEA9042617CAAD': ('M113APC_5E5C154FEE1094BB', 'Prefabs/Vehicles/Tracked/M113/M113A2_APC_MERDC.et'),
     'FD109F3702AAB392': ('ZU-23_5C9AD9EF76F6B5EA', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ZU23.et'),
 }
@@ -628,7 +630,7 @@ def verified_crew_config(source_units, guid, path, owned):
 
 
 def convert(block, source_units, dev_units, stock, owned, external_vehicles=None, external_ai=None, *,
-            external_parents=None, placed_names=()):
+            external_parents=None, placed_names=(), resolve_character=None):
     if not any('TILW_VehicleCrewComponent' in line for line in block):
         return block
     vehicle = VEHICLE.fullmatch(block[0])
@@ -656,6 +658,10 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
     if (guid in owned or (units_owned and not (inherited_override or vehicle_overlay or units_vehicle or core_transfer))
             or not (stock.contains(guid, path) or external_vehicle or units_vehicle)):
         raise ValueError('unverified crew vehicle ' + guid)
+    if resolve_character is None:
+        def resolve_character(resource, path):
+            return character_reference(resource, path, source_units, dev_units, stock, owned, external_ai,
+                                       allow_legacy_playable=True)
 
     def replace_crew(lines, single_turret, *, allow_default_crew=False):
         if not any('TILW_VehicleCrewComponent' in line for line in lines):
@@ -671,9 +677,7 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
             raise ValueError('crew component is outside the vehicle components')
         end = block_end(lines, index)
         replacement = render_component(
-            component, lines[index + 1:end],
-            lambda guid, path: character_reference(guid, path, source_units, dev_units, stock, owned, external_ai,
-                                                   allow_legacy_playable=True),
+            component, lines[index + 1:end], resolve_character,
             single_turret, lambda guid, path: verified_crew_config(source_units, guid, path, owned),
             allow_default_crew=allow_default_crew, placed_names=placed_names)
         return [*lines[:index], *replacement, *lines[end + 1:]]
@@ -690,7 +694,8 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
             if any('TILW_VehicleCrewComponent' in line for line in child):
                 if vehicle_host and not parents and VEHICLE.fullmatch(child[0].strip()):
                     native = convert([line[2:] for line in child], source_units, dev_units, stock, owned,
-                                     external_vehicles, external_ai, external_parents=external_parents)
+                                     external_vehicles, external_ai, external_parents=external_parents,
+                                     resolve_character=resolve_character)
                     rendered.extend('  ' + line for line in native)
                     cursor = end + 1
                     continue

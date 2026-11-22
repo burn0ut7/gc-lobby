@@ -154,6 +154,12 @@ def main():
     british_groups = {}
     workshop_damage_resources = ()
     external_vehicle_parents = {}
+    archived_crew = {}
+    if args.batch:
+        try:
+            archived_crew = batch.reviewed_archived_mission_crew(source, dev, stock)
+        except (OSError, ValueError, CalledProcessError) as exc:
+            parser.error(str(exc))
     if args.batch and args.workshop_addons:
         try:
             external_ai, rhs_database = rhs_ai_characters(args.workshop_addons)
@@ -300,6 +306,8 @@ def main():
                                     workshop_spawn_resources, reviewed_assets=reviewed_audio, aliases=asset_aliases)
 
     def resolve_crew(resource, path, *, allow_legacy_playable=True):
+        if (resource, path) in archived_crew:
+            return f'"{{{resource}}}{path}"'
         return vehicle_crew.character_reference(resource, path, source_units, dev_units, stock, locally_owned,
                                                 external_ai, allow_legacy_playable=allow_legacy_playable)
 
@@ -313,6 +321,7 @@ def main():
                 block = [block[0][:ref.start()] + alias + block[0][ref.end():], *block[1:]]
         return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned,
                                     external_vehicles, external_ai, external_parents=external_vehicle_parents,
+                                    resolve_character=resolve_crew,
                                     placed_names=placed_names)
 
     out = {}
@@ -1034,7 +1043,7 @@ def main():
                          asset_aliases, {**loadouts, **ai_loadouts, **southwind_assets, **reviewed_audio}, spawned_assets,
                          convert_crew, resolve_spawn, resolve_crew,
                          resolve_crew_config, delayed_extractions,
-                         batch.reviewed_faction_assets(source, dev, source_units, dev_units))
+                         batch.reviewed_faction_assets(source, dev, source_units, dev_units), archived_crew)
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
                         for path, contents in out.items()}
