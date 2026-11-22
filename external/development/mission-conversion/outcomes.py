@@ -1282,6 +1282,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         event_flags.update(flag for _, _, _, output in depot_supply_calls.values() for flag in output)
     inactive = inactive_flags(source, world, path, body, scripts) if compound else ()
     match_only_flags = {*match_only_flags, *sampled_flags}
+    if route_graph_audit:
+        match_only_flags.update((*route_graph_audit['areas'], *route_graph_audit['outputs']))
     derived_spawners = {}
     for flag, definition in spawner_definitions.items():
         if not spawner_reads.get(flag[1:-1]):
