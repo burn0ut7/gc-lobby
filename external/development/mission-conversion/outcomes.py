@@ -1257,6 +1257,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     direct_control = bool(controls and set(controls[path]) - {'DeactivateEvents'})
     dormant_helo = False
     if compound and (path, source.files[path]) == (SEEDER_REPLACEMENT_LAYER, SEEDER_REPLACEMENT_LAYER_BLOB):
+        replacement_flags = {**replacement_flags,
+                             **{f'Clear {flag} Flag': flag for flag in ('MainMission', 'SideMission')
+                                if flag in objective_flags}}
         closure = '\n'.join(source.read(item) for item in source.closure(world)
                             if PurePosixPath(item).suffix.lower() in SOURCE_TEXT)
         dormant_helo = (scripts is not None and not any(api in scripts for api in (*SCRIPT_FLAG_APIS, 'EvalExpression'))
@@ -1394,6 +1397,11 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             continue
         if compound and len(fields) == 1 and re.fullmatch(r'   m_name "(?:-{3,}|={3,} [\w ]+ ={3,})"', fields[0]):
             audit[loc] = {'name': fields[0].strip().removeprefix('m_name ')[1:-1], 'trigger': 'editor divider'}
+            continue
+        if (compound and (path, source.files[path]) == (SEEDER_REPLACEMENT_LAYER, SEEDER_REPLACEMENT_LAYER_BLOB)
+                and event[1] in ('688238C7EE52714B', '6889724DD5F7D609')):
+            audit[loc] = {'name': label[1:-1], 'trigger': 'editor divider',
+                          'reason': 'empty condition and no instructions'}
             continue
         spawns = {child.split('/')[1]: detail for child, detail in extraction_spawns.items()
                   if child.startswith(event[1] + '/')}

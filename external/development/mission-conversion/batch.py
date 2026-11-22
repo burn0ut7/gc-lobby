@@ -13,7 +13,7 @@ from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURR
                          LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, capture_status_texts, faction_keys)
 from boundaries import (ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE,
                         convert_boundaries, convert_instance as convert_boundary_instance, group_members,
-                        passive_shape_component)
+                        convert_child_outline, passive_shape_component)
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import OBSOLETE_NAVMESH, REF, SOURCE_TEXT
 from event_actions import (FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, VEHICLE_SPAWN,
@@ -235,6 +235,21 @@ SEEDER_CARGO_BLOBS = {
     'HTMTransportBox.et': '81ea34c7b0f95770586d29a4da20d32d914fe7f9',
     'HTMTransportBoxSupply400.et': '22d358e27225f592878199559853520c5e96e549',
     'HTMTransportBoxSupply500.et': '79552770d7d8e7189ba973ed53f440deb73158c8',
+}
+SEEDER_WORLD = SEEDER_REPLACEMENT_LAYER.removesuffix('_Layers/default.layer') + '.ent'
+SEEDER_PLAYER_VEHICLES = SEEDER_REPLACEMENT_LAYER.replace('default.layer', 'OPFOR_Players/OPFOR_Players.layer')
+SEEDER_RECON_BLOBS = {
+    SEEDER_REPLACEMENT_DIR + 'BRDM2_AFRF1.et': ('108b93125c89559423ee955430f654e51d8fd88d', 'Rec1'),
+    SEEDER_REPLACEMENT_DIR + 'BRDM2_AFRF2.et': ('e6313ca4f968ffc619e6cf578ba34ac8b335176f', 'Rec2'),
+}
+SEEDER_REWARD_DIR = SEEDER_REPLACEMENT_DIR.removesuffix('Respawn Vehicles/') + 'Reward Depots/'
+SEEDER_REWARD_BLOBS = {
+    'Helipad_Domi_Tier1.et': '40698fa013043b94ac2cb1d71f34248ea3cbff8f',
+    'Helipad_Domi_Tier2.et': '4c2111382400132b510959a5a6b0d9b03083879a',
+    'SupplyReward.et': '0a2cf5414293304606545da82779e936805543a1',
+    'VehicleDepot_Domi_Tier1.et': '15998deb05b7168a97ac9765751a1055ae590042',
+    'VehicleDepot_Domi_Tier2.et': '631d2932bb522a813ab74c0012976c2be8fcc238',
+    'VehicleDepot_Domi_Tier3.et': '4a283f1e534f50812ff9d3aa16609c8dce618d52',
 }
 GMFX_AMMO_TARGETS = (
     ('8B9AFAD3A1548FCE', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage.et'),
@@ -1040,6 +1055,9 @@ ZARICHNE_NAVMESH_ALIASES = {
 }
 
 WORKSHOP_RESOURCE_ALIASES = {
+    ('3F0C718D8FA6E1AE', 'Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed_GUV8700.et'): (
+        'WCS_Armaments_629B2BA37EFFD577', '3F0C718D8FA6E1AE',
+        'Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_Armed_GUV8700_X2.et'),
     ('71E416DCB2BE86D7', 'Prefabs/Vehicles/Tracked/BFV/M2A2_BUSK_Desert.et'): (
         'WCS_M2A2_63120AE07E6C0966', '71E416DCB2BE86D7',
         'Prefabs/Vehicles/Tracked/M2A2/M2A2_BUSK_Desert.et'),
@@ -3022,6 +3040,19 @@ def passive_asset(source, path):
             return body
     if suffix == '.et':
         body = source.read(path)
+        if path in SEEDER_RECON_BLOBS:
+            blob, flag = SEEDER_RECON_BLOBS[path]
+            if source.files.get(path) != blob or not seeder_recon_flags_unused(source):
+                raise ValueError('reviewed recon vehicle damage flag changed')
+            return '\n'.join(remove_unused_damage_flag(body.splitlines(), flag)) + '\n'
+        if path.startswith(SEEDER_REWARD_DIR):
+            expected = SEEDER_REWARD_BLOBS.get(path.removeprefix(SEEDER_REWARD_DIR))
+            if expected and source.files.get(path) == expected:
+                converted = re.sub(
+                    rf'(?m)^  TILW_SetNameComponent ({SERIALIZED_ID}) \{{\n   m_setName ("[\w.-]+")\n  \}}$',
+                    r'  GC_MissionEntityNameComponent \1 {\n   m_sMissionName \2\n  }', body)
+                if not LEGACY.search(converted):
+                    return converted
         if path.startswith(SEEDER_REPLACEMENT_DIR):
             blob = SEEDER_CARGO_BLOBS.get(path.removeprefix(SEEDER_REPLACEMENT_DIR))
             if blob and source.files.get(path) == blob and not LEGACY.search(body):
@@ -3065,6 +3096,29 @@ def passive_asset(source, path):
                         and '{' not in line and '}' not in line for line in [lines[1], *lines[7:-1]])):
             return body
     raise ValueError('requires a resource conversion rule')
+
+
+@lru_cache(maxsize=4)
+def seeder_recon_flags_unused(source):
+    if (source.files.get(SEEDER_REPLACEMENT_LAYER) != SEEDER_REPLACEMENT_LAYER_BLOB
+            or source.files.get(SEEDER_PLAYER_VEHICLES) != 'c3da94fe6583b635ef99a100b023a5fe2be32393'
+            or any(source.files.get(path) != blob for path, (blob, _) in SEEDER_RECON_BLOBS.items())):
+        return False
+    scripts = script_text(source)
+    if any(api in scripts for api in SCRIPT_FLAG_APIS) or any(flag in scripts for flag in ('Rec1', 'Rec2')):
+        return False
+    corpus = '\n'.join(source.read(path) for path in source.closure(SEEDER_WORLD)
+                        if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+    return corpus.count('"Rec1"') == 1 and corpus.count('"Rec2"') == 2
+
+
+def remove_unused_damage_flag(block, flag):
+    matches = [i for i, line in enumerate(block) if DAMAGE_COMPONENT.fullmatch(line)
+               and block[i + 1:i + 3] == [f'   m_flagName "{flag}"', '  }']]
+    if len(matches) != 1:
+        raise ValueError('expected one reviewed dormant damage observer')
+    index = matches[0]
+    return [*block[:index], *block[index + 3:]]
 
 
 def remove_legacy_callsigns(lines):
@@ -5913,7 +5967,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 elif (layer, line) in spawners:
                     result.append(spawners[(layer, line)])
                 elif kind == 'PS_ManualMarker':
-                    result.append(convert_layer(body, dev, draw_order=True, source=source)[0])
+                    result.append(convert_layer(body, dev, draw_order=True, source=source,
+                                                child_outline=convert_child_outline)[0])
                 elif kind == 'PS_ManuaMarkerRender':
                     result.append(convert_hover_camera(block, f'{layer}:{line}'))
                 elif BARE_SHAPE.fullmatch(head) and 'Prefabs/WEGenerators/Markers/PG_MarkerGenerator_' in body:
@@ -6011,6 +6066,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                          'detail': 'unverified hornbeam replacement or placement'})
                 elif NATIVE.match(head):
                     try:
+                        if (layer == SEEDER_PLAYER_VEHICLES and head.startswith('Vehicle BRDM2_AFRF2 : ')
+                                and seeder_recon_flags_unused(source)):
+                            block = remove_unused_damage_flag(block, 'Rec2')
+                            inactive_placements.append('The two BRDMs wrote unused recon damage flags in the original mission.')
                         if f'{{{BLOODY_GARRISON}}}' in head:
                             converted, groups, slots = garrison_placement(source, world, layer, block), 0, 0
                         else:

@@ -367,7 +367,7 @@ def marker_fields(match, source=None):
     return preset['fields']
 
 
-def convert_instance(lines, name, inherited, draw_order, depth=0):
+def convert_instance(lines, name, inherited, draw_order, depth=0, *, source=None, child_outline=None):
     # Preserve parent-relative coordinates and rotation by keeping the same hierarchy.
     if not lines or lines[-1].strip() != '}':
         return instance(lines, name, inherited, draw_order=draw_order), 1
@@ -385,23 +385,30 @@ def convert_instance(lines, name, inherited, draw_order, depth=0):
     while index < stop:
         head = lines[index].removeprefix(indent + ' ')
         child = LEGACY.fullmatch(head)
-        if not child:
-            raise ValueError('unsupported child of marker: ' + head.strip().partition(' ')[0])
         end = block_end(lines, index)
         if end >= stop:
             raise ValueError('marker placement extends outside the child list')
-        nested, nested_count = convert_placement(lines, index, end, child, draw_order, depth + 1)
-        children.extend('  ' + line for line in nested.splitlines())
-        count += nested_count
+        if child:
+            nested, nested_count = convert_placement(lines, index, end, child, draw_order, depth + 1,
+                                                     source=source, child_outline=child_outline)
+            children.extend('  ' + line for line in nested.splitlines())
+            count += nested_count
+        else:
+            normalized = [line.removeprefix(indent + ' ') for line in lines[index:end + 1]]
+            outline = child_outline(normalized) if child_outline else None
+            if outline is None:
+                raise ValueError('unsupported child of marker: ' + head.strip().partition(' ')[0])
+            children.extend('  ' + line for line in outline.splitlines())
         index = end + 1
     return '\n'.join([*marker[:-1], ' {', *children, ' }', marker[-1]]), count
 
 
-def convert_placement(lines, start, stop, match, draw_order, depth=0, *, source=None):
+def convert_placement(lines, start, stop, match, draw_order, depth=0, *, source=None, child_outline=None):
     inherited = marker_fields(match, source)
     if not match['group']:
         name = ' ' + match['name'] if match['name'] else ''
-        return convert_instance(lines[start + 1:stop], name, inherited, draw_order, depth)
+        return convert_instance(lines[start + 1:stop], name, inherited, draw_order, depth,
+                                source=source, child_outline=child_outline)
     indent = len(lines[start]) - len(lines[start].lstrip())
     member = re.compile(r' ' * (indent + 1) + r'(?:(?P<name>[\w.\-]+) )?\{')
     result = []
@@ -415,7 +422,8 @@ def convert_placement(lines, start, stop, match, draw_order, depth=0, *, source=
         if end >= stop:
             raise ValueError('marker placement extends outside the group')
         name = ' ' + head['name'] if head['name'] else ''
-        converted, members = convert_instance(lines[index + 1:end], name, inherited, draw_order, depth)
+        converted, members = convert_instance(lines[index + 1:end], name, inherited, draw_order, depth,
+                                              source=source, child_outline=child_outline)
         result.append(converted)
         count += members
         index = end + 1
@@ -424,7 +432,7 @@ def convert_placement(lines, start, stop, match, draw_order, depth=0, *, source=
     return '\n'.join(result), count
 
 
-def convert_layer(text, dev=None, *, draw_order=False, source=None):
+def convert_layer(text, dev=None, *, draw_order=False, source=None, child_outline=None):
     """Process complete icon-only layers. Mixed layers keep their original ordering for review."""
     if not re.search(r'^(?:\$grp )?PS_ManualMarker\b', text, re.M):
         return None
@@ -441,7 +449,8 @@ def convert_layer(text, dev=None, *, draw_order=False, source=None):
             raise ValueError(f'line {i + 1} mixed or custom placement')
         stop = block_end(lines, i)
         try:
-            rendered, converted = convert_placement(lines, i, stop, match, draw_order, source=source)
+            rendered, converted = convert_placement(lines, i, stop, match, draw_order, source=source,
+                                                    child_outline=child_outline)
         except ValueError as exc:
             raise ValueError(f'line {i + 1} {exc}') from exc
         result.append(rendered)

@@ -439,6 +439,20 @@ def convert_instance(lines, name, passive_only=False, allow_public_faction_color
     return cover_shape + standalone_overlay + passive_fill + '\n'.join([*lines,*placement,'}']), len(vertices)
 
 
+def convert_child_outline(lines):
+    shape = STANDALONE_SHAPE.fullmatch(lines[0])
+    if not shape:
+        return None
+    if shape['group'] or ' IsClosed 0' not in lines:
+        raise ValueError('marker outline child needs one open map shape')
+    name = ' ' + shape['name'] if shape['name'] else ''
+    native, _ = convert_instance(lines[1:-1], name, extended_shapes=True, standalone=True, nested=True)
+    if (not native.startswith(f'PolylineShapeEntity{name} : "{MAP_SHAPE}" {{')
+            or '   m_bFillEnabled 0' not in native.splitlines()):
+        raise ValueError('marker outline child must remain a passive map shape')
+    return native
+
+
 def group_members(lines, start, stop, root):
     if not root['group']:
         yield start, stop, root['name']

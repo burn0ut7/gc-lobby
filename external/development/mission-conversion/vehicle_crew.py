@@ -48,6 +48,8 @@ WORKSHOP_VEHICLES = {
     '31F0866273C46D76': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/K17/APC_K17_Berezok.et'),
     '3312ADBF53A16DD8': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/LAV25/LAV25_RHS.et'),
     '3868E03D9A4AF186': ('WCS_BMP-1_5E524E4FEECCA92B', 'Prefabs/Vehicles/Tracked/BMP1/BMP1P_Base.et'),
+    '3F0C718D8FA6E1AE': ('WCS_Armaments_629B2BA37EFFD577',
+                         'Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_Armed_GUV8700_X2.et'),
     '447CFE8D73F95C3E': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_AFRF.et'),
     '5CFD8CB5C3E55A4E': ('WCS_M2A2_63120AE07E6C0966', 'Prefabs/Vehicles/Tracked/M2A2/M2A2_MERDC.et'),
     '72018C87FBDC9F8C': ('WCS_M2A2_63120AE07E6C0966', 'Prefabs/Vehicles/Tracked/M2A2/M2A2_Desert.et'),

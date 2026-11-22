@@ -201,7 +201,8 @@ def convert_block(lines, key, stock=None, local_resources=()):
                                and resource[0] not in local_resources and stock.contains(*resource))
     head = REF.sub(lambda _: f'"{NATIVE_PREFAB}"', lines[0], count=1) if standalone else lines[0]
     if root:
-        placement, details = convert_object([head, *lines[1:]], root[1] or key, key, inherited, standalone=standalone)
+        placement, details = convert_with_children([head, *lines[1:]], root[1] or key, key, stock,
+                                                    local_resources, inherited, standalone=standalone)
         return '\n'.join(placement) + '\n', details
     output, details, names = [head], [], set()
     index = 1
@@ -210,8 +211,8 @@ def convert_block(lines, key, stock=None, local_resources=()):
         if not name:
             raise ValueError('unnamed interaction group member')
         end = block_end(lines, index)
-        placement, items = convert_object(lines[index:end + 1], name[1] or f'{key}/{index}', key, inherited,
-                                          standalone=standalone)
+        placement, items = convert_with_children(lines[index:end + 1], name[1] or f'{key}/{index}', key,
+                                                  stock, local_resources, inherited, standalone=standalone)
         if items and name[1]:
             if name[1] in names:
                 raise ValueError('duplicate interaction group member name')
@@ -220,3 +221,36 @@ def convert_block(lines, key, stock=None, local_resources=()):
         details.extend(items)
         index = end + 1
     return '\n'.join([*output, lines[-1]]) + '\n', details
+
+
+def convert_with_children(lines, name, key, stock, local_resources, inherited, *, standalone):
+    """Convert each interaction owner independently while retaining its parent transform."""
+    indent = ' ' * (len(lines[0]) - len(lines[0].lstrip()) + 1)
+    child_list = indent + '{'
+    if child_list not in lines[1:-1]:
+        return convert_object(lines, name, key, inherited, standalone=standalone)
+    start = lines.index(child_list, 1)
+    stop = block_end(lines, start)
+    if stop != len(lines) - 2:
+        raise ValueError('interaction children must follow the parent fields')
+    placement, details = convert_object([*lines[:start], lines[-1]], name, key, inherited,
+                                        standalone=standalone)
+    rendered = [*placement[:-1], lines[start]]
+    cursor = start + 1
+    child_indent = indent + ' '
+    while cursor < stop:
+        child_head = lines[cursor]
+        if not child_head.startswith(child_indent) or not child_head.endswith(' {'):
+            raise ValueError('unsupported interaction child placement')
+        end = block_end(lines, cursor)
+        if end >= stop:
+            raise ValueError('interaction child crosses its parent')
+        child = lines[cursor:end + 1]
+        if any(ACTION.fullmatch(line) for line in child):
+            converted, items = convert_block([line.removeprefix(child_indent) for line in child],
+                                             f'{name}/child/{cursor}', stock, local_resources)
+            child = [child_indent + line for line in converted.splitlines()]
+            details.extend(items)
+        rendered.extend(child)
+        cursor = end + 1
+    return [*rendered, lines[stop], lines[-1]], details
