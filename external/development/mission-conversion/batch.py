@@ -15,7 +15,8 @@ from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import OBSOLETE_NAVMESH, REF, SOURCE_TEXT
 from event_actions import (FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, VEHICLE_SPAWN,
                            render_crew_config, render_spawn, spawn_details)
-from vehicle_crew import CREW_CONFIG_FIELD, VERIFIED_DEFAULT_CREW, ZAGORIA_BMP2, crew_config_contents, split_crew_block
+from vehicle_crew import (CREW_CONFIG_FIELD, VERIFIED_DEFAULT_CREW, ZAGORIA_BMP2, crew_config_contents,
+                          split_crew_block, verified_core_btr70_transfer)
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
 from groups import (COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, SLOTS, inheritance, reviewed_native_ancestry,
@@ -215,10 +216,6 @@ WORKSHOP_SPAWN_PREFABS = {
          ('2D854F52D8D6B31E', 'Prefabs/Systems/Smoke/Wrapper_Smoke_Purple.et'),
          ('6BDBEFF5CE6E2F28', 'Prefabs/Systems/Smoke/Wrapper_Smoke_Green.et'), GMFX_AP_MINE),
     ),
-}
-CORE_TO_UNITS_SPAWN_OVERRIDES = {
-    ('1C5FE7B7FF49BB8D', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_Base.et'):
-        'ae982b43b504904f7b97947e7fc45c83f584e46ce5f7fa8d7c08c05e386eee74',
 }
 RHS_DAMAGE_PATHS = {
     '52B13341B4A2F012': 'Prefabs/Vehicles/Tracked/2S1/Tank_2S1_Green.et',
@@ -698,7 +695,7 @@ STORAGE_BOX = re.compile(
 CALLSIGN_TRIPLET = (r'm_iGC_CallsignCompany "\d+"\n(?P=indent)m_iGC_CallsignPlatoon "\d+"\n'
                     r'(?P=indent)m_iGC_CallsignSquad "\d+"\n')
 DUPLICATE_CALLSIGNS = re.compile(
-    rf'^(?P<first>(?P<indent> +){CALLSIGN_TRIPLET})(?P=indent){CALLSIGN_TRIPLET}', re.M)
+    rf'^(?P<first>(?P<indent> +){CALLSIGN_TRIPLET})(?P<second>(?P=indent){CALLSIGN_TRIPLET})', re.M)
 AI_WORLD_ALIASES = {
     '33A5B976E41B0A4C': ('Prefabs/AI/SCR_AIWorld_BadOrb.et', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et'),
     '70CCCF16487C927F': ('GitHub/gc-reforger-core/Prefabs/AI/SCR_AIWorld_Eden.et',
@@ -1876,7 +1873,7 @@ def fia_cache_damage_placement(block, stock, source_units, dev_units, local_reso
 
 
 def damage_flag_rules(source, world, stock, local_resources, source_units, dev_units, rhs=None, *,
-                      workshop_targets=()):
+                      workshop_targets=(), convert_crew):
     placements, audit, candidates = {}, {}, defaultdict(list)
     observed = {}
     layers = source.layers[world.lower()]
@@ -1942,10 +1939,13 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                     raise ValueError('unsupported initial hit zone health')
                 initial_health = Decimal(health) < 1
                 stock_target = DAMAGE_TARGETS.get(resource) == ref[2] and stock.contains(*ref.groups())
+                core_transfer = (block[0].startswith('Vehicle ')
+                                 and verified_core_btr70_transfer(*authored, source_units, dev_units, stock))
+                registered_target = ((stock_target or authored in workshop_targets)
+                                     and resource not in source_units.resources and resource not in dev_units.resources)
                 verified_default = (
-                    zone == '""' and (stock_target or (resource, ref[2]) in workshop_targets)
-                    and is_character == ref[2].startswith('Prefabs/Characters/')
-                    and resource not in source_units.resources and resource not in dev_units.resources)
+                    zone == '""' and (core_transfer or registered_target)
+                    and is_character == ref[2].startswith('Prefabs/Characters/'))
                 verified_zone = (resource, ref[2], zone) in REVIEWED_HIT_ZONES
                 if not (is_group or verified_default or verified_zone):
                     raise ValueError('unverified damage objective prefab or component placement')
@@ -2000,7 +2000,7 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                 if len(name.encode()) > 128:
                     raise ValueError('damage objective name exceeds the native limit')
                 converted = [head[1] + ' ' + name + head[3], *block[1:start], *initial, *block[stop + 1:]]
-                native = native_placement(converted)
+                native = native_placement(convert_crew(converted))
                 if not native:
                     raise ValueError('damage objective has another legacy component')
                 candidates[flag[1:-1]].append((path, line, name, native, health if initial else None))
@@ -2850,8 +2850,7 @@ def spawn_resource(source, dev, source_units, dev_units, stock, guid, path, obje
         return None
     before = source_units.resources.get(guid)
     after = dev_units.resources.get(guid)
-    if (not before and after == [path] and (digest := CORE_TO_UNITS_SPAWN_OVERRIDES.get((guid, path)))
-            and stock.contains(guid, path) and sha256(dev_units.read(path).strip().encode()).hexdigest() == digest):
+    if verified_core_btr70_transfer(guid, path, source_units, dev_units, stock):
         return path
     if before or after:
         if before != [path] or after != [path]:
@@ -4581,7 +4580,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     and sha256(data.encode()).hexdigest() == row.get('reviewedSettingsPreset', {}).get(path)):
                 reviewed_replacements[path] = sha256(data.encode()).hexdigest()
             elif (path.endswith('.layer') and isinstance(data, str) and DUPLICATE_CALLSIGNS.search(data)
-                    and DUPLICATE_CALLSIGNS.sub(r'\g<first>', data).strip() == text.strip()):
+                    and any(DUPLICATE_CALLSIGNS.sub(rf'\g<{copy}>', data).strip() == text.strip()
+                            for copy in ('first', 'second'))):
                 reviewed_replacements[path] = sha256(data.encode()).hexdigest()
             else:
                 blockers.append({'rule': 'existing Dev file differs', 'file': path})

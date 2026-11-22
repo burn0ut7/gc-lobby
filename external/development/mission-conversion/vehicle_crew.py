@@ -12,6 +12,13 @@ from polygon_capture import members
 from scenery import StockPrefabs
 
 ZAGORIA_BMP2 = ('1EF865DC4E3F7E0B', 'IFV/BMP2/BMP2_Olive_test.et')
+CORE_BTR70 = ('1C5FE7B7FF49BB8D', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_Base.et')
+CORE_BTR70_DIGEST = 'ae982b43b504904f7b97947e7fc45c83f584e46ce5f7fa8d7c08c05e386eee74'
+SEPARATIST_RIFLEMAN_RENAME = (
+    '917322E3B14A77B7',
+    'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/Character_GC_SEPARATIST_Rifleman.et',
+    'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/2020/Character_SEP_Rifleman.et',
+)
 VEHICLE = re.compile(
     r'(?P<group>\$grp )?(?:Vehicle|Tank|Turret)(?: (?P<name>[\w.-]+))? : '
     r'"\{(?P<guid>[\da-fA-F]{16})\}(?P<path>Prefabs/(?:Vehicles|Weapons/Tripods)/[^"]+\.et|'
@@ -248,7 +255,8 @@ def character_reference(guid, path, source_units, dev_units, stock, owned, exter
                 or (not allow_legacy_playable and legacy_member(source_units, guid, False))):
             raise ValueError('crew character ancestry needs review ' + guid)
         canonical, = dev_units.resources[guid]
-        if PurePosixPath(path).name != PurePosixPath(canonical).name:
+        if (PurePosixPath(path).name != PurePosixPath(canonical).name
+                and (guid, path, canonical) != SEPARATIST_RIFLEMAN_RENAME):
             titles = NVA_CREW_ROLE_PATHS.get(guid, ())
             prefix = 'Prefabs/Characters/Factions/OPFOR/GC_NVA/Character_GC_NVA_'
             if (path, canonical) != tuple(prefix + title + '.et' for title in titles):
@@ -519,6 +527,13 @@ def verified_btr70_overlay(guid, path, source_units, dev_units):
     return before == [BTR70_CREW_LEAF] and after == [BTR70_CREW_LEAF, BTR70_SMOKE_ANCESTOR]
 
 
+def verified_core_btr70_transfer(guid, path, source_units, dev_units, stock):
+    """Check the exact published GC Core stock override that moved into Units Dev."""
+    return ((guid, path) == CORE_BTR70 and stock.contains(guid, path)
+            and not source_units.resources.get(guid) and dev_units.resources.get(guid) == [path]
+            and sha256(dev_units.read(path).strip().encode()).hexdigest() == CORE_BTR70_DIGEST)
+
+
 def verified_units_crew_prefab(guid, path, source_units, dev_units, stock, owned, external_parents):
     spec = UNITS_CREW_PREFABS.get(guid)
     if (not spec or path != spec[0]
@@ -575,7 +590,8 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
     vehicle_overlay = vehicle and external_vehicle and verified_btr70_overlay(guid, path, source_units, dev_units)
     units_vehicle = (vehicle or vehicle_host) and units_owned and verified_units_crew_prefab(
         guid, path, source_units, dev_units, stock, owned, external_parents or {})
-    if (guid in owned or (units_owned and not (inherited_override or vehicle_overlay or units_vehicle))
+    core_transfer = vehicle and verified_core_btr70_transfer(guid, path, source_units, dev_units, stock)
+    if (guid in owned or (units_owned and not (inherited_override or vehicle_overlay or units_vehicle or core_transfer))
             or not (stock.contains(guid, path) or external_vehicle or units_vehicle)):
         raise ValueError('unverified crew vehicle ' + guid)
 

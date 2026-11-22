@@ -271,6 +271,17 @@ def main():
         return vehicle_crew.character_reference(resource, path, source_units, dev_units, stock, locally_owned,
                                                 external_ai, allow_legacy_playable=allow_legacy_playable)
 
+    def convert_crew(block):
+        ref = REF.search(block[0])
+        if (ref and vehicle_crew.VEHICLE.fullmatch(block[0])
+                and any('TILW_VehicleCrewComponent' in line for line in block)):
+            guid = ref[1].upper()
+            alias = batch.registered_alias(guid, ref[2], source, dev, asset_aliases)
+            if alias and REF.fullmatch(alias)[1] == guid:
+                block = [block[0][:ref.start()] + alias + block[0][ref.end():], *block[1:]]
+        return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned,
+                                    external_vehicles, external_ai, external_parents=external_vehicle_parents)
+
     out = {}
     arc_areas = {}
     batch_areas = {}
@@ -450,7 +461,7 @@ def main():
             try:
                 damage_flags, damage, audit = batch.damage_flag_rules(
                     source, world, stock, locally_owned, source_units, dev_units, rhs_database,
-                    workshop_targets=workshop_damage_resources)
+                    workshop_targets=workshop_damage_resources, convert_crew=convert_crew)
                 if set(damage_flags) & set(objective_flags) or damage.keys() & interaction_placements.keys():
                     raise ValueError('damage flag or target also has an interaction')
                 objective_flags = set(objective_flags) | set(damage_flags)
@@ -948,17 +959,6 @@ def main():
                                reviewed_ai_members={**native_ai_members, **(reviewed_ai_members or {})},
                                forced_external=forced_external,
                                rhs=rhs_database, local_aliases=local_groups, restored_rosters=restored_rosters)
-
-        def convert_crew(block):
-            ref = REF.search(block[0])
-            if (ref and vehicle_crew.VEHICLE.fullmatch(block[0])
-                    and any('TILW_VehicleCrewComponent' in line for line in block)):
-                guid = ref[1].upper()
-                alias = batch.registered_alias(guid, ref[2], source, dev, asset_aliases)
-                if alias and REF.fullmatch(alias)[1] == guid:
-                    block = [block[0][:ref.start()] + alias + block[0][ref.end():], *block[1:]]
-            return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned,
-                                        external_vehicles, external_ai, external_parents=external_vehicle_parents)
 
         def resolve_crew_config(resource, path):
             return vehicle_crew.verified_crew_config(source_units, resource, path, locally_owned)
