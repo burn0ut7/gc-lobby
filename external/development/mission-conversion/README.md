@@ -43,6 +43,12 @@ Stop each Workbench run once its assigned behaviors are verified. Record results
 
 The migration generates Arma launcher and world resource registrations. The resource audit checks against the dependency graph declared by the Dev projects. The metadata table in `plan.md` separately reports GC headers, generated metadata snapshots, catalogue data, manual catalogue addon IDs and portable launch files committed in Dev. The standard GC launcher requires a generated snapshot or portable export. It resolves the snapshot's referenced addon names to GUIDs, includes the mission's owning addon, and adds any manual catalogue IDs. The portable exporter reports its own file count because it writes outside the checkout. Confirm script-selected content and use the supported exporter for the published build.
 
+After installing captured snapshots, reconcile terrain providers before exporting portable manifests. The Workbench snapshot scans authored entities and their resources. A saved subscene parent can supply the terrain independently of those entity references.
+
+    python "$tools/reconcile_terrain_metadata.py" --missions $repo --audit "$output/plan.json" --base-database $base --workshop-addons $workshop --dependency . --dependency ../gc-reforger-core --dependency ../gc-reforger-units --report "$env:TEMP/gc-terrain-providers.json"
+
+Use a plan for the current committed Missions revision and supply the same `--historical-workshop` directories as the audit for pinned versions. The dry run verifies the parent against its reachable resource registry and finds its exact GUID in the saved Workbench addon table. It accepts the reviewed Longmoor archive only when its registry and archive hashes match. Add `--apply` to update the saved reference arrays, then commit the headers and refresh the audit before export. Repeat after another Workbench capture to keep the terrain entries current.
+
 Probe unresolved prefab references from the plan together in one isolated Workbench world.
 
     python "$tools/resource_probe.py" --plan "$output/plan.json" --stage $resourceProbe
@@ -1908,3 +1914,7 @@ Missions Dev commits `4544fb51` and `6a63dcbb` install the conversion and gate s
 The portable manifest check identified that the archived Core terrain wrapper supplied Bystrany to the first capture. Missions Dev commit `a4c3656f` uses the registered Bystrany world directly and restores the wrapper's map settings with the same reviewed terrain resources as Hnevice. Workbench MCP session `logs_2026-11-22_09-54-22` captured 347 authored entities and all 26 playable slots. It retained GC Units Dev, whose addon manifest still declares TilW for 19 legacy crew configuration files. Converting those shared configurations and removing that dependency belong to a separate Units migration. The new capture still excludes RHIB and reports an unknown inherited ammo component, `SAL_DroneBulletComponent`, which remains in the representative startup and equipment checks.
 
 Missions Dev commit `891003b0` stores the updated snapshot. The portable manifest lists 65 addons and includes Bystrany and GC Units Dev. Its authored asset list omits the archived Core and Lobby and the TilW framework. The final audit matched header hashes, worlds and nonempty addon lists for all 234 verified manifests.
+
+### Terrain coverage across the catalog
+
+The saved-file reconciliation identified 154 snapshots whose subscenes use external terrain. It updated 56 native reference arrays in Missions Dev commit `e47350cd`. Each edit adds the exact addon name already present in the snapshot's loaded-addon table. Fifty launch manifests were missing that terrain provider. In six other cases an authored catalogue entry already supplied it. The affected terrain families are Anizay, Bad Orb, Bystrany, Goose Green, Kunar, Longmoor, Ruha and Zarichne.
