@@ -55,6 +55,15 @@ CONSTRUCTION_FIELDS = {
     'm_fGameMultiplier': ('m_fMatchMultiplier', 0.5, 10000000),
 }
 DEFAULT_BUILDING_MANAGER = '  SCR_CampaignBuildingManagerComponent "{61B4DDBF56BF1B48}" {'
+ASSAD_FRAMEWORK_BLOB = 'bdd7db4625b168d6954457d5337ea54ef84ff00f'
+EMPTY_LEGACY_CUTSCENE = [
+    '  PS_CutsceneManager "{60E6C661B81E7619}" {',
+    '   m_aCutscenes {',
+    '    PS_Cutscene "{66276DEFD7DE434C}" {',
+    '    }',
+    '   }',
+    '  }',
+]
 EMPTY_GROUP_FLAGS = [
     '  SCR_GroupsManagerComponent "{5706EC99934496F5}" {',
     '   m_aGroupFlags {', '   }', '  }',
@@ -1645,13 +1654,22 @@ STARTUP_FIELDS = {
 }
 
 
+def authored_placement_flags(values):
+    flags = values.get('Flags')
+    if flags is None:
+        return []
+    if flags != '0x200000 0':
+        raise ValueError('unsupported entity placement flags')
+    return ['Flags ' + flags]
+
+
 def startup_cleanup(block):
     root = STARTUP_CLEANUP.fullmatch(block[0])
     if not root:
         raise ValueError('unsupported startup cleanup placement')
     output = []
     for name, lines in polygon_capture.members(block, root['group'], root['name']):
-        values = properties(lines, STARTUP_FIELDS.keys() | CAPTURE_TRANSFORM | {'m_prefabFilterList'})
+        values = properties(lines, STARTUP_FIELDS.keys() | CAPTURE_TRANSFORM | {'m_prefabFilterList', 'Flags'})
         transform = {key: value for key, value in values.items() if key in CAPTURE_TRANSFORM}
         if ('coords' not in transform or any(not FIELD.fullmatch(f'{key} {v}') for key, v in transform.items())
                 or ('angles' in transform and any(axis in transform for axis in ('angleX', 'angleY', 'angleZ')))):
@@ -1667,7 +1685,8 @@ def startup_cleanup(block):
                 or any(not REF.fullmatch(entry)[2].endswith('.et') for entry in entries)):
             raise ValueError('unsupported startup cleanup prefab filter')
         entity = 'GC_StartupCleanupEntity' + (f' {name}' if name else '')
-        output.extend([f'{entity} {{', *(f' {key} {v}' for key, v in transform.items()),
+        output.extend([f'{entity} {{', *(' ' + field for field in authored_placement_flags(values)),
+                       *(f' {key} {v}' for key, v in transform.items()),
                        *(f' {native} {values[key]}' for key, native in STARTUP_FIELDS.items() if key in values)])
         if entries:
             output.extend([' m_aPrefabs {', *(f'  {entry}' for entry in entries), ' }'])
@@ -3698,10 +3717,12 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             lines = lines[:start] + lines[end + 1:]
         data = properties(lines, transform_fields | {
             'm_prefab', 'm_conditionFlag', 'm_spawnTimings', 'm_setEntityNames', 'm_waypointNames', 'm_pregameSpawn',
+            'Flags',
         })
         transform = [f'{key} {value}' for key, value in data.items() if key in transform_fields]
         if 'coords' not in data or any(not FIELD.fullmatch(line) for line in transform):
             raise ValueError('spawner needs a placed transform')
+        transform[:0] = authored_placement_flags(data)
         pregame = data.get('m_pregameSpawn', '0')
         if pregame not in ('0', '1'):
             raise ValueError('invalid placed spawner phase')
@@ -4940,7 +4961,7 @@ def mode_children(lines, disable_photo=False, lock_editor=False):
 
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None,
                 *, dynamic_respawn_factions=(), area_flag_observers=(), cache_supply_depot=False,
-                inherited_immediate_release=False, capture_phase_entities=False):
+                inherited_immediate_release=False, capture_phase_entities=False, source_blob=None):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, environment, freeze = '', '', 0
@@ -4989,8 +5010,12 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
                           and component_lines[1:-1] == ['   Enabled 0'])
                       or NATIVE_END_SCREEN_SUBTITLES.fullmatch('\n'.join(component_lines))):
                     native_overrides.extend(component_lines)
+                elif source_blob == ASSAD_FRAMEWORK_BLOB and component_lines == EMPTY_LEGACY_CUTSCENE:
+                    # This mode inherits the disabled cutscene setting and has no cinematic entity.
+                    pass
                 else:
-                    raise ValueError('custom legacy game mode components')
+                    kind = header.strip().partition(' ')[0]
+                    raise ValueError('custom legacy game mode component: ' + kind)
                 component = stop + 1
             index = end
         elif line.strip().partition(' ')[0] in SPAWNER_TRANSFORM and FIELD.fullmatch(line.strip()):
@@ -5684,6 +5709,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                    inherited_immediate_release=(
                                        depot_layer == layer == FOOD_MARKET_OUTCOME_LAYER),
                                    capture_phase_entities=phase_entity_capture,
+                                   source_blob=source.files[layer],
                                    area_flag_observers=[line for record in shared_writers
                                                         for line in record['areaFlagObserver']])
             if preset:
