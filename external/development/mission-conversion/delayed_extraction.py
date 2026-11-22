@@ -18,6 +18,9 @@ NUMBER = r'\d+(?:\.\d+)?'
 LOST_AND_FOUND = 'worlds/FloridaMan/worlds/LostAndFound/LostAndFound.ent'
 EXTRACT_POINT = 'worlds/FloridaMan/Prefabs/Setpeice/BLUFOR_Extract_Point.et'
 EXTRACT_POINT_ID = 'B9CFA890D70B27DE'
+CAAT_ROOT = 'worlds/Jub/CombinedAntiArmorTeam/'
+CAAT_WORLD = CAAT_ROOT + 'CombinedAntiArmorTeam.ent'
+CAAT_FRAMEWORK = CAAT_ROOT + 'CombinedAntiArmorTeam_Layers/default.layer'
 
 
 @dataclass
@@ -26,6 +29,35 @@ class DelayedExtraction:
     spawns: dict = field(default_factory=dict)
     conditions: dict = field(default_factory=dict)
     startup_consumers: dict = field(default_factory=dict)
+
+
+def casualty_extraction(source):
+    asset = CAAT_ROOT + 'prefabs/TILW_ExtractionTrigger_CAAT.et'
+    identity = 'FE431ECD083AAA72'
+    expected = {
+        CAAT_FRAMEWORK: '8c317ad57d6514542dafc5fd619fa576b298220a',
+        CAAT_ROOT + 'CombinedAntiArmorTeam_Layers/AI/Spawns.layer': '8b6d3b90546c1540d42e390498e0855024060fcb',
+        asset: '2d15c28a37a98b5c2a48b8f9a45d5df9ba3b2879',
+        asset + '.meta': '5a9387d1247e1e3804463337e684dfb6c9dd22f6',
+    }
+    if (any(source.files.get(path) != blob for path, blob in expected.items())
+            or source.resources.get(identity) != [asset]):
+        raise ValueError('reviewed casualty extraction files changed')
+    prefab_ref = f'"{{{identity}}}{asset}"'
+    # The bare legacy sphere inherits a 25 m radius and an immediate first query.
+    # The violet sphere is a Workbench diagnostic. Keep the replication and hierarchy.
+    lines = source.read(asset).splitlines()
+    components = lines.index(' components {')
+    shape = '\n'.join(['GC_RadiusAreaEntity {', *lines[1:block_end(lines, components) + 1], ' m_fRadius 25', '}', ''])
+    meta = replace_reference(source.read(asset + '.meta'), META_NAME, identity, asset)
+    check = condition(CAAT_WORLD, 'exfil', 'exfil', '"RHS_USAF"', '0.8', '0', latch=False,
+                      location='"SP"', whole_number_quotient=True, recipients=('"RHS_USAF"',))
+    return DelayedExtraction(
+        assets={asset: shape, asset + '.meta': meta},
+        spawns={'6A58E7590ED81F72/6A58E7592EC65DE3': [
+            {'prefab': prefab_ref, 'anchor': 'SpawnPos4', 'area': 'exfil', 'delay': '5', 'flag': 'exfil'}]},
+        conditions={'"exfil"': ['      ' + line for line in check.splitlines()]},
+    )
 
 
 def sampled_extraction(source, world):
@@ -127,6 +159,8 @@ def read_prefab(source, path, asset, key):
 def collect(source, world):
     if world == LOST_AND_FOUND:
         return sampled_extraction(source, world)
+    if world == CAAT_WORLD:
+        return casualty_extraction(source)
     result = DelayedExtraction()
     groups = defaultdict(list)
     prefabs = defaultdict(set)

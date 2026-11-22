@@ -129,7 +129,7 @@ MATCH_PHASE_VALUE = '1'
 RESULT = {'EDITOR_FACTION_VICTORY': 1, 'EDITOR_FACTION_DEFEAT': 2, 'EDITOR_FACTION_DRAW': 3}
 # The legacy suppressed ending uses only the title, which is the same for
 # the timed and editor variants in BaseGameOverScreensConfig.
-ANNOUNCEMENT_RESULTS = {'FACTION_DEFEAT_TIME': 2}
+ANNOUNCEMENT_RESULTS = {'NEUTRAL': 0, 'FACTION_DEFEAT_TIME': 2}
 TERM = re.compile(
     r'\s*(?:m_(?:condition|definition) )?TILW_(Literal|Conjunction|Disjunction|Minjunction|Maxjunction|Matchjunction)'
     r'Term "\{[\da-fA-F]{16}\}" \{')

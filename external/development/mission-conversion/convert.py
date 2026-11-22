@@ -243,6 +243,10 @@ def main():
 
     def resolve_spawn(objectives, resource, path, *, group=False, vehicle=False):
         if vehicle:
+            if (external_vehicles.get(resource) == path
+                    and not any(resource in owned for owned in
+                                (locally_owned, source_units.resources, dev_units.resources))):
+                return path
             asset = objectives.get(resource, {})
             return path if asset.get('vehicle') and asset['path'] == path else None
         if group:

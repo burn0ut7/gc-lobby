@@ -162,7 +162,7 @@ class GC_RuleAction
 				return !m_sTextOrName.IsEmpty();
 			case GC_ERuleAction.END_MISSION:
 				return m_iOperation >= 0 && m_iOperation <= 4
-					&& (!m_bAnnounceResultOnly || (!m_bFinishImmediately && m_iOperation >= 1 && m_iOperation <= 3 && m_aFlagNames && m_aFlagNames.Count() == 1))
+					&& (!m_bAnnounceResultOnly || (!m_bFinishImmediately && m_iOperation <= 3 && m_aFlagNames && m_aFlagNames.Count() == 1))
 					&& m_sEndMessage.Length() <= 512 && !m_sEndMessage.Contains("<") && !m_sEndMessage.Contains(">")
 					&& ValidTargetNames(m_aFlagNames) && (!m_aFlagNames || m_aFlagNames.Count() <= 16);
 			case GC_ERuleAction.RESPAWN_TICKETS:

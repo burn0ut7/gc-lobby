@@ -124,7 +124,7 @@ class GC_EndMissionAction : GC_ActionBase
 {
 	[Attribute("0", UIWidgets.ComboBox, "Starts a two-minute mission-ending countdown. Admins can adjust, cancel or force it. The match and statistics stay active until the countdown finishes. Has no effect before Match, while another ending is pending, or after the mission has ended.", enums: {ParamEnum("Mission complete", "0"), ParamEnum("Faction victory", "1"), ParamEnum("Faction defeat", "2"), ParamEnum("Faction draw", "3"), ParamEnum("Mission failed", "4")})]
 	int m_iResult;
-	[Attribute("", UIWidgets.Auto, "Winning factions for Faction victory; affected factions for Faction defeat or Faction draw. Empty means all registered factions. Up to 16 entries; duplicates count once. Ignored for Mission complete and Mission failed.")]
+	[Attribute("", UIWidgets.Auto, "Select the winning faction for Faction victory or the affected factions for Faction defeat or Faction draw. A result announcement requires one faction. Mission endings with no entries apply to all registered factions. Mission complete and Mission failed ignore this field when ending the match.")]
 	ref array<FactionKey> m_aWinningFactions;
 	[Attribute("", UIWidgets.EditBox, "Optional ending description, up to 512 characters. Shown beneath the result heading in a notification and retained in the debrief and mission history. Blank means no notification.")]
 	string m_sMessage;

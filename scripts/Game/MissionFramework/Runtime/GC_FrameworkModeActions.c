@@ -269,8 +269,14 @@ modded class GC_LobbyManager
 			Faction faction = GetGame().GetFactionManager().GetFactionByKey(action.m_aFlagNames[0]);
 			if (!faction)
 				return false;
-			string result = GC_MissionResult.Reason(data.GetEndReason());
-			result.ToLower();
+			string result;
+			if (action.m_iOperation == 0)
+				result = WidgetManager.Translate("#AR-MatchResult_Default-UC");
+			else
+			{
+				result = GC_MissionResult.Reason(data.GetEndReason());
+				result.ToLower();
+			}
 			GC_RuleAction notice = new GC_RuleAction();
 			notice.m_sMessageTitle = "MISSION END";
 			notice.m_sTextOrName = "End conditions have been met:\n" + WidgetManager.Translate(faction.GetFactionName()) + " " + result + ".";
