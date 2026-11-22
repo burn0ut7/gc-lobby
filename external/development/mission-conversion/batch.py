@@ -3,6 +3,7 @@ from collections import Counter, defaultdict
 from decimal import Decimal
 from functools import lru_cache, partial
 from hashlib import file_digest, sha256
+from itertools import chain
 from math import isfinite
 from pathlib import PurePosixPath
 import re
@@ -151,6 +152,7 @@ DAMAGE_TARGETS = {
     'B3AB6D12D247DDB5': 'Prefabs/Characters/Factions/CIV/Businessman/Character_CIV_Businessman_Randomized.et',
     'E024A74F8A4BC644': 'Prefabs/Characters/Factions/CIV/Businessman/Character_CIV_Businessman_1.et',
     'A517C72CEF150898': 'Prefabs/Characters/Factions/CIV/Businessman/Character_CIV_Businessman_2.et',
+    '626874113CAE4387': 'Prefabs/Characters/Factions/CIV/Businessman/Character_CIV_Businessman_3.et',
     'FE65E8C60C751352': 'Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_PL.et',
 }
 DAMAGE_FLAG_NAME = re.compile(r'"[\w .-]+"')
@@ -290,6 +292,14 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/Til/DaybreakDiplomacy.conf': (
+        '83caf41bad5cbdd497a9809a7cff64982cfa0dac',
+        (('worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy_Layers/extr.layer',
+          '3bbe183980ea461867e95558fe4849bee15bbf15'),
+         ('worlds/Til/DaybreakDiplomacy/DaybreakDiplomacy_Layers/us.layer',
+          '10a67b56893ab13cf6ff18e5ba5b555f00b216a5')),
+        53, 64,
+    ),
     'Missions/HitTheMan/Screening The Orb/ScreeningTheOrb.conf': (
         '518b91880a094abbdcbafdc5ea04246fdb386f8e',
         (('worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/OPFOR/OPF_Players.layer',
@@ -3102,6 +3112,16 @@ def spawned_objectives(source, dev, world, stock, local_resources, workshop_targ
     return reviewed
 
 
+CIVILIAN_AI_GROUP = ('DF688F0BC937BFC7', 'Prefabs/Groups/CIV/Group_CIV_Base.et')
+
+
+def verified_civilian_ai_group(local_resources, source_units, dev_units):
+    resource, path = CIVILIAN_AI_GROUP
+    return (resource not in local_resources
+            and all(snapshot.resources.get(resource) == [path] for snapshot in (source_units, dev_units))
+            and source_units.read(path) == dev_units.read(path))
+
+
 def playable_objectives(source, dev, world, stock, local_resources, source_units, dev_units, respawn):
     """Migrate named characters in explicitly playable, single-life rosters."""
     if not stock or respawn.get('ticketGaps'):
@@ -3115,12 +3135,23 @@ def playable_objectives(source, dev, world, stock, local_resources, source_units
     replacement_factions = {entry['faction'] for entry in respawn.get('factions', ())}
     conflicting_ids = local_resources | source_units.resources.keys() | dev_units.resources.keys()
     reviewed = {}
+    civ_id, civ_path = CIVILIAN_AI_GROUP
+    civ_group = (f'{{{civ_id}}}{civ_path}' if verified_civilian_ai_group(local_resources, source_units, dev_units)
+                 and ' m_faction "CIV"' in source_units.read(civ_path).splitlines()
+                 and stock.contains('000CD338713F2B5A', 'Prefabs/AI/Groups/Group_Base.et') else None)
     for layer in source.layers[world.lower()]:
-        for line, group in blocks(originals[layer]):
-            if (not group[0].startswith('SCR_AIGroup ') or ' m_bSetPlayable 1' not in group
-                    or ' m_aUnitPrefabSlots {' not in group):
+        forced = ((line, group, None) for line, group in blocks(originals[layer])
+                  if group[0].startswith('SCR_AIGroup ') and ' m_bSetPlayable 1' in group)
+        civilian = named_ai_rosters(originals[layer], {civ_group}) if civ_group else ()
+        for line, group, inherited in chain(forced, civilian):
+            if group.count(' m_aUnitPrefabSlots {') != 1:
                 continue
             faction = [match[1] for field in group if (match := re.fullmatch(r' m_faction "([\w.-]+)"', field))]
+            if inherited and not faction:
+                faction = ['CIV']
+            if inherited and (faction != ['CIV'] or any(field.startswith((' m_bSetPlayable ', ' m_bPlayable '))
+                                                        for field in group)):
+                continue
             if len(faction) != 1 or faction[0] in replacement_factions:
                 continue
             start = group.index(' m_aUnitPrefabSlots {')
@@ -3145,6 +3176,13 @@ def playable_objectives(source, dev, world, stock, local_resources, source_units
                     fields, death = damage_state_flag_placement(entity)
                     root = fields.index(' components {')
                     end = block_end(fields, root)
+                    marker = ['  PS_PlayableComponent "{5EFCC1946F475F15}" {', '   m_bIsPlayable 1', '  }']
+                    playable = next((i for i in range(root + 1, end) if fields[i:i + len(marker)] == marker), None)
+                    if inherited and playable is None:
+                        continue
+                    if playable is not None:
+                        del fields[playable:playable + len(marker)]
+                        end -= len(marker)
                     setters = [i for i in range(root + 1, end) if re.fullmatch(
                         rf'  TILW_SetNameComponent {SERIALIZED_ID} \{{', fields[i])]
                     setter, = setters
@@ -3195,15 +3233,13 @@ def ai_objectives(source, dev, world, stock, local_resources, source_units, dev_
     condition_corpus = re.sub(r'(?m)^   m_name "[\w.-]+"$', '', corpus)
     scripts = script_text(source)
     base = ('E024A74F8A4BC644', 'Prefabs/Characters/Factions/CIV/Businessman/Character_CIV_Businessman_1.et')
-    civ = ('DF688F0BC937BFC7', 'Prefabs/Groups/CIV/Group_CIV_Base.et')
+    civ = CIVILIAN_AI_GROUP
     fia = ('EE92725E9B949C3D', 'Prefabs/Groups/INDFOR/Group_FIA_PlatoonHQ.et')
     if (base[0] in local_resources or not stock.contains(*base)
             or not stock.contains('000CD338713F2B5A', 'Prefabs/AI/Groups/Group_Base.et')):
         return reviewed
     prefabs = set()
-    if (civ[0] not in local_resources
-            and all(snapshot.resources.get(civ[0]) == [civ[1]] for snapshot in (source_units, dev_units))
-            and source_units.read(civ[1]) == dev_units.read(civ[1])):
+    if verified_civilian_ai_group(local_resources, source_units, dev_units):
         prefabs.add(f'{{{civ[0]}}}{civ[1]}')
     fia_prefab = f'{{{fia[0]}}}{fia[1]}'
     if verified_stock_ai_group(*fia, stock, local_resources, source_units, dev_units, inherited_slots=False):

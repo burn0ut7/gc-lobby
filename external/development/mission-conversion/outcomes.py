@@ -420,7 +420,8 @@ def event_control(kind, lines, key, named_events, *, direct, inactive_targets=()
 def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0, *,
               allow_dormant=False, derived=None, negate=False, inactive=()):
     match = TERM.fullmatch(lines[0])
-    if not match or depth > 8:
+    # Leave room for native condition wrappers within the runtime's depth limit of 16.
+    if not match or depth > 12:
         raise ValueError('unsupported outcome term')
     if match[1] == 'Literal':
         values = properties(lines[1:-1], {'m_flagName', 'm_invertTerm'})
