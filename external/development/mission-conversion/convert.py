@@ -489,16 +489,6 @@ def main():
         messages, review = ([], {}) if world in (RACE_WORLD, RUHA_WORLD) else world_events(source, world)
         if review:
             row['frameworkEvents'] = review
-        if args.batch and world == batch.SEEDER_WORLD:
-            try:
-                objective_prefabs = batch.seeder_objective_prefabs(source)
-                if objective_prefabs:
-                    row['spawnedObjectivePrefabs'] = {
-                        path: {key: value for key, value in prefab.items() if key != 'body'}
-                        for path, prefab in objective_prefabs.items()
-                    }
-            except ValueError as exc:
-                row['spawnedObjectivePrefabs'] = {'gap': str(exc)}
         objective_flags = ()
         interaction_placements = {}
         if args.batch and any(row['serializedTypes'].get(kind)
@@ -525,6 +515,27 @@ def main():
         has_outcomes = row['serializedTypes'].get('TILW_EndGameInstruction')
         delayed = None
         objectives = {}
+        bound_area_flags = set()
+        bound_damage_flags = set()
+        bound_spawner_reads = Counter()
+        if args.batch and world == batch.SEEDER_WORLD:
+            try:
+                prefabs = batch.seeder_objective_prefabs(source)
+                objectives.update(batch.seeder_native_assets(source, dev, source_units, dev_units, prefabs))
+                for prefab in prefabs.values():
+                    bound_area_flags.update(area['flag'] for area in prefab['areas'])
+                    bound_spawner_reads.update(prefab['spawnerFlagReaders'])
+                bound_damage_flags = {'SideObjectiveOfficer'} | {
+                    flag for prefab in prefabs.values() for flag in prefab['damageFlags']}
+                objective_flags = set(objective_flags) | bound_damage_flags
+                batch_interactions[world] = (objective_flags, interaction_placements)
+                spawned_assets[world] = objectives
+                row['spawnedObjectivePrefabs'] = {
+                    path: {key: value for key, value in prefab.items() if key != 'body'}
+                    for path, prefab in prefabs.items()
+                }
+            except ValueError as exc:
+                row['spawnedObjectivePrefabs'] = {'gap': str(exc)}
         if args.batch and row['serializedTypes'].get('TILW_SetNameComponent') and row['serializedTypes'].get('TILW_Flag_EntityDamage'):
             try:
                 ai_assets = batch.ai_objectives(source, dev, world, stock, locally_owned, source_units, dev_units)
@@ -619,10 +630,12 @@ def main():
                 observed_area_flags = {record['writesFlag'] for area in row.get('captureCandidate', {}).values()
                                        for record in area.values() if isinstance(record, dict)
                                        and record.get('writesFlag') in area_flag_readers}
+                observed_area_flags.update(bound_area_flags)
                 match_only_flags.update(observed_area_flags)
                 rules, outcome_audit, gap = compile_outcomes(
                     source, world, captures, compound=args.batch, notification_audit=review,
                     objective_flags=set(objective_flags) | observed_area_flags,
+                    bound_clearable_flags=bound_area_flags | bound_damage_flags,
                     replacement_flags={asset['replacementEvent']: asset['flag'] for asset in objectives.values()
                                        if 'replacementEvent' in asset},
                     extraction_spawns=delayed.spawns if delayed else None,
@@ -639,8 +652,9 @@ def main():
                                               if isinstance(placement, dict)
                                               for field in ('teleportRequiredFlags', 'interactionRequiredFlags')
                                               for flag in placement.get(field, [])),
-                    spawner_reads=batch.placed_spawner_flag_reads(source, source.layers[world.lower()])
-                    if args.batch else None, derived_spawners_audit=derived_spawners_audit if args.batch else None,
+                    spawner_reads=(Counter(batch.placed_spawner_flag_reads(source, source.layers[world.lower()]))
+                                   + bound_spawner_reads) if args.batch else None,
+                    derived_spawners_audit=derived_spawners_audit if args.batch else None,
                     route_graph_audit=route_graph_audit if args.batch else None)
                 outcome = {'events': outcome_audit}
                 if derived_audit:

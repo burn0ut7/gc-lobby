@@ -910,24 +910,43 @@ class GC_MissionRuleEngine
 		}
 		foreach (GC_AreaFlagObserver observer : observers)
 		{
-			GC_RuleCondition check;
-			if (observer && observer.m_Area && !observer.m_Area.m_Capture)
-				check = observer.m_Area.BuildCheck();
-			if (!check || observer.m_sFlag.IsEmpty() || m_mFlagDefinitions.Contains(observer.m_sFlag)
-				|| (m_DerivedFlags && m_DerivedFlags.Owns(observer.m_sFlag)) || !m_Areas.Register(check))
-			{
+			if (!AddAreaFlagObserver(observer))
 				Print("GC | Mission Framework | Invalid area flag observer skipped.", LogLevel.ERROR);
-				continue;
-			}
-			GC_AreaFlagObservation state = new GC_AreaFlagObservation();
-			state.m_sFlag = observer.m_sFlag;
-			state.m_Check = check;
-			state.m_bStopAfterMatchChange = observer.m_bStopAfterMatchChange;
-			state.m_bResetAfterDiscovery = observer.m_bResetAfterDiscovery;
-			if (state.m_bResetAfterDiscovery)
-				m_aDiscoveryResetFlags.Insert(state.m_sFlag);
-			m_aAreaFlagObservations.Insert(state);
 		}
+	}
+
+	bool RegisterBoundAreaFlag(GC_AreaFlagObserver observer, IEntity area)
+	{
+		if (!area || !m_bRunning || !m_ActionManager || area.GetWorld() != m_DamageWorld
+			|| !m_ActionManager.GC_HasFrameworkSource(this))
+			return false;
+		if (!observer || observer.m_bResetAfterDiscovery)
+			return false;
+		if (!m_Areas)
+			m_Areas = new GC_MissionAreaTracker(m_DamageWorld, m_ActionManager);
+		return AddAreaFlagObserver(observer, area);
+	}
+
+	protected bool AddAreaFlagObserver(GC_AreaFlagObserver observer, IEntity boundArea = null)
+	{
+		if (!observer || !observer.m_Area || observer.m_Area.m_Capture || observer.m_sFlag.IsEmpty()
+			|| m_mFlagDefinitions.Contains(observer.m_sFlag) || (m_DerivedFlags && m_DerivedFlags.Owns(observer.m_sFlag))
+			|| m_aAreaFlagObservations.Count() >= 256)
+			return false;
+		GC_RuleCondition check = observer.m_Area.BuildCheck();
+		if (!m_Areas.Register(check, boundArea))
+			return false;
+		GC_AreaFlagObservation state = new GC_AreaFlagObservation();
+		state.m_sFlag = observer.m_sFlag;
+		state.m_Check = check;
+		state.m_BoundArea = boundArea;
+		state.m_bBoundToEntity = boundArea != null;
+		state.m_bStopAfterMatchChange = observer.m_bStopAfterMatchChange;
+		state.m_bResetAfterDiscovery = observer.m_bResetAfterDiscovery;
+		if (state.m_bResetAfterDiscovery)
+			m_aDiscoveryResetFlags.Insert(state.m_sFlag);
+		m_aAreaFlagObservations.Insert(state);
+		return true;
 	}
 
 	protected void PublishAreaFlags()
@@ -937,7 +956,7 @@ class GC_MissionRuleEngine
 			return;
 		foreach (GC_AreaFlagObservation observer : m_aAreaFlagObservations)
 		{
-			if (observer.m_bStopped || !m_Areas.IsAvailable(observer.m_Check))
+			if (observer.m_bStopped || (observer.m_bBoundToEntity && !observer.m_BoundArea) || !m_Areas.IsAvailable(observer.m_Check))
 				continue;
 			bool answer = m_Areas.PassesCondition(observer.m_Check);
 			bool first = !observer.m_bDiscovered;
@@ -959,6 +978,15 @@ class GC_MissionRuleEngine
 		m_fNextAreaCheck = m_fNow + 1;
 		if (!m_Areas)
 			return;
+		for (int index = m_aAreaFlagObservations.Count() - 1; index >= 0; index--)
+		{
+			GC_AreaFlagObservation observer = m_aAreaFlagObservations[index];
+			if (observer.m_bBoundToEntity && !observer.m_BoundArea)
+			{
+				m_Areas.RemoveBoundCheck(observer.m_Check);
+				m_aAreaFlagObservations.RemoveOrdered(index);
+			}
+		}
 		GC_MissionRuleEvent notification = new GC_MissionRuleEvent(GC_ERuleEvent.AREA_CHANGED, "");
 		notification.m_aAreaChecks = {};
 		array<ref GC_RuleAction> messages = {};

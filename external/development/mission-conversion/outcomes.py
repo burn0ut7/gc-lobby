@@ -427,7 +427,8 @@ def waypoint_trigger(term):
     return term['trigger'] in ('Match start', 'dormant', 'area capture', 'interaction flag', 'event flag')
 
 
-def event_control(kind, lines, key, named_events, *, direct, inactive_targets=(), reset_without_check=False):
+def event_control(kind, lines, key, named_events, *, direct, inactive_targets=(), reset_without_check=False,
+                  ordered_events=()):
     allowed = {'m_eventNames', 'm_executionDelay'}
     if kind == 'RunEvents':
         allowed.add('m_allowRerun')
@@ -454,6 +455,7 @@ def event_control(kind, lines, key, named_events, *, direct, inactive_targets=()
         order = {name: index for index, name in enumerate(named_events)}
         targets.sort(key=lambda name: order.get(name[1:-1], len(order)))
     actions, active, case_mismatches, inactive = [], [], [], []
+    deliveries = []
     folded = Counter(name.casefold() for name in named_events)
     for index, target in enumerate(targets):
         name = target[1:-1]
@@ -466,10 +468,19 @@ def event_control(kind, lines, key, named_events, *, direct, inactive_targets=()
             case_mismatches.append(name)
             continue
         active.append(name)
+        deliveries.append((index, name))
+    authored_targets = active
+    if ordered_events:
+        selected = set(active)
+        active = [native for original, native in ordered_events if original in selected]
+        active.extend(name for name in authored_targets if name not in named_events)
+        deliveries = list(enumerate(active))
+    for index, name in deliveries:
         actions.extend([f'      GC_EventControlAction "{{{guid(f"{key}/{index}")}}}" {{',
-                        f'       m_sEventName {target}', f'       m_iOperation {operation}', '      }'])
+                        f'       m_sEventName "{name}"', f'       m_iOperation {operation}', '      }'])
     return Decimal(delay), actions, {'instruction': f'TILW_{kind}Instruction',
                                     audit_field: active, 'delaySeconds': delay,
+                                    **({'authoredTargets': authored_targets} if active != authored_targets else {}),
                                     **({'inactiveTargets': inactive} if inactive else {}),
                                     **({'caseMismatchedTargets': case_mismatches} if case_mismatches else {})}
 
@@ -582,7 +593,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                log_only=False, named_events=(), inactive=(), binary_startup=None, missing_term=False, ends_match=False,
                direct_control=False, empty_hint=None, missing_group_waypoint=None, sampled_pregame_flags=(),
                supply_comparison=False, reviewed_script_calls=None, reviewed_script_type=None,
-               unused_vehicle_name=None, replacement_flag=None):
+               unused_vehicle_name=None, replacement_flag=None, clearable_flags=(), ordered_events=(),
+               inactive_control_targets=()):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -660,12 +672,13 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                     assignments.append(assignment)
                 elif control_match:
                     kind, identity = control_match.groups()
-                    inactive_targets = ()
+                    inactive_targets = inactive_control_targets
                     if reviewed_script_type == 'GC_PhaseEntitySetScript' and identity == '660C40F7AE4DE2A2':
                         inactive_targets = ('Phase 2 Flag',)
                     delay, body, details = event_control(kind, fields[j + 1:last], key + '/' + identity,
                                                          named_events, direct=direct_control,
                                                          inactive_targets=inactive_targets,
+                                                         ordered_events=ordered_events,
                                                          reset_without_check=(direct_control
                                                              and replacement_flag == 'Helo1'
                                                              and identity == '687B646FFB0D7242'))
@@ -674,8 +687,11 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                     delay, body, details = compile_action(action_match, fields[j + 1:last], key, hidden_briefings)
                     flag = details.get('setsFlag') or details.get('clearsFlag')
                     if (flag and flag not in event_flags
+                            and details.get('clearsFlag') not in clearable_flags
                             and (not replacement_flag or details.get('clearsFlag') != replacement_flag)):
                         raise ValueError('flag has another producer or unsupported use: ' + flag)
+                    if details.get('clearsFlag') and flag not in event_flags:
+                        details['reviewedExternalFlagClear'] = True
                     converted_actions.append(details)
                 elif script_match:
                     identity = script_match[1]
@@ -1297,7 +1313,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                      derived_audit=None, identity_flags_audit=None, meta_dividers_audit=None, discovery_resets_audit=None,
                      match_only_flags=(), startup_samples_audit=None,
                      interaction_reads=None, spawner_reads=None, derived_spawners_audit=None, route_graph_audit=None,
-                     replacement_flags=None):
+                     replacement_flags=None, bound_clearable_flags=()):
     captures = captures or {}
     notification_audit = notification_audit or {}
     extraction_spawns = extraction_spawns or {}
@@ -1331,6 +1347,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     direct_control = bool(controls and set(controls[path]) - {'DeactivateEvents'})
     dormant_helo = False
     late_cleanup_refs, cleanup_names = {}, set()
+    clearable_flags = set(bound_clearable_flags)
+    inactive_control_targets = ()
     if compound and (path, source.files[path]) == (SEEDER_REPLACEMENT_LAYER, SEEDER_REPLACEMENT_LAYER_BLOB):
         late_cleanup_refs, cleanup_names = reviewed_late_cleanup(source, world, scripts)
         replacement_flags = {**replacement_flags,
@@ -1338,6 +1356,16 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                                 if flag in objective_flags}}
         closure = '\n'.join(source.read(item) for item in source.closure(world)
                             if PurePosixPath(item).suffix.lower() in SOURCE_TEXT)
+        clear_vehicle_spawner = re.findall(
+            r'TILW_ClearFlagInstruction "[^"\n]+" \{\n +m_executionDelay 8\n +m_flagName "Vehicle Spawner"\n', text)
+        if (scripts is not None and not any(api in scripts for api in SCRIPT_FLAG_APIS)
+                and 'Vehicle Spawner' not in scripts
+                and len(clear_vehicle_spawner) == closure.count('"Vehicle Spawner"') == 3):
+            clearable_flags.add('Vehicle Spawner')
+        if text.count('      "Side Objective Rewards"\n') == closure.count('"Side Objective Rewards"') == 6:
+            # The published event list has no matching label. The controls visit
+            # all authored events, so this target has no effect.
+            inactive_control_targets = ('Side Objective Rewards',)
         dormant_helo = (scripts is not None and not any(api in scripts for api in (*SCRIPT_FLAG_APIS, 'EvalExpression'))
                         and 'Helo2' not in scripts and '434AE06DF71DDAE3' not in source.resources
                         and closure.count('"Helo2"') == 2 and closure.count('"Respawn Helo2"') == 2
@@ -1442,6 +1470,23 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     names = set()
     source_names = Counter(match[1][1:-1] for item in body
                            if (match := re.fullmatch(r'   m_name (' + EVENT_LABEL + ')', item)))
+    native_event_names = {}
+    ordered_events = []
+    if direct_control and (path, source.files[path]) == (SEEDER_REPLACEMENT_LAYER, SEEDER_REPLACEMENT_LAYER_BLOB):
+        for index, line in enumerate(body):
+            event = EVENT.fullmatch(line)
+            if not event:
+                continue
+            end = block_end(body, index)
+            original = next((match[1][1:-1] for line in body[index + 1:end]
+                             if (match := re.fullmatch(r'   m_name (' + EVENT_LABEL + ')', line))), None)
+            if not original:
+                continue
+            name = f'{original} [{event[1]}]' if source_names[original] > 1 else original
+            native_event_names[event[1]] = name
+            ordered_events.append((original, name))
+        if len(ordered_events) != len({name for _, name in ordered_events}):
+            return [], {}, 'authored event targets would share a generated name'
     missing_term_blob, reviewed_missing_terms = REVIEWED_MISSING_TERMS.get(path, (None, ()))
     if not compound or source.files[path] != missing_term_blob or scripts is None or 'EvalExpression' in scripts:
         reviewed_missing_terms = ()
@@ -1508,6 +1553,9 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 reviewed_script_calls=reviewed_script_calls, reviewed_script_type=reviewed_script_type,
                 unused_vehicle_name=unused_vehicle_name,
                 replacement_flag=replacement_flags.get(name),
+                clearable_flags=clearable_flags,
+                ordered_events=ordered_events,
+                inactive_control_targets=inactive_control_targets,
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
             if not term.get('pregameSample') and any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
@@ -1519,8 +1567,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 suffixes.add('')
             if term.get('startupVehicles') or (direct_control and term['trigger'] not in ('startup choice', 'pregame start')):
                 suffixes = {''}
-            native_name = name
-            emitted_names = {name + suffix for suffix in suffixes}
+            native_name = native_event_names.get(event[1], name)
+            emitted_names = {native_name + suffix for suffix in suffixes}
             if compound and emitted_names & names:
                 native_name = f'{name} [{event[1]}]'
                 emitted_names = {native_name + suffix for suffix in suffixes}
@@ -1553,7 +1601,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         if not direct_control:
             excluded += ('Match start', 'dormant')
         trigger_names = {name for _, name, original, term, _ in parsed
-                         if name == original and term['trigger'] not in excluded}
+                         if (ordered_events or name == original) and term['trigger'] not in excluded}
+        target_counts = Counter(name for _, name in ordered_events) if ordered_events else source_names
         control_fields = ('deactivatesEvents', 'reactivatesEvents', 'runsEvents')
         mapped = 0
         bad_targets = False
@@ -1563,7 +1612,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             mapped += len(operations)
             targets = {target for action in operations for field in control_fields for target in action.get(field, ())}
             missing = sorted(target for target in targets
-                             if source_names[target] != 1 or target not in trigger_names)
+                             if target_counts[target] != 1 or target not in trigger_names)
             if missing:
                 bad_targets = True
                 event['gap'] = 'event control targets require unique converted triggers: ' + ', '.join(missing)

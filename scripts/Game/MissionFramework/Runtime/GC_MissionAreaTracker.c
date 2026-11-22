@@ -144,6 +144,7 @@ class GC_MissionAreaObservation
 	GC_RuleCondition m_Definition;
 	ref array<ref GC_AreaEntityReference> m_aTargets = {};
 	ref GC_MissionAreaGeometry m_Area;
+	bool m_bBoundToEntity;
 	bool m_bChanged;
 	protected bool m_bAvailable;
 	protected int m_iInside;
@@ -413,24 +414,37 @@ class GC_MissionAreaTracker
 	}
 
 	//------------------------------------------------------------------------------------------------
-	bool Register(GC_RuleCondition check)
+	bool Register(GC_RuleCondition check, IEntity boundArea = null)
 	{
 		if (!check || !check.IsValid())
 			return false;
-		if (check.m_Capture && !m_mCaptures.Contains(check))
-			m_mCaptures.Set(check, new GC_AreaCaptureState());
-		foreach (GC_MissionAreaObservation pair : m_aPairs)
+		if (boundArea && (check.m_bAreaAnywhere || check.m_Capture || boundArea.GetWorld() != m_World
+			|| !GC_MissionAreaGeometry.SupportsEntity(boundArea)))
+			return false;
+		if (!boundArea)
 		{
-			if (pair.Matches(check))
+			if (check.m_Capture && !m_mCaptures.Contains(check))
+				m_mCaptures.Set(check, new GC_AreaCaptureState());
+			foreach (GC_MissionAreaObservation pair : m_aPairs)
 			{
-				m_mChecks.Set(check, pair);
-				return true;
+				if (!pair.m_bBoundToEntity && pair.Matches(check))
+				{
+					m_mChecks.Set(check, pair);
+					return true;
+				}
 			}
 		}
 		if (m_aPairs.Count() >= 256)
 			return false;
 		GC_MissionAreaGeometry area;
-		if (!check.m_bAreaAnywhere && !m_mAreas.Find(check.m_sAreaName, area))
+		if (boundArea)
+		{
+			area = new GC_MissionAreaGeometry();
+			area.m_Reference = new GC_AreaEntityReference();
+			area.m_Reference.m_sName = check.m_sAreaName;
+			area.m_Reference.m_Entity = boundArea;
+		}
+		else if (!check.m_bAreaAnywhere && !m_mAreas.Find(check.m_sAreaName, area))
 		{
 			area = new GC_MissionAreaGeometry();
 			area.m_Reference = GetReference(check.m_sAreaName);
@@ -442,7 +456,14 @@ class GC_MissionAreaTracker
 		{
 			foreach (string name : check.m_aAreaNames)
 			{
-				GC_AreaEntityReference target = GetReference(name);
+				GC_AreaEntityReference target;
+				if (boundArea)
+				{
+					target = new GC_AreaEntityReference();
+					target.m_sName = name;
+				}
+				else
+					target = GetReference(name);
 				if (!observation.m_aTargets.Contains(target))
 					observation.m_aTargets.Insert(target);
 			}
@@ -455,9 +476,22 @@ class GC_MissionAreaTracker
 				m_bIncludeAI = true;
 		}
 		observation.m_Area = area;
+		observation.m_bBoundToEntity = boundArea != null;
 		m_aPairs.Insert(observation);
 		m_mChecks.Set(check, observation);
 		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	void RemoveBoundCheck(GC_RuleCondition check)
+	{
+		GC_MissionAreaObservation observation = GetObservation(check);
+		if (!observation || !observation.m_bBoundToEntity)
+			return;
+		m_aPairs.RemoveItemOrdered(observation);
+		m_mChecks.Remove(check);
+		m_mAnswers.Remove(check);
+		m_mAvailability.Remove(check);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -498,7 +532,17 @@ class GC_MissionAreaTracker
 		foreach (string areaName, GC_MissionAreaGeometry area : m_mAreas)
 			area.Sample();
 		foreach (GC_MissionAreaObservation pair : m_aPairs)
+		{
+			if (pair.m_bBoundToEntity)
+			{
+				if (pair.m_Area.m_Reference.m_Entity)
+					pair.m_Area.m_Reference.m_vPosition = pair.m_Area.m_Reference.m_Entity.GetOrigin();
+				pair.m_Area.Sample();
+				foreach (GC_AreaEntityReference target : pair.m_aTargets)
+					target.Sample(m_World);
+			}
 			pair.Sample(m_Population);
+		}
 		foreach (GC_RuleCondition check, GC_MissionAreaObservation observation : m_mChecks)
 		{
 			if (!initial && !observation.m_bChanged && !check.m_Capture)

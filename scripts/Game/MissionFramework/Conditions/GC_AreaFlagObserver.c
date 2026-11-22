@@ -18,6 +18,8 @@ class GC_AreaFlagObservation
 {
 	string m_sFlag;
 	ref GC_RuleCondition m_Check;
+	IEntity m_BoundArea;
+	bool m_bBoundToEntity;
 	bool m_bStopAfterMatchChange;
 	bool m_bResetAfterDiscovery;
 	bool m_bDiscovered;

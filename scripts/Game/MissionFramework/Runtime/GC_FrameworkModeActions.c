@@ -55,6 +55,12 @@ modded class GC_LobbyManager
 	}
 
 	//------------------------------------------------------------------------------------------------
+	bool GC_RegisterBoundAreaFlag(GC_AreaFlagObserver observer, IEntity area)
+	{
+		return GC_HasFrameworkSource(m_MissionRuleEngine) && m_MissionRuleEngine.RegisterBoundAreaFlag(observer, area);
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! Shared dispatch for script actions and sampled conditions; false means unavailable, not a false answer.
 	bool GC_RunFrameworkScript(GC_MissionRuleEngine source, GC_MissionScript script, out bool result)
 	{

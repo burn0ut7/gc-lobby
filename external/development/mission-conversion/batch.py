@@ -270,6 +270,12 @@ SEEDER_OBJECTIVE_ASSETS = {
     'Rewards/Seperatists_Supplies_Road.et': '14a02de64f76af20484af4961ab89233224dc3c7',
 }
 SEEDER_OBJECTIVE_ROOT = SEEDER_OBJECTIVE_DIR.removesuffix('Objectives/')
+SEEDER_OFFICER = SEEDER_OBJECTIVE_DIR + 'Side Objectives/Character_SEP_1990_PL_DomiOfficer.et'
+SEEDER_OFFICER_BLOB = '4a3249c46e91d5b65ae11b93a280e9f101f45e08'
+SEEDER_CHARACTER_PATHS = {
+    '140B6687EDDBF1FC': 'Crew',
+    '26F7A621B2020C0F': 'SL',
+}
 GMFX_AMMO_TARGETS = (
     ('8B9AFAD3A1548FCE', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage.et'),
     ('4C931B452C796A2A', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage_USSR.et'),
@@ -413,6 +419,12 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/Seeder Cold War Domination/ColdWarDomination.conf': (
+        'bc6197c01e5c71e08c4a6ca62b7e7fc090a8202f',
+        ((SEEDER_PLAYER_VEHICLES, 'c3da94fe6583b635ef99a100b023a5fe2be32393'),
+         (SEEDER_REPLACEMENT_LAYER, SEEDER_REPLACEMENT_LAYER_BLOB)),
+        79, 71,
+    ),
     'Missions/HitTheMan/Air Assault Onto Skalisty/AirAssaultOntoSkalisty.conf': (
         '72af1b267a4138d2d5dd82595b69a6dc81c5a0d0',
         (('worlds/HitTheMan/Air Assault Onto Skalisty/AirAssaultOnSkalisty_Layers/BLUFOR_Players/BLUFOR_Players.layer',
@@ -3158,10 +3170,14 @@ def seeder_objective_area(path, block):
         raise ValueError('objective capture area needs a named prefab identity')
     name = names[0].split('"')[1]
     checks, area, details = capture_instance(path, name, fields)
-    native = area.splitlines()
-    native[1:1] = [identity, *block[components:component_end + 1]]
-    native[-1:-1] = block[children:-1]
     flag, condition = next(iter(checks.items()))
+    observer = render_area_flag_observer(path, name, flag, condition, details['stopsAfterFirstChange'])
+    observer[0] = observer[0].replace('GC_AreaFlagObserver ', 'm_Observer GC_AreaFlagObserver ', 1)
+    component = [f'  GC_BoundAreaFlagComponent "{{{guid(path + "/bound area/" + name)}}}" {{',
+                 *(line[1:] for line in observer), '  }']
+    native = area.splitlines()
+    native[1:1] = [identity, *block[components:component_end], *component, block[component_end]]
+    native[-1:-1] = block[children:-1]
     return native, {'name': name, 'flag': flag[1:-1], 'condition': condition, **details}
 
 
@@ -3379,6 +3395,37 @@ def seeder_objective_prefabs(source):
                         'spawners': objective_spawners,
                         'spawnerFlagReaders': dict(sorted(Counter(item['flag'] for item in objective_spawners).items())),
                         'remainingLegacy': dict(sorted(remaining.items()))}
+    return assets
+
+
+def seeder_native_assets(source, dev, source_units, dev_units, prefabs):
+    if not prefabs or source.files.get(SEEDER_OFFICER) != SEEDER_OFFICER_BLOB:
+        raise ValueError('objective prefab dependencies need review')
+    aliases = {}
+    original = 'Prefabs/Characters/Factions/OPFOR/GC_SEP/1990/'
+    current = original.replace('/GC_SEP/', '/GC_SEPARATIST/')
+    for resource, role in SEEDER_CHARACTER_PATHS.items():
+        filename = f'Character_SEP_1990_{role}.et'
+        path = current + filename
+        if (source_units.resources.get(resource) != [path] or dev_units.resources.get(resource) != [path]
+                or source_units.files[path] != dev_units.files[path]):
+            raise ValueError(f'objective crew dependency changed: {filename}')
+        aliases[(resource, original + filename)] = (resource, path)
+    officer, flag = damage_state_flag_placement(source.read(SEEDER_OFFICER).splitlines(), clear_on_mismatch=True)
+    if flag != 'SideObjectiveOfficer':
+        raise ValueError('objective officer death flag changed')
+    bodies = {path: item['body'] for path, item in prefabs.items()}
+    bodies[SEEDER_OFFICER] = '\n'.join(officer) + '\n'
+    assets = {}
+    for path, body in bodies.items():
+        registration = META_NAME.search(source.read(path + '.meta'))
+        resource = registration[2].upper() if registration else None
+        if source.resources.get(resource) != [path] or dev.resources.get(resource) not in (None, [path]):
+            raise ValueError('objective prefab registration needs review: ' + path)
+        body = replace_registered_paths(body, source, dev, aliases)
+        if LEGACY.search(body) or (path in dev.files and body.strip() != dev.read(path).strip()):
+            raise ValueError('unconverted or differing objective prefab: ' + path)
+        assets[resource] = {'path': path, 'body': body}
     return assets
 
 
@@ -4559,11 +4606,20 @@ def resource_aliases(workshop, units, stock):
         hind = ('65ED07118C75B32F', hind_path + 'Mi24V_Armed_UPK23_X2.et')
         hind_refs = (hind, ('A8C732BE755F8BD0', hind_path + 'Mi24V_Base.et'),
                      ('8FCC897602A4BEB1', hind_path + 'VehParts/Weapons/Mi24V_Turret_9M120_X4.et'))
-        if workshop_resources(workshop, {
+        transport_variants = {
+            'Mi24V_supply.et': ('9F4841C20C2F4F12', hind_path + 'Mi24V_Supply.et'),
+            'Mi24V_transport.et': ('F889C67BFCAD2CF7', hind_path + 'Mi24V_Transport.et'),
+        }
+        registered = workshop_resources(workshop, {
             'WCS_Mi-24V_628933A0D3A0D700': (
-                'dd565719ee18758cc875dca490b3d05dd19a002df0a1a4e4af90767d9e91b4f8', hind_refs),
-        }) == set(hind_refs):
+                'dd565719ee18758cc875dca490b3d05dd19a002df0a1a4e4af90767d9e91b4f8',
+                (*hind_refs, *transport_variants.values())),
+        })
+        if set(hind_refs) <= registered:
             aliases[hind[0], hind_path + 'Mi24V_armed_UPK23.et'] = hind
+        for original, reference in transport_variants.items():
+            if reference in registered:
+                aliases[reference[0], hind_path + original] = reference
         if stock.contains(*VOLHA_STOCK_PARENT) and VOLHA_MESH in workshop_resources(workshop, {
             'ArmaTerrainCore_60B524F7A5AE96A8': (
                 '28574b99f5d6a12a7199a29d94194081b196b8ca37d854895fe296763cba778c', (VOLHA_MESH,)),
@@ -6038,7 +6094,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     for flag in sample['flags']}
     single_draw_flags = set(draw_by_flag)
     cleared_event_flags = {action['clearsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
-                           if 'clearsFlag' in action}
+                           if 'clearsFlag' in action and not action.get('reviewedExternalFlagClear')}
     required_event_flags = {term['flag'] for term in terms if term['trigger'] == 'event flag'} | cleared_event_flags
     unresolved_event_flags = required_event_flags - event_flags - route_flags - set(route_graph.get('outputs', ()))
     if unresolved_event_flags:
@@ -6467,7 +6523,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     spawn_guids = {REF.fullmatch(item['prefab'])[1].upper() for item in prefab_spawns}
     spawned_assets = spawned_assets.copy()
     for resource, asset in sorted(spawned_assets.items()):
-        if resource not in roster_assets and asset['flag'] in used_flags and resource not in spawn_guids:
+        if 'flag' in asset and resource not in roster_assets and asset['flag'] in used_flags and resource not in spawn_guids:
             blockers.append({'rule': 'spawned objective', 'file': asset['path'],
                              'detail': 'objective flag has no converted prefab spawn'})
         if asset.get('destroyed'):
@@ -6570,6 +6626,19 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         for item in prefab_spawns:
             if item['spawnName']:
                 spawned_names[item['spawnName']].append(item['startupChoice'])
+        rotating_names = set()
+        if world == SEEDER_WORLD and source.files.get(SEEDER_REPLACEMENT_LAYER) == SEEDER_REPLACEMENT_LAYER_BLOB:
+            side_name = 'Side_Obj_Trigger'
+            side_spawns = [item for item in prefab_spawns if item['spawnName'] == side_name]
+            side_events = {event['name']: event.get('convertedActions', ()) for event in rules.values()
+                           if any(action.get('spawnName') == side_name for action in event.get('convertedActions', ()))}
+            expected = {'Side - Kill Officer 1 - Start', 'Side - Kill Officer 2 - Start', 'Side - Destroy Caches 1 - Start'}
+            if (len(side_spawns) == 3 and side_events.keys() == expected
+                    and all(Decimal(spawn['delaySeconds']) == 5
+                            and any(action.get('entities') == [side_name] and Decimal(action['delaySeconds']) == 1
+                                    for action in side_events[spawn['sourceEvent']])
+                            for spawn in side_spawns)):
+                rotating_names.add(side_name)
         for name, policies in sorted(crew_names.items()):
             matches = named.get(name, ())
             if policies == {True} and len(matches) == 1 and matches[0][0] == 'GenericEntity' and name not in spawned_names:
@@ -6605,7 +6674,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             mutually_exclusive = (None not in choices and len(set(choices)) == len(choices)
                                   and len({draw_by_flag.get(choice) for choice in choices}) == 1)
             if (len(named.get(anchor, [])) != 1
-                    or (name and ((len(choices) > 1 and not mutually_exclusive and name not in temporary_names)
+                    or (name and ((len(choices) > 1 and not mutually_exclusive and name not in temporary_names
+                                   and name not in rotating_names)
                                   or (name in named and not replacement)))):
                 blockers.append({'rule': 'prefab spawn', 'file': world,
                                  'detail': 'missing anchor or conflicting spawn name for ' + anchor})
@@ -7008,6 +7078,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare prefab default occupants, seat filters and crew orders on event-spawned vehicles.')
     if any(spawn.get('crewGroups') for spawn in spawner_audit):
         remaining.append('Compare explicit crew seating and group routes on timed vehicle spawns.')
+    if world == SEEDER_WORLD and spawned_assets:
+        remaining.append('Compare successive main and side objectives, shared flag resets and scheduled AI crews in Match.')
     return ({} if blockers else draft), {
         'status': 'blocked by conversion rules' if blockers else 'generated for file review',
         'blockers': blockers, 'files': sorted(draft), 'mixedLayerGroups': group_blocks,
