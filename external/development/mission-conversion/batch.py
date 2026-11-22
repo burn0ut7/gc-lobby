@@ -31,7 +31,8 @@ from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_p
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
 from local_loadouts import unchanged_units_parent
-from markers import (DEST as MAP_MARKER_PREFAB, LEGACY as LEGACY_MARKER, convert_baked_marker_generator, convert_hover_camera,
+from markers import (ALLOWED as MARKER_FIELDS, DEST as MAP_MARKER_PREFAB, LEGACY as LEGACY_MARKER,
+                     BASE as LEGACY_MARKER_BASE, convert_baked_marker_generator, convert_hover_camera,
                      convert_layer, convert_wall_markers, instance as marker_instance)
 from outcomes import (ASSAD_FRAMEWORK_BLOB, ASSAD_FRAMEWORK_LAYER, DEPOT_SUPPLY_REVISIONS,
                       FOOD_MARKET_OUTCOME_LAYER, FRAMEWORK, INTERDICTION_OUTCOME_LAYER,
@@ -251,6 +252,24 @@ SEEDER_REWARD_BLOBS = {
     'VehicleDepot_Domi_Tier2.et': '631d2932bb522a813ab74c0012976c2be8fcc238',
     'VehicleDepot_Domi_Tier3.et': '4a283f1e534f50812ff9d3aa16609c8dce618d52',
 }
+SEEDER_OBJECTIVE_DIR = SEEDER_REPLACEMENT_DIR.removesuffix('Respawn Vehicles/') + 'Objectives/'
+SEEDER_OBJECTIVE_BLOBS = {
+    'Brambledeep_Objective.et': '847b5282998d19c57d8243b41951638eb10eec48',
+    'Kamoryn_Objective.et': 'ff56cad3317a5b3fa718453d711fbee4c78f3d11',
+    'NovaOlesov_Objective.et': '65d9819fb10a401a559e70cad5ced1df4def8aac',
+    'Pasastjen_Objective.et': 'cdcd69628be2c1f5e6b8ea175efc0c93fb3cc9cc',
+    'Side Objectives/SideObjCaches.et': 'd781fd420568c315361db419b468d3a1238eb6a5',
+    'Side Objectives/SideObjKillOfficer_1.et': '78b3dc112d8cf0923649d38b71ab5b9235ce3ea8',
+    'Side Objectives/SideObjKillOfficer_2.et': 'a5f91c5fd1d6b74c9c787e9d169a11c862bbde64',
+}
+SEEDER_OBJECTIVE_ASSETS = {
+    'AntennaMarker.et': 'e3a1180ebbe2eb10382129a981aa84f086dfc3aa',
+    'Rewards/Seperatists_Supplies_Markers.et': '4366672856579a2bcb827b1f3173c2a4829e72af',
+    'Rewards/Seperatists_Supplies_Markers_Road.et': '4c326a218c9fe229e8d09fe1f675854598e39eb5',
+    'Rewards/Seperatists_Supplies.et': '080b41899fde26d21ff3fc432599ed5bd7c65c34',
+    'Rewards/Seperatists_Supplies_Road.et': '14a02de64f76af20484af4961ab89233224dc3c7',
+}
+SEEDER_OBJECTIVE_ROOT = SEEDER_OBJECTIVE_DIR.removesuffix('Objectives/')
 GMFX_AMMO_TARGETS = (
     ('8B9AFAD3A1548FCE', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage.et'),
     ('4C931B452C796A2A', 'Prefabs/Destructible/AmmoStorage/GMFX_AmmoStorage_USSR.et'),
@@ -3040,6 +3059,14 @@ def passive_asset(source, path):
             return body
     if suffix == '.et':
         body = source.read(path)
+        if path.startswith(SEEDER_OBJECTIVE_ROOT):
+            expected = SEEDER_OBJECTIVE_ASSETS.get(path.removeprefix(SEEDER_OBJECTIVE_ROOT))
+            if expected and source.files.get(path) == expected:
+                if LEGACY_MARKER.fullmatch(body.splitlines()[0]):
+                    return seeder_named_marker(body)
+                native, _ = convert_mission_names(body)
+                if not LEGACY.search(native):
+                    return native
         if path in SEEDER_RECON_BLOBS:
             blob, flag = SEEDER_RECON_BLOBS[path]
             if source.files.get(path) != blob or not seeder_recon_flags_unused(source):
@@ -3048,9 +3075,7 @@ def passive_asset(source, path):
         if path.startswith(SEEDER_REWARD_DIR):
             expected = SEEDER_REWARD_BLOBS.get(path.removeprefix(SEEDER_REWARD_DIR))
             if expected and source.files.get(path) == expected:
-                converted = re.sub(
-                    rf'(?m)^  TILW_SetNameComponent ({SERIALIZED_ID}) \{{\n   m_setName ("[\w.-]+")\n  \}}$',
-                    r'  GC_MissionEntityNameComponent \1 {\n   m_sMissionName \2\n  }', body)
+                converted, _ = convert_mission_names(body)
                 if not LEGACY.search(converted):
                     return converted
         if path.startswith(SEEDER_REPLACEMENT_DIR):
@@ -3096,6 +3121,188 @@ def passive_asset(source, path):
                         and '{' not in line and '}' not in line for line in [lines[1], *lines[7:-1]])):
             return body
     raise ValueError('requires a resource conversion rule')
+
+
+def convert_mission_names(body):
+    return re.subn(
+        rf'(?m)^( +)TILW_SetNameComponent ({SERIALIZED_ID}) \{{\n\1 m_setName ("[\w.-]+")\n\1\}}$',
+        r'\1GC_MissionEntityNameComponent \2 {\n\1 m_sMissionName \3\n\1}', body)
+
+
+def seeder_named_marker(body):
+    lines = body.splitlines()
+    stop = block_end(lines, 2)
+    naming, count = convert_mission_names('\n'.join(lines[3:stop]))
+    if count != 1 or LEGACY.search(naming):
+        raise ValueError('unsupported objective marker name')
+    native = marker_instance(lines[stop + 1:-1], '', draw_order=True).splitlines()
+    stop = block_end(native, 1)
+    native[stop:stop] = naming.splitlines()
+    native.insert(1, lines[1])
+    return '\n'.join(native) + '\n'
+
+
+SEEDER_FACTION_AREA = re.compile(
+    r'TILW_FactionTriggerEntity(?: [\w.-]+)? : "\{8C576D46F6579229\}'
+    r'Prefabs/Logic/Triggers/TILW_FactionTrigger.et" \{')
+
+
+def seeder_objective_area(path, block):
+    components = block.index(' components {')
+    component_end = block_end(block, components)
+    children = block.index(' {', component_end) if ' {' in block[component_end:] else len(block) - 1
+    identity = block[1]
+    fields = [*block[2:components], *block[component_end + 1:children]]
+    names = [line for line in block[components:component_end] if line.startswith('   m_sMissionName ')]
+    if len(names) != 1 or ' ID ' not in identity:
+        raise ValueError('objective capture area needs a named prefab identity')
+    name = names[0].split('"')[1]
+    checks, area, details = capture_instance(path, name, fields)
+    native = area.splitlines()
+    native[1:1] = [identity, *block[components:component_end + 1]]
+    native[-1:-1] = block[children:-1]
+    flag, condition = next(iter(checks.items()))
+    return native, {'name': name, 'flag': flag[1:-1], 'condition': condition, **details}
+
+
+def seeder_objective_outline(block):
+    components = block.index(' components {')
+    component_end = block_end(block, components)
+    setter = next(i for i in range(components, component_end)
+                  if block[i].startswith('  GC_MissionEntityNameComponent '))
+    setter_end = block_end(block, setter)
+    fields = [*block[2:setter], *block[setter_end + 1:-1]]
+    original_name = AO_SHAPE.fullmatch(block[0])['name']
+    name = ' ' + original_name if original_name else ''
+    native, count = convert_boundary_instance(fields, name, extended_shapes=True, nested=True)
+    if native.count('\n}\n') or not native.startswith('PolylineShapeEntity'):
+        raise ValueError('objective overlay needs one passive map shape')
+    lines = native.splitlines()
+    start = lines.index(' components {')
+    stop = block_end(lines, start)
+    lines[stop:stop] = block[setter:setter_end + 1]
+    lines.insert(1, block[1])
+    return lines, count
+
+
+def seeder_objective_markers(source, block):
+    root = LEGACY_MARKER.fullmatch(block[0])
+    inherited, default_naming = {}, []
+    if root['guid'].upper() != LEGACY_MARKER_BASE:
+        path = root['path']
+        expected = SEEDER_OBJECTIVE_ASSETS.get(path.removeprefix(SEEDER_OBJECTIVE_ROOT))
+        if not expected or source.files.get(path) != expected or source.resources.get(root['guid']) != [path]:
+            raise ValueError('unverified objective marker template')
+        template, _ = convert_mission_names(source.read(path))
+        lines = template.splitlines()
+        stop = block_end(lines, 2)
+        inherited = properties(lines[stop + 1:-1], MARKER_FIELDS)
+        default_naming = lines[3:stop]
+    markers = []
+    count = 0
+    for name, fields in polygon_capture.members(block, root['group'], root['name']):
+        if not fields or not re.fullmatch(r' ID "[\da-fA-F]{16}"', fields[0]):
+            raise ValueError('objective marker needs an authored identity')
+        identity = fields[0]
+        fields = fields[1:]
+        naming = default_naming
+        if ' components {' in fields:
+            start = fields.index(' components {')
+            stop = block_end(fields, start)
+            naming = fields[start + 1:stop]
+            fields = [*fields[:start], *fields[stop + 1:]]
+        cursor = 0
+        while cursor < len(naming):
+            if not naming[cursor].startswith(('  GC_MissionEntityNameComponent ',
+                                              '  GC_DestroyedEntityFlagComponent ')):
+                raise ValueError('unsupported objective marker component override')
+            cursor = block_end(naming, cursor) + 1
+        native = marker_instance(fields, ' ' + name if name else '', inherited, draw_order=True).splitlines()
+        stop = block_end(native, native.index(' components {'))
+        native[stop:stop] = naming
+        native.insert(1, identity)
+        markers.extend(native)
+        count += 1
+    return markers, count
+
+
+def seeder_objective_prefabs(source):
+    """Prepare the shared authored geometry and observations for the seven rotating objectives."""
+    assets = {}
+    if source.files.get(SEEDER_REPLACEMENT_LAYER) != SEEDER_REPLACEMENT_LAYER_BLOB:
+        return assets
+    scripts = script_text(source)
+    corpus = '\n'.join(source.read(path) for path in source.closure(SEEDER_WORLD)
+                       if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+    can_omit_cleanup = (not any(api in scripts for api in SCRIPT_FLAG_APIS)
+                       and all(name not in scripts and corpus.count(f'"{name}"') == count
+                               for name, count in (('ClearAI', 4), ('ClearAISide', 3), ('Deleter', 7))))
+    for relative, expected in SEEDER_OBJECTIVE_BLOBS.items():
+        path = SEEDER_OBJECTIVE_DIR + relative
+        if source.files.get(path) != expected:
+            raise ValueError('reviewed objective composition changed: ' + path)
+        body, name_count = convert_mission_names(source.read(path))
+        body, empty_controls = re.subn(rf'(?m)^( +)TILW_ControlModeFlag {SERIALIZED_ID} \{{\n\1\}}\n', '', body)
+        lines = body.splitlines()
+        damage_flags = []
+        for index in range(len(lines) - 1, -1, -1):
+            line = lines[index]
+            indent = len(line) - len(line.lstrip()) - 2
+            if indent < 0 or not DAMAGE_COMPONENT.fullmatch(line[indent:]):
+                continue
+            stop = block_end(lines, index)
+            component = [text[indent:] for text in lines[index:stop + 1]]
+            native, flag = damage_state_flag_placement(
+                ['{', ' components {', *component, ' }', '}'],
+                allow_multiple_states=True, clear_on_mismatch=True)
+            lines[index:stop + 1] = [' ' * indent + field for field in native[2:-2]]
+            damage_flags.append(flag)
+        overlays = []
+        for start, stop, indent, outline in reversed(list(nested_placement_blocks(lines, AO_SHAPE))):
+            native, points = seeder_objective_outline(outline)
+            lines[start:stop + 1] = [' ' * indent + field for field in native]
+            overlays.append(points)
+        markers = 0
+        for start, stop, indent, marker in reversed(list(nested_placement_blocks(lines, LEGACY_MARKER))):
+            native, count = seeder_objective_markers(source, marker)
+            lines[start:stop + 1] = [' ' * indent + field for field in native]
+            markers += count
+        cleanup_members = []
+        for start, stop, indent, spawners in reversed(list(nested_placement_blocks(lines, PLACED_SPAWNER))):
+            if not spawners[0].startswith('$grp '):
+                continue
+            for index in range(len(spawners) - 2, 0, -1):
+                if spawners[index] != ' Deleter {':
+                    continue
+                end = block_end(spawners, index)
+                fields = spawners[index + 1:end]
+                prefab = next((REF.search(field) for field in fields if field.startswith('  m_prefab ')), None)
+                flag = next((field.split('"')[1] for field in fields if field.startswith('  m_conditionFlag "')), '')
+                if (not can_omit_cleanup or not prefab or prefab[1] not in ('3D54A6583D027631', '4FF97BC050F82106')
+                        or flag not in ('ClearAI', 'ClearAISide')
+                        or '  {' in fields or '  m_pregameSpawn 1' in fields):
+                    raise ValueError('unverified objective cleanup spawner')
+                cleanup_members.append(next(field.strip() for field in fields if field.startswith('  ID ')))
+                del spawners[index:end + 1]
+            lines[start:stop + 1] = [' ' * indent + field for field in spawners]
+        areas = []
+        for start, stop, indent, trigger in reversed(list(nested_placement_blocks(lines, SEEDER_FACTION_AREA))):
+            native, details = seeder_objective_area(path, trigger)
+            lines[start:stop + 1] = [' ' * indent + field for field in native]
+            areas.append(details)
+        native, details = seeder_objective_area(path, lines)
+        areas.insert(0, details)
+        body = '\n'.join(native) + '\n'
+        remaining = Counter(LEGACY.findall(body))
+        assets[path] = {'body': body, 'sha256': sha256(body.encode()).hexdigest(),
+                        'names': name_count, 'emptyControlObservers': empty_controls,
+                        'damageFlags': sorted(damage_flags), 'areas': areas, 'overlayVertices': overlays,
+                        'markers': markers,
+                        'omittedCleanupMembers': cleanup_members,
+                        'spawnerFlagReaders': dict(sorted(Counter(
+                            re.findall(r'(?m)^ +m_conditionFlag "([^"]+)"$', body)).items())),
+                        'remainingLegacy': dict(sorted(remaining.items()))}
+    return assets
 
 
 @lru_cache(maxsize=4)

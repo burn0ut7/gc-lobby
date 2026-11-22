@@ -489,6 +489,16 @@ def main():
         messages, review = ([], {}) if world in (RACE_WORLD, RUHA_WORLD) else world_events(source, world)
         if review:
             row['frameworkEvents'] = review
+        if args.batch and world == batch.SEEDER_WORLD:
+            try:
+                objective_prefabs = batch.seeder_objective_prefabs(source)
+                if objective_prefabs:
+                    row['spawnedObjectivePrefabs'] = {
+                        path: {key: value for key, value in prefab.items() if key != 'body'}
+                        for path, prefab in objective_prefabs.items()
+                    }
+            except ValueError as exc:
+                row['spawnedObjectivePrefabs'] = {'gap': str(exc)}
         objective_flags = ()
         interaction_placements = {}
         if args.batch and any(row['serializedTypes'].get(kind)

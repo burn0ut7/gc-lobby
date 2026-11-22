@@ -1964,3 +1964,9 @@ The converter records and removes the 14 inert framework spawns and their cleanu
 Spawn anchors with the same spelling as a flag count as entity references during flag validation. This resolves the four framework-owned location flags for Kamoryn, Brambledeep, Nova Olesov and Pasastejn. The Contact and SpawnReinforcements flags still depend on the objective compositions and their placed producers or consumers.
 
 The full 277-launcher audit reproduced all 330 earlier drafts and reduced the event records still in review from 32 to 30. Several events now reach a later dependency check on a spawned main or side objective composition. The two framework assembly blockers remain open.
+
+### Cold War Domination objective prefabs
+
+The common conversion prepares all four main and three side objective compositions. It ports their authored names, 11 radius areas and associated flag conditions, 14 damage observers, 23 icons, and seven map overlays. The comparison preserves all 224 polygon vertices and point IDs, and every entity ID outside the seven omitted cleanup spawners. The latter only read the unset `ClearAI` or `ClearAISide` flags and have no external name consumers. Three empty control-mode observers also have no configured flag. Five referenced marker and supply prefabs now convert through the normal asset resolver.
+
+The standard batch inventory exposes each composition under `spawnedObjectivePrefabs`. It records generated hashes, area condition definitions, remaining legacy classes and counts of the nested spawner flag readers. The editable review drafts still contain the authored nested spawner groups and crew definitions. Converting those groups, binding the generated areas and flags to the active objective, and verifying objective turnover are required before enabling these event spawns in Dev.
