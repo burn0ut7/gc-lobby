@@ -447,7 +447,7 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
 def read_event(fields, key, flags, captures, ai, compound, objective_flags, event_flags, extraction_spawns,
                resolve_spawn, resolve_crew, startup_flags, hidden_briefings, dormant_flag=None, derived=None,
                log_only=False, named_events=(), inactive=(), binary_startup=None, missing_term=False, ends_match=False,
-               direct_control=False, empty_hint=None, missing_group_waypoint=None):
+               direct_control=False, empty_hint=None, missing_group_waypoint=None, sampled_pregame_flags=()):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -478,6 +478,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
             elif binary and binary.get('m_flagName') == binary_startup[0] and binary.get('m_invertTerm', '0') in ('0', '1'):
                 choice = binary_startup[int(binary.get('m_invertTerm', '0'))]
                 term = {'trigger': 'startup choice', 'flag': choice[1:-1]}
+            elif literal_flag in sampled_pregame_flags and '   m_pregameEvent 1' in fields:
+                term = {'trigger': 'event flag', 'flag': literal_flag[1:-1], 'pregameSample': True}
             elif literal_flag == dormant_flag:
                 term = {'trigger': 'dormant', 'flag': literal_flag[1:-1], 'reason': 'no legacy flag producer'}
             else:
@@ -564,13 +566,17 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
     if compound and pregame and term['trigger'] == 'Match start':
         term = {'trigger': 'pregame start'}
     pregame_start = term['trigger'] == 'pregame start'
-    if pregame != (term['trigger'] in ('startup choice', 'pregame start')):
+    sample_before_match = term.get('pregameSample', False)
+    if pregame != (term['trigger'] in ('startup choice', 'pregame start') or sample_before_match):
         raise ValueError('pregame event requires a reviewed startup selection')
     startup_actions = ({'TILW_SetFlagInstruction'} if pregame_start
                        else {'TILW_SpawnPrefabInstruction', 'TILW_EditMapItemInstruction'})
     if binary_startup and not pregame_start:
         startup_actions.add('TILW_DeleteEntitiesInstruction')
+    if sample_before_match:
+        startup_actions.add('TILW_DeleteEntitiesInstruction')
     if pregame and (notices or assignments or delayed_areas or messages or (pregame_start and not converted_actions)
+                    or (sample_before_match and (direct_control or any(delay != 0 for delay in actions)))
                     or any(action['instruction'] not in startup_actions
                            for action in converted_actions)):
         raise ValueError('unsupported pregame action')
@@ -692,7 +698,10 @@ def render(key, name, term, actions, captures, capture_messages, tracked_areas, 
                 check = captures['"' + term['flag'] + '"']
             else:
                 check = render_check(term, key, captures, capture_messages, tracked_areas)
-            conditions = ['     m_aConditions {', *match_condition(key), *check, '     }']
+            if term.get('pregameSample'):
+                conditions = [*startup_conditions(key)[:-1], *check, '     }']
+            else:
+                conditions = ['     m_aConditions {', *match_condition(key), *check, '     }']
         result.extend([
             f'    GC_Event "{{{guid(key + "/trigger")}}}" {{', f'     m_sName "{name}"', *conditions,
             '     m_aActions {', f'      GC_MessageAction "{{{guid(key + "/log")}}}" {{',
@@ -792,8 +801,8 @@ def startup_flags(source, world, owner, body, scripts, identity_flags=()):
     return tuple(flags)
 
 
-def startup_samples(source, world, owner, body, scripts, spawner_reads, definitions):
-    """Read isolated draws used by Match events or verified placed spawners."""
+def startup_samples(source, world, owner, body, scripts, spawner_reads, definitions, identity_flags=()):
+    """Read isolated draws used by verified event conditions or placed spawners."""
     roots = [i for i, line in enumerate(body) if line == ' m_randomFlags {']
     if len(roots) != 1 or any(api in scripts for api in SCRIPT_FLAG_APIS):
         return []
@@ -823,6 +832,7 @@ def startup_samples(source, world, owner, body, scripts, spawner_reads, definiti
         if not 1 <= len(sampled) <= 64:
             return []
         reads = Counter()
+        pregame = set()
         for definition in definitions.values():
             reads.update(literal_flag_reads(definition))
         labels = defaultdict(int)
@@ -835,11 +845,15 @@ def startup_samples(source, world, owner, body, scripts, spawner_reads, definiti
                 label = re.fullmatch(r'   m_name (' + KEY + ')', field)
                 if label:
                     labels[label[1]] += 1
-                if match_only and (term := TERM.fullmatch(field)) and term[1] == 'Literal':
+                if (term := TERM.fullmatch(field)) and term[1] == 'Literal':
                     close = block_end(fields, position)
                     values = properties(fields[position + 1:close], {'m_flagName', 'm_invertTerm'})
-                    if values.get('m_invertTerm', '0') in ('0', '1'):
-                        reads[values.get('m_flagName')] += 1
+                    flag = values.get('m_flagName')
+                    if match_only and values.get('m_invertTerm', '0') in ('0', '1'):
+                        reads[flag] += 1
+                    elif not match_only and LITERAL.fullmatch(field) and len(values) == 1:
+                        reads[flag] += 1
+                        pregame.add(flag)
     except (IndexError, ValueError):
         return []
     authored = source.read(owner)
@@ -850,6 +864,11 @@ def startup_samples(source, world, owner, body, scripts, spawner_reads, definiti
         if (not (reads[flag] or spawner_count) or flag[1:-1] in scripts
                 or authored.count(flag) + outside.count(flag) != 1 + reads[flag] + labels[flag] + spawner_count):
             return []
+    if pregame and startup_flags(source, world, owner, body, scripts, identity_flags):
+        return []
+    for sample in samples:
+        if scoped := [flag for flag in sample['flags'] if f'"{flag}"' in pregame]:
+            sample['pregameFlags'] = scoped
     return samples
 
 
@@ -1015,13 +1034,14 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         identity_flags_audit.extend(flag[1:-1] for flag in sorted(identity_flags))
     samples, startup, binary_startup = [], (), None
     if compound and resolve_spawn:
-        samples = startup_samples(source, world, path, body, scripts or '', spawner_reads, definitions)
+        samples = startup_samples(source, world, path, body, scripts or '', spawner_reads, definitions, identity_flags)
         if not samples:
             startup = startup_flags(source, world, path, body, scripts or '', identity_flags)
             if not startup:
                 binary_startup = startup_binary_flag(source, world, path, body, scripts or '')
                 startup = binary_startup or ()
     sampled_flags = {flag for sample in samples for flag in sample['flags']}
+    sampled_pregame_flags = {f'"{flag}"' for sample in samples for flag in sample.get('pregameFlags', ())}
     event_flags = {*event_flags, *sampled_flags}
     inactive = inactive_flags(source, world, path, body, scripts) if compound else ()
     match_only_flags = {*match_only_flags, *sampled_flags}
@@ -1093,9 +1113,10 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 log_only=log_only, named_events=source_names, inactive=inactive, binary_startup=binary_startup,
                 direct_control=direct_control, ends_match=ends_match,
                 empty_hint=reviewed_empty_hint, missing_group_waypoint=missing_group_waypoint,
+                sampled_pregame_flags=sampled_pregame_flags,
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
-            if any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
+            if not term.get('pregameSample') and any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
                 term['requiresMatch'] = True
             suffixes = {f' ({delay:f}s)' for delay in actions}
             if not suffixes and term['trigger'] == 'Match start':
