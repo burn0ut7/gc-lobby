@@ -22,7 +22,8 @@ from vehicle_crew import (CREW_CONFIG_FIELD, FLORA_CREW_CONFIG, VERIFIED_DEFAULT
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
 from groups import (CALL, COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, INDEX, SLOTS, compare_ai_parents, inheritance,
-                    legacy_member, reviewed_native_ancestry, unchanged_explicit_playability, verified_stock_ai_group)
+                    legacy_member, reviewed_ai_member_ancestry, reviewed_native_ancestry,
+                    unchanged_explicit_playability, verified_stock_ai_group)
 from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_prefab
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
@@ -763,9 +764,12 @@ REVIEWED_MISSING_WAYPOINTS = {
             'AIWaypoint_SearchandDestroy_1', 'AIWaypoint_SearchandDestroy_2',
         }),
 }
+KHANDAR_AI_LAYER = 'worlds/James/KhandarClearance/KhandarClearance_Layers/ai.layer'
+KHANDAR_AI_BLOB = 'dc18ed6e0e49d9af717bd183b8781dab0bc3af89'
 REVIEWED_MISSING_SPAWN_WAYPOINTS = {
     'worlds/HitTheMan/VDV Hello From The Sky/VDVHelloFromTheSky_Layers/AI_Defenders/AI_Defenders_South.layer':
-        ('93dda27768ebdc5519b0ee2ef9ef57304cb44b1e', 'Def_WPMain_US_10'),
+        ('93dda27768ebdc5519b0ee2ef9ef57304cb44b1e', {'Def_WPMain_US_10': 1}),
+    KHANDAR_AI_LAYER: (KHANDAR_AI_BLOB, {'defnorth': 1, 'top': 4}),
 }
 REVIEWED_MISSING_STATIC_VEHICLES = {
     'worlds/Cunnah/A_Hop_Skip_And_A_Jump/a_hop_skip_and_a_jump_Layers/OPFOR.layer':
@@ -1181,6 +1185,14 @@ GRAVETTE_WIRECUTTER = 'worlds/ac337/prefab/Gravette_Wirecutters.et'
 LEGACY_WIRECUTTER = re.compile(
     r'\$grp GenericEntity : "\{8554ED3F088BADA6\}Prefabs/Items/Core/Wirecutters/wirecutters(?:old)?\.et" \{')
 UNITS_PREFAB_ALIASES = {
+    ('E1A0797669362096', 'Prefabs/Groups/OPFOR/USSR/SovietArmy_Airborne_1983/Group_USSR_VDV_PHQ.et'): (
+        'E1A0797669362096', 'Prefabs/Groups/OPFOR/Russia/1980s/Airborne 1983/Group_USSR_VDV_PHQ.et',
+        '9ee0e54b862f0576caf8a1326ab05436a696fd55735026644ede6440c4ce5540',
+    ),
+    ('870783CDCE09CCD9', 'Prefabs/Groups/OPFOR/USSR/SovietArmy_Airborne_1983/Group_USSR_VDV_Squad.et'): (
+        '870783CDCE09CCD9', 'Prefabs/Groups/OPFOR/Russia/1980s/Airborne 1983/Group_USSR_VDV_Squad.et',
+        'e5fc8d79b6190df6bf1fc8c51ad3b701c50edc5cc35be76b21e5a4b3dd8c25f3',
+    ),
     ('BE2630E26227D529', 'Prefabs/Vehicles/Wheeled/M998/GC_M1151_armed_M134.et'): (
         'BE2630E26227D529', 'Prefabs/Vehicles/Wheeled/M998/M1151/M134/GC_M1151_armed_M134.et',
         '1c9b03336c59ea87be7bce7a5e7c271bed535b54272e01c65e3cced9a205c1bc',
@@ -1243,6 +1255,10 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/James/KhandarClearance/EffectModule_Zoned_BM21Barrage.et':
+        '3d5e01e2ce8c84f17f1462bdaf81f1ee5b357c3b695c13ea7ea263043689d78f',
+    'worlds/James/KhandarClearance/Ammo_Rocket_9M22_HE_EffectModule.et':
+        '02eb4e34d0f8980b8690ca07ce115846d0788d0953c2168e466d33a9392cfb90',
     'worlds/HitTheMan/Battle For Zarichne/Mine_M15AT_EffectModuleEntity_HTM.et':
         '9ddd4b64ea129d6435e224f5732052697e70e5e16b29f3221015e121193bc961',
     'worlds/HitTheMan/Battle For Zarichne/Warhead_Mine_M15AT_HTM.et':
@@ -2533,6 +2549,7 @@ REVIEWED_DORMANT_SPAWNER_FLAGS = {
     **dict.fromkeys(REVIEWED_BUILDING_AREAS, (('SpawnTwo', 2), ('US_Trigger_Right_3', 1))),
     '9dfaedf4beacd04c9260e63be23dc6194ce4d9be': (('Counter_Trigger_2', 2),),
     SCREENING_AREA_BLOB: (('WestExterior1', 1), ('MiddleExterior_Trigger_1', 1)),
+    KHANDAR_AI_BLOB: (('atk1', 3),),
 }
 BREAK_THE_LINE_EFFECTS = {
     'A7E0C1FAD9FFAB46': 'HTM_EffectModule_Zoned_MortarBarrage_Creeping.et',
@@ -2917,13 +2934,9 @@ def verified_local_ai_group(source, dev, source_units, dev_units, stock, resourc
         else:
             before = inheritance(source_units, guid)
             after = inheritance(dev_units, guid)
-            if path.endswith('/PK_MUJ_03_AT_Fighters.et') and guid == '6A2B87B94BFDCA65':
-                # Units Dev added an editor icon to the AI RPG assistant.
-                icon = ('    Icon "{FB48FAD32DA8BC91}UI/Textures/Editor/EditableEntities/Characters/'
-                        'EditableEntity_Character_AmmoBearer.edds"\n')
-                after = (after[0].replace(icon, '', 1), *after[1:])
             if (not before[0].startswith('SCR_ChimeraCharacter') or legacy_member(source_units, guid, False)
-                    or not reviewed_native_ancestry(before, after, dev_units)):
+                    or not (reviewed_native_ancestry(before, after, dev_units)
+                            or reviewed_ai_member_ancestry(guid, before, after, dev_units))):
                 return False
     return True
 
@@ -3469,7 +3482,7 @@ def reviewed_spawn_type(source, resource, path, types):
 
 
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
-                 resolve_crew_config=None, shadowed_names=(), missing_waypoint=None, self_waypoints=(),
+                 resolve_crew_config=None, shadowed_names=(), missing_waypoints=(), self_waypoints=(),
                  capture_latches=None, single_draw_flags=(), derived_conditions=None, dormant_flags=(), allow_bare=False):
     root = placed_spawner_root(block[0], allow_bare)
     if not root:
@@ -3537,11 +3550,9 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                 ignored_effect_waypoints, waypoints = waypoints, []
         group = bool(ref and (ref[2].startswith('Prefabs/Groups/') or
                               reviewed_spawn_type(source, ref[1].upper(), ref[2], 'SCR_AIGroup : ')))
-        absent = f'"{missing_waypoint}"' if missing_waypoint else None
-        if group and absent in waypoints:
+        absent = next((point for point in waypoints if point[1:-1] in missing_waypoints), None) if group else None
+        if absent:
             waypoints = [point for point in waypoints if point != absent]
-        else:
-            absent = None
         self_waypoint = group and name in self_waypoints and waypoints == [f'"{name}"']
         if self_waypoint:
             waypoints = []
@@ -3559,7 +3570,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             placements.extend([f'GenericEntity {anchor} {{', *(' ' + line for line in transform), *children, '}'])
             audit.append({'spawnAnchor': anchor, 'spawnName': '', 'prefab': data.get('m_prefab', ''),
                           'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in waypoints],
-                          'trigger': 'inactive flag', 'flag': flag[1:-1]})
+                          'trigger': 'inactive flag', 'flag': flag[1:-1],
+                          **({'missingGroupWaypoint': absent[1:-1]} if absent else {})})
             continue
         details = spawn_details({
             'm_prefab': data.get('m_prefab', ''), 'm_locationName': f'"{anchor}"',
@@ -3670,14 +3682,16 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
     for layer, text in layers.items():
         try:
             dormant = dormant_spawner_flags(source, world, layer)
-            reviewed = REVIEWED_MISSING_SPAWN_WAYPOINTS.get(layer)
-            missing_waypoint = None
-            if reviewed and source.files[layer] == reviewed[0] and reviewed[1] not in script_text(source):
-                name = reviewed[1]
-                token = re.compile(r'(?<![\w.-])' + re.escape(name) + r'(?![\w.-])')
-                if sum(len(token.findall(source.read(p))) for p in source.closure(world)
-                       if PurePosixPath(p).suffix.lower() in SOURCE_TEXT) == 1:
-                    missing_waypoint = name
+            blob, reviewed = REVIEWED_MISSING_SPAWN_WAYPOINTS.get(layer, (None, {}))
+            missing_waypoints = set()
+            if source.files[layer] == blob:
+                scripts = script_text(source)
+                references = '\n'.join(source.read(p) for p in source.closure(world)
+                                       if PurePosixPath(p).suffix.lower() in SOURCE_TEXT)
+                for name, count in reviewed.items():
+                    token = re.compile(r'(?<![\w.-])' + re.escape(name) + r'(?![\w.-])')
+                    if not token.search(scripts) and len(token.findall(references)) == count:
+                        missing_waypoints.add(name)
             for line, nested, block in placed_spawner_entries(source, layer, text):
                 if nested and (layer, line) not in area_placements:
                     continue
@@ -3692,7 +3706,7 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                     native, scheduled, info = placed_spawn(
                         block, location, resolve_spawn, captures, flags, used_flags, resolve_crew,
                         source=source, resolve_crew_config=resolve_crew_config, shadowed_names=shadowed,
-                        missing_waypoint=missing_waypoint, self_waypoints=self_waypoints,
+                        missing_waypoints=missing_waypoints, self_waypoints=self_waypoints,
                         capture_latches=capture_latches, single_draw_flags=single_draw_flags,
                         derived_conditions=derived_conditions, dormant_flags=dormant,
                         allow_bare=(layer, source.files[layer]) in REVIEWED_BARE_SPAWNER_LAYERS)
@@ -4150,6 +4164,8 @@ def reviewed_area_flag_reference_text(source, path):
         return re.sub(r'(?m)^ +m_sDescription "extract"$', '', text)
     if path == ZARICHNE_DEFAULT and source.files[path] == ZARICHNE_DEFAULT_BLOB:
         return re.sub(r'(?m)^ +(?:m_locationName|m_sDescription) "Compound"$', '', text)
+    if path == KHANDAR_AI_LAYER and source.files[path] == KHANDAR_AI_BLOB:
+        return re.sub(r'(?m)^( +m_waypointNames \{\n) +("top")\n', r'\1', text)
     return text
 
 
@@ -4337,16 +4353,20 @@ def area_rules(source, world, dev=None):
                                        and source.files[layer] == '2a7bc142928320aff39efbec9bc0ec2214a3e57d'
                                        and trigger['kind'] == 'Presence'
                                        and flag == '"Group_hilltop_is_not_present"')
+                    unused_khandar = (layer == KHANDAR_AI_LAYER and source.files[layer] == KHANDAR_AI_BLOB
+                                      and trigger['kind'] == 'Faction' and flag == '"top"')
                     if ((unused_presence or trigger['kind'] == 'Faction' and not name)
                             and not shape and not attached and not any('m_Messages ' in item for item in rule)):
                         if references is None:
-                            references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                            references = '\n'.join(reviewed_area_flag_reference_text(source, path)
+                                                   for path in sorted(source.closure(world))
                                                    if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
                         if scripts is None:
                             scripts = script_text(source)
-                        if references.count(flag) == 1 and flag[1:-1] not in scripts:
+                        script_name = flag if unused_khandar else flag[1:-1]
+                        if references.count(flag) == 1 and script_name not in scripts:
                             capture_details[flag[1:-1]]['unused'] = True
-                            if unused_presence:
+                            if unused_presence or unused_khandar:
                                 areas.append(area)
                             continue
                     if shape:

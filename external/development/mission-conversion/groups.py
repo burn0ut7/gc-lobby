@@ -394,6 +394,26 @@ def reviewed_native_ancestry(before, after, dev):
             and sha256(after[-1].strip().encode()).hexdigest() == bridge[1])
 
 
+def reviewed_ai_member_ancestry(resource, before, after, dev):
+    # These exact additions change the editor icon only.
+    if resource == '6A2B87B94BFDCA65':
+        icon = (
+            '    Icon "{FB48FAD32DA8BC91}UI/Textures/Editor/EditableEntities/Characters/'
+            'EditableEntity_Character_AmmoBearer.edds"\n'
+        )
+    elif resource in ('4A8AFB51826FCE3E', '2F855F59E09CC66D'):
+        icon = (
+            '   m_UIInfo SCR_EditableEntityUIInfo "{5298E609432D192D}" {\n'
+            '    Icon "{AE53796BC5D21A08}UI/Textures/Editor/EditableEntities/Characters/'
+            'EditableEntity_Character_Rifleman.edds"\n'
+            '   }\n'
+        )
+    else:
+        return False
+    return bool(after and icon in after[0]
+                and reviewed_native_ancestry(before, (after[0].replace(icon, '', 1), *after[1:]), dev))
+
+
 def stock_wrapper_ancestry_matches(source, dev, guid, stock, owned):
     try:
         before, after = inheritance(source, guid), inheritance(dev, guid)

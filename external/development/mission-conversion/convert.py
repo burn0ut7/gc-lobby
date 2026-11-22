@@ -23,7 +23,8 @@ from catalog import REF, Snapshot, WORLD, compare
 from delayed_extraction import collect as collect_delayed_extraction
 from event_actions import ACTIONS
 from events import world_events
-from groups import (SLOTS, compare_ai_parents, convert_ai_instance, group_layer, inheritance, rhs_ai_characters,
+from groups import (SLOTS, compare_ai_parents, convert_ai_instance, group_layer, inheritance, reviewed_ai_member_ancestry,
+                    rhs_ai_characters,
                     uk_ai_characters,
                     unchanged_deprecated_stock_override, unchanged_disabled_playability, verified_rhs_forced_roles,
                     verified_stock_ai_group, verified_uk_forced_roles)
@@ -253,20 +254,30 @@ def main():
                 ancestry = compare_ai_parents(source_units, dev_units, resource)
                 if not ancestry[0].startswith('SCR_AIGroup '):
                     return None
-                convert_ai_instance([], resource, source_units, dev_units, locally_owned, external_ai)
+                stock_members = {}
+                inherited = next((slots[1] for body in ancestry if (slots := SLOTS.search(body))), '')
+                for member, member_path in REF.findall(inherited):
+                    member = member.upper()
+                    if not any(member in owner for owner in owners) and stock.contains(member, member_path):
+                        stock_members[member] = member_path
+                verified_members = external_ai | stock_members
+                convert_ai_instance([], resource, source_units, dev_units, locally_owned, verified_members)
                 for parent in inheritance(dev_units, resource):
                     slots = SLOTS.search(parent)
                     if not slots:
                         continue
                     for member, member_path in REF.findall(slots[1]):
                         member = member.upper()
-                        if (external_ai.get(member) == member_path and member not in locally_owned
+                        if (verified_members.get(member) == member_path and member not in locally_owned
                                 and (not any(member in owner for owner in owners)
                                      or unchanged_deprecated_stock_override(
                                          source_units, dev_units, member, member_path))):
                             continue
                         if (dev_units.resources.get(member) != [member_path]
                                 or not (local_loadouts.unchanged_units_parent(source_units, dev_units, member)
+                                        or reviewed_ai_member_ancestry(
+                                            member, inheritance(source_units, member),
+                                            inheritance(dev_units, member), dev_units)
                                         or unchanged_disabled_playability(source_units, dev_units, member))):
                             return None
                     break
