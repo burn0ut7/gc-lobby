@@ -373,6 +373,11 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
             recorded_checks[header] = checks
             runtime_candidates.append({'world': row['world'], 'launchers': [header],
                                        'behaviorGaps': checks})
+    vehicle_group_links = {}
+    for header, row in sorted(inventory['headers'].items()):
+        worlds = row['worlds']
+        if len(worlds) == 1 and (links := inventory['worlds'].get(worlds[0], {}).get('legacyVehicleGroupLinks')):
+            vehicle_group_links[header] = links
     return {
         'source': inventory['source'], 'target': inventory['target'],
         'committedLaunchersWithWorld': len(committed),
@@ -388,6 +393,7 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         'runtimeChecksByLauncher': recorded_checks,
         'runtimeChecks': runtime_checks(runtime_candidates),
         'authoredFileNotesByLauncher': file_notes,
+        'legacyVehicleGroupLinksByLauncher': vehicle_group_links,
         'unresolvedResources': review.get('unresolvedResources', []),
         'sourceDependencyLeads': review.get('sourceDependencyLeads', []),
         'outcomeFlagLeads': review.get('outcomeFlagLeads', {}),
@@ -485,6 +491,11 @@ def markdown(plan):
         for header, notes in sorted(plan['authoredFileNotesByLauncher'].items()):
             lines.append(f'- `{header}`')
             lines.extend(f'  - {note}' for note in notes)
+    if links := plan['legacyVehicleGroupLinksByLauncher']:
+        lines.extend(['', '## Deferred lobby vehicle features', '',
+                      f'{len(links)} launchers have legacy vehicle-to-group fields. '
+                      'Role-selection vehicle previews and removal of vehicles for locked groups are deferred. '
+                      '`legacyVehicleGroupLinksByLauncher` in `plan.json` lists the original file, line, and group name.'])
     lines.extend(['', '## Drafts held for file checks', ''])
     for entry in plan['heldDrafts']:
         lines.append(f"- `{entry['world']}`")
