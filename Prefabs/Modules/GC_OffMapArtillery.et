@@ -1,0 +1,19 @@
+GC_OffMapArtillery {
+ ID "652B743AC00780BF"
+ components {
+  RplComponent "{652B743A98F2F6B6}" {
+   Streamable Disabled
+  }
+ }
+ m_artyRounds {
+  GC_OffMapRound "{652B743A90CE7EE7}" {
+   m_factionKeys {
+    "US"
+   }
+   m_allowedFrequencies {
+    38500
+   }
+   m_roundReload 5
+  }
+ }
+}

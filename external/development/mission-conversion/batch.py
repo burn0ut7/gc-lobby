@@ -673,7 +673,12 @@ REVIEWED_MISSING_ORDER_GROUPS = {
         '6794efd40331f9e3f20c6c14b3955b4468279d08', {'NVA_AI_7', 'NVA_AI_10', 'T72_NVA2'},
     ),
 }
+BREAK_THE_LINE_MISSING_WAYPOINTS = {f'def_wp_Mid_CAF_{i}' for i in (*range(8, 25), 28)}
 REVIEWED_MISSING_WAYPOINTS = {
+    'worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_Layers/BLUFOR/BLU_AI_Town_Defene_60xAI.layer':
+        ('1eb75b271a2d5a51e0e2982674a6a5f0bfdb4f32', BREAK_THE_LINE_MISSING_WAYPOINTS),
+    'worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/BLUFOR/BLU_AI_Town_Defene_60xAI.layer':
+        ('8573eeee4429b7f50d01367cf51c7faba24b49c3', BREAK_THE_LINE_MISSING_WAYPOINTS),
     'worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/BLUFOR/BLU_AI_STINGERS_7AI.layer':
         ('59c8e46c27403dddb8a7557eb800c04408f6f513', {f'def_wp_CAF_{i}' for i in range(50, 55)}),
     'worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/BLUFOR/BLU_AI_TOWN_86AI.layer':
@@ -866,6 +871,9 @@ ZARICHNE_NAVMESH_ALIASES = {
 }
 
 WORKSHOP_RESOURCE_ALIASES = {
+    ('B9E3B9B143A43A79', 'Prefabs/Weapons/Magazines/AKM/Magazine_AK_762x39_AK55_30rnd.et'): (
+        'TacticalFlava-Weapons_DEADC0DE00000001', 'B9E3B9B143A43A79',
+        'Prefabs/Weapons/Magazines/AKM/Magazine_AK_762x39_Steel_30rnd_Ball.et'),
     ('4A30874E3A255689', 'Prefabs/Weapons/HeavyWeapons/2A46/Cannon_2A466_T72A_HE.et'): (
         'WCS_T-72_5E0AB16BEB16D6A4', '4A30874E3A255689',
         'Prefabs/Weapons/Cannons/Cannon_2A46/Cannon_2A46_T72A_HE.et'),
@@ -2374,6 +2382,17 @@ SCREENING_AI_WORLD_REVISIONS = {'58773b357fef8e5db20e8f3a5fc0b12891a43521',
 BAD_ORB_AI_WORLD = ('33A5B976E41B0A4C', 'Prefabs/AI/SCR_AIWorld_BadOrb_GC.et')
 BAD_ORB_AI_WORLD_BLOB = 'fa88aab78356bca0f0a6995a880e5ccf9cf738f2'
 BARE_AI_WORLD = 'SCR_AIWorld {\n}\n'
+OFF_MAP_ARTILLERY_LAYERS = {
+    'worlds/HitTheMan/2nd Break The Line/2ndBreakTheLine_Layers/default.layer':
+        '67b3e00e605f97eec6ae80538fd3ae551deb7d28',
+    'worlds/HitTheMan/3rd Break The Line/3rdBreakTheLine_Layers/default.layer':
+        'd7e5c4daa844e11787e8f1be7d7b4df2f94f5933',
+    'worlds/Corax/SummerDays/SummerDays_Layers/default.layer':
+        '45d91535504c59cfdf271f36fecaa9f028eccbb2',
+}
+LEGACY_ARTILLERY = 'GCC_Arty : "{6C38A36F9C37A967}Prefabs/Modules/Off_Map_Arty.et" {'
+LOBBY_ARTILLERY = ('GC_OffMapArtillery GC_OffMapArtillery : '
+                   '"{3AF7F6A04B4F7564}Prefabs/Modules/GC_OffMapArtillery.et" {')
 REVIEWED_DORMANT_SPAWNER_FLAGS = {
     **dict.fromkeys(REVIEWED_BUILDING_AREAS, (('SpawnTwo', 2), ('US_Trigger_Right_3', 1))),
     '9dfaedf4beacd04c9260e63be23dc6194ce4d9be': (('Counter_Trigger_2', 2),),
@@ -4689,6 +4708,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     converted_passive_cover = False
     converted_bare_map = False
     converted_hornbeams = False
+    converted_artillery = False
     converted_scenery_map = False
     inactive_placements = []
     reused_layers = set()
@@ -4967,6 +4987,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     else:
                         blockers.append({'rule': kind, 'file': layer, 'line': line,
                                          'detail': 'verified Bad Orb AI world prefab unavailable'})
+                elif head == LEGACY_ARTILLERY and OFF_MAP_ARTILLERY_LAYERS.get(layer) == source.files[layer]:
+                    converted = [line.replace('  GCC_ArtyData "', '  GC_OffMapRound "', 1)
+                                 if line.startswith('  GCC_ArtyData "') else line for line in block[1:]]
+                    result.append('\n'.join([LOBBY_ARTILLERY, *converted]) + '\n')
+                    converted_artillery = True
                 elif (layer == LACOURT_HORNBEAM_LAYER
                       and source.files[layer] == LACOURT_HORNBEAM_BLOB
                       and (tree := REF.search(head)) and tree.groups() in LACOURT_HORNBEAMS):
@@ -5329,6 +5354,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if converted_hornbeams:
         remaining.append('The two retired hornbeams use current destructible trees of the same varieties. '
                          'Historical damage thresholds and break physics remain unverified.')
+    if converted_artillery:
+        remaining.append('Compare the call-in menu, radio authorization, salvo timing and the late-join ammunition display.')
     for target in sorted({spawn['missingGroupWaypoint'] for spawn in prefab_spawns if 'missingGroupWaypoint' in spawn}):
         remaining.append(f'The original reinforcement waypoint {target} has no authored target.')
     for target in sorted(missing_spawn_anchors):
