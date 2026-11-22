@@ -118,9 +118,9 @@ PERCEPTION = re.compile(r'^PerceptionManager(?: [\w.-]+| "(?P<serialized>[\da-fA
 SUMMER_DAYS_DEFAULT = 'worlds/Corax/SummerDays/SummerDays_Layers/default.layer'
 SUMMER_DAYS_DEFAULT_BLOB = '45d91535504c59cfdf271f36fecaa9f028eccbb2'
 SUMMER_DAYS_TOPO = 'worlds/Corax/SummerDays/SummerDays.topo'
+PROJECTILE_SOUNDS_MANAGER = 'ProjectileSoundsManager : "{B4DA8B0024536625}Prefabs/World/Game/ProjectileSoundsManager.et" {'
 SUMMER_DAYS_MANAGERS = {
     'SCR_DestructionManager : "{E5B570B5F32A7BAE}Prefabs/Systems/Destruction/DestructionManager.et" {',
-    'ProjectileSoundsManager : "{B4DA8B0024536625}Prefabs/World/Game/ProjectileSoundsManager.et" {',
     'BasePreloadManager PreloadManager1 : "{104F8505FD1871EF}Prefabs/World/Game/PreloadManager.et" {',
     'RadioBroadcastManager : "{66B93BC296E2F977}Prefabs/Radio/RadioBroadcastManager.et" {',
     'SoundWorld : "{8A8604E158704937}Prefabs/Sounds/SoundWorld/SoundWorld_Eden.et" {',
@@ -6668,8 +6668,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     label = 'template framework' if world == TEMPLATE_WORLD else 'Summer Days framework'
                     inactive_placements.append(f'The original {label} is empty and runs no mission events.')
                 elif (layer == SUMMER_DAYS_DEFAULT and source.files[layer] == SUMMER_DAYS_DEFAULT_BLOB
-                      and head in SUMMER_DAYS_MANAGERS and block[1:] == ['}']):
-                    result.append(body)
+                      and block[1:] == ['}'] and (head in SUMMER_DAYS_MANAGERS or head == PROJECTILE_SOUNDS_MANAGER)):
+                    if head == PROJECTILE_SOUNDS_MANAGER:
+                        # ChimeraSystemsConfig enables projectile audio in the shared SndSystem.
+                        inactive_placements.append('Compare flybys and sonic cracks with the native projectile sound module.')
+                    else:
+                        result.append(body)
                 elif (layer == INACTIVE_DOOR_LAYER and source.files[layer] == 'b21a4cb26d47b0c4e0cdd9fc04786a90adc2c5cd'
                       and block == INACTIVE_DOOR and 'TILW_DoorOpenerComponent' not in script_text(source)):
                     # The released TilW prefab still names the component removed in c47df35.
