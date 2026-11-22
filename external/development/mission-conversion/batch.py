@@ -1284,6 +1284,10 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/HitTheMan/Air Assault Onto Skalisty/Prefab/AmmoCrateStingers.et':
+        'ed732d82b4cdc573ea1177b09b7ab99a5c0239d33386c73b594fabad9abb174f',
+    'worlds/HitTheMan/Air Assault Onto Skalisty/Prefab/Mi8MT_armed3HTM.et':
+        'd0599de581d4c3ecb31d23a947538fdae8a768f09f2c7da200b9a8f04563886b',
     # Keep the repair station, three default occupants, and Gulf War appearance.
     'worlds/Perfk/Prefabs/Vehicles/Wheeled/M923A1/M923A1_repair_GulfWar_unlimited_supply.et':
         '5f43afde1cd048677e478cef8982457ffb77f47313d296c24383793714f42b80',
@@ -2581,6 +2585,7 @@ LEGACY_ARTILLERY = 'GCC_Arty : "{6C38A36F9C37A967}Prefabs/Modules/Off_Map_Arty.e
 LOBBY_ARTILLERY = ('GC_OffMapArtillery GC_OffMapArtillery : '
                    '"{3AF7F6A04B4F7564}Prefabs/Modules/GC_OffMapArtillery.et" {')
 REVIEWED_DORMANT_SPAWNER_FLAGS = {
+    'fc23379018f367731dde8cd1214c4b800c72f0e5': (('HeliTwo', 1),),
     **dict.fromkeys(REVIEWED_BUILDING_AREAS, (('SpawnTwo', 2), ('US_Trigger_Right_3', 1))),
     '9dfaedf4beacd04c9260e63be23dc6194ce4d9be': (('Counter_Trigger_2', 2),),
     SCREENING_AREA_BLOB: (('WestExterior1', 1), ('MiddleExterior_Trigger_1', 1)),
@@ -2650,8 +2655,12 @@ def unused_flag_sampling(source, world, path, line, framework):
     while index < end:
         kind = re.fullmatch(r'  TILW_(FlagSampling|RandomFlag) "\{[\da-fA-F]{16}\}" \{', framework[index])
         if not kind:
-            return []
+            return None
         stop = block_end(framework, index)
+        # With no flag name this default Bernoulli draw cannot write a mission flag.
+        if kind[1] == 'RandomFlag' and stop == index + 1:
+            index = stop + 1
+            continue
         if kind[1] == 'FlagSampling':
             data = properties(framework[index + 1:stop], {'m_flagNames'})
             names = data.get('m_flagNames', '')
@@ -2660,9 +2669,9 @@ def unused_flag_sampling(source, world, path, line, framework):
             chance = data.get('m_chance', '0.5')
             names = data.get('m_flagName', '')
             if not re.fullmatch(NUMBER, chance) or not 0 <= Decimal(chance) <= 1 or not re.fullmatch(name, names):
-                return []
+                return None
         if not re.fullmatch(rf'(?:{name}\s*)+', names):
-            return []
+            return None
         flags.extend(re.findall(name, names))
         index = stop + 1
     content = source.read(path).splitlines()
@@ -2671,10 +2680,10 @@ def unused_flag_sampling(source, world, path, line, framework):
     other = '\n'.join(source.read(p) for p in sorted(source.closure(world) - {path})
                       if PurePosixPath(p).suffix.lower() in SOURCE_TEXT)
     scripts = script_text(source)
-    if not flags or any(f'"{flag}"' in rest or f'"{flag}"' in other or flag in scripts for flag in flags):
-        return []
+    if any(f'"{flag}"' in rest or f'"{flag}"' in other or flag in scripts for flag in flags):
+        return None
     if 'GetFlagSetCopy' in scripts or 'm_flagSet' in scripts:
-        return []
+        return None
     return sorted(set(flags))
 
 
@@ -5312,8 +5321,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                             unsupported.clear()
                         else:
                             unused_flags = unused_flag_sampling(source, world, layer, line, block)
-                            if unused_flags:
+                            if unused_flags is not None:
                                 unsupported.clear()
+                                if not unused_flags:
+                                    inactive_placements.append('The original random flag block has no named flag to set.')
                     if unsupported:
                         blockers.append({'rule': 'framework settings', 'file': layer, 'line': line, 'detail': roots})
                 elif kind == 'SCR_AIGroup':
