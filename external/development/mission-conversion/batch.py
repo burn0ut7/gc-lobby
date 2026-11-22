@@ -400,12 +400,6 @@ REVIEWED_CAPACITY = {
           '1becf9d159310dd07d958b1bd9081801a6e35dda')),
         58, 57,
     ),
-    'Missions/Gabe/TVT97PowerStruggle/TVT97PowerStruggle.conf': (
-        'ab58aad1aec16739e3327402f7f9f7eca62a165a',
-        (('worlds/Gabe/PowerStruggle/TVT97PowerStruggle_Layers/Players.layer',
-          '23f5f5f4c38796dfad894f9c6404be7c2fc55eb9'),),
-        97, 95,
-    ),
     'Missions/Corax/SanSerriffeBusters/Serriff_Busters.conf': (
         'dca7ef8249bd38cf60d1c1d5ce2b1b87ad6b9253',
         (('worlds/Corax/SerriffBusters/SerrifBusters_Layers/BLUFOR.layer',
@@ -1032,6 +1026,10 @@ WIRECUTTER_PREFAB = ('42232FFE6E7AC415', 'Prefabs/Items/Core/Wirecutters/wirecut
 LEGACY_WIRECUTTER = re.compile(
     r'\$grp GenericEntity : "\{8554ED3F088BADA6\}Prefabs/Items/Core/Wirecutters/wirecutters(?:old)?\.et" \{')
 UNITS_PREFAB_ALIASES = {
+    # The previous Power Struggle variant migrated this exact vehicle radio slot in 1b3bd78c.
+    ('88B4E9C3B4F3B89D', 'Prefabs/Items/Equipment/Radios/Radio_R148_Multi.et'): (
+        'E1A5D4B878AA8980', 'Prefabs/Items/Equipment/Radios/RU/Radio_R148.et',
+        '82b8d536d8af5b0d207dc83ecaf8fe0230c022b551dcfbb63a9001afc9df11f8'),
     ('A3E19E754552334B', 'Prefabs/Items/Equipment/Radios/Radio_PRC352.et'): (
         'A3E19E754552334B', 'Prefabs/Items/Equipment/Radios/UK/Radio_PRC351.et',
         '801d79b4ecfb2e2c7e9b78bc660b2cc5ca0cbfdfcbae9874807a90927fa34e77'),

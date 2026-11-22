@@ -8,6 +8,9 @@ import re
 import subprocess
 import sys
 
+from dependencies import database_project
+from scenery import StockPrefabs
+
 
 def run_tool(name, args):
     script = Path(__file__).with_name(name + '.py')
@@ -93,6 +96,64 @@ def dependency_recovery_queue(resources, held):
         package['references'] = sorted(package['references'])
     return sorted(packages.values(), key=lambda package: (
         -len(package['onlyMissingPackage']), -len(package['worlds']), package['provider']))
+
+
+def historical_provider_candidates(plan, roots):
+    """Find archived registrations without changing the active provider graph."""
+    references = {entry['reference']: entry['worlds'] for entry in plan['resourceRecoveryQueue']}
+    if not references:
+        return []
+    held = {}
+    for entry in plan['heldDrafts']:
+        held[entry['world']] = {
+            issue for issue in entry['issues'] if not issue.endswith(' — Unresolved external resource references')
+        }
+    databases = {path.resolve() for root in roots for path in root.glob('*/resourceDatabase.rdb')}
+    candidates = []
+    for database in sorted(databases):
+        stock = StockPrefabs(database)
+        matched = {ref for ref in references if stock.contains(ref[1:17], ref[18:])}
+        if not matched:
+            continue
+        provider = database_project(database)
+        version_file = database.with_name('ServerData.json')
+        if not provider or not version_file.is_file():
+            continue
+        data = json.loads(version_file.read_text(encoding='utf-8-sig'))
+        addon_id, dependencies = provider
+        revision = data.get('revision') if isinstance(data, dict) else None
+        version = revision.get('version') if isinstance(revision, dict) else None
+        if not version or not isinstance(version, str) or str(data.get('id', '')).upper() != addon_id:
+            raise ValueError(f'cannot verify archived addon identity and version from {version_file}')
+        worlds = {world for ref in matched for world in references[ref]}
+        candidates.append({
+            'addonId': addon_id, 'version': version, 'projectDirectory': str(database.parent),
+            'databaseSha256': sha256(stock.data).hexdigest(), 'directDependencies': list(dependencies),
+            'exactReferences': sorted(matched), 'worlds': sorted(worlds),
+            'onlyMissingPackage': sorted(world for world in worlds if held[world] <= matched),
+        })
+    return sorted(candidates, key=lambda row: (
+        -len(row['onlyMissingPackage']), -len(row['worlds']), row['addonId'],
+        row['version'], row['projectDirectory']))
+
+
+def compare_provider_plans(baseline, candidate):
+    if any(baseline[key] != candidate[key] for key in ('source', 'target')):
+        raise ValueError('provider comparison requires matching legacy and Dev mission revisions')
+
+    def ready_drafts(plan):
+        return {header for key in ('suggestedBatch', 'additionalDrafts')
+                for draft in plan[key] for header in draft['launchers']}
+
+    before = set(baseline['committedLauncherMetadata'])
+    after = set(candidate['committedLauncherMetadata'])
+    before_drafts, after_drafts = ready_drafts(baseline), ready_drafts(candidate)
+    return {
+        'committedGains': sorted(after - before),
+        'committedLosses': sorted(before - after),
+        'draftGains': sorted(after_drafts - before_drafts),
+        'draftLosses': sorted(before_drafts - after_drafts),
+    }
 
 
 def authored_file_note(note):
@@ -375,6 +436,23 @@ def markdown(plan):
             registered = 'Yes' if entry['registeredInDevGraph'] else 'No'
             lines.append(f"| `{entry['reference']}` | {len(entry['onlyMissingAsset'])} | "
                          f"{len(entry['worlds'])} | {registered} |")
+    if archives := plan.get('historicalAddonAlternatives'):
+        lines.extend(['', '## Historical addon versions for held drafts', '',
+                      'Each row checks the exact resource IDs and paths from the held drafts. '
+                      'Audit the full dependency graph with the selected version before delivery.', '',
+                      '| Addon | Version | Drafts with all blockers covered | Held worlds | Exact references |',
+                      '| --- | --- | ---: | ---: | ---: |'])
+        for entry in archives:
+            lines.append(f"| `{entry['addonId']}` | {entry['version']} | {len(entry['onlyMissingPackage'])} | "
+                         f"{len(entry['worlds'])} | {len(entry['exactReferences'])} |")
+    if comparison := plan.get('providerComparison'):
+        lines.extend(['', '## File clearance compared with the baseline provider graph', ''])
+        for key, label in (('committedGains', 'Committed launchers cleared'),
+                           ('committedLosses', 'Committed launchers newly held'),
+                           ('draftGains', 'Draft launchers cleared'), ('draftLosses', 'Draft launchers newly held')):
+            lines.extend([f'### {label}', ''])
+            lines.extend([f'- `{header}`' for header in comparison[key]] or ['None.'])
+            lines.append('')
     if parents := plan.get('blockedLoadoutParents'):
         lines.extend(['', '## Missing parents of mission loadouts', '',
                       'These exact parent references occur in the local character prefabs named by failed roster checks. '
@@ -460,6 +538,10 @@ def main():
     parser.add_argument('--dependency', action='append', default=[], type=Path)
     parser.add_argument('--base-database', required=True, type=Path)
     parser.add_argument('--workshop-addons', required=True, type=Path)
+    parser.add_argument('--historical-workshop', action='append', default=[], type=Path,
+                        help='search an additional Workshop addon directory for exact historical registrations')
+    parser.add_argument('--compare-provider-plan', type=Path,
+                        help='report gained and lost file clearance against a plan for the same mission revisions')
     parser.add_argument('--output', required=True, type=Path, help='output directory outside the addons')
     parser.add_argument('--batch-size', default=10, type=int, help='maximum worlds in the suggested batch')
     parser.add_argument('--previous-plan', type=Path, help='carry forward runtime checks from the previous batch')
@@ -472,6 +554,9 @@ def main():
     if any(output.is_relative_to(addon.resolve()) for addon in [args.missions, *dependencies]):
         parser.error('use an output directory outside the addons')
     try:
+        for root in args.historical_workshop:
+            if not root.is_dir():
+                raise ValueError(f'historical Workshop directory does not exist: {root}')
         units_head = subprocess.check_output(
             ['git', '-C', str(args.units), 'rev-parse', 'HEAD', args.units_dev + '^{commit}'], text=True
         ).splitlines()
@@ -498,6 +583,11 @@ def main():
         plan = summarize(inventory_data, json.loads(review.read_text(encoding='utf-8')),
                          args.batch_size, prior.get('runtimeChecksByLauncher'),
                          prior.get('authoredFileNotesByLauncher'))
+        if args.historical_workshop:
+            plan['historicalAddonAlternatives'] = historical_provider_candidates(plan, args.historical_workshop)
+        if args.compare_provider_plan:
+            baseline = json.loads(args.compare_provider_plan.read_text(encoding='utf-8'))
+            plan['providerComparison'] = compare_provider_plans(baseline, plan)
         plan['inventorySha256'] = sha256(inventory_bytes).hexdigest()
         (output / 'plan.json').write_text(json.dumps(plan, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
         (output / 'plan.md').write_text(markdown(plan), encoding='utf-8')
