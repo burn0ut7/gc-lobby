@@ -1349,6 +1349,10 @@ The earliest listed WCS Army Cobra archive, 3.0.0, registers the original path a
 
 Lamentin Losers is converted in local Missions Dev commit `c1087b8c` with 45 playable roles. The legacy reinforcement handler skips missing waypoints, so the converter omits the absent `BLUWP4_4` from four event routes and keeps all remaining waypoints in their original order. The engine-owned static group route retains its inactive `BLUWATK10_1` link. The audit checks both source layers by blob and rechecks named targets in the converted world. All 239 previous drafts reproduced byte for byte.
 
+Workbench session `logs_2026-11-21_19-19-32` captured 1,631 entities and the same 45 playable roles on the retained dependency graph. The metadata installer verified the world files and merged only the snapshot in local Missions Dev commit `d4e53383`.
+
+The portable launch manifest matches the committed header hash and world reference. It lists 64 required addon IDs, including the WCS Cobra provider. The committed audit now clears 195 launchers with native snapshots.
+
 FIA Le Moule Raid is in Missions Dev commit `8251cb2a`. The source launcher advertises 16 players and the source has 17 playable roles across two fireteams, two machine gun teams and one platoon HQ. The converter retains both values. Its three destruction flags observe the command truck, fuel truck and ZU-23 truck by entity name. The legacy and Dev addon graphs both include the original ZU-23 provider. The convoy's installed ZU-23 archive and prefab registration were verified, and the prefab has a native vehicle damage manager. The converter recognizes this case only for the reviewed archive.
 
 The Best Defense's marker keeps the 128,000 world-scale authoring value and the original `8x4` cover image quad. The Dev image set points to the preserved legacy atlas under Top Malo House. The current WCS provider registers the Cobra GUID as `AH1S_Army_M261_X4.et`. The historical prefab body and its loadout have not been verified. The draft remains held on that reference, with cover scale across zoom levels queued for runtime review after installation.
