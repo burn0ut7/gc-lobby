@@ -67,6 +67,8 @@ This reads the legacy author fields defined in the published GC Core `GC_SCR_Mis
 
 The first pass mapped 36 author blocks, retaining the originals and all earlier generated snapshots. Junction Jab retained its era, Artillery tag, faction force descriptions and sides, and mission-group details through a native metadata refresh in Workbench session `logs_2026-11-21_12-15-42`. Its new snapshot and the 36 catalogue blocks are in Missions Dev commit `337e257d`.
 
+The pass over all 234 file-cleared launchers in Missions Dev added five more authored catalogue blocks in `de3b7025`. It preserved the generated snapshots and found no unrecognized author blocks in that cohort. Sixty launchers have native author catalogue data. All 234 have the generated snapshot used by the GC launcher to resolve required addons.
+
 Stage the header type for the native exporter with the same committed Dev revision used by the plan.
 
     python "$tools/launchers.py" --missions $repo --dev HEAD --prepare-metadata "$output/plan.json" --stage $metadataStage
