@@ -33,13 +33,20 @@ ADDON_VERSION = re.compile(r'"([\da-fA-F]{16})=([0-9]+(?:\.[0-9]+){1,3})"')
 REVIEWED_VERSION_PINS = {
     'Missions/arc/UrbanTroubles.conf': (
         '44c5ff26490d165afbcaab0a572682cb99679a57',
-        'worlds/arc/UrbanTroubles/UrbanTroubles_Layers/props.layer', 'a20ad2c82ffd839ee41b6f2e3aa53fa5e2f96be8',
-        '59EAA899751805DF=1.3.0',
+        (('worlds/arc/UrbanTroubles/UrbanTroubles_Layers/props.layer',
+          'a20ad2c82ffd839ee41b6f2e3aa53fa5e2f96be8', '59EAA899751805DF=1.3.0'),),
     ),
     'Missions/Huska/WindyGoat.conf': (
         'd7598feec3f1abf731fe149ea80be2fde129c041',
-        'Missions/Huska/Prefabs/Gabe_P.et', '76c5a6c7b1d5255aee20fabc0221fb85df347e64',
-        '61BD6595183FCEBD=1.0.56',
+        (('Missions/Huska/Prefabs/Gabe_P.et', '76c5a6c7b1d5255aee20fabc0221fb85df347e64',
+          '61BD6595183FCEBD=1.0.56'),),
+    ),
+    'Missions/Til/MetsalaAirfield.conf': (
+        '24e9b6684a21e9e9d41e187999f55e9522f7199f',
+        (('worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/ru.layer',
+          'd2b64a9a0d8d2081238c2aff1ee520b4b42a6b61', '628933A0D3A0D700=8.4.0'),
+         ('worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/props.layer',
+          'bf64e6ba099e6921f5e62ae93c884943b669fac1', '653CB36244ADBE0F=0.3.2')),
     ),
 }
 
@@ -134,10 +141,12 @@ def launcher(source, dev, header):
             raise ValueError(f'{path} already has a different Dev identity')
     body = native_header(replace_reference(text, WORLD_REF, world_id, world).encode()).decode()
     if header in REVIEWED_VERSION_PINS:
-        header_blob, asset, asset_blob, pin = REVIEWED_VERSION_PINS[header]
-        if source.files[header] == header_blob and source.files.get(asset) == asset_blob:
+        header_blob, reviewed_assets = REVIEWED_VERSION_PINS[header]
+        if source.files[header] == header_blob and all(source.files.get(path) == blob
+                                                      for path, blob, _ in reviewed_assets):
             # Keep the package version verified for these authored resources.
-            body = body.rstrip().removesuffix('}') + f' m_aRequiredAddonVersions {{\n  "{pin}"\n }}\n}}\n'
+            pins = ''.join(f'  "{pin}"\n' for _, _, pin in reviewed_assets)
+            body = body.rstrip().removesuffix('}') + f' m_aRequiredAddonVersions {{\n{pins} }}\n}}\n'
     files = {
         header: body,
         header + '.meta': replace_reference(header_meta, META_NAME, header_id, header),

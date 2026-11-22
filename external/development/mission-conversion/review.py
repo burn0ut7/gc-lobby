@@ -33,6 +33,8 @@ ZAGORIA_DRIVETRAIN_FAILURE = {
 }
 ENGINE_19037_DATABASE = 'd65ebb14b5c9b2baaef1dfafd9b653f51a6ce11f9815585cf8b5ada88dd4e58a'
 BOLT_GUNS_57_ARCHIVE = 'd262083e654a4d4952b88c901d257377de03329b6df0c7204359dcc8a38e5550'
+RUHA_032_REGISTRY = 'fb4911e6b81561933d73cbb1eeb734e97d1fe20bd08bb8f6797949e28f77a8b4'
+RUHA_WORLD = ('31A1248EA401F22C', 'worlds/Ruha.ent')
 SCREENING_RUNTIME_LAYER = 'worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/default.layer'
 SCREENING_RUNTIME_BLOB = '3eac40a7befe19671fbd9abb4e8e78714a804dd0'
 LEGACY_PRESENTATION_RESOURCES = {
@@ -81,6 +83,17 @@ def known_compile_failure(stock, providers):
         with package.open('rb') as native:
             if file_digest(native, 'sha256').hexdigest() == BOLT_GUNS_57_ARCHIVE:
                 return 'Chungus Bolt Guns 1.0.57 fails script compilation on Reforger 1.9.0.37'
+    return None
+
+
+def known_terrain_failure(stock, providers, references):
+    if RUHA_WORLD not in references or sha256(stock.data).hexdigest() != ENGINE_19037_DATABASE:
+        return None
+    for database in providers:
+        if database.parent.name == 'Ruha_653CB36244ADBE0F':
+            with database.open('rb') as native:
+                if file_digest(native, 'sha256').hexdigest() == RUHA_032_REGISTRY:
+                    return 'Ruha 0.3.2 navigation meshes are obsolete on Reforger 1.9.0.37'
     return None
 
 
@@ -586,9 +599,16 @@ def main():
                 if pins and not provider_issue:
                     provider_issue = known_compile_failure(stock, chosen_providers)
                 for header in group:
+                    terrain_issue = None
+                    if not provider_issue and pins:
+                        world_match = WORLD_REF.search(target.read(header))
+                        if world_match and (world := world_match[3]) in target.files:
+                            parent_refs = {(guid.upper(), path) for guid, path in REF.findall(target.read(world))}
+                            terrain_issue = known_terrain_failure(stock, chosen_providers, parent_refs)
+                    issue = provider_issue or terrain_issue
                     missions[header] = compare_mission(source, target, header, notes, chosen_dependencies, stock,
-                                                       unresolved, longmoor, provider_issue, zagoria_failure)
-                    if pins and not provider_issue:
+                                                       unresolved, longmoor, issue, zagoria_failure)
+                    if pins and not issue:
                         missions[header]['auditedAddonVersions'] = dict(pins)
         except (OSError, ValueError) as exc:
             parser.error(str(exc))

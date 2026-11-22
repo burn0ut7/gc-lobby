@@ -231,6 +231,7 @@ WORKSHOP_SPAWN_PREFABS = {
         None,
         (('1A486F1C4D22A32A', 'Prefabs/Vehicles/Tracked/T14/VehParts/Seats/T14_seat.et'),
          ('EDD3E14E481BDA62', 'Prefabs/Vehicles/Airplanes/FA18A/FA18A_GBU_CAS.et'),
+         ('17B08DA4B050BBFE', 'Prefabs/Vehicles/Missles/kh55/KH55_CAS.et'),
          ('EAD777F4CDA11F16', 'Prefabs/Vehicles/Airplanes/F22/F22_Flyby.et'),
          ('FDD01BF3CEAB37E3', 'Prefabs/Vehicles/Airplanes/SU57/SU57_Flyby.et'),
          ('123595894023C474', 'Prefabs/Vehicles/Wheeled/LAV25/LAV25_RHS_D.et')),
@@ -252,6 +253,9 @@ WORKSHOP_SPAWN_GROUPS = {
         (('8A265F54C454DD93', 'Prefabs/Groups/OPFOR/Group_USSR_ManeuverGroup_Late.et'),),
     ),
 }
+METSALA_VEHICLE_LAYER = 'worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/ru.layer'
+METSALA_VEHICLE_BLOB = 'd2b64a9a0d8d2081238c2aff1ee520b4b42a6b61'
+METSALA_HIND = '{658B80A790C7EFA7}Prefabs/Vehicles/Helicopters/Mi24/Mi24V_armed_9M114.et'
 RHS_DAMAGE_PATHS = {
     '52B13341B4A2F012': 'Prefabs/Vehicles/Tracked/2S1/Tank_2S1_Green.et',
     'D8136D90BE12445F': 'Prefabs/Vehicles/Tracked/2S1/Tank_2S1.et',
@@ -1231,6 +1235,8 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/Til/MetsalaAirfield/Prefabs/Mi8MT_Hardpoints_black_HEDP_2.et':
+        '2a457545cecc38d326ff96d123e76fad987f90704c3dc0eeac8c4aaa400c700b',
     'worlds/HitTheMan/2nd Break The Line/HTM_EffectModule_Zoned_MortarBarrage_Creeping.et':
         '730b92d721c0fb153f471e346b1fe2368f347e96b9f4e95e0471eda1e1625ff9',
     'worlds/Perfk/Prefabs/Crates/pk_MedicalCrate.et':
@@ -4177,7 +4183,8 @@ def area_rules(source, world, dev=None):
                 if any(TRIGGER.fullmatch(field.strip()) or PRESENCE_TRIGGER.fullmatch(field.strip())
                        for field in block[1:-1]):
                     try:
-                        checks, converted, records = nested_map_areas(source, world, block, conditions)
+                        checks, converted, records = nested_map_areas(
+                            source, world, block, conditions, shape_scope=f'{layer}:{line}')
                     except (ArithmeticError, KeyError, ValueError) as exc:
                         audit[f'{layer}:{line}'] = {'gap': str(exc)}
                     else:
@@ -4364,7 +4371,7 @@ def building_area_captures(source, world, block, known_conditions):
     return checks, '\n'.join(converted) + '\n', records
 
 
-def nested_map_areas(source, world, block, known_conditions):
+def nested_map_areas(source, world, block, known_conditions, *, shape_scope):
     checks, records = {}, {}
     scripts = script_text(source)
 
@@ -4377,9 +4384,9 @@ def nested_map_areas(source, world, block, known_conditions):
                 continue
             children = [TRIGGER.fullmatch(row[3:]) for row in block[start + 1:end] if row.startswith('   ')]
             captures = [child for child in children if child and child['kind'] == 'Faction'
-                        and child['guid'] == '8C576D46F6579229' and child['name']]
+                        and child['guid'] == '8C576D46F6579229']
             if len(captures) == 1:
-                anchor = captures[0]['name']
+                anchor = captures[0]['name'] or f'{shape_scope}:{start}'
                 names[start] = f'GC_MigrationArea_{guid(world + "/polygon/" + anchor)}'
         if names:
             references = '\n'.join(source.read(path) for path in sorted(source.closure(world))
@@ -5293,6 +5300,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                             converted, groups, slots = garrison_placement(source, world, layer, block), 0, 0
                         else:
                             vehicle, groups, slots = convert_vehicle_groups(convert_crew(block), convert_group_block)
+                            if (layer == METSALA_VEHICLE_LAYER and source.files[layer] == METSALA_VEHICLE_BLOB
+                                    and head == f'$grp Vehicle : "{METSALA_HIND}" {{'):
+                                # Version 8.4.0 retains these component, group and station IDs.
+                                vehicle = [line.replace(METSALA_HIND, METSALA_HIND.replace('_armed_', '_Armed_'))
+                                           .replace('WCS_ArmamentWeaponGroup ', 'WCS_Armament_WeaponGroup ')
+                                           .replace('WCS_ArmamentWeaponInfo ', 'WCS_Armament_WeaponInfo ')
+                                           for line in vehicle]
                             vehicle = restore_rhib_mounts(vehicle, asset_aliases, source.files[layer])
                             converted = native_placement(update_cobra_armament(vehicle, asset_aliases))
                     except ValueError as exc:
