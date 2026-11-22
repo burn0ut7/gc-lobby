@@ -557,6 +557,7 @@ def main():
                     hidden_briefings = {page.name: order for order, page in indexed
                                         if names[page.name] == 1 and page.audience == BriefingAudience.HIDDEN}
                 derived_audit = []
+                derived_spawners_audit = {}
                 identity_flags_audit = []
                 startup_samples_audit = []
                 damage_flags_before_match = {flag for candidate in row.get('damageFlagCandidates', {}).values()
@@ -576,10 +577,12 @@ def main():
                                               for field in ('teleportRequiredFlags', 'interactionRequiredFlags')
                                               for flag in placement.get(field, [])),
                     spawner_reads=batch.placed_spawner_flag_reads(source, source.layers[world.lower()])
-                    if args.batch else None)
+                    if args.batch else None, derived_spawners_audit=derived_spawners_audit if args.batch else None)
                 outcome = {'events': outcome_audit}
                 if derived_audit:
                     outcome['derivedFlags'] = derived_audit
+                if derived_spawners_audit:
+                    outcome['derivedSpawnerConditions'] = derived_spawners_audit
                 if identity_flags_audit:
                     outcome['identityFlags'] = identity_flags_audit
                 if startup_samples_audit:

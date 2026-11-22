@@ -124,8 +124,8 @@ def instruction_flags(source, world, framework_path, lines, scripts, flag_reads)
                         and corpus.count(flag) == known_uses[flag] + flag_reads.get(flag[1:-1], 0)))
 
 
-def derived_flags(source, world, framework_path, body, scripts):
-    """Read pure derived flags whose authored references are all literal terms."""
+def meta_flag_definitions(body, scripts):
+    """Read serialized meta definitions and idempotent self-assignments."""
     starts = [i for i, line in enumerate(body) if line == ' m_metaFlags {']
     if not starts:
         return {}, set()
@@ -161,7 +161,32 @@ def derived_flags(source, world, framework_path, body, scripts):
             definitions[flag] = fields[term:close + 1]
         cursor = stop + 1
 
-    literal_uses = defaultdict(int)
+    dependencies = {flag: {match[1] for line in lines if (match := META_FLAG_FIELD.fullmatch(line))
+                           and match[1] in definitions}
+                    for flag, lines in definitions.items()}
+    try:
+        tuple(TopologicalSorter(dependencies).static_order())
+    except CycleError as exc:
+        raise ValueError('cyclic meta flag definitions') from exc
+    return definitions, identities
+
+
+def verify_derived_flag_readers(source, world, framework_path, body, definitions, spawner_reads):
+    """Account for literal terms and direct placed-spawner readers of each flag."""
+    if not definitions:
+        return
+    literal_uses = literal_flag_reads(body)
+    content = '\n'.join('\n'.join(line for line in source.read(path).splitlines()
+                                  if not (path == framework_path and line.startswith('   m_name ')))
+                        for path in sorted(source.closure(world))
+                        if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+    for flag in definitions:
+        if content.count(flag) != literal_uses[flag] + spawner_reads.get(flag[1:-1], 0) + 1:
+            raise ValueError('meta flag has another producer or unsupported use: ' + flag)
+
+
+def literal_flag_reads(body):
+    literal_uses = Counter()
     for index, line in enumerate(body):
         match = TERM.fullmatch(line)
         if not match or match[1] != 'Literal':
@@ -171,21 +196,7 @@ def derived_flags(source, world, framework_path, body, scripts):
         for item in fields:
             if name := META_FLAG_FIELD.fullmatch(item):
                 literal_uses[name[1]] += 1
-    content = '\n'.join('\n'.join(line for line in source.read(path).splitlines()
-                                  if not (path == framework_path and line.startswith('   m_name ')))
-                        for path in sorted(source.closure(world))
-                        if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
-    for flag in definitions:
-        if content.count(flag) != literal_uses[flag] + 1:
-            raise ValueError('meta flag has another producer or unsupported use: ' + flag)
-    dependencies = {flag: {match[1] for line in lines if (match := META_FLAG_FIELD.fullmatch(line))
-                           and match[1] in definitions}
-                    for flag, lines in definitions.items()}
-    try:
-        tuple(TopologicalSorter(dependencies).static_order())
-    except CycleError as exc:
-        raise ValueError('cyclic meta flag definitions') from exc
-    return definitions, identities
+    return literal_uses
 
 
 def end_action(lines, key, *, extended_announcements=False, end_match=False):
@@ -737,7 +748,7 @@ def startup_flags(source, world, owner, body, scripts, identity_flags=()):
     return tuple(flags)
 
 
-def startup_samples(source, world, owner, body, scripts, spawner_reads):
+def startup_samples(source, world, owner, body, scripts, spawner_reads, definitions):
     """Read isolated draws used by Match events or verified placed spawners."""
     roots = [i for i, line in enumerate(body) if line == ' m_randomFlags {']
     if len(roots) != 1 or any(api in scripts for api in SCRIPT_FLAG_APIS):
@@ -767,7 +778,9 @@ def startup_samples(source, world, owner, body, scripts, spawner_reads):
             index = stop + 1
         if not 1 <= len(sampled) <= 64:
             return []
-        reads = defaultdict(int)
+        reads = Counter()
+        for definition in definitions.values():
+            reads.update(literal_flag_reads(definition))
         labels = defaultdict(int)
         for start, line in enumerate(body):
             if not EVENT.fullmatch(line):
@@ -899,7 +912,7 @@ def review_prefab_spawns(fields, key, resolve_spawn, resolve_crew):
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
                      extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None,
                      derived_audit=None, identity_flags_audit=None, match_only_flags=(), startup_samples_audit=None,
-                     interaction_reads=None, spawner_reads=None):
+                     interaction_reads=None, spawner_reads=None, derived_spawners_audit=None):
     captures = captures or {}
     notification_audit = notification_audit or {}
     extraction_spawns = extraction_spawns or {}
@@ -937,10 +950,13 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     for flag, count in spawner_reads.items():
         flag_reads[flag] += count
     event_flags = instruction_flags(source, world, path, body, scripts, flag_reads) if scripts is not None else ()
-    derived, identity_flags, derived_gap = {}, set(), None
+    definitions, derived, identity_flags, derived_gap = {}, {}, set(), None
     if compound:
         try:
-            derived, identity_flags = derived_flags(source, world, path, body, scripts)
+            definitions, identities = meta_flag_definitions(body, scripts)
+            verify_derived_flag_readers(source, world, path, body, definitions,
+                                        spawner_reads if derived_spawners_audit is not None else {})
+            derived, identity_flags = definitions, identities
         except ValueError as exc:
             derived_gap = str(exc)
     if derived and derived_audit is not None:
@@ -949,7 +965,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         identity_flags_audit.extend(flag[1:-1] for flag in sorted(identity_flags))
     samples, startup, binary_startup = [], (), None
     if compound and resolve_spawn:
-        samples = startup_samples(source, world, path, body, scripts or '', spawner_reads)
+        samples = startup_samples(source, world, path, body, scripts or '', spawner_reads, definitions)
         if not samples:
             startup = startup_flags(source, world, path, body, scripts or '', identity_flags)
             if not startup:
@@ -959,6 +975,18 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     event_flags = {*event_flags, *sampled_flags}
     inactive = inactive_flags(source, world, path, scripts) if compound else ()
     match_only_flags = {*match_only_flags, *sampled_flags}
+    derived_spawners = {}
+    for flag, definition in derived.items():
+        if not spawner_reads.get(flag[1:-1]):
+            continue
+        try:
+            term = read_term(definition, flags, captures, ai, objective_flags, event_flags, derived=derived)
+            if any(item['trigger'] not in ('event flag', 'interaction flag') for item in leaves(term)):
+                raise ValueError('requires a placed-spawner condition for a non-mission flag')
+        except ValueError as exc:
+            derived_gap = f'meta flag {flag} cannot gate a placed spawner: {exc}'
+            break
+        derived_spawners[flag[1:-1]] = {**term, 'requiresMatch': True, 'derivedFlag': flag[1:-1]}
     parsed, audit = [], {}
     names = set()
     source_names = Counter(match[1][1:-1] for item in body
@@ -1076,6 +1104,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     if samples:
         used_samples = {item.get('flag') for _, _, _, term, _ in parsed for item in leaves(term)}
         used_samples.update(spawner_reads)
+        used_samples.update(item.get('flag') for term in derived_spawners.values() for item in leaves(term))
         if not sampled_flags <= used_samples:
             return [], audit, 'startup sampled flag still has an unconverted consumer'
         if 'GC_MigrationStartupSampling' in names:
@@ -1107,4 +1136,6 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         else:
             compiled.extend(render(world + '/' + identity, name, term, actions, captures, capture_messages,
                                    tracked_areas, display_name))
+    if derived_spawners_audit is not None and not derived_gap:
+        derived_spawners_audit.update(derived_spawners)
     return compiled, audit, derived_gap

@@ -214,6 +214,8 @@ WORKSHOP_SPAWN_PREFABS = {
     GMFX_PROVIDER: (
         GMFX_DIGEST,
         (('DDDDBEC77B49A995', 'Prefabs/Systems/Explosions/Wrapper_Bomb_Huge.et'),
+         ('9016E09E91956B2E', 'Prefabs/Systems/Explosions/Wrapper_Bomb_Medium.et'),
+         ('4BE47BA2B7E3877E', 'Prefabs/Systems/Fire/Wrapper_Fire_Large_Damage.et'),
          ('30263B4F1FB2A0F2', 'Prefabs/Systems/Artillery/ArtilleryWrapper_WTF.et'),
          ('2D854F52D8D6B31E', 'Prefabs/Systems/Smoke/Wrapper_Smoke_Purple.et'),
          ('6BDBEFF5CE6E2F28', 'Prefabs/Systems/Smoke/Wrapper_Smoke_Green.et'), GMFX_AP_MINE),
@@ -2422,6 +2424,14 @@ def passive_asset(source, path):
             return body
     if suffix == '.et':
         body = source.read(path)
+        if path == 'worlds/Perfk/Prefabs/Markers/EditableMarker_AmmoCache_VIS_GC_MUJ.et':
+            if sha256(body.strip().encode()).hexdigest() != (
+                    '8246d5e01642372cc3e1e71714c846059d5ee937e6abf54f0d75f33e8380131e'):
+                raise ValueError('spawned ammunition marker needs review')
+            root, identity, *fields = body.splitlines()
+            marker, _ = convert_layer('\n'.join([root, *fields]) + '\n', draw_order=True, source=source)
+            head, rest = marker.split('\n', 1)
+            return '\n'.join([head, identity, rest])
         if path in REVIEWED_LOCKED_M113:
             digest, native_lock = REVIEWED_LOCKED_M113[path]
             if sha256(body.strip().encode()).hexdigest() != digest:
@@ -2942,7 +2952,7 @@ def reviewed_spawn_type(source, resource, path, types):
 
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
                  resolve_crew_config=None, shadowed_names=(), missing_waypoint=None, self_waypoints=(),
-                 capture_latches=None, single_draw_flags=()):
+                 capture_latches=None, single_draw_flags=(), derived_conditions=None):
     root = PLACED_SPAWNER.fullmatch(block[0])
     if not root:
         raise ValueError('unverified placed spawner prefab')
@@ -3030,6 +3040,10 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                 term = {'trigger': 'area capture', 'flag': flag[1:-1]}
                 if flag[1:-1] not in used_flags and any('m_Messages ' in line for line in check):
                     raise ValueError('capture-gated spawner needs a shared status-message owner')
+            elif derived_conditions and flag[1:-1] in derived_conditions:
+                term = derived_conditions[flag[1:-1]]
+                if any(item['flag'] not in flags for item in leaves(term)):
+                    raise ValueError('spawner meta flag lacks converted producers: ' + flag)
             elif flag[1:-1] in flags and re.fullmatch(FLAG_NAME, flag):
                 term = {'trigger': 'interaction flag', 'flag': flag[1:-1]}
             else:
@@ -3052,7 +3066,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             actions[seconds].extend(action)
         label = 'GC_MigratedSpawn_' + guid(key)
         rendered = render_outcome(key, label, term, actions, captures, {flag}, capture_latches or {})
-        if term['trigger'] == 'interaction flag':
+        if term['trigger'] == 'interaction flag' and not term.get('requiresMatch'):
             rendered[3:3] = [f'      GC_GameModeStateCondition "{{{guid(key + "/match")}}}" {{',
                              f'       m_eGameModeState {MATCH_PHASE_VALUE}', '      }']
         rules.extend(rendered)
@@ -3104,7 +3118,7 @@ def shadowed_crew_names(source, world, layers):
 
 
 def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, blockers, resolve_crew, resolve_crew_config,
-                   single_draw_flags):
+                   single_draw_flags, derived_conditions):
     placements, schedules, audit = {}, [], []
     layers = {path: text for path in source.layers[world.lower()]
               if 'TILW_PrefabSpawnerEntity' in (text := source.read(path))}
@@ -3131,7 +3145,8 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                         block, f'{layer}:{line}', resolve_spawn, captures, flags, used_flags, resolve_crew,
                         source=source, resolve_crew_config=resolve_crew_config, shadowed_names=shadowed,
                         missing_waypoint=missing_waypoint, self_waypoints=self_waypoints,
-                        capture_latches=capture_latches, single_draw_flags=single_draw_flags)
+                        capture_latches=capture_latches, single_draw_flags=single_draw_flags,
+                        derived_conditions=derived_conditions)
                 except ValueError as exc:
                     blockers.append({'rule': 'TILW_PrefabSpawnerEntity', 'file': layer, 'line': line,
                                      'detail': str(exc)})
@@ -4225,9 +4240,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         area_placements = {**placed_areas, **area_placements}
         spawners, schedules, spawner_audit = world_spawners(source, world, resolve_spawn, captures,
                                                            set(objective_flags) | event_flags, used_flags, blockers,
-                                                           resolve_crew, resolve_crew_config, single_draw_flags)
+                                                           resolve_crew, resolve_crew_config, single_draw_flags,
+                                                           outcome.get('derivedSpawnerConditions'))
         rule_text += schedules
         used_flags.update(entry['flag'] for entry in spawner_audit if entry['trigger'] == 'area capture')
+        used_flags.update(item['flag'] for entry in spawner_audit if entry.get('derivedFlag')
+                          for item in leaves(entry))
     unused_flags = []
     status_areas = {}
     flag_references = None
@@ -4474,6 +4492,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 crew_names[group['groupName']].add(group.get('shadowedByAnchor', False))
                 crew_name_counts[group['groupName']] += 1
     spawn_guids = {REF.fullmatch(item['prefab'])[1].upper() for item in prefab_spawns}
+    spawned_assets = spawned_assets.copy()
     for resource, asset in sorted(spawned_assets.items()):
         if resource not in roster_assets and asset['flag'] in used_flags and resource not in spawn_guids:
             blockers.append({'rule': 'spawned objective', 'file': asset['path'],
@@ -4481,12 +4500,22 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         if asset.get('destroyed'):
             producers = [item for item in prefab_spawns if REF.fullmatch(item['prefab'])[1].upper() == resource]
             choices = {item['startupChoice'] for item in producers}
-            if (len(producers) != asset['spawnCount']
-                    or any(len(item.get('spawnDelaysSeconds', ['0'])) != 1 for item in producers)
-                    or (len(producers) > 1 and (
-                        None in choices or len(choices) != len(producers)))):
+            complete = (len(producers) == asset['spawnCount']
+                        and all(len(item.get('spawnDelaysSeconds', ['0'])) == 1 for item in producers))
+            exclusive = len(choices) == len(producers) and None not in choices
+            shared_draw = (complete and not asset.get('vehicle') and choices <= single_draw_flags
+                           and len({item['spawnAnchor'] for item in producers}) == len(producers)
+                           and all(item.get('spawnDelaysSeconds') == ['0'] for item in producers))
+            if not complete or (len(producers) > 1 and not (exclusive or shared_draw)):
                 blockers.append({'rule': 'spawned objective', 'file': asset['path'],
                                  'detail': 'damage objective needs one spawn or mutually exclusive startup choices'})
+            elif len(producers) > 1 and not exclusive:
+                # A chosen location can spawn multiple observers. Each writes the same
+                # flag until its own hit zone reaches the target state.
+                field = f'   m_sFlag "{asset["flag"]}"\n'
+                body = asset['body'].replace(field, field + '   m_bClearOnMismatch 1\n'
+                                            '   m_bDeferInitialSample 1\n', 1)
+                spawned_assets[resource] = {**asset, 'body': body}
     extraction_spawns = [item for event in rules.values() for item in event.get('extractionSpawns', [])]
     if delayed:
         flag_uses = Counter(term.get('flag') for term in terms if term['trigger'] == 'area capture')
