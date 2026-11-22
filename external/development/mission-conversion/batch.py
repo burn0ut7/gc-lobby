@@ -268,6 +268,13 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/TemplateHeader.conf': (
+        'dd0c95da8fe67c84206139b954d9a86006c19735',
+        tuple((f'worlds/TemplateMission/TemplateMission_Layers/{faction}/Players.layer',
+               'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391')
+              for faction in ('BLUFOR', 'CIVFOR', 'INDFOR', 'OPFOR')),
+        30, 0,
+    ),
     'Missions/TheLocalPub/BarnyardBashers.conf': (
         '045f48cbb044d096c67f9700fe54e32e291314a1',
         (('worlds/TheLocalPub/BarnyardBashers/BarnyardBashers_Layers/BLUFOR/Players.layer',
@@ -1869,6 +1876,23 @@ def native_placement(block, *, reviewed_character=False):
                 stack.pop()
     text = '\n'.join(lines) + '\n'
     return None if LEGACY.search(text) else text
+
+
+EDITOR_COMMENT = re.compile(r'(?P<group>\$grp )?EditorCommentEntity(?: (?P<name>[\w.-]+))? \{')
+
+
+def validate_editor_comments(block):
+    head = EDITOR_COMMENT.fullmatch(block[0])
+    if not head:
+        raise ValueError('expected native editor comment')
+    for _, fields in polygon_capture.members(block, head['group'], head['name']):
+        fields, children = trigger_children(fields) if ' {' in fields else (fields, [])
+        values = properties(fields, CAPTURE_TRANSFORM | {'m_Comment', 'm_Size', 'm_FaceCamera', 'm_TextBackground'})
+        for field, value in values.items():
+            if field in CAPTURE_TRANSFORM and not FIELD.fullmatch(f'{field} {value}'):
+                raise ValueError('invalid editor comment transform')
+        for _, child in children:
+            validate_editor_comments(child)
 
 
 def garrison_anchors(block, expected):
@@ -3745,6 +3769,14 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
 
 TRIGGER = re.compile(r'(?P<group>\$grp )?TILW_(?P<kind>Extraction|Faction)TriggerEntity(?: (?P<name>[\w.-]+))?'
                      r' : "\{(?P<guid>192ABD6B9232E064|8C576D46F6579229)\}[^"\n]+" \{')
+TEMPLATE_WORLD = 'worlds/TemplateMission/TemplateMission.ent'
+TEMPLATE_SETTINGS_NOTE = ('4. In Workbench, duplicate TemplateMission_GC_Settings.et into your mission folder. '
+                          'Reassign the GC_LobbyGameMode in your default layer to the copy before editing '
+                          'briefings or mission rules.')
+TEMPLATE_TRIGGER_PATHS = {
+    'worlds/TemplateMission/TemplateMission_Layers/SYSTEMS/Triggers/Capture.layer': '843785c1340060e2046f5e7161e26d6a1481d065',
+    'worlds/TemplateMission/TemplateMission_Layers/SYSTEMS/Triggers/Extract.layer': '2375bbeb375662a178c062dfd27de46b150583d7',
+}
 PRESENCE_TRIGGER = re.compile(r'(?P<group>\$grp )?TILW_(?P<kind>Presence)TriggerEntity(?: (?P<name>[\w.-]+))?'
                               r' : "\{826E6F2246328952\}Prefabs/Logic/Triggers/TILW_PresenceTrigger\.et" \{')
 PRESENCE_MESSAGES = (
@@ -4614,6 +4646,32 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     result.append('')
                 elif kind == 'PS_MissionDescription' and preset and not row['briefingGaps']:
                     continue
+                elif kind == 'EditorCommentEntity':
+                    try:
+                        validate_editor_comments(block)
+                        if world == TEMPLATE_WORLD:
+                            body = body.replace(
+                                '"- Framework"', '"- Mission rules and briefings in the copied Lobby settings prefab"')
+                            body = body.replace('"- PS_GameMode_Lobby_GC"', '"- GC_LobbyGameMode"')
+                            step = next((field for field in block if '"3. Rename the folder to ' in field), '')
+                            if step.endswith('\\'):
+                                indent = step[:len(step) - len(step.lstrip())]
+                                body = body.replace(step + '\n', step + '\n' + indent +
+                                                    f'"{TEMPLATE_SETTINGS_NOTE}"\\\n', 1)
+                        result.append(body)
+                    except ValueError as exc:
+                        blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
+                elif world == TEMPLATE_WORLD and (trigger := TRIGGER.fullmatch(head)) and (
+                        TEMPLATE_TRIGGER_PATHS.get(layer) == source.files[layer]
+                        and trigger['name'] and len(block) == 3 and FIELD.fullmatch(block[1].strip())):
+                    result.append(f'GC_RadiusAreaEntity {trigger["name"]} : '
+                                  '"{2C4447C53A1E450B}Prefabs/Logic/Mission/RadiusArea.et" {\n'
+                                  f'{block[1]}\n m_fRadius 25\n}}\n')
+                elif world == TEMPLATE_WORLD and FRAMEWORK.fullmatch(head) and (
+                        source.files[layer] == 'f2c572e21672fb6eccb7e9c583a0109678944e00'
+                        and len(block) == 3 and FIELD.fullmatch(block[1].strip())):
+                    # This shipped starter has no events, flags or script overrides.
+                    inactive_placements.append('The original template framework is empty and runs no mission events.')
                 elif (layer == INACTIVE_DOOR_LAYER and source.files[layer] == 'b21a4cb26d47b0c4e0cdd9fc04786a90adc2c5cd'
                       and block == INACTIVE_DOOR and 'TILW_DoorOpenerComponent' not in script_text(source)):
                     # The released TilW prefab still names the component removed in c47df35.
@@ -4821,8 +4879,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         except ValueError as exc:
             blockers.append({'rule': 'mode settings', 'file': mode_index[0], 'detail': str(exc)})
     for path, blocks_in_layer in parts.items():
-        if ''.join(blocks_in_layer).strip():
-            draft[path] = ''.join(blocks_in_layer)
+        contents = ''.join(blocks_in_layer)
+        if contents.strip() or world == TEMPLATE_WORLD and not source.read(path):
+            draft[path] = contents
+    if world == TEMPLATE_WORLD and (instructions := 'worlds/TemplateMission/READ ME.txt') in source.files:
+        original = source.read_raw(instructions).decode('utf-8').rstrip('\r\n')
+        draft[instructions] = f'{original}\n{TEMPLATE_SETTINGS_NOTE}\n'
     assignments = [item for event in rules.values() for item in event.get('waypointAssignments', [])]
     marker_edits = [item for event in rules.values() for item in event.get('convertedActions', []) if 'markers' in item]
     briefing_edits = Counter(order for edit in marker_edits for order in edit.get('briefingOrders', []))
