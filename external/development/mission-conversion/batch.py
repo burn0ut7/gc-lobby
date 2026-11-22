@@ -1391,6 +1391,7 @@ BULGES = 'worlds/TheLocalPub/BattleOfTheBulges'
 LOST_AND_FOUND_DELTA_GROUP = ('worlds/FloridaMan/Prefabs/Groups/BLUFOR/US/Army_2010_DeltaForce/'
                               'Group_Delta_2010_Assault_m_P.et')
 LOST_AND_FOUND_PILOT_GROUP = 'worlds/FloridaMan/Prefabs/Groups/BLUFOR/US/US_Pilot_Group.et'
+LOST_AND_FOUND_PILOT_ID = 'C1E798172DA45F29'
 REVIEWED_SPAWNED_MARKERS = {
     'worlds/Perfk/Prefabs/Markers/EditableMarker_AmmoCache_VIS_GC_MUJ.et':
         '8246d5e01642372cc3e1e71714c846059d5ee937e6abf54f0d75f33e8380131e',
@@ -3900,6 +3901,7 @@ def area_rules(source, world, dev=None):
                 for name, fields in polygon_capture.members(block, root['group'], root['name']):
                     trigger = match
                     attached = []
+                    pilot_spawn = None
                     if shape:
                         if not any(TRIGGER.fullmatch(field.strip()) for field in fields):
                             parent, visual, amounts = attached_trigger_map(fields, dev)
@@ -3908,7 +3910,17 @@ def area_rules(source, world, dev=None):
                             head = 'PolylineShapeEntity' + (f' {name}' if name else '') + ' {'
                             areas.append('\n'.join([head, *parent, ' {', *visual, ' }', '}', '']))
                             continue
-                        placement, (trigger, fields), vertices = polygon_capture.read(fields, TRIGGER)
+                        if any(field.startswith('  TILW_AreaSpawningComponent ') for field in fields):
+                            prefab_blob, spawn_layer, layer_blob, _, _ = REVIEWED_GROUP_CALLSIGNS[
+                                LOST_AND_FOUND_PILOT_GROUP]
+                            if (layer != spawn_layer or source.files.get(layer) != layer_blob
+                                    or source.files.get(LOST_AND_FOUND_PILOT_GROUP) != prefab_blob
+                                    or source.resources.get(LOST_AND_FOUND_PILOT_ID) != [LOST_AND_FOUND_PILOT_GROUP]):
+                                raise ValueError('polygon startup spawn needs a verified group and placement')
+                            pilot_spawn = ('658EF768737FE0CE', guid(layer + '/startup-group'),
+                                           f'"{{{LOST_AND_FOUND_PILOT_ID}}}{LOST_AND_FOUND_PILOT_GROUP}"')
+                        placement, (trigger, fields), vertices = polygon_capture.read(
+                            fields, TRIGGER, startup_prefab=pilot_spawn)
                     elif ' {' in fields:
                         fields, attached, amounts = attached_trigger_map(fields, dev)
                     flag_field = next((value.strip() for value in fields if value.strip().startswith('m_flagName ')),
@@ -3987,6 +3999,8 @@ def area_rules(source, world, dev=None):
                         capture_details[flag[1:-1]]['polygonVertices'] = vertices
                         if any('GC_MapShapeComponent ' in row for row in placement):
                             capture_details[flag[1:-1]]['polygonMapOverlay'] = True
+                        if pilot_spawn:
+                            capture_details[flag[1:-1]]['startupPlayableSlots'] = 2
                     elif attached:
                         area = '\n'.join([*area.splitlines()[:-1], ' {', *attached, ' }', '}', ''])
                         capture_details.setdefault(flag[1:-1], {'area': area_name}).update(amounts)
@@ -5188,7 +5202,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             else:
                 blockers.append({'rule': 'existing Dev file differs', 'file': path})
     complete_rosters = (entry.get('unitPrefabEntries', 0) for entry in row.get('groupLayers', {}).values())
-    slots = sum(complete_rosters) + sum(entry['slots'] for entry in group_blocks)
+    captures_audit = [record for trigger in row.get('captureCandidate', {}).values()
+                      for record in trigger.values() if isinstance(record, dict)]
+    startup_slots = sum(record.get('startupPlayableSlots', 0) for record in captures_audit)
+    slots = sum(complete_rosters) + sum(entry['slots'] for entry in group_blocks) + startup_slots
     advertised = {}
     for header in row['headers']:
         count = re.search(r'^\s*m_iPlayerCount (\d+)\s*$', source.read(header), re.M)
@@ -5222,6 +5239,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(record.get('polygonMapOverlay') for trigger in row.get('captureCandidate', {}).values()
            for record in trigger.values() if isinstance(record, dict)):
         remaining.append('Compare the capture footprint and its shared map fill, outline and faction visibility.')
+    if startup_slots:
+        remaining.append('Compare random pilot placement and the two authored slots before role selection.')
     if any('m_fAuthoredCountdownSeconds ' in text for text in draft.values() if isinstance(text, str)):
         remaining.append('Compare the authored fractional staging release and displayed countdown.')
     if any('m_bRestrictAuthoredStagingCombat 1' in text for text in draft.values() if isinstance(text, str)):

@@ -26,7 +26,7 @@ def members(block, grouped, name):
     return result
 
 
-def read(lines, trigger_pattern):
+def read(lines, trigger_pattern, *, startup_prefab=None):
     origin, vertices, child = None, None, None
     seen = set()
     yaw = 0
@@ -67,7 +67,7 @@ def read(lines, trigger_pattern):
             pass
         elif field == 'components' and value == '{':
             end = block_end(lines, index)
-            placement.extend(polygon_components(lines[index + 1:end]))
+            placement.extend(polygon_components(lines[index + 1:end], startup_prefab=startup_prefab))
             index = end + 1
             continue
         elif line == ' {':
@@ -95,8 +95,19 @@ def read(lines, trigger_pattern):
     return placement, child, len(vertices)
 
 
-def polygon_components(lines):
+def polygon_components(lines, *, startup_prefab=None):
     result = [' components {']
+    if startup_prefab:
+        component, entry, prefab = startup_prefab
+        legacy = [f'  TILW_AreaSpawningComponent "{{{component}}}" {{',
+                  '   m_prefabs {', f'    {prefab}', '   }', '  }']
+        if lines[:len(legacy)] != legacy:
+            raise ValueError('reviewed polygon startup spawn fields changed')
+        result.extend([f'  GC_AreaPrefabSpawnerComponent "{{{component}}}" {{',
+                       '   m_aPrefabs {', f'    GC_AreaSpawnEntry "{{{entry}}}" {{',
+                       f'     m_sPrefab {prefab}', '    }', '   }',
+                       '   m_bAvoidWater 0', '  }'])
+        lines = lines[len(legacy):]
     seen = set()
     index = 0
     while index < len(lines):
