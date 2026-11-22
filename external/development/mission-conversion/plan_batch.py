@@ -338,6 +338,7 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         'unresolvedResources': review.get('unresolvedResources', []),
         'sourceDependencyLeads': review.get('sourceDependencyLeads', []),
         'outcomeFlagLeads': review.get('outcomeFlagLeads', {}),
+        'scriptedInstructionLeads': review.get('scriptedInstructionLeads', {}),
         'resourceRecoveryQueue': resource_recovery_queue(review.get('unresolvedResources', []), held),
         'dependencyRecoveryQueue': dependency_recovery_queue(review.get('unresolvedResources', []), held),
         'blockedLoadoutParents': review.get('blockedLoadoutParents', []),
@@ -535,6 +536,13 @@ def markdown(plan):
                       '| Serialized owner outside literal conditions | Worlds |', '| --- | ---: |'])
         for owner, count in sorted(owners.items(), key=lambda entry: (-entry[1], entry[0])):
             lines.append(f'| `{owner}` | {count} |')
+    if scripts := plan.get('scriptedInstructionLeads'):
+        lines.extend(['', '## Legacy inline script calls', '',
+                      'The JSON plan records the original script declarations, event and instruction IDs, '
+                      'delays, and client and rerun settings. The worlds stay in review.', '',
+                      '| World | Script calls |', '| --- | ---: |'])
+        for world, files in scripts.items():
+            lines.append(f"| `{world}` | {sum(len(file['calls']) for file in files)} |")
     lines.extend(['', '## Shared blocker combinations', '',
                   'Each row lists blockers currently reported together. Clearing them moves the listed '
                   'worlds to the next file checks.', '',

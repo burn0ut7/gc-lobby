@@ -10,8 +10,10 @@ from pathlib import Path, PurePosixPath
 import re
 import subprocess
 
+from briefings import block_end, properties
 from catalog import GC_HEADER, OBSOLETE_NAVMESH, REF, SOURCE_TEXT, Snapshot, TYPES
 from dependencies import database_project, dependency_resources, pinned_databases
+from events import EVENT
 from install_batch import resource_databases, unregistered_references
 from launchers import META_NAME, WORLD_REF, authored_header_text, launcher, registered_identity, required_addon_versions
 from scenery import StockPrefabs
@@ -22,6 +24,9 @@ LEGACY = re.compile(r'^(?:TILW|PS)_')
 UNRESOLVED_OUTCOME_FLAG = re.compile(r'unresolved or unsupported outcome flag ("[^"]*")')
 SERIALIZED_FLAG_FIELD = re.compile(r'(m_\w*[Ff]lag\w*) ("[^"]+")')
 MISSION_OWNED_SLOT = re.compile(r'mission-owned slot ([0-9A-F]{16})')
+SCRIPT_HOOK = re.compile(r'^ (userScript|FrameworkScript[1-5]) "')
+SCRIPT_INSTRUCTION = re.compile(r'^    TILW_RunScriptInstruction "\{([\da-fA-F]{16})\}" \{$')
+SCRIPT_FIELDS = {'m_iScriptNumber', 'm_executionDelay', 'm_bClientScript', 'm_bAllowRerun'}
 ZAGORIA_DRIVETRAIN_FAILURE = {
     'b2dbad72f17557b06f7b933aa21b2c1bacccca0b36094fb4e022697bcc0c43ae': '1.0.23',
     '37898175d32ccab770d122a90c35183cd0009a56d9411303974401e55d823ab6': '1.0.25',
@@ -366,6 +371,57 @@ def blocked_loadout_parents(source, missions, notes, leads):
                                          -len(row['worlds']), row['path']))
 
 
+def scripted_instruction_leads(source, notes, worlds):
+    """Locate numbered legacy script bodies and the events that schedule them."""
+    results = {}
+    for world in sorted(worlds):
+        if notes.get(world, {}).get('batchDraft', {}).get('status') != 'blocked by conversion rules':
+            continue
+        locations = []
+        for path in sorted(source.closure(world)):
+            if PurePosixPath(path).suffix.lower() not in ('.layer', '.et'):
+                continue
+            text = source.read(path)
+            if 'TILW_RunScriptInstruction' not in text:
+                continue
+            lines = text.splitlines()
+            hooks = defaultdict(list)
+            calls = []
+            for index, line in enumerate(lines):
+                if hook := SCRIPT_HOOK.match(line):
+                    end = index
+                    while lines[end].endswith('\\') and end + 1 < len(lines):
+                        end += 1
+                    hooks[hook[1]].append({'firstLine': index + 1, 'lastLine': end + 1})
+                if not (event := EVENT.fullmatch(line)):
+                    continue
+                try:
+                    end = block_end(lines, index)
+                except ValueError:
+                    continue
+                name = next((field.removeprefix('   m_name ') for field in lines[index + 1:end]
+                             if field.startswith('   m_name ')), '""')
+                for call in range(index + 1, end):
+                    if not (instruction := SCRIPT_INSTRUCTION.fullmatch(lines[call])):
+                        continue
+                    details = {'line': call + 1, 'event': name[1:-1], 'eventId': event[1],
+                               'instructionId': instruction[1]}
+                    try:
+                        fields = properties(lines[call + 1:block_end(lines, call)], SCRIPT_FIELDS)
+                        details.update(scriptNumber=fields.get('m_iScriptNumber', '1'),
+                                       delaySeconds=fields.get('m_executionDelay', '5'),
+                                       clientScript=fields.get('m_bClientScript', '0'),
+                                       allowRerun=fields.get('m_bAllowRerun', '0'))
+                    except ValueError as exc:
+                        details['gap'] = str(exc)
+                    calls.append(details)
+            if calls:
+                locations.append({'file': path, 'sourceBlob': source.files[path], 'hooks': dict(hooks), 'calls': calls})
+        if locations:
+            results[world] = locations
+    return results
+
+
 def outcome_flag_leads(source, notes, worlds):
     """Locate literal source references for the flags that stopped outcome conversion."""
     results = {}
@@ -523,6 +579,7 @@ def main():
     if notes:
         worlds = {mission['world'] for mission in missions.values() if mission.get('world')} if args.mission else notes
         report['outcomeFlagLeads'] = outcome_flag_leads(source, notes, worlds)
+        report['scriptedInstructionLeads'] = scripted_instruction_leads(source, notes, worlds)
     if args.draft_stage:
         report['includesDraft'] = True
     if args.workshop_addons:
