@@ -965,7 +965,8 @@ def main():
             normalize_references=lambda body: batch.replace_registered_paths(body, source, dev, asset_aliases),
             unavailable=unavailable, historical_parents=historical_roles)
         reviewed_members = {guid: asset[0] for guid, asset in loadouts.items()}
-        local_groups = batch.reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed_members)
+        local_groups = batch.reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed_members,
+                                                    rhs_database)
 
         def convert_group_block(body, reviewed_ai_members=None, reviewed_playable_members=None):
             return group_layer(body, source_units, dev_units, stock, locally_owned,

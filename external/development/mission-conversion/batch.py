@@ -19,11 +19,12 @@ from vehicle_crew import (CREW_CONFIG_FIELD, VERIFIED_DEFAULT_CREW, ZAGORIA_BMP2
                           split_crew_block, verified_core_btr70_transfer)
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
-from groups import (CALL, COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, SLOTS, compare_ai_parents, inheritance, legacy_member,
-                    reviewed_native_ancestry, unchanged_explicit_playability)
+from groups import (CALL, COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, INDEX, SLOTS, compare_ai_parents, inheritance,
+                    legacy_member, reviewed_native_ancestry, unchanged_explicit_playability, verified_stock_ai_group)
 from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_prefab
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
+from local_loadouts import unchanged_units_parent
 from markers import (DEST as MAP_MARKER_PREFAB, convert_baked_marker_generator, convert_hover_camera,
                      convert_layer, convert_wall_markers)
 from outcomes import FRAMEWORK, MATCH_PHASE_VALUE, SCRIPT_FLAG_APIS, leaves, render as render_outcome, render_capture_trackers
@@ -1387,22 +1388,34 @@ REVIEWED_NATIVE_ASSETS = {
 }
 ROCKY_CIVILIANS = 'worlds/Burn0ut7/Rocky Road/Prefabs/CiV_Group.et'
 BULGES = 'worlds/TheLocalPub/BattleOfTheBulges'
+LOST_AND_FOUND_DELTA_GROUP = ('worlds/FloridaMan/Prefabs/Groups/BLUFOR/US/Army_2010_DeltaForce/'
+                              'Group_Delta_2010_Assault_m_P.et')
+REVIEWED_SPAWNED_MARKERS = {
+    'worlds/Perfk/Prefabs/Markers/EditableMarker_AmmoCache_VIS_GC_MUJ.et':
+        '8246d5e01642372cc3e1e71714c846059d5ee937e6abf54f0d75f33e8380131e',
+    'worlds/FloridaMan/Prefabs/Setpeice/opfor_notice_marker.et':
+        '219df188327c2f3a4b1ff82b6efa0e81e3775f4f68a44877d51a902e5e86c4c5',
+}
 BULGES_RED_MATERIAL = (
     '196D8860670DE1B9',
     'Assets/Props/Fabric/Flags/Data/Flagcolourred1.emat',
     f'{BULGES}/Assets/Props/Fabric/Flags/Data/Flagcolourred1.emat',
     'Assets/Props/Fabric/Flags/Data/Flagred1.emat',
 )
-# The legacy engine selected these indices on all three placements of each prefab.
+# The indices are recorded from the reviewed prefab or its effective placements.
 REVIEWED_GROUP_CALLSIGNS = {
     f'{BULGES}/Prefabs/Groups/BLUFOR/Group_BLUE_RIFLE_P.et': (
         '166c62b096beca9d5cc75efc4ae122f3742b92ae',
         f'{BULGES}/BattleOfTheBulges_Layers/BLUFOR_PLAYERS.layer',
-        '53120d90d0b513254d90068d7acb85849da733f5', 3),
+        '53120d90d0b513254d90068d7acb85849da733f5', (0, 0, 3), False),
     f'{BULGES}/Prefabs/Groups/OPFOR/Group_RED_RIFLES_P.et': (
         'ca3a2abb657a82d2bb34058659e7c4991ab8aac6',
         f'{BULGES}/BattleOfTheBulges_Layers/OPFOR_PLAYERS.layer',
-        'b5002cd92179dbd5983a04681ca172b8a5f7179e', 1),
+        'b5002cd92179dbd5983a04681ca172b8a5f7179e', (0, 0, 1), False),
+    LOST_AND_FOUND_DELTA_GROUP: (
+        '12bd5100b584b1d07a21445336bcbdb67537dee0',
+        'worlds/FloridaMan/worlds/LostAndFound/LostAndFound_Layers/BLUFOR.layer',
+        '9063e2ec7ab2a43b8dc4c89d63a918aa5ad9782d', (1, 1, 1), True),
 }
 REVIEWED_PLAYABLE_GROUPS = {
     ROCKY_CIVILIANS: '6ab575e5895921c869d63aa3c896bd59f52a4b809317a1c80f3717514a4de117',
@@ -2585,10 +2598,9 @@ def passive_asset(source, path):
             return body
     if suffix == '.et':
         body = source.read(path)
-        if path == 'worlds/Perfk/Prefabs/Markers/EditableMarker_AmmoCache_VIS_GC_MUJ.et':
-            if sha256(body.strip().encode()).hexdigest() != (
-                    '8246d5e01642372cc3e1e71714c846059d5ee937e6abf54f0d75f33e8380131e'):
-                raise ValueError('spawned ammunition marker needs review')
+        if path in REVIEWED_SPAWNED_MARKERS:
+            if sha256(body.strip().encode()).hexdigest() != REVIEWED_SPAWNED_MARKERS[path]:
+                raise ValueError('spawned marker needs review')
             root, identity, *fields = body.splitlines()
             marker, _ = convert_layer('\n'.join([root, *fields]) + '\n', draw_order=True, source=source)
             head, rest = marker.split('\n', 1)
@@ -2636,13 +2648,16 @@ def remove_legacy_callsigns(lines):
 
 
 def reviewed_callsign_group(source, path):
-    prefab_blob, layer, layer_blob, squad = REVIEWED_GROUP_CALLSIGNS[path]
+    prefab_blob, layer, layer_blob, indices, _ = REVIEWED_GROUP_CALLSIGNS[path]
     if source.files.get(path) != prefab_blob or source.files.get(layer) != layer_blob:
         raise ValueError('reviewed callsign prefab or placement changed')
     body = remove_legacy_callsigns(source.read(path).splitlines())
+    body = body.replace('\n m_bSetPlayable 1\n', '\n')
     body = body.replace('\n m_sCustomNameSet ', '\n m_sGC_Description ', 1)
-    fields = [' m_bPlayable 1', ' m_iGC_CallsignCompany "0"', ' m_iGC_CallsignPlatoon "0"',
-              f' m_iGC_CallsignSquad "{squad}"']
+    if path == LOST_AND_FOUND_DELTA_GROUP:
+        body = body.replace('}Prefabs/Characters/Factions/BLUFOR/RHS_USAF/Delta Force/2010/P/',
+                            '}Prefabs/Characters/Factions/BLUFOR/RHS_USAF/2009/Delta/P/')
+    fields = [' m_bPlayable 1', *(f' {field} "{value}"' for field, value in zip(INDEX.values(), indices, strict=True))]
     return '\n'.join([*body.splitlines()[:-1], *fields, '}', ''])
 
 
@@ -2709,7 +2724,7 @@ def reviewed_rocky_civilian(source, dev, source_units, dev_units, stock, guid, p
     return True
 
 
-def reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed_members):
+def reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed_members, rhs=None):
     aliases = {}
     for path, digest in (REVIEWED_NATIVE_ASSETS | REVIEWED_PLAYABLE_GROUPS | REVIEWED_GROUP_CALLSIGNS).items():
         if path not in source.files or path + '.meta' not in source.files:
@@ -2734,7 +2749,18 @@ def reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed
                 or dev.resources.get(identity[2].upper()) not in (None, [path])
                 or (path in dev.files and dev.read(path) != native)):
             continue
-        if playable:
+        if path == LOST_AND_FOUND_DELTA_GROUP:
+            owned = source.resources.keys() | dev.resources.keys()
+            if not verified_stock_ai_group(parent, parent_path, stock, owned, source_units, dev_units, rhs,
+                                           inherited_slots=False):
+                continue
+            roles = REF.findall(SLOTS.search(native)[1])
+            if any(reviewed_members.get(guid) != member and (
+                    guid in owned or dev_units.resources.get(guid) != [member]
+                    or not legacy_member(source_units, guid, False)
+                    or not unchanged_units_parent(source_units, dev_units, guid)) for guid, member in roles):
+                continue
+        elif playable:
             slots = SLOTS.search(body)
             if (not stock or not stock.contains(parent, parent_path) or not slots
                     or any(parent in snapshot.resources for snapshot in (source, dev, source_units, dev_units))
@@ -4704,10 +4730,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         group_body = interaction_placements.get((layer, line), body)
                         ref = REF.search(block[0])
                         if ref and ref[2] in REVIEWED_GROUP_CALLSIGNS:
-                            _, expected_layer, layer_blob, _ = REVIEWED_GROUP_CALLSIGNS[ref[2]]
+                            _, expected_layer, layer_blob, _, use_placed_callsigns = REVIEWED_GROUP_CALLSIGNS[ref[2]]
                             if layer != expected_layer or source.files.get(layer) != layer_blob:
                                 raise ValueError('callsign placement differs from runtime evidence')
-                            group_body = remove_legacy_callsigns(group_body.splitlines())
+                            if not use_placed_callsigns:
+                                group_body = remove_legacy_callsigns(group_body.splitlines())
                         converted, count, slots = convert_group_block(
                             group_body,
                             {identity: asset['path'] for identity, asset in members.items() if not asset.get('playable')},
