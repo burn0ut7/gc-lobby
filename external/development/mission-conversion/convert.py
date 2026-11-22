@@ -1007,10 +1007,15 @@ def main():
         reviewed_members = {guid: asset[0] for guid, asset in loadouts.items()}
         local_groups = batch.reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed_members,
                                                     rhs_database)
+        southwind_assets, southwind_groups, southwind_members = batch.reviewed_southwind_groups(
+            source, dev, source_units, dev_units, stock, ai_loadouts)
+        local_groups.update(southwind_groups)
 
         def convert_group_block(body, reviewed_ai_members=None, reviewed_playable_members=None):
+            group = REF.search(body.partition('\n')[0])
+            forced_members = southwind_members if group and group[1].upper() in southwind_groups else {}
             return group_layer(body, source_units, dev_units, stock, locally_owned,
-                               reviewed_members={**reviewed_members, **(reviewed_playable_members or {})},
+                               reviewed_members={**reviewed_members, **forced_members, **(reviewed_playable_members or {})},
                                external_ai=external_ai,
                                allow_stock_ai=True, restored_members=restored,
                                reviewed_ai_members={**native_ai_members, **(reviewed_ai_members or {})},
@@ -1022,7 +1027,7 @@ def main():
             return vehicle_crew.verified_crew_config(source_units, resource, path, locally_owned)
 
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
-                         asset_aliases, {**loadouts, **ai_loadouts, **reviewed_audio}, spawned_assets,
+                         asset_aliases, {**loadouts, **ai_loadouts, **southwind_assets, **reviewed_audio}, spawned_assets,
                          convert_crew, resolve_spawn, resolve_crew,
                          resolve_crew_config, delayed_extractions,
                          batch.reviewed_faction_assets(source, dev, source_units, dev_units))

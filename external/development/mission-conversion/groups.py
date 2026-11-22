@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import re
 
-from briefings import QUOTED, block_end
+from briefings import QUOTED, block_end, properties
 from catalog import REF
 from scenery import NUMBER, StockPrefabs, placements
 
@@ -606,6 +606,35 @@ def native_group_component(lines, start, end):
     return True
 
 
+def native_group_variant_overrides(lines, start, end, parent, reviewed_members):
+    """Keep variant weights and references to reviewed character prefabs."""
+    if (not reviewed_members or end < start + 5 or lines[start].strip() != EDITABLE_GROUP
+            or not EMPTY_VARIANT.fullmatch(lines[start + 1].strip())
+            or lines[start + 2].strip() != 'm_aVariants {'
+            or block_end(lines, start + 2) != end - 2 or lines[end - 1].strip() != '}'):
+        return False
+    index = start + 3
+    seen = set()
+    while index < end - 2:
+        entry = lines[index].strip()
+        if (entry in seen or entry not in parent
+                or not re.fullmatch(r'SCR_EditableEntityVariant "\{[\da-fA-F]{16}\}" \{', entry)):
+            return False
+        seen.add(entry)
+        stop = block_end(lines, index)
+        try:
+            fields = properties(lines[index + 1:stop], {'m_sVariantPrefab', 'm_iRandomizerWeight'})
+        except ValueError:
+            return False
+        prefab = fields.get('m_sVariantPrefab')
+        if prefab and (not (ref := REF.fullmatch(prefab)) or reviewed_members.get(ref[1].upper()) != ref[2]):
+            return False
+        if not re.fullmatch(r'[1-9]\d*', fields.get('m_iRandomizerWeight', '1')):
+            return False
+        index = stop + 1
+    return bool(seen)
+
+
 def unchanged_disabled_playability(source_units, dev_units, guid):
     return unchanged_explicit_playability(source_units, dev_units, guid, False)
 
@@ -899,7 +928,8 @@ def convert_instance(lines, guid, old, new, source_units, dev_units, stock, loca
                                 assigned == (identity, {'Enabled': 0}) and set(placed) & INDEX.keys()):
                             raise ValueError('ambiguous duplicate callsign component')
                     assigned = (identity, placed)
-                elif native_group_component(lines, j, last):
+                elif (native_group_component(lines, j, last)
+                      or native_group_variant_overrides(lines, j, last, old, reviewed_members)):
                     components.extend(lines[j:last+1])
                 else:
                     raise ValueError('group component needs review: ' + lines[j].strip().split()[0])

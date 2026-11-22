@@ -1298,6 +1298,10 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/anteante101/Prefabs/Weapons/MG_M60_empty_AA101.et':
+        'b13396f1e6d2b266144ee6f661bbab573e5ce93447e6cbac7db9bee6250db598',
+    'worlds/anteante101/Prefabs/Weapons/Rifle_MP5_empty_AA101.et':
+        'dca15e409fc2f836c3a5b269edbd14b8db94669d184b3d834eecd6698d328860',
     'worlds/HitTheMan/Air Assault Onto Skalisty/Prefab/AmmoCrateStingers.et':
         'ed732d82b4cdc573ea1177b09b7ab99a5c0239d33386c73b594fabad9abb174f',
     'worlds/HitTheMan/Air Assault Onto Skalisty/Prefab/Mi8MT_armed3HTM.et':
@@ -3101,6 +3105,60 @@ def reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed
             continue
         aliases[identity[2].upper()] = (path, parent, (body, native) if playable else None)
     return aliases
+
+
+def reviewed_southwind_groups(source, dev, source_units, dev_units, stock, ai_loadouts):
+    """Retain the mission's two native group prefabs and review all forced roles."""
+    root = 'worlds/anteante101/Prefabs/group/FIA Rebel/'
+    paths = {
+        'C2BE7BE6B80386FF': (root + 'Group_FIA_REBEL_AA101.et',
+                             '74955e3fea709345952f98196c62bd74781d986c7ef5567d06f99f47fd50e213'),
+        '4A6E8E54916F2A29': (root + 'Group_FIA_REBEL_squad_AA101.et',
+                             'bae06f30e35fb74d0e4934c8ab48d1844ff49455f039a629848c99cc70df6a6b'),
+    }
+    layer = 'worlds/anteante101/South wind is blowing/South wind is blowing_Layers/fia.layer'
+    if not stock or source.files.get(layer) != '71ce428cc9a24fe9fc3ccfdd777137679608e532':
+        return {}, {}, {}
+    parent = '3E19B428E9137511'
+    parent_path = 'Prefabs/Groups/INDFOR/FIA/FIA_Modern/Group_FIAModern_RifleSquad.et'
+    if any(snapshot.resources.get(parent) != [parent_path]
+           or snapshot.files.get(parent_path) != '983615501d8011bc2e318bdaeeaa52450a951e02'
+           for snapshot in (source_units, dev_units)):
+        return {}, {}, {}
+    assets = {}
+    for resource, (path, digest) in paths.items():
+        if (source.resources.get(resource) != [path] or dev.resources.get(resource) not in (None, [path])
+                or resource in source_units.resources or resource in dev_units.resources):
+            return {}, {}, {}
+        body = source.read(path)
+        if sha256(body.strip().encode()).hexdigest() != digest or LEGACY.search(body):
+            return {}, {}, {}
+        assets[resource] = (path, body)
+
+    resource = 'C2BE7BE6B80386FF'
+    path, old = assets[resource]
+    local_parent = '4A6E8E54916F2A29'
+    native = old.replace('worlds/anteante101/Prefabs/group/Group_FIA_REBEL_squad_AA101.et',
+                         assets[local_parent][0], 1)
+    assets[resource] = (path, native)
+    if any(path in dev.files and dev.read(path) != body for path, body in assets.values()):
+        return {}, {}, {}
+
+    members = {}
+    for identity, name in set(REF.findall(source.read(layer) + old + assets[local_parent][1])):
+        if (identity, name) in ((resource, path), (parent, parent_path)) or identity == local_parent:
+            continue
+        if identity in ('677B515F119222C2', 'FE65E8C60C751352'):
+            if (not stock.contains(identity, name)
+                    or any(identity in snapshot.resources for snapshot in (source, dev, source_units, dev_units))):
+                return {}, {}, {}
+        elif ai_loadouts.get(identity, (None,))[0] != name:
+            # References outside the groups are consumed by their own reviewed spawner or placement.
+            if not name.startswith('worlds/anteante101/Prefabs/characther/FIA_REBEL/'):
+                continue
+            return {}, {}, {}
+        members[identity] = name
+    return assets, {resource: (path, parent, (old, native))}, members
 
 
 def damage_state_flag_placement(block, *, allow_multiple_states=False, clear_on_mismatch=False):

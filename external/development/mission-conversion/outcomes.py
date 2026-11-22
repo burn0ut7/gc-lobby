@@ -999,17 +999,23 @@ def startup_samples(source, world, owner, body, scripts, spawner_reads, definiti
     authored = source.read(owner)
     outside = '\n'.join(source.read(path) for path in sorted(source.closure(world))
                         if path != owner and PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+    unused = set()
     for flag in sampled:
         spawner_count = spawner_reads.get(flag[1:-1], 0)
         expected = 1 + reads[flag] + labels[flag] + spawner_count + spawn_anchors[flag] + 2 * (flag in identity_flags)
-        if (not (reads[flag] or spawner_count) or flag[1:-1] in scripts
-                or authored.count(flag) + outside.count(flag) != expected):
+        if flag[1:-1] in scripts or authored.count(flag) + outside.count(flag) != expected:
             return []
+        if not (reads[flag] or spawner_count):
+            unused.add(flag[1:-1])
+    if len(unused) == len(sampled) or (unused and 'TILW_RunScriptInstruction' in authored + outside):
+        return []
     if pregame and startup_flags(source, world, owner, body, scripts, identity_flags):
         return []
     for sample in samples:
         if scoped := [flag for flag in sample['flags'] if f'"{flag}"' in pregame]:
             sample['pregameFlags'] = scoped
+        if unconsumed := [flag for flag in sample['flags'] if flag in unused]:
+            sample['unconsumedFlags'] = unconsumed
     return samples
 
 
@@ -1345,7 +1351,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         used_samples = {item.get('flag') for _, _, _, term, _ in parsed for item in leaves(term)}
         used_samples.update(spawner_reads)
         used_samples.update(item.get('flag') for term in derived_spawners.values() for item in leaves(term))
-        if not sampled_flags <= used_samples:
+        unconsumed = {flag for sample in samples for flag in sample.get('unconsumedFlags', ())}
+        if not sampled_flags <= used_samples | unconsumed:
             return [], audit, 'startup sampled flag still has an unconverted consumer'
         if 'GC_MigrationStartupSampling' in names:
             return [], audit, 'generated startup sampling name collides with a mission event'
