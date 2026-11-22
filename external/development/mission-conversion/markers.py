@@ -76,9 +76,23 @@ BAKED_OPFOR_LIMIT = re.compile(
     r'    \$grp PS_ManualMarker : "\{5F773B024F23FD0F\}PrefabsEditable/Markers/AOLimit/Marker_AOLimit_OPFOR.et" \{\n'
     r'(?P<members>.*?)\n    \}\n   \}\n  \}\n \}\n\}', re.S)
 BAKED_OPFOR_LIMIT_MEMBER = re.compile(r'     \{\n      coords ([^\n]+)\n      m_sDescription ("FLET")\n     \}')
+BAKED_BASE_LIMIT = re.compile(
+    r'PolylineShapeEntity [\w.-]+ \{\n coords (?P<origin>[^\n]+)\n Points \{\n'
+    rf'(?:  ShapePoint "\{{[\da-fA-F]{{16}}\}}" \{{\n   Position {NUMBER} {NUMBER} {NUMBER}\n  \}}\n)+'
+    r' \}\n IsClosed 1\n LineColor 0 0 0 0\n \{\n'
+    r'  PrefabGeneratorEntity : "\{2566B9813575CF40\}Prefabs/WEGenerators/Markers/PG_MarkerGenerator_AOLimit_Base.et" \{\n'
+    r'   coords 0 0 0\n   Flags 1048579\n   m_bFlipForward 1\n   \{\n'
+    r'    \$grp PS_ManualMarker : "\{93C2F8BDFF146CB8\}PrefabsEditable/Markers/AOLimit/Marker_AOLimit_Base.et" \{\n'
+    r'(?P<members>.*?)\n    \}\n   \}\n  \}\n \}\n\}', re.S)
+BAKED_BASE_LIMIT_MEMBER = re.compile(
+    rf'     \{{\n      coords ({NUMBER} {NUMBER} {NUMBER})\n'
+    rf'(      angleX {NUMBER}\n      angleY {NUMBER}\n'
+    r'      m_sImageSet "\{[\da-fA-F]{16}\}[^"\n]+\.imageset"\n'
+    rf'      m_sQuadName "[\w.-]+"\n      m_fWorldSize {NUMBER})\n     \}}')
 # TilW ef141d7 removed the generator and both marker templates. These are their inherited display fields.
 OPFOR_LIMIT_FIELDS = {'m_sImageSetGlow': '""', 'm_MarkerColor': '0.502 0 0 1', 'm_sQuadName': '"dot"',
                       'm_fWorldSize': '75', 'm_bVisibleForEmptyFaction': '1', 'm_bShowForAnyFaction': '1'}
+BASE_LIMIT_FIELDS = {**OPFOR_LIMIT_FIELDS, 'm_MarkerColor': '0 0 0 1', 'm_sDescription': '"AO Limit"'}
 
 
 def convert_baked_marker_generator(block, source, dev):
@@ -88,6 +102,9 @@ def convert_baked_marker_generator(block, source, dev):
         limit = BAKED_OPFOR_LIMIT.fullmatch('\n'.join(block))
         if limit:
             return render_baked_markers(limit, BAKED_OPFOR_LIMIT_MEMBER, 'm_sDescription', OPFOR_LIMIT_FIELDS, dev)
+        limit = BAKED_BASE_LIMIT.fullmatch('\n'.join(block))
+        if limit:
+            return render_baked_markers(limit, BAKED_BASE_LIMIT_MEMBER, None, BASE_LIMIT_FIELDS, dev)
         raise ValueError('unverified baked marker generator')
     inherited = local_marker_fields(source, match['guid'].upper(), match['path'])
     if TRANSFORM.intersection(inherited) != {'coords', 'angles'}:
@@ -149,7 +166,9 @@ def render_baked_markers(match, pattern, member_field, inherited, dev):
         absolute = ' '.join(format(Decimal(parent) + Decimal(child), 'f')
                             for parent, child in zip(origin.split(), coords.split()))
         placement = [' coords ' + absolute]
-        if value:
+        if member_field is None:
+            placement.extend(field[5:] for field in value.splitlines())
+        elif value:
             placement.append(f' {member_field} {value}')
         output.append(instance(placement, '', inherited, draw_order=True))
     if not output:

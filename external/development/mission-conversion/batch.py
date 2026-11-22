@@ -776,6 +776,8 @@ STOCK_RESOURCE_ALIASES = {
         'Prefabs/Props/Core/DestructibleMultiPhase_Props_Base.et',
     ('4F8AAD383330D2B9', 'Configs/Weapons/AIBallisiticTables/AIBT_Smoke_M18_Violet.conf'):
         'Configs/Weapons/AIBallisticTables/AIBT_Smoke_M18_Violet.conf',
+    ('900E362C5B4A1B69', 'Configs/Weapons/AIBallisiticTables/AIBT_Smoke_RDG2.conf'):
+        'Configs/Weapons/AIBallisticTables/AIBT_Smoke_RDG2.conf',
     ('E26B2BD5B751713D', 'Configs/Weapons/AIBallisiticTables/AIBT_Smoke_ANM8HC.conf'):
         'Configs/Weapons/AIBallisticTables/AIBT_Smoke_ANM8HC.conf',
     ('1D0B32AA80873228', 'Prefabs/Props/Wrecks/LAV25_wreck.et'):
@@ -1329,6 +1331,14 @@ REVIEWED_NATIVE_ASSETS = {
         '4915c486c26c3c384c5306930c966c5f45d747d9f295142e48098bf99ae7b827',
     'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Grenades/Smoke_ANM8HC_US.et':
         '8f65ccfdb561457e84aef0ceabb73c1297a9460d07c764c8920626c8a8917d04',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Props/Military/Camps/AmmoboxRED.et':
+        'b795011ea21ca849c305f872c076ad492440f9f7cddb258941bb170a8a589c79',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Magazines/Magazine_1shot_red.et':
+        '56d37eb8484d72629b0f0e0e0a13db1f59afc3dea5c9c88b3b4b20856076a622',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Grenades/Smoke_RDG2_USSR.et':
+        'efff8807508bb0a3fb00cae6895f03e7540f250f97aa4b728a7e95fabaa9f989',
+    'worlds/TheLocalPub/BattleOfTheBulges/Prefabs/Weapons/Grenades/M18/Smoke_M18_Red_USSR.et':
+        '507aae83ddab9061a017e74cd170e793add20bda88e2cadd4de0cc3813017efe',
 }
 ROCKY_CIVILIANS = 'worlds/Burn0ut7/Rocky Road/Prefabs/CiV_Group.et'
 REVIEWED_PLAYABLE_GROUPS = {
