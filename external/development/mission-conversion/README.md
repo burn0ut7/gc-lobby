@@ -31,7 +31,7 @@ The audit at Missions Dev `f2dd0ebd` clears 256 of the 277 published launchers, 
 | Cobra’s Bite | The two authored USMC M3 MAAW roles remain unavailable. |
 | Factory Siege Redux | The authored 2003 woodland forward observer remains unresolved. |
 | Gull Bay Guns | The original RHS EMR squad leader remains unresolved. |
-| Commandos Reforged | The objective manager and interaction prefab need an integrated conversion. |
+| Commandos Reforged | The objective manager still needs a native port for selection, completion, marker updates and private defector briefings. |
 
 Run the planner from GC Lobby with a clean Missions Dev checkout. Use a fresh output directory when the commits or conversion rules change.
 
@@ -2339,4 +2339,6 @@ The converter preserves the ammo dump cleanup inside its original parent and kee
 
 The Black Hawk objective retains its exact parent GUID, zero-capacity fuel policy, Hull explosive multiplier and objective registration. The reviewed H-60 package supplies two live fuel nodes. The converter zeroes both and discards the three obsolete node IDs from the saved override. Reforger MCP verified the two tanks and Hull component in the registered H-60 prefab, catalogue `e0d20a56b57142b0962d3327fc78b6f7`. Match verification still needs to cover fuel and destruction.
 
-The two dynamic marker templates render through the native Lobby marker component. They preserve the icon and size, US-only objective marker, Russian and unassigned default audience, and original drawing priorities. The objective manager still needs to publish and update those markers at the authored lifecycle points, deliver private defector briefings, and route objective interactions.
+The two dynamic marker templates render through the native Lobby marker component. They preserve the icon and size, US-only objective marker, Russian and unassigned default audience, and original drawing priorities. The objective manager still needs to publish and update those markers at the authored lifecycle points and deliver private defector briefings.
+
+The interaction recipe converts all 82 authored actions and their shared prefab. It preserves action labels, context, timing and US faction access. Reforger MCP confirmed that the stock intelligence folder inherits its default action context and runtime replication from `Item_Base.et`. The source uses ten public objective names and no defector override on these actions. Each objective shares one availability flag and one completion flag across all its placements. The manager port must publish the availability flags and consume the completion flags. The representative Match check must cover shared completion across placements and the separate defector authorization path.

@@ -29,7 +29,8 @@ from groups import (CALL, COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, INDEX, SLOTS, 
                     legacy_member, reviewed_ai_member_ancestry, reviewed_native_ancestry,
                     unchanged_explicit_playability, verified_stock_ai_group)
 from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_prefab
-from interactions import convert_block as convert_interaction_block, convert_object
+from interactions import (convert_action as convert_interaction_action,
+                          convert_block as convert_interaction_block, convert_object)
 from launchers import META_NAME, launcher, replace_reference
 from local_loadouts import migrate_playability, unchanged_units_parent
 from markers import (ALLOWED as MARKER_FIELDS, DEST as MAP_MARKER_PREFAB, LEGACY as LEGACY_MARKER,
@@ -2219,6 +2220,55 @@ COMMANDOS_BLACK_HAWK_PARENT = ('1529FD2C6A8162A1', 'Prefabs/Vehicles/Helicopters
 COMMANDOS_BLACK_HAWK_TANKS = ('5622A70CD4036C5A', '661A5AD75FDB52FF')
 COMMANDOS_OBJECTIVE_MARKER = 'worlds/arc/CommandosReforged/Prefabs/Objective_Marker.et'
 COMMANDOS_DEFAULT_MARKER = 'worlds/arc/CommandosReforged/Prefabs/Marker_Any.et'
+COMMANDOS_INTERACTION = 'worlds/arc/CommandosReforged/Prefabs/Objective_Interact.et'
+COMMANDOS_INTERACTION_BLOB = '3da7cdb4a2c03e31897fffb8b254c2b497a09bc1'
+COMMANDOS_INTERACTION_COMPONENT = guid('Commandos/Objective_Interact/component')
+
+
+def commandos_objective_flags(name):
+    key = guid('Commandos/objective/' + name)
+    return f'Commandos_{key}_Active', f'Commandos_{key}_Complete'
+
+
+def commandos_interactions(block):
+    lines = block.copy()
+    starts = [index for index, line in enumerate(lines) if line.lstrip().startswith('GC_CommandosInteraction ')]
+    for start in reversed(starts):
+        end = block_end(lines, start)
+        indent = len(lines[start]) - len(lines[start].lstrip())
+        if indent < 4:
+            raise ValueError('Commandos interaction needs an entity action manager')
+        components_header = ' ' * (indent - 3) + 'components {'
+        components = next((index for index in range(start - 1, -1, -1) if lines[index] == components_header), -1)
+        if components < 0 or block_end(lines, components) < end:
+            raise ValueError('Commandos interaction is outside entity components')
+        component_indent = ' ' * (indent - 2)
+        component_head = component_indent + f'GC_MissionInteractionComponent "{{{COMMANDOS_INTERACTION_COMPONENT}}}" {{'
+        if component_head in lines[components + 1:block_end(lines, components)]:
+            raise ValueError('multiple Commandos objective actions on one entity')
+        fields = lines[start + 1:end]
+        name, = [line.strip().removeprefix('m_objectiveName ') for line in fields
+                 if line.strip().startswith('m_objectiveName ')]
+        if not re.fullmatch(QUOTED, name) or any(line.strip().startswith('m_defectorObjective ') for line in fields):
+            raise ValueError('Commandos interaction needs a public named objective')
+        required, completed = commandos_objective_flags(name[1:-1])
+        titles = [line.strip().removeprefix('Name ') for line in fields if line.strip().startswith('Name ')]
+        if len(titles) > 1:
+            raise ValueError('Commandos interaction has ambiguous action text')
+        fields = [line for line in fields if not line.strip().startswith('m_objectiveName ')]
+        native_fields = ' ' * (indent + 1)
+        if not any(line.strip() == 'm_factionKeys {' for line in fields):
+            fields.extend([native_fields + 'm_factionKeys {', native_fields + ' "RHS_USAF"', native_fields + '}'])
+        fields.extend(native_fields + field for field in (
+            'm_actionName ' + (titles[0] if titles else '"Sabotage"'),
+            f'm_conditionFlag "{required}"', f'm_flagName "{completed}"', 'm_singleUse 0'))
+        legacy = [lines[start].replace('GC_CommandosInteraction', 'TILW_BaseInteraction', 1), *fields, lines[end]]
+        action, component, _ = convert_interaction_action(legacy, name[1:-1], '')
+        lines[start:end + 1] = action
+        lines[components + 1:components + 1] = [
+            component_head, *(component_indent + field for field in component), component_indent + '}',
+        ]
+    return lines
 
 
 def commandos_objective_cleanup(block):
@@ -6513,6 +6563,10 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
                         draft[canonical] = commandos_black_hawk(source, asset_aliases)
                     elif canonical in (COMMANDOS_OBJECTIVE_MARKER, COMMANDOS_DEFAULT_MARKER):
                         draft[canonical] = commandos_marker(source, canonical)
+                    elif canonical == COMMANDOS_INTERACTION:
+                        if source.files[canonical] != COMMANDOS_INTERACTION_BLOB:
+                            raise ValueError('Commandos objective interaction template changed')
+                        draft[canonical] = '\n'.join(commandos_interactions(source.read(canonical).splitlines())) + '\n'
                     else:
                         draft[canonical] = approved[1] if approved else passive_asset(source, canonical)
                     draft[meta] = replace_reference(source.read(meta), META_NAME, identity[2], canonical)
@@ -7833,6 +7887,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         parts[layer] = result
         try:
             for line, block in blocks(source.read(layer)):
+                if layer == COMMANDOS_OBJECTIVES_LAYER and source.files[layer] == COMMANDOS_OBJECTIVES_BLOB:
+                    block = commandos_interactions(block)
                 head = block[0]
                 body = '\n'.join(block) + '\n'
                 kind = head.removeprefix('$grp ').split()[0]
