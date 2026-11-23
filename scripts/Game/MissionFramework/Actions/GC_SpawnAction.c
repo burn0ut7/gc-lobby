@@ -29,7 +29,7 @@ class GC_PrefabSpawn
 	ResourceName m_sPrefab;
 	[Attribute("", UIWidgets.EditComboBox, "Exact name of an existing entity. Its position and direction are used for the spawn. No automatic ground placement or clear-space search is performed.", enums: {ParamEnum("", "", "gc-choices:2:GC_EntityReferenceChoices")})]
 	string m_sLocation;
-	[Attribute("", UIWidgets.EditBox, "Optional unique name for the new entity. Leave empty when spawning repeatedly. If this name is already in use, nothing spawns.")]
+	[Attribute("", UIWidgets.EditBox, "Optional name for the new entity. By default, an existing entity with this name prevents another spawn.")]
 	string m_sEntityName;
 	[Attribute("0", UIWidgets.CheckBox, "Preserve an authored duplicate entity name for legacy name lookup.")]
 	bool m_bAllowDuplicateName;
