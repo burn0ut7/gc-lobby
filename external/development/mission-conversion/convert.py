@@ -93,6 +93,8 @@ def main():
     parser.add_argument('--include-wetfeet-scene', action='store_true', help='stage WetFeet scenery, equipment and cleanup')
     parser.add_argument('--include-wetfeet-candidate', action='store_true', help='assemble the WetFeet playtest world externally')
     parser.add_argument('--workshop-addons', type=Path, help='installed Workshop addon directory for provider resource checks')
+    parser.add_argument('--historical-workshop', type=Path, action='append', default=[],
+                        help='directory containing archived Workshop providers for declared version pins')
     parser.add_argument('--include-outcomes', action='store_true', help='audit and stage supported legacy outcome rule fragments')
     parser.add_argument('--include-industrial-candidate', action='store_true', help='assemble the Industrial Metal playtest world')
     parser.add_argument('--include-irish-candidate', action='store_true', help='assemble the Irish Checkpoint playtest world')
@@ -1172,7 +1174,8 @@ def main():
                          spawned_assets,
                          convert_crew, resolve_spawn, resolve_crew,
                          resolve_crew_config, delayed_extractions,
-                         batch.reviewed_faction_assets(source, dev, source_units, dev_units), archived_crew)
+                         batch.reviewed_faction_assets(source, dev, source_units, dev_units), archived_crew,
+                         args.historical_workshop)
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
                         for path, contents in out.items()}

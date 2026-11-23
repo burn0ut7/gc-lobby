@@ -35,7 +35,7 @@ from groups import (CALL, COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, INDEX, SLOTS, 
 from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_prefab
 from interactions import (convert_action as convert_interaction_action,
                           convert_block as convert_interaction_block, convert_object)
-from launchers import META_NAME, launcher, replace_reference
+from launchers import META_NAME, launcher, replace_reference, required_addon_versions
 from local_loadouts import migrate_playability, unchanged_units_parent
 from markers import (ALLOWED as MARKER_FIELDS, DEST as MAP_MARKER_PREFAB, LEGACY as LEGACY_MARKER,
                      BASE as LEGACY_MARKER_BASE, convert_baked_marker_generator, convert_hover_camera,
@@ -6011,6 +6011,20 @@ WCS_COLLIMATOR_RENAMES = (
 )
 
 
+APACHE_PIN = ('6303360DA719E832', '8.4.0')
+APACHE_DIRECTORY = 'Prefabs/Vehicles/Helicopters/AH64D/'
+APACHE_REGISTERED = ('397971C2026D588F', APACHE_DIRECTORY + 'USArmy/AH64D_USArmy_AGM114L_X2.et')
+APACHE_AUTHORED = (APACHE_REGISTERED[0], APACHE_DIRECTORY + 'AH64D_AGM114L_X2.et')
+
+
+@lru_cache(maxsize=16)
+def verified_apache_alias(workshop):
+    packages = {'WCS_AH-64D_6303360DA719E832': (
+        '7f7cbdf17572449ef466802c5e834a7c6fdc64b14f2b96f08d20890800d7fb9b', (APACHE_REGISTERED,),
+    )}
+    return {APACHE_AUTHORED: APACHE_REGISTERED} if APACHE_REGISTERED in workshop_resources(workshop, packages) else {}
+
+
 def resource_aliases(workshop, units, stock):
     aliases = {(guid, old): (guid, new) for (guid, old), new in STOCK_RESOURCE_ALIASES.items()
                if stock and stock.contains(guid, new)}
@@ -6069,13 +6083,7 @@ def resource_aliases(workshop, units, stock):
             COBRA_PROVIDER: (COBRA_DIGEST, (MARINE_M299_CURRENT,)),
         }):
             aliases[MARINE_M299] = MARINE_M299_CURRENT
-        apache_path = 'Prefabs/Vehicles/Helicopters/AH64D/'
-        apache = ('397971C2026D588F', apache_path + 'USArmy/AH64D_USArmy_AGM114L_X2.et')
-        if apache in workshop_resources(workshop, {
-            'WCS_AH-64D_6303360DA719E832': (
-                '7f7cbdf17572449ef466802c5e834a7c6fdc64b14f2b96f08d20890800d7fb9b', (apache,)),
-        }):
-            aliases[apache[0], apache_path + 'AH64D_AGM114L_X2.et'] = apache
+        aliases.update(verified_apache_alias(workshop))
         for original, (provider, guid, path) in WORKSHOP_RESOURCE_ALIASES.items():
             if provider not in databases:
                 registry = workshop / provider / 'resourceDatabase.rdb'
@@ -7681,7 +7689,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
 
 def world_draft(source, dev, world, row, staged, area_placements, interactions, convert_group_block, asset_aliases,
                 local_loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew, resolve_crew_config, delayed=None,
-                faction_assets=None, archived_crew=None):
+                faction_assets=None, archived_crew=None, historical_roots=()):
     draft, blockers = {}, []
     reviewed_replacements = {}
     commandos_objectives = None
@@ -8733,6 +8741,17 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if delayed:
         draft.update(delayed.assets)
     draft.update(commandos_runtime)
+    if historical_roots and APACHE_AUTHORED not in asset_aliases:
+        try:
+            uses_pinned_apache = all(header in draft and APACHE_PIN in required_addon_versions(draft[header])
+                                     for header in row['headers'])
+        except ValueError:
+            uses_pinned_apache = False  # File review reports malformed launcher declarations.
+        if uses_pinned_apache:
+            for root in historical_roots:
+                if archive_alias := verified_apache_alias(root):
+                    asset_aliases = {**asset_aliases, **archive_alias}
+                    break
     blockers.extend(migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets,
                                    faction_assets or {}, archived_crew or {}))
     for path, text in draft.items():
@@ -9076,14 +9095,15 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
 
 def plan(source, dev, report, staged, area_placements, interactions, convert_group_block, asset_aliases,
          local_loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew, resolve_crew_config, delayed_extractions,
-         faction_assets=None, archived_crew=None):
+         faction_assets=None, archived_crew=None, historical_roots=()):
     results, emitted, totals, families = {}, {}, Counter(), Counter()
     for world, row in report['worlds'].items():
         draft, result = world_draft(source, dev, world, row, staged, area_placements.get(world, {}),
                                     interactions.get(world, ((), {})), convert_group_block, asset_aliases,
                                     local_loadouts, spawned_assets.get(world, {}), convert_crew,
                                     partial(resolve_spawn, spawned_assets.get(world, {})), resolve_crew,
-                                    resolve_crew_config, delayed_extractions.get(world), faction_assets, archived_crew)
+                                    resolve_crew_config, delayed_extractions.get(world), faction_assets, archived_crew,
+                                    historical_roots)
         results[world] = result
         totals[result['status']] += 1
         families.update({blocker['rule'] for blocker in result.get('blockers', [])})

@@ -765,10 +765,10 @@ def main():
         review = output / 'review.json'
         common = ['--missions', args.missions, '--source', args.source, '--dev', args.dev,
                   '--base-database', args.base_database, '--workshop-addons', args.workshop_addons]
-        run_tool('convert', [*common, '--batch', '--units', args.units, '--units-source', args.units_source,
-                             '--units-dev', args.units_dev, '--stage', stage, '--report', inventory])
-        providers = [item for path in dependencies for item in ('--dependency', path)]
         archives = [item for path in args.historical_workshop for item in ('--historical-workshop', path)]
+        run_tool('convert', [*common, '--batch', '--units', args.units, '--units-source', args.units_source,
+                             '--units-dev', args.units_dev, *archives, '--stage', stage, '--report', inventory])
+        providers = [item for path in dependencies for item in ('--dependency', path)]
         run_tool('review', [*common, *providers, *archives, '--inventory', inventory, '--draft-stage', stage,
                             '--report', review, '--summary', output / 'review.md'])
         inventory_bytes = inventory.read_bytes()
