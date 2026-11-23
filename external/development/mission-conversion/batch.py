@@ -2172,12 +2172,18 @@ def authored_placement_flags(values):
     return ['Flags ' + flags]
 
 
-def startup_cleanup(block):
+def startup_cleanup(block, *, preserve_children=False):
     root = STARTUP_CLEANUP.fullmatch(block[0])
     if not root:
         raise ValueError('unsupported startup cleanup placement')
     output = []
     for name, lines in polygon_capture.members(block, root['group'], root['name']):
+        children = []
+        if preserve_children and ' {' in lines:
+            first = lines.index(' {')
+            if block_end(lines, first) != len(lines) - 1 or any(LEGACY.search(line) for line in lines[first:]):
+                raise ValueError('unsupported startup cleanup hierarchy')
+            children, lines = lines[first:], lines[:first]
         values = properties(lines, STARTUP_FIELDS.keys() | CAPTURE_TRANSFORM | {'m_prefabFilterList', 'Flags'})
         transform = {key: value for key, value in values.items() if key in CAPTURE_TRANSFORM}
         if ('coords' not in transform or any(not FIELD.fullmatch(f'{key} {v}') for key, v in transform.items())
@@ -2199,10 +2205,30 @@ def startup_cleanup(block):
                        *(f' {native} {values[key]}' for key, native in STARTUP_FIELDS.items() if key in values)])
         if entries:
             output.extend([' m_aPrefabs {', *(f'  {entry}' for entry in entries), ' }'])
+        output.extend(children)
         output.append('}')
     if not output:
         raise ValueError('empty startup cleanup group')
     return '\n'.join([*output, ''])
+
+
+COMMANDOS_OBJECTIVES_LAYER = 'worlds/arc/CommandosReforged/CommandosReforged_Layers/objectives.layer'
+COMMANDOS_OBJECTIVES_BLOB = 'c173a7dc7e159bccc8c9764500392838742b7316'
+
+
+def commandos_objective_cleanup(block):
+    if block[0] == 'PK_EntityDeleter Radar_OBJ {':
+        # The legacy cleanup removes this child after its objective registers.
+        return startup_cleanup(block, preserve_children=True)
+    nested = list(nested_placement_blocks(block, STARTUP_CLEANUP))
+    if len(nested) != 1:
+        raise ValueError('expected the reviewed ammo dump cleanup placement')
+    start, stop, depth, cleanup = nested[0]
+    replacement = [' ' * depth + line for line in startup_cleanup(cleanup).splitlines()]
+    converted = native_placement([*block[:start], *replacement, *block[stop + 1:]])
+    if not converted:
+        raise ValueError('unconverted commandos objective placement')
+    return converted
 
 
 def static_particle_placement(block):
@@ -7904,6 +7930,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                          'detail': 'reviewed static Commandos riflemen need their native prefab'})
                     else:
                         result.append(native)
+                elif (layer == COMMANDOS_OBJECTIVES_LAYER and source.files[layer] == COMMANDOS_OBJECTIVES_BLOB
+                      and line in (1, 477)):
+                    try:
+                        result.append(commandos_objective_cleanup(block))
+                    except ValueError as exc:
+                        blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
                 elif kind == 'PK_EntityDeleter':
                     try:
                         result.append(startup_cleanup(block))

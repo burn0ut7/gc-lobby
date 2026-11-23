@@ -31,7 +31,7 @@ The audit at Missions Dev `f2dd0ebd` clears 256 of the 277 published launchers, 
 | Cobra’s Bite | The two authored USMC M3 MAAW roles remain unavailable. |
 | Factory Siege Redux | The authored 2003 woodland forward observer remains unresolved. |
 | Gull Bay Guns | The original RHS EMR squad leader remains unresolved. |
-| Commandos Reforged | The objective manager, interaction prefabs, radar cleanup and Black Hawk objective need an integrated conversion. |
+| Commandos Reforged | The objective manager, interaction prefab and Black Hawk objective need an integrated conversion. |
 
 Run the planner from GC Lobby with a clean Missions Dev checkout. Use a fresh output directory when the commits or conversion rules change.
 
@@ -2335,4 +2335,4 @@ The converter now preserves 62 ordered slots across three US groups and nine Rus
 
 The equipment pass retains five custom weapon prefabs, the issued helmet, the Mi-8 fuel and flare-dispenser overrides, and three wirecutter placements. Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7` supplied the RHS, Tactical Flava and WCS prefab ancestry for the attachment and dispenser checks. The shared wirecutter conversion restores the original inventory settings. The dog pack carries 26 original files with the prefab, mesh, import sources, materials, textures, sound project and recording. The dependency audit resolves the authored references in its prefabs and material files, including the links stored in the mesh metadata and sound project.
 
-The objective manager and its objective registrations still require a native runtime port. The original startup cleanup destroys its own entity tree after the world-postprocess callback. The radar child registers an objective and marker during initialization before that removal, so the port needs to preserve that order.
+The converter preserves the ammo dump cleanup inside its original parent and keeps the radar and its cables attached to the radar cleanup entity. Both use Lobby's existing startup cleanup, which removes its own hierarchy after world postprocessing, matching the original TilW `PK_EntityDeleter.c`. Reversing the two translated class and filter field names reproduces both published placement blocks exactly. The native objective manager port still needs to provide the radar's objective and marker registration during initialization, before cleanup removes its child.
