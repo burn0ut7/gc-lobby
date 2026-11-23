@@ -5126,14 +5126,26 @@ def registered_alias(resource, path, source, dev, aliases):
 
 
 def reviewed_units_asset_paths(source_units, dev_units):
+    aliases = {}
     icon = '5E4DDEE56C6D4D16'
     original = 'worlds/Blue/TheBearWentOvertheMountain2/Assets/Mujahadeen.edds'
     current = 'Images/GC_MUJ_icon.edds'
     if (source_units.resources.get(icon) == dev_units.resources.get(icon) == [current]
             and source_units.files[current] == dev_units.files[current]
             and source_units.files[current + '.meta'] == dev_units.files[current + '.meta']):
-        return {(icon, original): (icon, current)}
-    return {}
+        aliases[icon, original] = icon, current
+    directory = 'Prefabs/Groups/OPFOR/GC_NVA/'
+    for identity, role, old_blob, new_blob in (
+        ('ECE5B52C1476B039', 'CHQ', '1e8acff7a8a5d680091b2c39fa914a80853610e9',
+         '818cea2295fdf55828b49ae1d0139504675bd25a'),
+        ('F357F0DCAC2F8A5B', 'PHQ', '498c65d0482ea97553158a7e24162e6353580f44',
+         'a8e9fea460f81f957517ccb8256ab254e1e514e0'),
+    ):
+        current = directory + f'Group_NVA_{role}.et'
+        if (source_units.resources.get(identity) == dev_units.resources.get(identity) == [current]
+                and source_units.files[current] == old_blob and dev_units.files[current] == new_blob):
+            aliases[identity, directory + f'Group_GC_NVA_{role}.et'] = identity, current
+    return aliases
 
 
 def reviewed_faction_assets(source, dev, source_units, dev_units):

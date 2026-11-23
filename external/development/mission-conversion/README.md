@@ -2101,6 +2101,14 @@ The shared crew converter accepts the verified mission-owned BMP-1 after the sav
 
 The roster now depends on the missing USMC M3 MAAW gunner `6CA5BE07728357DE` and assistant `4EA7CF8765E83F76`. Missions commit `69d1524a` explicitly changed both slots from the original MAAW pair. The current registered MAAW pair cannot establish the authored M3 loadouts. Keep Cobra’s Bite in review until the two exact assets or equivalent source loadouts can be verified.
 
+### Company Team Counter Attack headquarters
+
+Units commit `062d2988` introduced the NVA company headquarters as an AI group. The published Lobby only enabled a group’s character slots when `m_bSetPlayable` was set or the characters inherited an enabled playability component. All four headquarters roles lack that setting, and Company Team Counter Attack places or spawns the group without enabling it. The old stock `m_bPlayable 1` value would make GC Lobby register player slots and suppress normal AI spawning. Units Dev commit `c4e33a17` changes that value to `0` while keeping the original group and ordered role GUIDs. The saved Missions source and indexed installed archives reference the group only in this mission and the Units editor catalogue. The old company and platoon headquarters paths now resolve to their verified Units registrations.
+
+Missions Dev commit `3f8b0ce4` retains all 57 advertised playable roles, 30 capture-gated spawners and 12 framework events. The full draft audit reproduced all 330 earlier draft files byte for byte. Compare the late NVA headquarters spawn, both headquarters’ role order, and the timing of approach, capture and AI cleanup during Match.
+
+Workbench MCP generated the launcher snapshot for 244 entities in session `logs_2026-11-22_19-10-40`. The metadata installer verified the captured world, layers and resource registrations before merging the snapshot into Missions Dev commit `77871a6b`.
+
 ### Combined Anti-Armor Team
 
 The converter verifies the source framework and spawner layers and binds the eight `UK_KIA` spawns to the same UK AI casualty threshold used by the authored events. All eight retain their 180.9-second delay after the threshold is met during Match and their original RHS effect prefab. Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7` verifies the prefab and trigger parent. The audit records 14 converted placed spawners.
