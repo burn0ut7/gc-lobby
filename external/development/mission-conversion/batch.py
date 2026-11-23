@@ -2214,6 +2214,11 @@ def startup_cleanup(block, *, preserve_children=False):
 
 COMMANDOS_OBJECTIVES_LAYER = 'worlds/arc/CommandosReforged/CommandosReforged_Layers/objectives.layer'
 COMMANDOS_OBJECTIVES_BLOB = 'c173a7dc7e159bccc8c9764500392838742b7316'
+COMMANDOS_BLACK_HAWK = 'worlds/arc/CommandosReforged/Prefabs/Blackhawk_OBJ.et'
+COMMANDOS_BLACK_HAWK_PARENT = ('1529FD2C6A8162A1', 'Prefabs/Vehicles/Helicopters/AUS_MH60/AUS_UH60_Pylon_Quad_Hydra.et')
+COMMANDOS_BLACK_HAWK_TANKS = ('5622A70CD4036C5A', '661A5AD75FDB52FF')
+COMMANDOS_OBJECTIVE_MARKER = 'worlds/arc/CommandosReforged/Prefabs/Objective_Marker.et'
+COMMANDOS_DEFAULT_MARKER = 'worlds/arc/CommandosReforged/Prefabs/Marker_Any.et'
 
 
 def commandos_objective_cleanup(block):
@@ -5953,6 +5958,13 @@ def resource_aliases(workshop, units, stock):
                     if stock and not stock.registered_paths(old) and stock.contains(new, path)})
     databases = {}
     if workshop:
+        if COMMANDOS_BLACK_HAWK_PARENT in workshop_resources(workshop, {
+            'SikorskyH60Project_60ED3CC6E7E40221': (
+                '01e5390c986af0406bd5134fbcf5ff890f28d0171bfb0bc9b14347f0d8114bca',
+                (COMMANDOS_BLACK_HAWK_PARENT,),
+            ),
+        }):
+            aliases[COMMANDOS_BLACK_HAWK_PARENT] = COMMANDOS_BLACK_HAWK_PARENT
         collimator_prefix = 'Prefabs/Weapons/Attachments/Optics/Collimators/'
         collimators = {(resource, collimator_prefix + current) for resource, _, current in WCS_COLLIMATOR_RENAMES}
         registered_collimators = workshop_resources(workshop, {
@@ -6262,6 +6274,40 @@ def commandos_dog_assets(source, dev, aliases):
     return files
 
 
+def commandos_black_hawk(source, aliases):
+    if (source.files.get(COMMANDOS_BLACK_HAWK) != '3ea9e9583dfc4118371e36f9e1163eeedfacba3d'
+            or aliases.get(COMMANDOS_BLACK_HAWK_PARENT) != COMMANDOS_BLACK_HAWK_PARENT):
+        raise ValueError('Commandos Black Hawk needs the reviewed objective and H-60 prefab')
+    lines = source.read(COMMANDOS_BLACK_HAWK).splitlines()
+    start = lines.index('   FuelNodes {')
+    end = block_end(lines, start)
+    nodes = [f'    SCR_FuelNode "{{{tank}}}" {{\n     MaxFuel 0\n     m_fInitialFuelTankState 0\n    }}'
+             for tank in COMMANDOS_BLACK_HAWK_TANKS]
+    # Zero both current tanks. The other three authored IDs no longer exist on the parent.
+    return '\n'.join([*lines[:start + 1], *nodes, *lines[end:], ''])
+
+
+def commandos_marker(source, path):
+    if (source.files.get(COMMANDOS_OBJECTIVE_MARKER) != '15d8920014534efd3ad16a710e1d3985da7337cd'
+            or source.files.get(COMMANDOS_DEFAULT_MARKER) != '02bc84124f05f7929622066601407bafbdc6d0d0'):
+        raise ValueError('Commandos marker templates changed')
+    objective = source.read(COMMANDOS_OBJECTIVE_MARKER).splitlines()
+    # Native markers publish their snapshots through the Lobby manager.
+    style = objective[block_end(objective, 2) + 1:-1]
+    inherited = None
+    legacy = objective
+    if path == COMMANDOS_DEFAULT_MARKER:
+        legacy = source.read(path).splitlines()
+        # The child inherits the marker style, but supplies its own transform.
+        inherited = properties(style, MARKER_FIELDS | {'m_iZOrder'})
+        for field in CAPTURE_TRANSFORM:
+            inherited.pop(field, None)
+        style = legacy[2:-1]
+    rendered = marker_instance(style, '', inherited, draw_order=True).splitlines()
+    rendered.insert(1, legacy[1])
+    return '\n'.join([*rendered, ''])
+
+
 def archived_volha_assets(source, dev, path, identity):
     if path in source.files or identity in source.resources or dev.resources.get(identity) not in (None, [path]):
         raise ValueError('archived wreck prefab identity collision')
@@ -6463,6 +6509,10 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
                     objective = spawned_assets.get(resource)
                     if objective:
                         draft[canonical] = objective['body']
+                    elif canonical == COMMANDOS_BLACK_HAWK:
+                        draft[canonical] = commandos_black_hawk(source, asset_aliases)
+                    elif canonical in (COMMANDOS_OBJECTIVE_MARKER, COMMANDOS_DEFAULT_MARKER):
+                        draft[canonical] = commandos_marker(source, canonical)
                     else:
                         draft[canonical] = approved[1] if approved else passive_asset(source, canonical)
                     draft[meta] = replace_reference(source.read(meta), META_NAME, identity[2], canonical)
