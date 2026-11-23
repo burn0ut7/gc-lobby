@@ -603,6 +603,9 @@ def main():
                 ai_assets = batch.ai_objectives(source, dev, world, stock, locally_owned, source_units, dev_units)
                 playable = batch.playable_objectives(source, dev, world, stock, locally_owned, source_units,
                                                      dev_units, row.get('respawn', {}))
+                villa_roles, villa_markers = batch.villa_us_roster(source, dev, world, stock, locally_owned,
+                                                                  source_units, dev_units)
+                playable.update(villa_roles)
                 if ai_assets.keys() & playable.keys():
                     raise ValueError('objective character appears in both AI and playable rosters')
                 roster_assets = {**ai_assets, **playable}
@@ -613,11 +616,15 @@ def main():
                     raise ValueError('duplicate AI objective flag producers')
                 if roster_assets:
                     objectives.update(roster_assets)
+                    objectives.update(villa_markers)
                     objective_flags = set(objective_flags) | set(ai_flags)
                     batch_interactions[world] = (objective_flags, interaction_placements)
                     spawned_assets[world] = objectives
                     row['aiObjectives'] = {identity: {k: v for k, v in asset.items() if k != 'body'}
                                            for identity, asset in roster_assets.items()}
+                    if villa_markers:
+                        row['attachedMarkers'] = {identity: asset['markerName']
+                                                  for identity, asset in villa_markers.items()}
             except ValueError as exc:
                 row['aiObjectiveGap'] = str(exc)
         if args.batch and any(row['serializedTypes'].get(kind)

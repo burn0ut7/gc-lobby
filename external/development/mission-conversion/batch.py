@@ -31,7 +31,7 @@ from groups import (CALL, COLOR_TEAM_ARRAY, DYNAMIC_LOD_DISTANCE, INDEX, SLOTS, 
 from interactions import BLACKBOX, BLACKBOX_FLAG, blackbox_placement, blackbox_prefab
 from interactions import convert_block as convert_interaction_block, convert_object
 from launchers import META_NAME, launcher, replace_reference
-from local_loadouts import unchanged_units_parent
+from local_loadouts import migrate_playability, unchanged_units_parent
 from markers import (ALLOWED as MARKER_FIELDS, DEST as MAP_MARKER_PREFAB, LEGACY as LEGACY_MARKER,
                      BASE as LEGACY_MARKER_BASE, convert_baked_marker_generator, convert_hover_camera,
                      convert_layer, convert_wall_markers, instance as marker_instance)
@@ -3184,6 +3184,11 @@ BEACH_HOLIDAY_BLUE_BLOB = '2cdfdee7c12327f6e112cd50461a96f2b8b68bc8'
 VILLA = 'worlds/HitTheMan/Stealthing Into Villa/'
 VILLA_HIND = VILLA + 'Prefab/Mi24V_armed_UPK1_HTM.et'
 VILLA_OPFOR = VILLA + 'StealthingIntoVilla_Layers/OPFOR_Players/OPFOR_Players.layer'
+VILLA_OPFOR_BLOB = '5daa19731dbdcc75bd45833e0f17285b384dbe2a'
+VILLA_BLUFOR = VILLA + 'StealthingIntoVilla_Layers/BLUFOR_Players/BLUFOR_Players.layer'
+VILLA_BLUFOR_BLOB = '386dfc4dd48baa575d3b6893f973813518d2c878'
+VILLA_ROLE_ASSETS_HASH = 'b9f9378648905622eebdb9a86d84f96dba1d4ec9be6b530e6cd82609d9722735'
+VILLA_UNPLACED_MARKERS = {'Medic_Marker_2', 'Medic_Marker_3', 'Rifleman_Marker_1'}
 VILLA_PROPS = VILLA + 'StealthingIntoVilla_Layers/CORE/Props.layer'
 VILLA_DEFAULT = VILLA + 'StealthingIntoVilla_Layers/default.layer'
 VILLA_DEFAULT_BLOB = '3cf1bfd80d2ccf4d78ad37e074c6ef6759db894e'
@@ -3216,7 +3221,7 @@ REVIEWED_AIRCRAFT = {
 REVIEWED_AIRCRAFT_LAYERS = {
     BEACH_HOLIDAY_BLUE: (BEACH_HOLIDAY_BLUE_BLOB, COBRA_DAMAGE_PARENT,
                         {path for path in REVIEWED_AIRCRAFT if path.startswith(BEACH_HOLIDAY)}),
-    VILLA_OPFOR: ('5daa19731dbdcc75bd45833e0f17285b384dbe2a', HIND_DAMAGE_PARENT, {VILLA_HIND}),
+    VILLA_OPFOR: (VILLA_OPFOR_BLOB, HIND_DAMAGE_PARENT, {VILLA_HIND}),
 }
 REVIEWED_AREA_FLAG_WRITERS = {
     BEACH_HOLIDAY_DEFAULT: (BEACH_HOLIDAY_DEFAULT_BLOB, {'Factory': 1}),
@@ -4848,7 +4853,7 @@ def villa_commander(source, dev, world, stock, local_resources, source_units, de
     officer = ('5117311FB822FD1F', 'Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Officer.et')
     if (world != VILLA + 'StealthingIntoVilla.ent'
             or source.files.get(VILLA_DEFAULT) != VILLA_DEFAULT_BLOB
-            or source.files.get(VILLA_OPFOR) != '5daa19731dbdcc75bd45833e0f17285b384dbe2a'
+            or source.files.get(VILLA_OPFOR) != VILLA_OPFOR_BLOB
             or source.files.get(path) != blob or source.resources.get(resource) != [path]
             or dev.resources.get(resource) not in (None, [path])
             or any(identity in snapshot.resources for snapshot in (source_units, dev_units)
@@ -4875,6 +4880,87 @@ def villa_commander(source, dev, world, stock, local_resources, source_units, de
         return {}
     return {resource: {'path': path, 'body': body, 'placement': VILLA_OPFOR + ':72',
                        'rosterFlags': flags, 'playable': True}}
+
+
+def villa_us_roster(source, dev, world, stock, local_resources, source_units, dev_units):
+    if (world != VILLA + 'StealthingIntoVilla.ent' or not stock
+            or source.files.get(VILLA_BLUFOR) != VILLA_BLUFOR_BLOB
+            or source.files.get(VILLA_DEFAULT) != VILLA_DEFAULT_BLOB):
+        return {}, {}
+    layer = source.read(VILLA_BLUFOR)
+    corpus = '\n'.join(source.read(item) for item in source.closure(world)
+                       if PurePosixPath(item).suffix.lower() in SOURCE_TEXT)
+    scripts = script_text(source)
+    roles, markers = {}, {}
+    role_prefix = VILLA + 'Prefab/US/HTM_Campaign_US_Player_SF_'
+    marker_prefix = VILLA + 'Prefab/US/EditableMarker_Stealth_HTM_'
+    owned = local_resources | source_units.resources.keys() | dev_units.resources.keys()
+    if any(api in scripts for api in SCRIPT_FLAG_APIS):
+        return {}, {}
+    for resource, path in REF.findall(layer):
+        if not path.startswith(role_prefix):
+            continue
+        body = source.read(path)
+        fields = body.splitlines()
+        parent = REF.search(fields[0]) if fields else None
+        if (source.resources.get(resource) != [path] or corpus.upper().count('{' + resource + '}') != 1
+                or resource in source_units.resources or resource in dev_units.resources
+                or dev.resources.get(resource) not in (None, [path])
+                or not parent or not fields[0].startswith('SCR_ChimeraCharacter : ')
+                or not parent[2].startswith('Prefabs/Characters/Campaign/Final/BLUFOR/US_army/GreenBerets/Suppressed/')
+                or parent[1] in owned or not stock.contains(*parent.groups())):
+            return {}, {}
+        try:
+            fields, flags = damage_state_flag_placements(fields, allow_multiple_states=False)
+            flag, = flags
+            child_start = fields.index(' {')
+            child = fields[child_start + 1:-2]
+            ref = REF.search(child[0])
+            if (len(child) != 5 or not ref or not ref[2].startswith(marker_prefix)
+                    or child[0] != '  PS_ManualMarker : ' + ref[0] + ' {'
+                    or not re.fullmatch(r'   ID "[\da-fA-F]{16}"', child[1])
+                    or child[2:] != ['   coords 0 0 0', '   angles 0 0 0', '  }']
+                    or flag in scripts or not literal_flag_reads(corpus, flag)
+                    or corpus.count(f'"{flag}"') != 1 + literal_flag_reads(corpus, flag)):
+                return {}, {}
+            marker_id, marker_path = ref.groups()
+            if (source.resources.get(marker_id) != [marker_path] or marker_id in markers
+                    or marker_id in source_units.resources or marker_id in dev_units.resources
+                    or dev.resources.get(marker_id) not in (None, [marker_path])
+                    or corpus.upper().count('{' + marker_id + '}') != 1):
+                return {}, {}
+            original = source.read(marker_path).splitlines()
+            end = block_end(original, 2)
+            naming, = (block for _, block in blocks('\n'.join(line[2:] for line in original[3:end]))
+                       if block[0].startswith('TILW_SetNameComponent '))
+            name = properties(naming[1:-1], {'m_setName'})['m_setName'][1:-1]
+            naming, count = convert_mission_names('\n'.join('  ' + line for line in naming))
+            if (count != 1 or original[0] != 'PS_ManualMarker {' or original[2] != ' components {'
+                    or name in VILLA_UNPLACED_MARKERS or name in scripts or corpus.count(f'"{name}"') != 3):
+                return {}, {}
+            native = marker_instance(original[end + 1:-1], '', draw_order=True).splitlines()
+            stop = block_end(native, 1)
+            native[stop:stop] = naming.splitlines()
+            native.insert(block_end(native, 2), '   m_bTrackTransform 1')
+            native.insert(1, original[1])
+            marker_body = '\n'.join(native) + '\n'
+            fields[child_start + 1] = child[0].replace('PS_ManualMarker', 'GenericEntity', 1)
+            role, playable = migrate_playability('\n'.join(fields) + '\n')
+            if (not playable or LEGACY.search(role + marker_body)
+                    or any(file in dev.files and dev.read(file).strip() != converted.strip()
+                           for file, converted in ((path, role), (marker_path, marker_body)))):
+                return {}, {}
+        except (IndexError, KeyError, ValueError):
+            return {}, {}
+        roles[resource] = {'path': path, 'body': role, 'placement': VILLA_BLUFOR + ':129',
+                           'rosterFlags': (flag,), 'playable': True, 'attachedMarker': marker_id}
+        markers[marker_id] = {'path': marker_path, 'body': marker_body, 'markerName': name}
+    paths = sorted(asset['path'] for asset in chain(roles.values(), markers.values()))
+    signature = sha256('\n'.join(f'{path} {source.files[path]}' for path in paths).encode()).hexdigest()
+    if (len(roles) != 18 or len({marker['markerName'] for marker in markers.values()}) != 18
+            or signature != VILLA_ROLE_ASSETS_HASH):
+        return {}, {}
+    return roles, markers
 
 
 def playable_objectives(source, dev, world, stock, local_resources, source_units, dev_units, respawn):
@@ -7502,6 +7588,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         and len(block) == 3 and FIELD.fullmatch(block[1].strip())):
                     label = 'template framework' if world == TEMPLATE_WORLD else 'Summer Days framework'
                     inactive_placements.append(f'The original {label} is empty and runs no mission events.')
+                elif (layer == VILLA_PROPS and source.files[layer] == VILLA_PROPS_BLOB
+                      and source.files.get(VILLA_DEFAULT) == VILLA_DEFAULT_BLOB
+                      and head.startswith('SCR_FactionManager "5EA8C932C68D400F" : "{4A188E44289B9A50}')
+                      and block[1:] == [' coords 2654.675 220.845 6982.4', '}']):
+                    # The default layer's mode child registers first on the authored Cain scene.
+                    inactive_placements.append('The placed editor faction manager is inactive in the original layer order.')
                 elif (layer == SUMMER_DAYS_DEFAULT and source.files[layer] == SUMMER_DAYS_DEFAULT_BLOB
                       and block[1:] == ['}'] and (head in SUMMER_DAYS_MANAGERS or head == PROJECTILE_SOUNDS_MANAGER)):
                     if head == PROJECTILE_SOUNDS_MANAGER:
@@ -7888,7 +7980,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     (event.get('trigger') == 'event flag' and not event.get('inverted') and flag in single_draw_flags))
         prefab_spawns.extend({**item, 'startupChoice': flag if selected else None, 'sourceEvent': event['name']}
                              for item in event.get('convertedActions', []) if 'spawnAnchor' in item)
-    prefab_spawns.extend(spawner_audit)
+    prefab_spawns.extend(spawn for spawn in spawner_audit if spawn['trigger'] != 'inactive cleanup')
     crew_names = defaultdict(set)
     crew_name_counts = Counter()
     for spawn in prefab_spawns:
@@ -7980,6 +8072,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             if len(commander_spawns) != len(CONCRETE_TOWNS) or actual_towns != expected_towns:
                 blockers.append({'rule': 'spawned objective', 'file': CONCRETE_COMMANDER,
                                  'detail': 'expected one commander spawn condition per exclusive town'})
+        attached_roster_markers = set()
         for resource, asset in roster_assets.items():
             reference = f'"{{{resource}}}{asset["path"]}"'
             occurrences = sum(body.count(reference) for body in draft.values())
@@ -7989,6 +8082,15 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                  'detail': 'expected one member with no conflicting runtime name'})
             elif entity:
                 named[entity] = [('SCR_ChimeraCharacter', reference)]
+            if marker_id := asset.get('attachedMarker'):
+                marker = spawned_assets[marker_id]
+                marker_name = marker['markerName']
+                if occurrences != 1 or marker_name in named:
+                    blockers.append({'rule': 'roster marker', 'file': marker['path'],
+                                     'detail': 'expected one role with a unique attached marker name'})
+                else:
+                    named[marker_name] = [('GenericEntity', marker['body'].splitlines())]
+                    attached_roster_markers.add(marker_name)
         for target in sorted(damage_flags.values()):
             if len(named.get(target, [])) != 1:
                 blockers.append({'rule': 'damage flag target', 'file': world,
@@ -8173,6 +8275,14 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     and len({draw_by_flag[choice] for choice in expected if choice in draw_by_flag}) == 1
                     and expected <= draw_by_flag.keys()):
                 marker_targets = {**named, trifecta_tracker: [('GenericEntity', marker_asset['body'].splitlines())]}
+        if (len(attached_roster_markers) == 18
+                and source.files.get(VILLA_DEFAULT) == VILLA_DEFAULT_BLOB
+                and source.files.get(VILLA_BLUFOR) == VILLA_BLUFOR_BLOB
+                and not VILLA_UNPLACED_MARKERS.intersection(marker_targets)):
+            # These three reveal targets belong to roles absent from the saved roster.
+            marker_edits = [{**edit, 'markers': [name for name in edit['markers']
+                                               if name not in VILLA_UNPLACED_MARKERS]}
+                            for edit in marker_edits]
         for gap in marker_edit_gaps(marker_targets, marker_edits):
             blockers.append({'rule': 'marker visibility actions', 'file': world, 'detail': gap})
     for layer, converted in boundaries.items():
@@ -8352,6 +8462,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     and all(source.files.get(roster) == blob for roster, blob in rosters)
                     and actual == limit and slots == slots_in_source):
                 capacity_notes[header] = f'{limit} advertised players and {slots} original roster entries preserved.'
+        elif (world == VILLA + 'StealthingIntoVilla.ent' and actual == 110 and slots == 75
+              and source.files[header] == '415338f6ef78d0aa5811d82a54f34dde62d59bef'
+              and source.files.get(VILLA_DEFAULT) == VILLA_DEFAULT_BLOB
+              and source.files.get(VILLA_BLUFOR) == VILLA_BLUFOR_BLOB
+              and source.files.get(VILLA_OPFOR) == VILLA_OPFOR_BLOB
+              and source.files.get(VILLA_CONVOY_LAYER) == VILLA_CONVOY_LAYER_BLOB):
+            capacity_notes[header] = '110 advertised players, 66 placed slots, and 9 slots in each convoy draw.'
     if ai_faction:
         remaining.append('AI casualty tracking uses native registration and confirmed death events. '
                          'Compare possession, faction changes and delayed recounts separately.')

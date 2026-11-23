@@ -16,7 +16,7 @@ Use the batch workflow for the catalog. The same rules process every legacy laun
 
 ### Remaining migration work
 
-The audit at Missions Dev `fb372db0` clears 254 of the 277 published launchers, all with native snapshots and verified portable manifests. Of the 23 remaining launchers, nine have generated drafts held on file checks and fourteen still need conversion rules. The generated `plan.md` and `inventory.json` carry the exact resource IDs, paths and rule failures for the current dependency graph. Review shared providers as a group, then use representative Match checks for each affected behavior family.
+The audit at Missions Dev `6fad88be` clears 255 of the 277 published launchers. The preceding 254 have native snapshots and verified portable manifests. Stealthing Into Villa has passed file review and its metadata capture is pending. Of the 22 launchers still held by the file audit, nine have generated drafts and thirteen still need conversion rules. The generated `plan.md` and `inventory.json` carry the exact resource IDs, paths and rule failures for the current dependency graph. Review shared providers as a group, then use representative Match checks for each affected behavior family.
 
 | Launchers | Remaining blocker |
 | --- | --- |
@@ -31,7 +31,6 @@ The audit at Missions Dev `fb372db0` clears 254 of the 277 published launchers, 
 | Cobra’s Bite | The two authored USMC M3 MAAW roles remain unavailable. |
 | Factory Siege Redux | The authored 2003 woodland forward observer remains unresolved. |
 | Gull Bay Guns | The original RHS EMR squad leader remains unresolved. |
-| Stealthing Into Villa | The separate editor faction manager and the US roster's attached markers and death events still need conversion. |
 | Operation Arrowhead Iron Cipher | Extraction, intel and fallback spawns, flag producers, event deactivation and the tan TIGR need an integrated conversion. |
 | Commandos Reforged | The mission-specific Commandos manager, interactions, cleanup, aircraft and loadouts need an integrated conversion. |
 
@@ -1522,7 +1521,11 @@ Villa's commander slot retains its published resource identity, civilian affilia
 
 Villa's siren keeps its original position, sound and zero-second delay after `Sirens`. Both flag writers run in Match, at least ten seconds after the original spawners could register. The converter omits five generator light cleanup helpers. Their one-second spawn schedules miss the only world-postprocess callback, as verified for the same published cleanup class in the Cold War Domination fixture. The generator damage flags and notifications remain active. The catalogue audit reproduced all 313 prior draft files and 254 metadata records and reduced Villa's reported blockers to three.
 
-The US roster contains 18 placed roles with attached markers. The reveal instruction lists 21 names because the second and third medics and first rifleman have authored marker prefabs without corresponding placed roles. The separate editor faction manager also needs a runtime authority check. Its prefab inherits a faction table and receives Workshop overlays, as confirmed in Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7`.
+The converter retains the 18 placed US roles in their three ordered squads. It keeps the 18 attached marker resource IDs and child transforms, the initial audience and the three-second death cleanup. Native markers sample their attached entity's transform every 500 milliseconds. The reveal still lists all 21 authored names. The second and third medics and first rifleman have saved marker prefabs but no placed roles, so those targets resolve to no live marker. Match checks should cover marker movement, reveal, death and respawn.
+
+Dedicated controls confirmed that the first loaded faction manager becomes authoritative. A fixture using the source Cain parent and the original `default.layer` and `CORE/Props.layer` split chose the mode's manager and reported its authored faction label in `logs_2026-11-23_01-17-17`, line 186. A reversed-order control in `logs_2026-11-23_01-16-05`, line 180, selected the editor manager instead. The converter retains the mode manager and its authored faction overrides and omits the unused editor placement for the verified Villa layers.
+
+The published header advertises 110 players. The source comparison counted 18 US and 48 opposing-side slots in the 14 placed groups. Each of the three mutually exclusive convoy choices adds nine slots, for 75 available in a session. The converter keeps the header's advertised count and records the difference after matching the source layers and both startup draws.
 
 The two escape placements spawn without an added delay after `Sirens`. Its two authored writers run in Match after ten seconds, so the source spawners have already initialized when the flag is set. The bound capture observer keeps the original 1,500-metre radius and the at-most-five-percent US share of local players and AI. It publishes the first result silently and notifies the framework on subsequent changes, as the published `TILW_BaseTriggerEntity.c` does. The source also evaluates an empty area as true. The boundary keeps all 32 authored points, the 15-second grace period, the USSR, FIA and CIV enforcement audience, and the blue outline and separate US overlay. The same-GUID Hind exemption resolves at its current registered path. The original code was checked in Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7`.
 
