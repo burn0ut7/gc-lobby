@@ -16,7 +16,7 @@ Use the batch workflow for the catalog. The same rules process every legacy laun
 
 ### Remaining migration work
 
-The audit at local Missions Dev `7e9c7ce8` with Units Dev `95f6c363` clears 267 of the 277 published launchers on files. All 267 have native snapshots and exported portable manifests. The ten remaining launchers have generated drafts held on 34 distinct external resource references. The generated `plan.md` lists each held launcher and any file-cleared launchers awaiting a snapshot. Its `plan.json` records file issues and source locations under `remainingLaunchers`. Review shared providers as a group, then use representative Match checks for each affected behavior family.
+The audit at published Missions Dev `6388ca2b` with Units Dev `95f6c363` clears 267 of the 277 legacy launchers on files. All 267 have native snapshots and exported portable manifests. The ten remaining launchers have generated drafts held on 34 distinct external resource references. The post-archive audit reproduced all 238 draft hashes and the same launcher, blocker and pinned version results. The generated `plan.md` lists each held launcher and any file-cleared launchers awaiting a snapshot. Its `plan.json` records file issues and source locations under `remainingLaunchers`. Review shared providers as a group, then use representative Match checks for each affected behavior family.
 
 | Launchers | Original provider or source lead | Remaining blocker |
 | --- | --- | --- |
@@ -46,6 +46,8 @@ python "$tools/prepare_smoke_batch.py" --missions $repo --audit $audit --drafts 
 ```
 
 Open `$stage/missions/addon.gproj` through Workbench MCP to build the staged resource database. Point the Missions Dev entry in the Dev addon graphs at that project directory. Each generated case includes its exact scenario, expected world, provider graph and watched resource IDs. The preparation reproduced all 20 launch specifications and 238 draft files from the final-ten smoke comparison. A graph missing the Hot Boxes pin was rejected before staging.
+
+To replay the reviewed archive from Missions Dev, replace `--drafts "$audit/drafts"` with `--broken "$repo/Broken"`. The command checks each archived file against both the archive manifest and the audit before restoring its runtime filename in external staging. A replay from `6388ca2b` reproduced all 286 staged files and the 20-case matrix byte for byte.
 
 ```powershell
 python "$tools/smoke_batch.py" --cases "$stage/cases.json" --server "$server/ArmaReforgerServer.exe" --base-project "$server/addons/data/ArmaReforger.gproj" --output "$stage/smoke-results"

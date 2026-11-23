@@ -53,7 +53,7 @@ def verify_pins(directory, pins):
         raise ValueError(f"version pins mismatch in {directory}: expected {wanted}, found {versions}")
 
 
-def prepare(repo, audit, drafts, output, graphs):
+def prepare(repo, audit, drafts, output, graphs, *, broken=False):
     plan = read(audit / "plan.json")
     review = read(audit / "review.json")
     inventory_path = audit / "inventory.json"
@@ -63,6 +63,12 @@ def prepare(repo, audit, drafts, output, graphs):
     if any((data["source"], data["target"]) != (plan["source"], plan["target"])
            for data in (inventory, review)) or not review["includesDraft"]:
         raise ValueError("the audit must include drafts and matching source and Dev revisions")
+    archive_hashes = None
+    if broken:
+        archive = read(drafts / "manifest.json")
+        if archive["legacyRevision"] != plan["source"] or archive["suffix"] != ".disabled":
+            raise ValueError("the Broken archive uses a different legacy revision or file suffix")
+        archive_hashes = archive["sha256"]
     source = Snapshot(repo, plan["source"])
     dev = Snapshot(repo, plan["target"])
     batch = inventory["batchMigration"]
@@ -79,8 +85,12 @@ def prepare(repo, audit, drafts, output, graphs):
         for kind in ("same", "changed", "devOnly"):
             files.update(path for path in mission["files"][kind] if path in dev.files)
         for path in batch["worlds"][entry["world"]]["files"]:
-            body = safe_path(drafts, path).read_bytes()
-            if sha256(body).hexdigest() != batch["sha256"][path]:
+            relative = path + ".disabled" if broken else path
+            body = safe_path(drafts, relative).read_bytes()
+            digest = sha256(body).hexdigest()
+            if archive_hashes is not None and digest != archive_hashes.get(path):
+                raise ValueError(f"archive file does not match its manifest: {path}")
+            if digest != batch["sha256"][path]:
                 raise ValueError(f"draft changed since generation: {path}")
             overlay[path] = body
 
@@ -126,7 +136,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--missions", required=True, type=Path)
     parser.add_argument("--audit", required=True, type=Path, help="directory containing plan, review and inventory JSON")
-    parser.add_argument("--drafts", required=True, type=Path)
+    inputs = parser.add_mutually_exclusive_group(required=True)
+    inputs.add_argument("--drafts", type=Path, help="ordinary draft directory from the audit")
+    inputs.add_argument("--broken", type=Path, help="Broken archive from Missions Dev")
     parser.add_argument("--graphs", required=True, type=Path, help="legacy and Dev addon graphs, keyed by version pins")
     parser.add_argument("--output", required=True, type=Path, help="new directory outside the Missions checkout")
     args = parser.parse_args()
@@ -136,7 +148,8 @@ def main():
         lobby = Path(__file__).resolve().parents[3]
         if any(output.is_relative_to(checkout) for checkout in (repo, lobby)):
             raise ValueError("stage smoke tests outside the Missions and Lobby checkouts")
-        prepare(repo, args.audit, args.drafts.resolve(strict=True), output, read(args.graphs))
+        drafts = (args.drafts or args.broken).resolve(strict=True)
+        prepare(repo, args.audit, drafts, output, read(args.graphs), broken=args.broken is not None)
     except (KeyError, OSError, TypeError, ValueError, subprocess.CalledProcessError) as error:
         parser.error(str(error))
 
