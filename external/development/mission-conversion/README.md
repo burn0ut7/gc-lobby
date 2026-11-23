@@ -1839,7 +1839,9 @@ Workbench MCP reload `logs_2026-11-22_21-00-04`, lines 27878–27947, compiled t
 
 The batch now compiles all ten Oil Rig Rangos events and 23 placed spawners. Event deactivation leaves instructions already queued for delivery, as it does in the published source. The authored `ECOWinMaj2` control target has no matching event and stays inactive. Match-start slot cleanup removes open CIV slots after one second and open ECO slots after 300 seconds through GC Lobby's existing slot handler. The three original effects prefabs retain their IDs, stock warhead parent and registered effects, including the fuel effect provided by Anizay 1.0.12.
 
-Workbench MCP reload `logs_2026-11-22_21-00-04`, lines 27948–28017, compiled the new action with zero errors. The full audit reproduced all 313 previous staged files byte for byte and retained all 245 metadata records. Oil Rig Rangos remains held on the UK pilot role, the ECO group and the ECO faction configuration. Representative Match coverage still includes open versus claimed slots at the two deadlines, interaction and timer writes to the bomb flags, and the resulting effects and outcome.
+Workbench MCP reload `logs_2026-11-22_21-00-04`, lines 27948–28017, compiled the new action with zero errors. Representative Match coverage includes open versus claimed slots at the two deadlines, interaction and timer writes to the bomb flags, and the resulting effects and outcome.
+
+Missions Dev commit `be9afa30` installs the 94 reviewed files. The three authored roster layers match the Dev roster by ordered prefab ID, with 33 UK, 10 ECO and two CIV slots. The header retains the source capacity of 47. The ECO group resolves the same GC Units parent at its registered path, and the faction catalogue omits its sole stale entry for the gunner variant deleted in source commit `a910686f`. It retains the original radio prefab and the 14 registered character catalogue entries. The UK aircrew vest resolves under its authored GUID in Prontos Brit Kit 1.2.65, pinned in the launcher. The audit reproduced all 313 earlier staged files byte for byte.
 
 ### Battle For Zarichne
 

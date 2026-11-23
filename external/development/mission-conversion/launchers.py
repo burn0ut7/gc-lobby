@@ -33,6 +33,11 @@ ADVERTISED_SLOTS = re.compile(r'^ m_iPlayerCount (\d+)[ \t]*$', re.M)
 ADDON_VERSIONS_FIELD = re.compile(r'^ m_aRequiredAddonVersions\b', re.M)
 ADDON_VERSION = re.compile(r'"([\da-fA-F]{16})=([0-9]+(?:\.[0-9]+){1,3})"')
 REVIEWED_VERSION_PINS = {
+    'Missions/TheLocalPub/OilRigRangos.conf': (
+        '3cbbf3fea039dc0f84d984fe4123d5cf63b807c7',
+        (('worlds/TheLocalPub/OilRigRangos/Prefabs/Characters/Factions/BLUFOR/UK_Army/2024/VBSS/'
+          'Character_UK_2024_RM_Pilot_P.et', '565a11585ed8fa29b4f16ffbfc43bffb98b24e6c', '5E8CA06EE59E7F13=1.2.65'),),
+    ),
     'Missions/Jub/OperationArrowheadMulladostPass.conf': (
         'cb25c94860ef584a0110dc41ccfeb81c576bf4dd',
         (('worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/Vehicles.layer',

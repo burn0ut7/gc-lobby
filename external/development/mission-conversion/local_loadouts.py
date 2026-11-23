@@ -30,6 +30,8 @@ REVIEWED_RHS_PILOT_PARENT = (
     '42A502E3BB727CEC',
     'Prefabs/Characters/Factions/BLUFOR/RHS_USAF/RHS_USAF_USMC_MEF/Character_RHS_USAF_USMC_HeliPilot.et',
 )
+OIL_RIG_LOADOUTS = 'worlds/TheLocalPub/OilRigRangos/Prefabs/Characters/Factions/'
+OIL_RIG_RIFLEMAN_PARENT = '4AF2023E868540E7'
 MOVED_AI_PARENTS = {
     ('4C362B06571604F9', 'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/Character_GC_SEPARATIST_SL.et'):
         'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/2020/Character_SEP_SL.et',
@@ -129,7 +131,7 @@ def unchanged_units_parent(source_units, dev_units, resource, *, force_playable=
 
 
 def collect(source, dev, source_units, dev_units, stock, *, normalize_references=None, unavailable=(),
-            historical_parents=None, published_playable_parents=(), rhs=None):
+            historical_parents=None, published_playable_parents=(), rhs=None, external_roles=None):
     """Return approved asset bodies by unique source GUID."""
     approved = {}
     owned = source.resources.keys() | dev.resources.keys()
@@ -223,7 +225,10 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
             else:
                 registered_rhs_pilot = (rhs and (source.files[path], resource, parent_path) == REVIEWED_RHS_PILOT_PARENT
                                         and rhs.contains(resource, parent_path))
-                if not (removed or verified_forced) or not (registered_rhs_pilot or stock.contains(resource, parent_path)):
+                registered_oil_rig_role = (resource == OIL_RIG_RIFLEMAN_PARENT and path.startswith(OIL_RIG_LOADOUTS)
+                                           and (external_roles or {}).get(resource) == (parent_path, parent_path))
+                if not (removed or verified_forced) or not (
+                        registered_rhs_pilot or registered_oil_rig_role or stock.contains(resource, parent_path)):
                     return None
         if (guid == '730C15295DBF4543' and source.files[path] == '90e7c82588520852e48f88e85f35bcbeb29b27ef'
                 and GREEN_SNOOD in unavailable

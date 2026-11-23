@@ -436,6 +436,15 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/TheLocalPub/OilRigRangos.conf': (
+        '3cbbf3fea039dc0f84d984fe4123d5cf63b807c7',
+        tuple((f'worlds/TheLocalPub/OilRigRangos/OilRigRangos_Layers/{layer}', blob) for layer, blob in (
+            ('BLUFOR/Players.layer', '18f1b11ab72cf4545b14dce051bfc371314aba06'),
+            ('CIV/Player.layer', '35e1818db34359182dc442584649590ebc77fea1'),
+            ('OPFOR/Players.layer', '2cd001153af4e918b92394e7a32176f51a803b0f'),
+        )),
+        47, 45,
+    ),
     'Missions/Jub/OperationArrowheadMulladostPass.conf': (
         'cb25c94860ef584a0110dc41ccfeb81c576bf4dd',
         (('worlds/Jub/OperationArrowheadMulladostPass/OperationArrowheadMulladostPass_Layers/players.layer',
@@ -1477,6 +1486,8 @@ REVIEWED_NATIVE_ASSETS = {
         '480be3cec4967d21c3644962ebafbb2bd18f1192375a5d2a0e1fc5c43c48d88d',
     'worlds/TheLocalPub/OilRigRangos/Prefabs/Weapons/Warheads/Explosions/Explosion_nodamage_fire.et':
         '3d8ec1a3caf47e2cbc7202ad014b683311dddac3cfe245b06d1d6a2a64695927',
+    'worlds/TheLocalPub/OilRigRangos/Prefabs/Items/Equipment/Radios/Radio_R187P1_OLD_Single.et':
+        'beae3ccce22aa16b1005bfcb5691cdbd97f39a75f3ccc8c6c5067db9ab5b7b39',
     TRIFECTA_ROOT + 'Prefabs/SafehouseV3.et': 'd196c18e73eceb95035902b1fd8daa3e9cdf1766c207d933f13cac4bf33c6fde',
     TRIFECTA_ROOT + 'Prefabs/Solar_Panel.et': '87b5822c315917f2cbff304ad571639ac9d64bca8bef3987cc777a47724eb920',
     TRIFECTA_ROOT + 'Prefabs/SVDM_Infratech.et': '7f39ee1ee6d296b8fbc6f1ecd6182eb29feef5ca93285ef51324795a992ebff3',
@@ -3391,9 +3402,17 @@ OIL_RIG_CREW_VARIANTS = {
     'Character_CIV_ConstructionWorker_P_2.et': 'f9beadad1e10ae16eae5c3788e78a32b07f9a083',
 }
 OIL_RIG_CREW_PREFABS = 'worlds/TheLocalPub/OilRigRangos/Prefabs/Characters/Factions/CIV/ConstructionWorker/'
+OIL_RIG_FACTION = 'worlds/TheLocalPub/OilRigRangos/Configs/Factions/ECOTERROR.conf'
+OIL_RIG_DELETED_GUNNER = 'D8F7C335536E5786'
 
 
 def passive_asset(source, path):
+    if (path == OIL_RIG_FACTION and source.files[path] == 'f0d3f76d2cf7ba98a5e5510f7225861eb405d262'
+            and OIL_RIG_DELETED_GUNNER not in source.resources):
+        # The publisher removed this variant from the addon and roster but left its catalog entry.
+        body = source.read(path).replace(' m_bShowInWelcomeScreenIfNonPlayable 0\n', '', 1)
+        return re.sub(r'(?m)^    SCR_EntityCatalogEntry "\{6677556ECD1DB618\}" \{\n'
+                      rf'     m_sEntityPrefab "\{{{OIL_RIG_DELETED_GUNNER}\}}[^"\n]+"\n    \}}\n', '', body, count=1)
     if (path == SUMMER_DAYS_TOPO and source.files[path] == 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391'
             and source.files.get(path + '.meta') == 'ad93c07b9a7e51f489692ab26ec3860a6cfead54'):
         # The published archive also contains the empty map topology resource.
@@ -4005,6 +4024,28 @@ def reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed
             continue
         aliases[identity[2].upper()] = (path, parent, (body, native) if playable else None)
     return aliases
+
+
+def reviewed_oil_rig_group(source, dev, source_units, dev_units, loadouts):
+    resource = '558D7D02AE68982F'
+    path = 'worlds/TheLocalPub/OilRigRangos/Prefabs/Groups/OPFOR/ECO forces/Group_ECO_RifleTeam_P.et'
+    parent = 'FB08033A33E826D5'
+    parent_path = 'Prefabs/Groups/BLUFOR/British Forces/1989/Light Infantry/Group_UK_1989_REG_RifleSection.et'
+    if (source.resources.get(resource) != [path] or source.files.get(path) != '183f4e56be96f6ac6d928aa5cdb86f1c8da0ddef'
+            or dev.resources.get(resource) not in (None, [path]) or parent in source.resources or parent in dev.resources
+            or any(resource in snapshot.resources or snapshot.resources.get(parent) != [parent_path]
+                   or snapshot.files.get(parent_path) != '57dcd8d9d38e0253cc87f0bbaa2b859d092dbe63'
+                   for snapshot in (source_units, dev_units))):
+        return {}, {}
+    old = source.read(path)
+    if any(loadouts.get(member, (None,))[0] != name for member, name in REF.findall(SLOTS.search(old)[1])):
+        return {}, {}
+    old_parent = parent_path.replace('/Light Infantry', '')
+    native = old.replace(f'{{{parent}}}{old_parent}', f'{{{parent}}}{parent_path}', 1)
+    native = native.replace(' m_sCustomNameSet ""\n', ' m_bPlayable 1\n', 1)
+    if path in dev.files and dev.read(path) != native:
+        return {}, {}
+    return {resource: (path, native)}, {resource: (path, parent, (old, native))}
 
 
 def reviewed_southwind_groups(source, dev, source_units, dev_units, stock, ai_loadouts):

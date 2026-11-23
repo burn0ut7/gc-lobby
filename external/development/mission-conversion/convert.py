@@ -1088,11 +1088,14 @@ def main():
             source, dev, source_units, dev_units, stock,
             normalize_references=lambda body: batch.replace_registered_paths(body, source, dev, asset_aliases),
             unavailable=unavailable, historical_parents=historical_roles, rhs=rhs_database,
+            external_roles=forced_external,
             published_playable_parents={current for (identity, _), current in aircrew_roles.items()
                                         if identity == current[0]})
         reviewed_members = {guid: asset[0] for guid, asset in loadouts.items()}
         local_groups = batch.reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed_members,
                                                     rhs_database)
+        oil_rig_assets, oil_rig_groups = batch.reviewed_oil_rig_group(source, dev, source_units, dev_units, loadouts)
+        local_groups.update(oil_rig_groups)
         southwind_assets, southwind_groups, southwind_members = batch.reviewed_southwind_groups(
             source, dev, source_units, dev_units, stock, ai_loadouts)
         local_groups.update(southwind_groups)
@@ -1113,7 +1116,8 @@ def main():
             return vehicle_crew.verified_crew_config(source_units, resource, path, locally_owned)
 
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
-                         asset_aliases, {**loadouts, **ai_loadouts, **southwind_assets, **reviewed_audio}, spawned_assets,
+                         asset_aliases, {**loadouts, **ai_loadouts, **southwind_assets, **oil_rig_assets, **reviewed_audio},
+                         spawned_assets,
                          convert_crew, resolve_spawn, resolve_crew,
                          resolve_crew_config, delayed_extractions,
                          batch.reviewed_faction_assets(source, dev, source_units, dev_units), archived_crew)
