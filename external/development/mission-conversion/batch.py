@@ -1203,6 +1203,8 @@ ZARICHNE_NAVMESH_ALIASES = {
 }
 
 WORKSHOP_RESOURCE_ALIASES = {
+    ('1852DD0D0BED6182', 'Prefabs/Items/Facepaint_01_Base.et'): (
+        'ACEFacepaintDev_68EAA4B96976D557', '1852DD0D0BED6182', 'Prefabs/Items/ACE_Facepaint_01_Base.et'),
     ('28FA34E692783ACB', 'Prefabs/Items/GC_Facepaint_01_USSR.et'): (
         'ACEFacepaintDev_68EAA4B96976D557', '28FA34E692783ACB', 'Prefabs/Items/ACE_Facepaint_01_USSR.et'),
     ('3DD336DB69DCD4AC', 'Prefabs/Vehicles/Helicopters/Mi24/Mi24P_armed_R60.et'): (
@@ -2903,6 +2905,9 @@ def fia_cache_damage_placement(block, stock, source_units, dev_units, local_reso
 BEBBLE_ROOT = 'worlds/TheLocalPub/BebbleIslandRaid/'
 BEBBLE_OBJECTIVES = BEBBLE_ROOT + 'BebbleIslandRaid_Layers/OBJECTIVES.layer'
 BEBBLE_OBJECTIVES_BLOB = 'd7ac84420272fa4c521c6ca0e66aaa521cf9bf86'
+ROCKY_TRUCK_LAYER = 'worlds/Burn0ut7/Rocky Road/Rocky_Road_Layers/Blufor.layer'
+ROCKY_TRUCK_LAYER_BLOB = '455b2c7b6792902a5e8f0abc274804b0ce41de32'
+ROCKY_SUPPLY_TRUCK = ('15A15F5EF6FFE4A5', 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_covered_GulfWar.et')
 BEBBLE_HVT = BEBBLE_ROOT + 'Prefabs/Characters/Factions/OPFOR/GC_ARG/1980_Regulars/Character_GC_ARG_1980_HVT.et'
 BEBBLE_HVT_BLOB = '409f34968af01738fb4edf42e71f5301bf1b8b9c'
 BEBBLE_FUEL = (BEBBLE_ROOT + 'Prefabs/Structures/Industrial/Containers/FuelTanks/FuelTank_01/FuelTank_01_green.et')
@@ -2981,10 +2986,13 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                                      and all(BEBBLE_FUEL_BASE[0] not in units.resources for units in (source_units, dev_units)))
                     authored_zu = (bebble and ref and ref.groups() == BEBBLE_ZU and BEBBLE_ZU in workshop_targets
                                    and all(BEBBLE_ZU[0] not in units.resources for units in (source_units, dev_units)))
+                    # Translate the authored observers while the file audit independently gates the original truck.
+                    rocky_truck = (path == ROCKY_TRUCK_LAYER and source.files[path] == ROCKY_TRUCK_LAYER_BLOB
+                                   and ref and ref.groups() == ROCKY_SUPPLY_TRUCK)
                     observed[(path, line)] = grouped_damage_placement(
                         block, stock, local_resources, source_units, dev_units, rhs,
                         workshop_targets=workshop_targets, reviewed_local=bool(authored_fuel),
-                        convert_crew=convert_crew if authored_zu else None)
+                        reviewed_missing_target=bool(rocky_truck), convert_crew=convert_crew if authored_zu else None)
                 except ValueError as exc:
                     audit[location] = {'gap': str(exc)}
                 continue
@@ -3167,7 +3175,7 @@ def verified_rhs_damage(resource, path, source_units, dev_units, rhs):
 
 
 def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs, *, workshop_targets=(),
-                             reviewed_local=False, convert_crew=None):
+                             reviewed_local=False, reviewed_missing_target=False, convert_crew=None):
     ref = REF.search(block[0])
     if (not ref or not re.match(
             r'^\$grp (Vehicle|Tank|RHS_Tank|GameEntity|GenericEntity|StaticModelEntity|SCR_ChimeraCharacter|SCR_DestructibleBuildingEntity) ', block[0])
@@ -3177,7 +3185,7 @@ def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs, 
     is_character = block[0].startswith('$grp SCR_ChimeraCharacter ')
     registered = ((stock and DAMAGE_TARGETS.get(resource) == path and stock.contains(resource, path))
                   or (resource, path) in workshop_targets)
-    verified_target = ((registered or reviewed_local)
+    verified_target = ((registered or reviewed_local or reviewed_missing_target)
                        and resource not in source_units.resources and resource not in dev_units.resources)
     reviewed_units = UNITS_DAMAGE_TARGETS.get((resource, path))
     if not verified_target and reviewed_units:
