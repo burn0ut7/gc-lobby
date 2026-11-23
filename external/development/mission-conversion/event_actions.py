@@ -34,6 +34,16 @@ def delete_entities(data, _key):
     return entity_fields(names), {'entities': [name[1:-1] for name in names]}
 
 
+def delete_open_slots(data, key):
+    faction_list = data.get('m_factionKeys', '')
+    factions = target_names(faction_list) if faction_list else []
+    fields = [f'       m_Script GC_RemoveOpenSlotsScript "{{{guid(key + "/script")}}}" {{']
+    if factions:
+        fields.extend(['        m_aFactions {', *('         ' + faction for faction in factions), '        }'])
+    fields.append('       }')
+    return fields, {'removesOpenSlotsForFactions': [faction[1:-1] for faction in factions]}
+
+
 def service_vehicles(data, _key):
     names = target_names(data.get('m_aVehicleNames', ''))
     fuel, supplies, repair = (data.get(field, '0') for field in ('m_bAdjustFuel', 'm_bAdjustSupplies', 'm_bRepair'))
@@ -254,6 +264,7 @@ def render_legacy_crew(data, key, resolve_character):
 
 ACTIONS = {
     'TILW_DeleteEntitiesInstruction': ('GC_DeleteEntitiesAction', delete_entities, {'m_entityNames'}),
+    'TILW_DeleteOpenSlotsInstruction': ('GC_CustomScriptAction', delete_open_slots, {'m_factionKeys'}),
     'TILW_ServiceVehiclesInstruction': (
         'GC_VehicleAction', service_vehicles,
         {'m_aVehicleNames', 'm_bAdjustFuel', 'm_fFuelRatio', 'm_bAdjustSupplies', 'm_iAmountSupplies', 'm_bRepair'},

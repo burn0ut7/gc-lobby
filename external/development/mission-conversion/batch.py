@@ -1470,6 +1470,13 @@ UNITS_PREFAB_ALIASES = {
 }
 RASMAN_AA_GROUP = 'worlds/HotMic/Prefabs/Characters/Afghan/GC_INS_Afghan_Squad_WithAA_HotMIc.et'
 REVIEWED_NATIVE_ASSETS = {
+    # Oil Rig Rangos uses the stock warhead parent and the original Anizay fuel effect.
+    'worlds/TheLocalPub/OilRigRangos/Prefabs/Weapons/Warheads/Explosions/Explosion_Tnt_Large.et':
+        '8601adcda3595b20f8342e7ec8d866785a22826174f72ab9f6c921cb68474d8f',
+    'worlds/TheLocalPub/OilRigRangos/Prefabs/Weapons/Warheads/Explosions/Explosion_nodamage.et':
+        '480be3cec4967d21c3644962ebafbb2bd18f1192375a5d2a0e1fc5c43c48d88d',
+    'worlds/TheLocalPub/OilRigRangos/Prefabs/Weapons/Warheads/Explosions/Explosion_nodamage_fire.et':
+        '3d8ec1a3caf47e2cbc7202ad014b683311dddac3cfe245b06d1d6a2a64695927',
     TRIFECTA_ROOT + 'Prefabs/SafehouseV3.et': 'd196c18e73eceb95035902b1fd8daa3e9cdf1766c207d933f13cac4bf33c6fde',
     TRIFECTA_ROOT + 'Prefabs/Solar_Panel.et': '87b5822c315917f2cbff304ad571639ac9d64bca8bef3987cc777a47724eb920',
     TRIFECTA_ROOT + 'Prefabs/SVDM_Infratech.et': '7f39ee1ee6d296b8fbc6f1ecd6182eb29feef5ca93285ef51324795a992ebff3',

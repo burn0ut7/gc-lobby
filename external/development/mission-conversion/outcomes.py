@@ -1470,11 +1470,17 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     controls = {p: matches for p in local if (matches := EVENT_CONTROL.findall(source.read(p)))}
     if controls and (not compound or set(controls) != {path}):
         return [], {}, 'has legacy event control instructions'
-    direct_control = bool(controls and set(controls[path]) - {'DeactivateEvents'})
+    oil_rig_events = (compound and world == OIL_RIG_WORLD
+                      and (path, source.files[path]) == OIL_RIG_POPULATION_FRAMEWORK
+                      and source.files.get(OIL_RIG_POPULATION_AREA[0]) == OIL_RIG_POPULATION_AREA[1])
+    direct_control = bool(controls and (oil_rig_events or set(controls[path]) - {'DeactivateEvents'}))
     dormant_helo = False
     late_cleanup_refs, cleanup_names = {}, set()
     clearable_flags = set(bound_clearable_flags)
     inactive_control_targets = ()
+    if oil_rig_events:
+        # This name occurs only in a control array. The existing event is named ECOMajWin2.
+        inactive_control_targets = ('ECOWinMaj2',)
     if compound and (path, source.files[path]) == RASMAN_FRAMEWORK:
         # All three references are in control arrays. The published event list
         # has no event with this name.
@@ -1515,9 +1521,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         return [], {}, 'instance ends the mission and needs a separate runtime port'
     flags = peak_flags(body)
     shared_population_flag = '"Hostage<"'
-    if (compound and population_flags_audit is not None and world == OIL_RIG_WORLD
-            and (path, source.files[path]) == OIL_RIG_POPULATION_FRAMEWORK
-            and source.files.get(OIL_RIG_POPULATION_AREA[0]) == OIL_RIG_POPULATION_AREA[1]
+    if (oil_rig_events and population_flags_audit is not None
             and shared_population_flag[1:-1] in objective_flags
             and flags.get(shared_population_flag) == ('CIV', '1')
             and scripts is not None and shared_population_flag[1:-1] not in scripts):
@@ -1533,6 +1537,12 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     flag_reads = defaultdict(int, interaction_reads or {})
     for flag, count in spawner_reads.items():
         flag_reads[flag] += count
+    if oil_rig_events:
+        # Each of these two flags has one additional writer in the converted
+        # interaction group. The first successful call or timed assignment sets count one.
+        for flag in ('BombDefused', 'DropBomb'):
+            if flag in objective_flags:
+                flag_reads[flag] += 1
     event_flags = instruction_flags(source, world, path, body, scripts, flag_reads) if scripts is not None else ()
     definitions, derived, identity_flags, derived_gap = {}, {}, set(), None
     if compound:
