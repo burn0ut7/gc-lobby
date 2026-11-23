@@ -3184,8 +3184,14 @@ BEACH_HOLIDAY_BLUE_BLOB = '2cdfdee7c12327f6e112cd50461a96f2b8b68bc8'
 VILLA = 'worlds/HitTheMan/Stealthing Into Villa/'
 VILLA_HIND = VILLA + 'Prefab/Mi24V_armed_UPK1_HTM.et'
 VILLA_OPFOR = VILLA + 'StealthingIntoVilla_Layers/OPFOR_Players/OPFOR_Players.layer'
+VILLA_PROPS = VILLA + 'StealthingIntoVilla_Layers/CORE/Props.layer'
 VILLA_DEFAULT = VILLA + 'StealthingIntoVilla_Layers/default.layer'
 VILLA_DEFAULT_BLOB = '3cf1bfd80d2ccf4d78ad37e074c6ef6759db894e'
+VILLA_PROPS_BLOB = 'ad35832247cc956f9252146c506c55ed92f6ebec'
+VILLA_LIGHT_CLEANUP = ('3AA16BA294431D4E', VILLA + 'Prefab/LightsGeneratorCheckpoint.et',
+                      'ee206e451196828f2fa9e75bc6dd49e71037d8ef')
+VILLA_COMMANDER = ('EF8996D07DEC3E86', VILLA + 'Prefab/Character_USSR_Officer_HTM.et',
+                   'ab76c84351e6b20760d645e9b60eaec93ecc0ccc')
 VILLA_ESCAPE_TRIGGER = ('D344EE6C304890DD', VILLA + 'Prefab/BluforEscapeTrigger.et',
                         'dcf0f545b012295af1641e6ed3a96017220c8443')
 VILLA_ESCAPE_BOUNDARY = ('80437C58E91B0A3E', VILLA + 'Prefab/AO_Draw_Escape_BLU_Prefab.et',
@@ -4837,6 +4843,40 @@ def verified_civilian_ai_group(local_resources, source_units, dev_units):
             and source_units.read(path) == dev_units.read(path))
 
 
+def villa_commander(source, dev, world, stock, local_resources, source_units, dev_units):
+    resource, path, blob = VILLA_COMMANDER
+    officer = ('5117311FB822FD1F', 'Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Officer.et')
+    if (world != VILLA + 'StealthingIntoVilla.ent'
+            or source.files.get(VILLA_DEFAULT) != VILLA_DEFAULT_BLOB
+            or source.files.get(VILLA_OPFOR) != '5daa19731dbdcc75bd45833e0f17285b384dbe2a'
+            or source.files.get(path) != blob or source.resources.get(resource) != [path]
+            or dev.resources.get(resource) not in (None, [path])
+            or any(identity in snapshot.resources for snapshot in (source_units, dev_units)
+                   for identity in (resource, officer[0]))
+            or officer[0] in local_resources or not stock or not stock.contains(*officer)):
+        return {}
+    corpus = '\n'.join(source.read(item) for item in source.closure(world)
+                       if PurePosixPath(item).suffix.lower() in SOURCE_TEXT)
+    flags = ('CommanderDead', 'CommanderAlive')
+    scripts = script_text(source)
+    if (corpus.upper().count('{' + resource + '}') != 1
+            or any(flag in scripts for flag in flags)
+            or any(api in scripts for api in SCRIPT_FLAG_APIS)
+            or corpus.count('"CommanderDead"') != 2 + literal_flag_reads(corpus, 'CommanderDead')
+            or corpus.count('"CommanderAlive"') != 1 + literal_flag_reads(corpus, 'CommanderAlive')):
+        return {}
+    fields, written = damage_state_flag_placements(source.read(path).splitlines(), allow_multiple_states=True)
+    if tuple(written) != flags:
+        raise ValueError('Villa commander damage producers differ from the reviewed prefab')
+    start = fields.index('  PS_PlayableComponent "{5EFCC1946F475F15}" {')
+    del fields[start:block_end(fields, start) + 1]
+    body = '\n'.join(fields) + '\n'
+    if LEGACY.search(body) or (path in dev.files and dev.read(path).strip() != body.strip()):
+        return {}
+    return {resource: {'path': path, 'body': body, 'placement': VILLA_OPFOR + ':72',
+                       'rosterFlags': flags, 'playable': True}}
+
+
 def playable_objectives(source, dev, world, stock, local_resources, source_units, dev_units, respawn):
     """Migrate named characters in explicitly playable, single-life rosters."""
     if not stock or respawn.get('ticketGaps'):
@@ -4849,7 +4889,7 @@ def playable_objectives(source, dev, world, stock, local_resources, source_units
         return {}
     replacement_factions = {entry['faction'] for entry in respawn.get('factions', ())}
     conflicting_ids = local_resources | source_units.resources.keys() | dev_units.resources.keys()
-    reviewed = {}
+    reviewed = villa_commander(source, dev, world, stock, local_resources, source_units, dev_units)
     civ_id, civ_path = CIVILIAN_AI_GROUP
     civ_group = (f'{{{civ_id}}}{civ_path}' if verified_civilian_ai_group(local_resources, source_units, dev_units)
                  and ' m_faction "CIV"' in source_units.read(civ_path).splitlines()
@@ -5178,6 +5218,22 @@ def reviewed_spawn_type(source, resource, path, types):
     return body.startswith(types)
 
 
+def villa_light_cleanup_is_inert(source, location):
+    if (location != VILLA_PROPS + ':85' or source.files.get(VILLA_PROPS) != VILLA_PROPS_BLOB
+            or source.files.get(VILLA_DEFAULT) != VILLA_DEFAULT_BLOB):
+        return False
+    resource, path, blob = VILLA_LIGHT_CLEANUP
+    if source.files.get(path) != blob or source.resources.get(resource) != [path]:
+        return False
+    world = VILLA + 'StealthingIntoVilla.ent'
+    corpus = '\n'.join(source.read(item) for item in source.closure(world)
+                       if PurePosixPath(item).suffix.lower() in SOURCE_TEXT)
+    return (corpus.upper().count('{' + resource + '}') == 5
+            and len(re.findall(r'\bLightDeleterSpawner_[1-5]\b', corpus)) == 5
+            and not re.search(r'LightDeleterSpawner_|3AA16BA294431D4E|LightsGeneratorCheckpoint',
+                              script_text(source), re.I))
+
+
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
                  resolve_crew_config=None, shadowed_names=(), missing_waypoints=(), self_waypoints=(),
                  capture_latches=None, single_draw_flags=(), derived_conditions=None, dormant_flags=(), allow_bare=False,
@@ -5189,6 +5245,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
     placements, rules, audit = [], [], []
     paired_actions = defaultdict(list) if local_files_markers else None
     transform_fields = SPAWNER_TRANSFORM | {'scale'}
+    inert_light_cleanup = villa_light_cleanup_is_inert(source, location)
     members = polygon_capture.members(block, root['group'], root['name'], allow_quoted=True)
     for index, (authored_name, lines) in enumerate(members):
         name = authored_name.strip('"') if authored_name else None
@@ -5246,8 +5303,16 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         if pregame not in ('0', '1'):
             raise ValueError('invalid placed spawner phase')
         flag = data.get('m_conditionFlag', '""')
-        if (location == VILLA_DEFAULT + ':4128' and source.files.get(VILLA_DEFAULT) == VILLA_DEFAULT_BLOB
-                and flag == '"Sirens"' and 'Sirens' in flags):
+        if (inert_light_cleanup and re.fullmatch(r'LightDeleterSpawner_[1-5]', name or '')
+                and data.get('m_prefab') == f'"{{{VILLA_LIGHT_CLEANUP[0]}}}{VILLA_LIGHT_CLEANUP[1]}"'
+                and pregame == '1' and data.get('m_spawnTimings') == '1'):
+            # These helpers are spawned after the only world-postprocess callback.
+            audit.append({'spawnAnchor': name, 'spawnName': '', 'prefab': data['m_prefab'],
+                          'spawnDelaysSeconds': ['1'], 'trigger': 'inactive cleanup', 'flag': flag[1:-1]})
+            continue
+        if (flag == '"Sirens"' and 'Sirens' in flags and source.files.get(VILLA_DEFAULT) == VILLA_DEFAULT_BLOB
+                and (location == VILLA_DEFAULT + ':4128'
+                     or (location == VILLA_PROPS + ':85' and source.files.get(VILLA_PROPS) == VILLA_PROPS_BLOB))):
             # Both writers are Match events with a ten-second delay, after legacy spawner initialization.
             pregame = '0'
         if (pregame == '1' and flag != '""'
@@ -7307,7 +7372,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     objective_flags, interaction_placements = interactions
     damage_flags = {record['flag']: record['entity'] for record in row.get('damageFlagCandidates', {}).values()
                     if 'flag' in record and record['flag'] in objective_flags}
-    roster_assets = {resource: asset for resource, asset in spawned_assets.items() if 'deathFlag' in asset}
+    roster_assets = {resource: asset for resource, asset in spawned_assets.items()
+                     if 'deathFlag' in asset or 'rosterFlags' in asset}
     damage_flags.update({asset['deathFlag']: asset['entity'] for asset in roster_assets.values()
                          if not asset.get('playable')})
     teleport_targets = {target for record in row.get('interactionCandidate', {}).values() if isinstance(record, dict)
@@ -7917,11 +7983,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         for resource, asset in roster_assets.items():
             reference = f'"{{{resource}}}{asset["path"]}"'
             occurrences = sum(body.count(reference) for body in draft.values())
-            if occurrences != 1 or asset['entity'] in named:
+            entity = asset.get('entity')
+            if occurrences != 1 or entity in named:
                 blockers.append({'rule': 'roster objective spawn', 'file': asset['path'],
-                                 'detail': 'expected one member and one unique runtime name'})
-            else:
-                named[asset['entity']] = [('SCR_ChimeraCharacter', reference)]
+                                 'detail': 'expected one member with no conflicting runtime name'})
+            elif entity:
+                named[entity] = [('SCR_ChimeraCharacter', reference)]
         for target in sorted(damage_flags.values()):
             if len(named.get(target, [])) != 1:
                 blockers.append({'rule': 'damage flag target', 'file': world,
@@ -8205,6 +8272,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         if count:
             advertised[header] = int(count[1])
     remaining = inactive_placements
+    if any(item['trigger'] == 'inactive cleanup' for item in spawner_audit):
+        remaining.append('The five generator light cleanup spawns miss the original world-postprocess callback. '
+                         'The generator flags and messages remain active.')
     if any(item.get('startupPlayableSlots') for item in spawner_audit):
         remaining.append('Compare the selected convoy roster, callsigns, vehicle positions and marker audience.')
     if converted_hornbeams:

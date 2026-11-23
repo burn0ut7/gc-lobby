@@ -597,7 +597,8 @@ def main():
                 }
             except ValueError as exc:
                 row['spawnedObjectivePrefabs'] = {'gap': str(exc)}
-        if args.batch and row['serializedTypes'].get('TILW_SetNameComponent') and row['serializedTypes'].get('TILW_Flag_EntityDamage'):
+        if args.batch and row['serializedTypes'].get('TILW_Flag_EntityDamage') and (
+                row['serializedTypes'].get('TILW_SetNameComponent') or world == batch.VILLA + 'StealthingIntoVilla.ent'):
             try:
                 ai_assets = batch.ai_objectives(source, dev, world, stock, locally_owned, source_units, dev_units)
                 playable = batch.playable_objectives(source, dev, world, stock, locally_owned, source_units,
@@ -605,7 +606,8 @@ def main():
                 if ai_assets.keys() & playable.keys():
                     raise ValueError('objective character appears in both AI and playable rosters')
                 roster_assets = {**ai_assets, **playable}
-                ai_flags = [asset['deathFlag'] for asset in roster_assets.values()]
+                ai_flags = [flag for asset in roster_assets.values()
+                            for flag in (asset['rosterFlags'] if 'rosterFlags' in asset else (asset['deathFlag'],))]
                 ai_flags.extend(action['flag'] for asset in ai_assets.values() for action in asset['interactions'])
                 if len(set(ai_flags)) != len(ai_flags) or set(ai_flags) & set(objective_flags):
                     raise ValueError('duplicate AI objective flag producers')

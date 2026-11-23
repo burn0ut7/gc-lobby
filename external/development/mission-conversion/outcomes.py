@@ -632,7 +632,8 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                direct_control=False, empty_hint=None, missing_group_waypoint=None, sampled_pregame_flags=(),
                supply_comparison=False, reviewed_script_calls=None, reviewed_script_type=None,
                unused_vehicle_name=None, replacement_flag=None, clearable_flags=(), ordered_events=(),
-               inactive_control_targets=(), concrete_crushers=False, spawn_companions=None, redundant_clears=None):
+               inactive_control_targets=(), concrete_crushers=False, spawn_companions=None, redundant_clears=None,
+               redundant_sets=None):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -730,6 +731,12 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                 elif action_match:
                     delay, body, details = compile_action(action_match, fields[j + 1:last], key, hidden_briefings)
                     flag = details.get('setsFlag') or details.get('clearsFlag')
+                    if (flag and redundant_sets
+                            and redundant_sets.get(action_match[2]) == details.get('setsFlag') == flag):
+                        details.pop('setsFlag')
+                        details['omittedRedundantLatchedSet'] = flag
+                        flag = None
+                        body = []
                     if (flag and redundant_clears and redundant_clears.get(action_match[2]) == details.get('clearsFlag') == flag
                             and f'"{flag}"' in derived):
                         details.pop('clearsFlag')
@@ -1615,6 +1622,11 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     event_flags = instruction_flags(source, world, path, body, scripts, flag_reads) if scripts is not None else ()
     river_layers = 'worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/'
     redundant_clears = {}
+    redundant_sets = {}
+    if (compound and source.files[path] == '3cf1bfd80d2ccf4d78ad37e074c6ef6759db894e'
+            and {'CommanderDead', 'CommanderAlive'} <= set(objective_flags)):
+        # The event already requires the one-shot destruction flag.
+        redundant_sets = {'66EC24BC03BECEE2': 'CommanderDead'}
     if (compound and (path, source.files[path]) == (river_layers + 'default.layer', '33c97af9b3adf7695ef8e0c68ba9cd21fbe45e4a')
             and source.files.get(river_layers + 'BLUFOR/Vehicles.layer') == 'abdf3fadd2d16e9b11abd31d7db8e1bd335b1f91'
             and {'BradDead', 'AmmoDead', 'RepairDead', 'FuelDead', 'CommandDead'} <= set(objective_flags)):
@@ -1812,6 +1824,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 concrete_crushers=concrete_crushers,
                 spawn_companions=spawn_companions,
                 redundant_clears=redundant_clears,
+                redundant_sets=redundant_sets,
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
             if villa_match_markers or (not term.get('pregameSample') and any(
