@@ -33,6 +33,11 @@ ADVERTISED_SLOTS = re.compile(r'^ m_iPlayerCount (\d+)[ \t]*$', re.M)
 ADDON_VERSIONS_FIELD = re.compile(r'^ m_aRequiredAddonVersions\b', re.M)
 ADDON_VERSION = re.compile(r'"([\da-fA-F]{16})=([0-9]+(?:\.[0-9]+){1,3})"')
 REVIEWED_VERSION_PINS = {
+    'Missions/Blue/TVT39_Direction_Found.conf': (
+        'ca24752458e9292e2d69668ccd46ed318c2abcc5',
+        (('worlds/Blue/DirectionFound/DirectionFound_Layers/BLUFOR/Static.layer',
+          'bdc881fd99428dc0f38128c05853ebbe3a854692', '5E5C154FEE1094BB=1.0.17'),),
+    ),
     'Missions/TheLocalPub/OilRigRangos.conf': (
         '3cbbf3fea039dc0f84d984fe4123d5cf63b807c7',
         (('worlds/TheLocalPub/OilRigRangos/Prefabs/Characters/Factions/BLUFOR/UK_Army/2024/VBSS/'
