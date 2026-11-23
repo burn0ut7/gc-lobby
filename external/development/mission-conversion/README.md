@@ -1861,6 +1861,12 @@ All 19 framework events retain their conditions and authored delays. One startup
 
 Workbench MCP session `logs_2026-11-22_22-36-20` captured 618 entities and all 77 playable slots under the declared dependency graph. Missions Dev commit `411187a3` stores the native snapshot. Its portable launch manifest matches the header and world and lists 68 required addons, including British Forces, RHIB, Wirecutters2 and ZU-23. The capture reports partial authored resource coverage and inherited ammunition errors in lines 30225–30234. The audit clears 248 launchers and preserves all 247 earlier metadata records.
 
+### The Old Wood 2024
+
+Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7` verifies the original RHS rifle squad, its base and six roster entries in order. The file audit also resolves 27 explicit RHS character references. The anonymous 200-metre UK presence trigger and the 300-second Match timer both write `UK_STEPOFF`. The conversion keeps one shared flag, verifies both writers and accounts for all eight placed spawner consumers. The 69 playable roles now pass file review.
+
+The remaining conversion blocker is the crewed T-72B at `NorthQRF2`. The published Core overlay uses the original GUID and authors a hull damage override. The installed WCS resource uses the same GUID at a different path and carries additional inventory and other prefab fields. The migration holds this group pending a comparison of the inherited vehicle, crew stations and damage behavior. The audit reproduced all 313 earlier drafts and retained all 248 existing metadata records.
+
 ### Battle For Zarichne
 
 Missions Dev commit `18dee842` retains the 110-player advertised capacity and all 80 original playable roles. Two independent radius observers preserve the shared `Compound` flag and its two event readers and eight timed spawns. Fifteen minefield markers stay on their original parent placements with their original transforms and faction visibility. The mission's two custom mine assets keep their registered resource IDs, with the obsolete cross-mission warhead path corrected.

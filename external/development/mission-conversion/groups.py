@@ -269,8 +269,14 @@ def rhs_ai_characters(workshop):
     characters['2E0D284F521C5696'] = summer + 'Character_RHS_RF_MSV_VKPO_S_CC.et'
     characters.update({guid: path for group in RHS_AI_GROUPS.values() for guid, path in group['slots']})
     for guid, role in {'9D7859DE5E1DA3AB': 'AR', '8DE84439090A3D21': 'SR', '918062BE34F7C4D7': 'CC',
-                       'E0E062BD23185D62': 'AMG', 'E1EAB80D1FE2C5FE': 'Sergeant'}.items():
+                       'E0E062BD23185D62': 'AMG', 'E1EAB80D1FE2C5FE': 'Sergeant', '69EE1158717E3028': 'PL',
+                       'B6C45B392F33B9E4': 'RTO', '7E590EDD929739E4': 'Medic', '68EB286921B4E7FD': 'Sharpshooter'}.items():
         characters[guid] = root + f'Character_RHS_RF_MSV_VKPO_DS_{role}.et'
+    triada = 'Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO3_EMR/RandomSoldiers/'
+    for guid, role in {'4C979E19C89FC16A': 'Sharpshooter', '4F82CCEFD7568A0B': 'Sapper', '579A27BC02F0679D': 'SR',
+                       '5C35EA02B7341881': 'Medic', '620994B8115B2EA8': 'Sergeant', '9346DF38AE9494D5': 'AR',
+                       'B80F0843E190EC33': 'RTO', 'E55C5AB67AC54638': 'Rifleman', 'EFD9E95B71413C6E': 'PL'}.items():
+        characters[guid] = triada + f'Character_RHS_RF_MSV_VKPO_3.0_{role}_Random.et'
     return {guid: path for guid, path in characters.items() if registry.contains(guid, path)}, registry
 
 

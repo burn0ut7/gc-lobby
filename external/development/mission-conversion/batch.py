@@ -40,7 +40,7 @@ from outcomes import (ASSAD_FRAMEWORK_BLOB, ASSAD_FRAMEWORK_LAYER, CONCRETE_COUN
                       FOOD_MARKET_OUTCOME_LAYER, FRAMEWORK, INTERDICTION_OUTCOME_LAYER,
                       INTERSECTING_DEFAULT, INTERSECTING_DEFAULT_BLOB, MATCH_PHASE_VALUE,
                       NAGALAM_AMBUSH_BLOBS, NAGALAM_AMBUSH_LAYERS, NAGALAM_LAYERS,
-                      OIL_RIG_POPULATION_AREA, OIL_RIG_POPULATION_FRAMEWORK,
+                      OIL_RIG_POPULATION_AREA, OIL_RIG_POPULATION_FRAMEWORK, OLD_WOOD_SPAWNERS, OLD_WOOD_STEPOFF,
                       RUHA_PHASE_BLOB, RUHA_PHASE_LAYER, RUHA_UNIT_NAMES, SCRIPT_FLAG_APIS,
                       SEEDER_REPLACEMENT_LAYER, SEEDER_REPLACEMENT_LAYER_BLOB,
                       SUPPLY_OUTCOME_BLOB, SUPPLY_OUTCOME_LAYER,
@@ -3109,6 +3109,7 @@ ZARICHNE_MINE = 'worlds/HitTheMan/Battle For Zarichne/Mine_M15AT_EffectModuleEnt
 ZARICHNE_WARHEAD = 'worlds/HitTheMan/Battle For Zarichne/Warhead_Mine_M15AT_HTM.et'
 REVIEWED_AREA_FLAG_WRITERS = {
     OIL_RIG_POPULATION_AREA[0]: (OIL_RIG_POPULATION_AREA[1], {'Hostage<': 1}),
+    OLD_WOOD_STEPOFF[0]: (OLD_WOOD_STEPOFF[1], {'UK_STEPOFF': 1}),
     INTERSECTING_DEFAULT: (INTERSECTING_DEFAULT_BLOB, {'reinforce': 2}),
     SCREENING_AREA_LAYER: (SCREENING_AREA_BLOB, SCREENING_AREA_FLAGS),
     **{f'{CONCRETE_CRUSHERS_LAYERS}PhaseTwoRedfor/{location}.layer':
@@ -6809,6 +6810,15 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         reviewed_readers = reviewed_area_flag_readers(source, world)
         derived = outcome.get('derivedSpawnerConditions', {})
         reviewed_reads = {flag: checked_area_flag_reads(flag, reviewed_readers, rules, derived) for flag in writers}
+        timer_writers = set()
+        if (source.files.get(OLD_WOOD_STEPOFF[0]) == OLD_WOOD_STEPOFF[1]
+                and OLD_WOOD_STEPOFF[0] in source.layers[world.lower()]
+                and source.files.get(OLD_WOOD_SPAWNERS[0]) == OLD_WOOD_SPAWNERS[1]
+                and readers['UK_STEPOFF'] == 8 and any(
+                    event.get('name') == 'STEPOFF_FALLBACK' and event.get('trigger') == 'Match start'
+                    and any(action.get('setsFlag') == 'UK_STEPOFF' and action.get('delaySeconds') == '300'
+                            for action in event.get('convertedActions', ())) for event in rules.values())):
+            timer_writers.add('UK_STEPOFF')
         reset_flags = {record['writesFlag'] for record in shared_writers if record.get('resetAfterDiscovery')}
         if reset_flags != set(outcome.get('discoveryResetFlags', ())):
             blockers.append({'rule': 'shared area flags', 'file': world,
@@ -6817,7 +6827,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         unresolved = sorted(flag for flag, count in writers.items()
                             if not (readers[flag] or reviewed_reads[flag]) or f'"{flag}"' in scripts
                             or closure.count(f'"{flag}"') != count + readers[flag] + reviewed_reads[flag]
-                            + (flag in reset_flags) + (flag in population_flags)
+                            + (flag in reset_flags) + (flag in population_flags) + (flag in timer_writers)
                             or (flag in reset_flags and (readers[flag] != 3
                                 or source.files.get(INTERSECTING_DEFAULT.replace('default.layer', 'Opfor.layer'))
                                 != '42a0e55cfa0d5197e995e1474a814e0a09e5ae5c')))

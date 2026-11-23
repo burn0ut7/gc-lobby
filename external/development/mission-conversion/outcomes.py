@@ -1431,6 +1431,9 @@ def remove_late_cleanup(fields, refs, names):
 OIL_RIG_WORLD = 'worlds/TheLocalPub/OilRigRangos/OilRigRangos.ent'
 OIL_RIG_LAYERS = OIL_RIG_WORLD.removesuffix('.ent') + '_Layers/'
 OIL_RIG_POPULATION_FRAMEWORK = (OIL_RIG_LAYERS + 'default.layer', '5e0837d0820a24bb50b0cbbf72ffa1c075ba02d6')
+OLD_WOOD_LAYERS = 'worlds/arc/TheOldWood2024/TheOldWood2024_Layers/'
+OLD_WOOD_STEPOFF = (OLD_WOOD_LAYERS + 'default.layer', 'a8d346a85a3b0d2a0272ed9ff476fe4ee8968ef4')
+OLD_WOOD_SPAWNERS = (OLD_WOOD_LAYERS + 'AI.layer', 'e86bf8052472676a1033a19fbd34a1d06eb5e27a')
 OIL_RIG_POPULATION_AREA = (OIL_RIG_LAYERS + 'Systems/Core.layer', '964662eb622f536b1715ef335f7e72cf6b2d756e')
 
 
@@ -1543,6 +1546,11 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     flag_reads = defaultdict(int, interaction_reads or {})
     for flag, count in spawner_reads.items():
         flag_reads[flag] += count
+    if (compound and (path, source.files[path]) == OLD_WOOD_STEPOFF
+            and source.files.get(OLD_WOOD_SPAWNERS[0]) == OLD_WOOD_SPAWNERS[1]
+            and spawner_reads.get('UK_STEPOFF') == 8):
+        # The area observer can set the same Boolean before the timer fires.
+        flag_reads['UK_STEPOFF'] += 1
     if oil_rig_events:
         # Each of these two flags has one additional writer in the converted
         # interaction group. The first successful call or timed assignment sets count one.

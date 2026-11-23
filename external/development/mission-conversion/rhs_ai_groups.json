@@ -1,4 +1,20 @@
 {
+  "D5BA898DF743F90B": {
+    "path": "Prefabs/Groups/OPFOR/RHS_AFRF/MSV/VKPO_3.0/Group_RHS_RF_MSV_VKPO_3.0_RifleSquad.et",
+    "sha256": "4132464134e9470489a2c9bea1e8c08b5237599af3be2f85390e91c95813aa0a",
+    "inheritedGroups": [
+      ["8B5C823B095566CF", "Prefabs/Groups/OPFOR/RHS_AFRF/MSV/VKPO_3.0/Group_RHS_RF_MSV_VKPO_3.0_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["2113EE7AFFE66688", "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO3_EMR/RandomSoldiers/Character_RHS_RF_MSV_VKPO_3.0_SL_Random.et"],
+      ["C8338815A75BDEBB", "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO3_EMR/RandomSoldiers/Character_RHS_RF_MSV_VKPO_3.0_MG_Random.et"],
+      ["D402120614D6E643", "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO3_EMR/RandomSoldiers/Character_RHS_RF_MSV_VKPO_3.0_AMG_Random.et"],
+      ["699B17C9F5D2497F", "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO3_EMR/RandomSoldiers/Character_RHS_RF_MSV_VKPO_3.0_GL_Random.et"],
+      ["C70E907F4348588B", "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO3_EMR/RandomSoldiers/Character_RHS_RF_MSV_VKPO_3.0_AT_Random.et"],
+      ["DB3F0A6CF0C56073", "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO3_EMR/RandomSoldiers/Character_RHS_RF_MSV_VKPO_3.0_AAT_Random.et"]
+    ]
+  },
   "220AE7CEE8B2A12F": {
     "path": "Prefabs/Groups/OPFOR/RHS_AFRF/MSV/VKPO_Summer/Group_RHS_RF_MSV_VKPO_S_RadioReconTeam.et",
     "sha256": "36fbafaedde3cb05bfebd85b20623d0ff8f978f3364dc755cb9a8cdbf905f901",
