@@ -231,6 +231,33 @@ class GC_CommandosManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	void Bark(IEntity dog)
+	{
+		if (!IsActiveAuthority() || !dog || dog.GetWorld() != GetOwner().GetWorld())
+			return;
+		RplId id = Replication.FindItemId(dog);
+		if (id == RplId.Invalid())
+			return;
+		Rpc(RpcDo_Bark, id);
+		if (RplSession.Mode() != RplMode.Dedicated)
+			RpcDo_Bark(id);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	[RplRpc(RplChannel.Unreliable, RplRcver.Broadcast)]
+	protected void RpcDo_Bark(RplId id)
+	{
+		if (GetInstance() != this)
+			return;
+		IEntity dog = IEntity.Cast(Replication.FindItem(id));
+		if (!dog)
+			return;
+		SoundComponent sound = SoundComponent.Cast(dog.FindComponent(SoundComponent));
+		if (sound)
+			sound.SoundEvent("SOUND_DOGBARK");
+	}
+
+	//------------------------------------------------------------------------------------------------
 	[RplRpc(RplChannel.Reliable, RplRcver.Broadcast)]
 	protected void RpcDo_ShowCompletion(string message)
 	{

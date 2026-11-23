@@ -2,10 +2,11 @@
 import json
 import re
 from collections import Counter
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 from briefings import QUOTED, block_end, guid, page, properties
 from catalog import REF
+from launchers import META_NAME, replace_reference
 
 
 ROOT = 'worlds/arc/CommandosReforged/'
@@ -20,6 +21,26 @@ DEFECTOR_PAGE = ROOT + 'Prefabs/Defector_Brief.et'
 DEFECTOR_PAGE_BLOB = 'a21735796600dc51e2bb01234ec53369667bca9c'
 DEFECTOR_CONTROLLER = 'scripts/game/arc/CommandosReforged/GC_CommandosPlayerController.c'
 DEFECTOR_CONTROLLER_BLOB = '47fb97f87f6d9ce42f635b697ef4fafd45bd5600'
+CONTROLLER_PATH = ROOT + 'Prefabs/DefaultPlayerControllerMP_Coop_Commandos.et'
+CONTROLLER_ID = '30319F56A7F20B33'
+CONTROLLER_REF = f'"{{{CONTROLLER_ID}}}{CONTROLLER_PATH}"'
+LEGACY_CONTROLLER = 'SCR_PlayerController : "{4E5DAC62A374950F}Prefabs/Characters/Core/DefaultPlayerControllerMP_Coop.et" {'
+NATIVE_CONTROLLER = 'GC_LobbyPlayerController : "{FE3C731AAB2FB003}Prefabs/Characters/Core/LobbyPlayerController.et" {'
+DOG_SCRIPT_BLOBS = {
+    'GC_CommandosDogManager.c': 'c3ce395c2f621c565dad69f058a816351042b808',
+    'GC_CommandosFootPrints.c': 'b3dce0ab9b95012a508345e18bb262a81a5cf280',
+    'GC_SetInvisible.c': '440caa72266f02ad350b2ebaf9d6f169710ffd83',
+}
+TRACK_ASSET_BLOBS = {
+    'Bootprint_Left.emat': '74507bc9f781d428b7dc8794d759401318e2423a',
+    'Bootprint_Left.emat.meta': '2b32d28c10ddd9c77289d57ed626e4ee158c2782',
+    'Bootprint_Right.emat': '500dd628cee4a02a7912f95776e3b7239c29d5c6',
+    'Bootprint_Right.emat.meta': '3bfa03ec0b1f3fd02d5afcdd377bb2f404a3fe6b',
+    'left.edds': '3e9d682220764c53b986e3930f5030f0b07d7f3b',
+    'left.edds.meta': 'e1e977f8d6dd75fc9ecd4e3e020f1fff07cab8aa',
+    'right.edds': 'b92f2c3f34b94b2ac1a739a13250633a721f7e0f',
+    'right.edds.meta': 'b54e92c3dfc6be1065d5d715db37631af8f3afe7',
+}
 KINDS = {
     'GC_CommandosObj': 'interaction',
     'GC_CommandosDestroyed': 'destruction',
@@ -34,6 +55,32 @@ OBJECTIVE_FIELDS = TEXT_FIELDS | {'m_markerPrefab', 'm_chance', 'm_blacklist'}
 def objective_flags(name):
     key = guid('Commandos/objective/' + name)
     return f'Commandos_{key}_Active', f'Commandos_{key}_Complete'
+
+
+def runtime_files(source):
+    if (source.files.get(CONTROLLER_PATH) != '960f1a37192a7ce5a4efe77efded7d2520f46ba3'
+            or source.files.get(CONTROLLER_PATH + '.meta') != '4c8f408c9df5e696f754c36e3a33caf91b3ec907'
+            or any(source.files.get(MANAGER_SCRIPT.rsplit('/', 1)[0] + '/' + name) != blob
+                   for name, blob in DOG_SCRIPT_BLOBS.items())):
+        raise ValueError('Commandos controller or dog scripts changed')
+    controller = source.read(CONTROLLER_PATH)
+    if not controller.startswith(LEGACY_CONTROLLER + '\n'):
+        raise ValueError('Commandos controller parent changed')
+    result = {
+        CONTROLLER_PATH: controller.replace(LEGACY_CONTROLLER, NATIVE_CONTROLLER, 1),
+        CONTROLLER_PATH + '.meta': replace_reference(source.read(CONTROLLER_PATH + '.meta'),
+                                                    META_NAME, CONTROLLER_ID, CONTROLLER_PATH),
+    }
+    for name, blob in TRACK_ASSET_BLOBS.items():
+        path = ROOT + 'Assets/' + name
+        if source.files.get(path) != blob:
+            raise ValueError('Commandos track asset changed: ' + path)
+        result[path] = source.read_raw(path) if path.endswith('.edds') else source.read(path)
+    scripts = {*DOG_SCRIPT_BLOBS, 'GC_CommandosManager.c', 'GC_CommandosObjective.c', 'GC_CommandosObjRegister.c'}
+    folder = Path(__file__).with_name('commandos-runtime')
+    for name in sorted(scripts):
+        result['Scripts/Game/arc/CommandosReforged/' + name] = (folder / name).read_text(encoding='utf-8')
+    return result
 
 
 def saved_text(value):

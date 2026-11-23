@@ -16,9 +16,10 @@ from boundaries import (ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_
                         convert_child_outline, passive_shape_component)
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import OBSOLETE_NAVMESH, REF, SOURCE_TEXT, VEHICLE_LINK
-from commandos import (MODE_LAYER as COMMANDOS_MODE_LAYER, OBJECTIVES_LAYER as COMMANDOS_OBJECTIVES_LAYER,
+from commandos import (CONTROLLER_REF as COMMANDOS_CONTROLLER, MANAGER as COMMANDOS_MANAGER,
+                       MODE_LAYER as COMMANDOS_MODE_LAYER, OBJECTIVES_LAYER as COMMANDOS_OBJECTIVES_LAYER,
                        WORLD as COMMANDOS_WORLD, audit_objectives as audit_commandos_objectives,
-                       objective_flags as commandos_objective_flags)
+                       objective_flags as commandos_objective_flags, runtime_files as commandos_runtime_files)
 from event_actions import (FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, VEHICLE_SPAWN,
                            render_crew_config, render_spawn, spawn_details)
 from vehicle_crew import (BMP1_PARENT, BMP1_TURRET_PARENT, CREW_CONFIG_FIELD, FLORA_CREW_CONFIG, MISSION_BMP1,
@@ -1320,6 +1321,15 @@ WORKSHOP_RESOURCE_ALIASES = {
     ('89B49CDEBBEC973A', 'Prefabs/Weapons/Magazines/Magazine_127x99_M107A1_10rnd_M2.et'): (
         'TacticalFlava-Weapons_DEADC0DE00000001', '89B49CDEBBEC973A',
         'Prefabs/Weapons/Magazines/M107A1/Magazine_127x99_M107A1_10rnd_M2.et'),
+    ('AB5AAFA893C60C2D', 'Prefabs/Weapons/Magazines/Magazine_127x99_M107A1_10rnd_M33_M10.et'): (
+        'TacticalFlava-Weapons_DEADC0DE00000001', 'AB5AAFA893C60C2D',
+        'Prefabs/Weapons/Magazines/M107A1/Magazine_127x99_M107A1_10rnd_M33_M10.et'),
+    ('23C815180F127C5F', 'Prefabs/Weapons/Magazines/Magazine_762x51_SCAR_H_20rnd_m80.et'): (
+        'TacticalFlava-Weapons_DEADC0DE00000001', '23C815180F127C5F',
+        'Prefabs/Weapons/Magazines/FN_SCAR_H/Magazine_762x51_SCAR_H_20rnd_m80.et'),
+    ('A58F99A3723E119C', 'Prefabs/Weapons/Magazines/Magazine_762x51_SCAR_H_20rnd_m62.et'): (
+        'TacticalFlava-Weapons_DEADC0DE00000001', 'A58F99A3723E119C',
+        'Prefabs/Weapons/Magazines/FN_SCAR_H/Magazine_762x51_SCAR_H_20rnd_m62.et'),
     ('9AA441DE6DAB6D94', 'Prefabs/Vehicles/Helicopters/Mi24/Mi24V_armed_S8.et'): (
         'WCS_Mi-24V_628933A0D3A0D700', '9AA441DE6DAB6D94',
         'Prefabs/Vehicles/Helicopters/Mi24/Mi24V_Armed_B8V20A_X4.et'),
@@ -7383,7 +7393,7 @@ def mode_children(lines, disable_photo=False, lock_editor=False):
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None,
                 *, dynamic_respawn_factions=(), area_flag_observers=(), cache_supply_depot=False,
                 inherited_immediate_release=False, capture_phase_entities=False, source_blob=None,
-                derived_flag_containers=(), replaced_tracker=None, population_flags=None):
+                derived_flag_containers=(), replaced_tracker=None, population_flags=None, commandos_component=None):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, environment, freeze = '', '', 0
@@ -7404,6 +7414,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     respawn_table_seen = False
     respawn_fields = ''
     safe_start_seen = False
+    controller_override = ''
     index = 1
     while index < len(root) - 1:
         line = root[index]
@@ -7440,6 +7451,8 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
                 elif header == replaced_tracker:
                     # The native marker placement owns the reviewed Intel tracking behavior.
                     pass
+                elif commandos_component and header == COMMANDOS_MANAGER:
+                    native_overrides.extend(commandos_component.splitlines())
                 elif stashed_cache and kind in STASHED_CACHE_NATIVE_MODE:
                     native_overrides.extend(component_lines)
                 elif stashed_cache and kind in STASHED_CACHE_INHERITED_MODE | STASHED_CACHE_LOBBY_MODE:
@@ -7507,6 +7520,8 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
             if field in construction:
                 raise ValueError('duplicate construction progress field ' + field)
             construction[field] = value
+        elif commandos_component and line == ' PlayerControllerPrefab ' + COMMANDOS_CONTROLLER and not controller_override:
+            controller_override = line + '\n'
         elif line == ' {' and not child_placements:
             end = block_end(root, index)
             child_placements = root[index:end + 1]
@@ -7657,7 +7672,7 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
  components {{
 {weather}{environment}{settings} }}
 {placement}
-{jip_fields}{marker_fields}{disabled_resources}{children}}}
+{jip_fields}{marker_fields}{disabled_resources}{controller_override}{children}}}
 '''
 
 
@@ -7667,6 +7682,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     draft, blockers = {}, []
     reviewed_replacements = {}
     commandos_objectives = None
+    commandos_runtime = {}
     if row.get('playtestCandidate') or row.get('raceConversion'):
         return {}, {'status': 'explicit recipe'}
     if not row['headers']:
@@ -8279,7 +8295,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         if world == COMMANDOS_WORLD and mode_index[0] == COMMANDOS_MODE_LAYER:
             try:
                 commandos_objectives = audit_commandos_objectives(source, mode)
+                commandos_runtime = commandos_runtime_files(source)
             except ValueError as exc:
+                commandos_objectives = None
                 blockers.append({'rule': 'Commandos objective authoring', 'file': COMMANDOS_MODE_LAYER,
                                  'detail': str(exc)})
         if route_flags != route_observers.keys():
@@ -8298,13 +8316,20 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                              'detail': 'legacy instruction removes briefing pages: ' + ', '.join(deleted_briefings)})
         try:
             layer, index = mode_index
+            mode_flags = set(objective_flags) | event_flags
+            if commandos_objectives:
+                mode_flags.update(objective[key] for objective in commandos_objectives['definitions'].values()
+                                  if objective['kind'] == 'interaction'
+                                  for key in ('availabilityFlag', 'completionFlag'))
             rendered = render_mode(world, mode, preset or '', rule_text, zones, ai_faction,
-                                   set(objective_flags) | event_flags, damage_flags,
+                                   mode_flags, damage_flags,
                                    population_flags=population_flags,
+                                   commandos_component=(commandos_objectives['nativeManagerComponent']
+                                                        if commandos_objectives else None),
                                    dynamic_respawn_factions=edited_factions,
                                    cache_supply_depot=cache_supply_depot,
                                    inherited_immediate_release=(
-                                       depot_layer == layer == FOOD_MARKET_OUTCOME_LAYER),
+                                       depot_layer == layer == FOOD_MARKET_OUTCOME_LAYER or bool(commandos_objectives)),
                                    capture_phase_entities=phase_entity_capture,
                                    source_blob=source.files[layer],
                                    replaced_tracker=(
@@ -8704,6 +8729,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'launcher', 'file': header, 'detail': str(exc)})
     if delayed:
         draft.update(delayed.assets)
+    draft.update(commandos_runtime)
     blockers.extend(migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets,
                                    faction_assets or {}, archived_crew or {}))
     for path, text in draft.items():
@@ -9026,6 +9052,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare the authored helicopter armament overrides and historical infrared lock delay.')
     if world == SEEDER_WORLD and spawned_assets:
         remaining.append('Compare successive main and side objectives, shared flag resets and scheduled AI crews in Match.')
+    if commandos_objectives:
+        remaining.extend([
+            'Compare Commandos target registration before cleanup, the opening draw, shared interaction completion and damage notices.',
+            'Compare Commandos owner-only objective pages and markers across reconnect and with a second client.',
+            'Compare the Dog role model, moving-character footprints, bark and voice during possession and after leaving the role.',
+        ])
     return ({} if blockers else draft), {
         'status': 'blocked by conversion rules' if blockers else 'generated for file review',
         'blockers': blockers, 'files': sorted(draft), 'mixedLayerGroups': group_blocks,
