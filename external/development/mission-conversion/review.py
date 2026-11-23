@@ -132,10 +132,13 @@ COBRA_PROJECTILE_PROVIDER = 'WCS_Armaments_629B2BA37EFFD577'
 COBRA_PROJECTILE_PACKAGE = '11a4b537297275db86e7b2773df7770b893d5d1f1d5d11ad928d4fbc141a072e'
 COBRA_PROJECTILE_CHANGES = {
     '10340BBEDA1F26E8': ('WCS Armaments 9.0.2 changes the archived AH-1Z BGM-71 safety distance '
+                         'and guidance, changes launcher offset and aircraft collision handling, '
                          'and drops its automatic flare cooldown setting.'),
     '124BF96EFF7BDEB0': ('WCS Armaments 9.0.2 changes the archived AH-1Z M229 launch speed and mass '
-                         'and drops its automatic flare cooldown setting.'),
-    '6F57BF4E759DF6DF': 'WCS Armaments 9.0.2 changes the archived UH-1Y M229 launch speed and mass.',
+                         'and drops its automatic flare cooldown setting. Its LAU-61 also changes '
+                         'launch offset and aircraft collision handling.'),
+    '6F57BF4E759DF6DF': ('WCS Armaments 9.0.2 changes the archived UH-1Y M229 and M247 movement '
+                         'and adds vehicle-motion compensation in the launcher code.'),
 }
 RUHA_032_REGISTRY = 'fb4911e6b81561933d73cbb1eeb734e97d1fe20bd08bb8f6797949e28f77a8b4'
 RUHA_WORLD = ('31A1248EA401F22C', 'worlds/Ruha.ent')
