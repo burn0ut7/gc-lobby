@@ -2155,6 +2155,24 @@ REVIEWED_PLAYABLE_GROUPS = {
     'worlds/FSM/Prefabs/Groups/OPFOR/Seperatists/P/FSM_Playable_Seperatists_RifleSquad.et':
         'f38d729add3e1a2d89d005dcde68e189e52d7b73fe747ff6bcb1d0af8c33f9a2',
 }
+FSM_REPLACED_GROUP_SLOTS = {
+    'worlds/FSM/Prefabs/Groups/OPFOR/Seperatists/P/FSM_Playable_Seperatists_HQ.et': 1,
+    'worlds/FSM/Prefabs/Groups/OPFOR/Seperatists/P/FSM_Playable_Seperatists_RifleSquad.et': 2,
+}
+FSM_GC_UNITS_ROSTER_LAYERS = {
+    'worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache_Layers/Players.layer':
+        '1d8bf3d1ed509287416b1643577154d4fef9ef0b',
+    'worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache_Layers/Players.layer':
+        'ac25a435ecd507619c926ee789c3f71037b8c33f',
+}
+FSM_FACTION_IMAGE_ID = 'F2C2EEB1C0433F80'
+FSM_UNPUBLISHED_FACTION_IMAGE = f'{{{FSM_FACTION_IMAGE_ID}}}images/istockphoto-1472123963-612x612.edds'
+FSM_FACTION_IMAGE_LAYERS = {
+    'worlds/FSM/Worlds/TVT66ZherebetsRiverCache/TVT66ZherebetsRiverCache_Layers/Framework.layer':
+        '009be0c7cd1ff32e6b2c60490cdd25d28fe34dfb',
+    'worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache_Layers/default.layer':
+        '9fbb5ad9e5bd14fed3a320bd044b412360efbd9b',
+}
 
 
 def blocks(text):
@@ -6493,12 +6511,49 @@ def reviewed_wirecutter_inventory(source, owner):
     return None
 
 
+def fsm_group_without_retired_slots(source, draft, owner, path, ref):
+    """Strip the inactive prefab defaults when both layers replace every roster."""
+    if (owner not in FSM_GC_UNITS_ROSTER_LAYERS
+            or any(source.files.get(layer) != blob for layer, blob in FSM_GC_UNITS_ROSTER_LAYERS.items())):
+        raise ValueError('Cache group placement needs roster review')
+    def effective_rosters(text):
+        rosters = []
+        for _, group in blocks(text):
+            if ref not in group[0]:
+                continue
+            root = {'group': group[0].startswith('$grp '), 'name': None}
+            for start, end, _ in group_members(group, 0, len(group) - 1, root):
+                fields = '\n'.join(line[int(root['group']):] for line in group[start + 1:end])
+                slots = SLOTS.findall(fields)
+                if len(slots) != 1 or not REF.findall(slots[0]) or REF.sub('', slots[0]).strip():
+                    raise ValueError('Cache group must replace its entire roster')
+                rosters.append([resource.upper() for resource, _ in REF.findall(slots[0])])
+        if len(rosters) != FSM_REPLACED_GROUP_SLOTS[path]:
+            raise ValueError('Cache group placement count changed')
+        return rosters
+
+    if effective_rosters(source.read(owner)) != effective_rosters(draft[owner]):
+        raise ValueError('Cache group replacement roster changed')
+    body = playable_group_prefab(source.read(path), path)
+    slots = SLOTS.search(body)
+    return body[:slots.start()] + body[slots.end() + 1:]
+
+
 def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets, faction_assets, archived_crew):
     files = list(draft)
     blockers = set()
+    checked_cache_groups = {}
     for owner in files:
         if PurePosixPath(owner).suffix.lower() not in SOURCE_TEXT:
             continue
+        if (owner in FSM_FACTION_IMAGE_LAYERS
+                and source.files.get(owner) == FSM_FACTION_IMAGE_LAYERS[owner]
+                and FSM_FACTION_IMAGE_ID not in source.resources):
+            # The published graph never supplied this presentation image. Keep the faction
+            # overlay and its registered flag material, with empty icon and flag textures.
+            draft[owner] = re.sub(
+                rf'(?m)^( +(?:Icon|m_sFactionFlag)) "{re.escape(FSM_UNPUBLISHED_FACTION_IMAGE)}"$',
+                r'\1 ""', draft[owner])
 
         def relocate(ref):
             resource, path = ref[1].upper(), ref[2]
@@ -6573,6 +6628,13 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
                 except ValueError as exc:
                     blockers.add((owner, path, str(exc)))
                 return ref[0]
+            if path in FSM_REPLACED_GROUP_SLOTS and (owner, path) not in checked_cache_groups:
+                try:
+                    checked_cache_groups[owner, path] = fsm_group_without_retired_slots(
+                        source, draft, owner, path, ref[0])
+                except ValueError as exc:
+                    blockers.add((owner, path, str(exc)))
+                    return ref[0]
             if not paths or path in draft or path in dev.files:
                 return ref[0]
             try:
@@ -6611,6 +6673,8 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
                     objective = spawned_assets.get(resource)
                     if objective:
                         draft[canonical] = objective['body']
+                    elif (owner, canonical) in checked_cache_groups:
+                        draft[canonical] = checked_cache_groups[owner, canonical]
                     elif canonical == COMMANDOS_BLACK_HAWK:
                         draft[canonical] = commandos_black_hawk(source, asset_aliases)
                     elif canonical in (COMMANDOS_OBJECTIVE_MARKER, COMMANDOS_DEFAULT_MARKER):
