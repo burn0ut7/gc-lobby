@@ -1825,6 +1825,14 @@ The file audit clears the archived-terrain navigation issue only for the tested 
 
 Run `python -B inspect_navmesh.py <original.nmn> --compare <regenerated.nmn> --verify-tiles` from this tooling directory to compare index formats and spatial coverage. The index comparison excludes the origin cell because the index also uses zero coordinates for empty records. Tile verification checks the version 3 companion files, table offsets, and each Detour version 11 payload's grid coordinates, including a populated origin tile. It reports a digest of the ordered containers so an installed copy can be compared with the saved archive. Loading each navigation profile and exercising authored routes are separate checks.
 
+### Oil Rig Rangos vehicle parts and crew
+
+The converter keeps the three transform-only RHS panels in Oil Rig Rangos and the stock Mi-8 rotor in Clean House with their original GUIDs, positions and angles. Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7` verifies the concrete `VehiclePartPanel` and `VehiclePartRotor` prefab classes. The TNPO panel inherits its signals and Look interaction through `RHS_TNPO170A.et`. The converter also recognizes two exact civilian crew variants referenced only by the original randomized character. Their legacy component leaves playability at its default and repeats the native display name. Removing that component preserves both variant IDs, the authored outfit fields and the parent variant list. Live interaction and appearance remain unverified.
+
+Oil Rig Rangos writes `Hostage<` from both `CivChecker` and the CIV player casualty recount. In the published catalogue, `TILW_BaseTriggerEntity.c` lines 189–225 show the area writer's silent first sample, its first changed value, and its stop behavior. `TILW_MissionFrameworkEntity.c` lines 511–523 show the reversible Match-only casualty writer and the comparison against the peak living player count. Both use the same scalar flag setter. Either can replace the other's value. The two outcome readers need this sequence preserved alongside the bomb interaction flags and event controls.
+
+The 277-launcher audit retains all 245 file clearances and metadata records and reproduces all 313 earlier staged files. Oil Rig Rangos has seven remaining catalog blockers, down from twelve. Clean House has ten, down from eleven. Their launchers remain held while the other placement, roster, faction and event rules are resolved.
+
 ### Battle For Zarichne
 
 Missions Dev commit `18dee842` retains the 110-player advertised capacity and all 80 original playable roles. Two independent radius observers preserve the shared `Compound` flag and its two event readers and eight timed spawns. Fifteen minefield markers stay on their original parent placements with their original transforms and faction visibility. The mission's two custom mine assets keep their registered resource IDs, with the obsolete cross-mission warhead path corrected.

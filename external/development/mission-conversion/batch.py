@@ -2447,6 +2447,27 @@ def staging_vehicle_placement(block):
     return [*rendered, block[-1]]
 
 
+REVIEWED_VEHICLE_PARTS = {
+    '72CDA8BE510C54C3': ('VehiclePartPanel', 'Prefabs/Vehicles/Shared/Gauges_Ru/RHS_FireBox2.et'),
+    'B3CB28972BD32713': ('VehiclePartPanel', 'Prefabs/Vehicles/Shared/Gauges_Ru/RHS_FCS.et'),
+    'C4C669819F1CBAD8': ('VehiclePartPanel', 'Prefabs/Vehicles/Shared/Gauges_Ru/RHS_TNPO-168A.et'),
+    '3B7D5676B67CC90F': ('VehiclePartRotor',
+                         'Prefabs/Vehicles/Helicopters/Mi8MT/VehParts/Rotor/VehPart_Mi8_rotor_main.et'),
+}
+
+
+def reviewed_vehicle_part(block):
+    """Retain the original prefab and inherit its native behavior."""
+    reference = REF.search(block[0])
+    if not reference:
+        return False
+    kind, path = REVIEWED_VEHICLE_PARTS.get(reference[1], (None, None))
+    return (block[0] == f'{kind} : "{{{reference[1]}}}{path}" {{'
+            and len(block) == 4
+            and block[1].startswith(' coords ') and block[2].startswith(' angles ')
+            and all(FIELD.fullmatch(row.strip()) for row in block[1:-1]))
+
+
 def native_placement(block, *, reviewed_character=False):
     if not NATIVE.match(block[0]) and not (
             reviewed_character and re.match(r'^(?:\$grp )?SCR_ChimeraCharacter(?: [\w.-]+)? : ', block[0])):
@@ -3355,6 +3376,13 @@ def skalisty_fallback_ao(text):
     return '\n'.join(limit) + '\n'
 
 
+OIL_RIG_CREW_VARIANTS = {
+    'Character_CIV_ConstructionWorker_P_1.et': 'ef405968479df5f42c164b3d5f5d83f9591d97c2',
+    'Character_CIV_ConstructionWorker_P_2.et': 'f9beadad1e10ae16eae5c3788e78a32b07f9a083',
+}
+OIL_RIG_CREW_PREFABS = 'worlds/TheLocalPub/OilRigRangos/Prefabs/Characters/Factions/CIV/ConstructionWorker/'
+
+
 def passive_asset(source, path):
     if (path == SUMMER_DAYS_TOPO and source.files[path] == 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391'
             and source.files.get(path + '.meta') == 'ad93c07b9a7e51f489692ab26ec3860a6cfead54'):
@@ -3367,6 +3395,14 @@ def passive_asset(source, path):
         return source.read(path)
     if path in ROUTE_OBSTACLE_PREFABS:
         return route_obstacle_prefab(source, path)[0]
+    if (path.startswith(OIL_RIG_CREW_PREFABS)
+            and source.files[path] == OIL_RIG_CREW_VARIANTS.get(path.removeprefix(OIL_RIG_CREW_PREFABS))
+            and source.files.get(OIL_RIG_CREW_PREFABS + 'Character_CIV_ConstructionWorker_Randomized_P.et')
+                == '04df79ac0e169eb24f806031d379a81ae6e60513'):
+        # These variants are reached through the native randomized character. Their
+        # legacy component only repeats the display name and leaves playability false.
+        body = source.read(path)
+        return body.replace('  PS_PlayableComponent "{5EFCC1946F475F15}" {\n   m_sName "Crew member"\n  }\n', '', 1)
     if path in REVIEWED_NATIVE_ASSETS:
         body = source.read(path)
         if sha256(body.strip().encode()).hexdigest() == REVIEWED_NATIVE_ASSETS[path] and not LEGACY.search(body):
@@ -7006,6 +7042,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     else:
                         blockers.append({'rule': kind, 'file': layer, 'line': line,
                                          'detail': 'unverified hornbeam replacement or placement'})
+                elif head.startswith(('VehiclePartPanel ', 'VehiclePartRotor ')) and reviewed_vehicle_part(block):
+                    result.append('\n'.join(block) + '\n')
                 elif NATIVE.match(head):
                     try:
                         if (layer == SEEDER_PLAYER_VEHICLES and head.startswith('Vehicle BRDM2_AFRF2 : ')
