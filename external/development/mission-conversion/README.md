@@ -16,7 +16,7 @@ Use the batch workflow for the catalog. The same rules process every legacy laun
 
 ### Remaining migration work
 
-The audit at Missions Dev `f2dd0ebd` clears 256 of the 277 published launchers, all with native snapshots and verified portable manifests. Of the 21 launchers still held by the file audit, nine have generated drafts and twelve still need conversion rules. The generated `plan.md` and `inventory.json` carry the exact resource IDs, paths and rule failures for the current dependency graph. Review shared providers as a group, then use representative Match checks for each affected behavior family.
+The audit at Missions Dev `23c1e214` clears 257 of the 277 published launchers, all with native snapshots and verified portable manifests. With the archived Zagoria and Apache packages available, 13 of the remaining 20 have generated drafts and seven still need conversion rules. The generated `plan.md` lists the remaining launchers individually. Its `plan.json` records their file issues and source locations under `remainingLaunchers`. Review shared providers as a group, then use representative Match checks for each affected behavior family.
 
 | Launchers | Remaining blocker |
 | --- | --- |
@@ -31,7 +31,6 @@ The audit at Missions Dev `f2dd0ebd` clears 256 of the 277 published launchers, 
 | Cobra’s Bite | The two authored USMC M3 MAAW roles remain unavailable. |
 | Factory Siege Redux | The authored 2003 woodland forward observer remains unresolved. |
 | Gull Bay Guns | The original RHS EMR squad leader remains unresolved. |
-| Commandos Reforged | Converted in local Missions Dev `c944ee54` with native metadata in `23c1e214`. Representative Match checks are pending. |
 
 Run the planner from GC Lobby with a clean Missions Dev checkout. Use a fresh output directory when the commits or conversion rules change.
 
@@ -2323,7 +2322,13 @@ The complete 1.0.46 Olive variant retains the slot names, default occupant refer
 
 An isolated class comparison used the installed 1.0.43 hull and simulation in two externally staged prefabs. The fixture verified that one instance used `KOS_TrackedVehicle` and the other used the standard `Vehicle` class. On dry Arland terrain the tracked instance moved 76.77 m and the standard instance moved 83.40 m over 450 samples. The unmodified package control moved 83.41 m. All three registered 16 wheels. This rules out the entity-class change as a requirement for sustained movement with the newer hull and simulation. Dedicated session `logs_2026-11-23_03-18-08`, lines 370–375, records the observations. The embedded Workbench fixture stopped during world load in `logs_2026-11-23_03-14-39`.
 
-The archived 1.0.26 registry contains the original hull mesh, and the installed 1.0.43 and archived 1.0.46 registries contain the later hull mesh. The publisher's 1.0.30 notes report a wheel-geometry change. The observed movement gap remains tied to the original hull or another inherited setting outside the tested simulation and class. [Zagoria 89 BMP2 release history](https://reforger.armaplatform.com/workshop/6730D59067916E3D/changelog)
+The archived 1.0.26 registry contains the original hull mesh, and the installed 1.0.43 and archived 1.0.46 registries contain the later hull mesh. The publisher's 1.0.30 notes report a wheel-geometry change. [Zagoria 89 BMP2 release history](https://reforger.armaplatform.com/workshop/6730D59067916E3D/changelog)
+
+Three separated copies of the original hull with the complete later simulation, mass and center of mass registered 16 wheels with the original 0.31 m radius. All three accepted the same throttle, clutch and gear commands. Two stalled in the baseline despite external wheel contact. Waking the physics body once before scripted driving moved all three hulls 78.93–82.72 m after 450 samples. The stock truck moved 63.29 m. Dedicated sessions `logs_2026-11-23_03-27-11`, `logs_2026-11-23_03-28-29` and `logs_2026-11-23_03-29-38` record the comparison.
+
+A separate occupied fixture exercised native engine start and stop on all three hulls. The test hook received both events. The occupied controller left the clutch at zero in the scripted drive trial, including on the stock truck, so this trial verifies the event hook only. A candidate still needs sustained movement under actual driver input and the original crew, cargo and damage settings. See `logs_2026-11-23_03-33-49`, lines 249–323.
+
+Zagoria archives 1.0.27 and 1.0.29 retain the exact authored GUID and prefab path. Both fail the current engine's powertrain setup and report zero wheels and zero RPM beside a six-wheel truck idling at 600 RPM. The batch audit now recognizes both tested archive fingerprints. Versions 1.0.30, 1.0.38 and 1.0.39 lack the authored GUID and path. Dedicated 1.0.27 session `logs_2026-11-23_03-41-34`, lines 211–230, and 1.0.29 session `logs_2026-11-23_03-40-52`, lines 212–220, record the result.
 
 The batch plan reports the reviewed 1.0.46 successor alongside all five affected launchers when supplied its archived package. With Zagoria 1.0.26 mounted and the pinned Apache archive supplied separately, the converter generates all five drafts and confirms 69, 40, 28, 49 and 26 playable slots, respectively, across Topdown, Combined Anti-Armor Team, Light Armored Recon, Mulladost Pass and Two Bloody Miles. Each draft has the original BMP-2 drivetrain failure as its sole file-review hold. This provider comparison retains clearance and metadata for all 257 committed launchers.
 

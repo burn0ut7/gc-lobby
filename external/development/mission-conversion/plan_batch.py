@@ -170,6 +170,11 @@ def conversion_resource_queue(resources, loadout_parents, headers, blockers_by_w
 def historical_provider_candidates(plan, roots, base):
     """Find exact and alternate archived registrations for known missing mission inputs."""
     drafts = {entry['reference']: entry['worlds'] for entry in plan['resourceRecoveryQueue']}
+    zagoria = f"{{{ZAGORIA_BMP2[0]}}}{ZAGORIA_BMP2[1]}"
+    failed_zagoria_worlds = {entry['world'] for entry in plan['heldDrafts']
+                             if any('fails the verified drivetrain test' in issue for issue in entry['issues'])}
+    if failed_zagoria_worlds:
+        drafts[zagoria] = sorted(set(drafts.get(zagoria, ())) | failed_zagoria_worlds)
     conversion = {entry['reference']: entry for entry in plan.get('conversionResourceQueue', ())}
     references = drafts.keys() | conversion.keys()
     if not references:
@@ -223,7 +228,6 @@ def historical_provider_candidates(plan, roots, base):
                     })
         if not matched and not alternates and not successors:
             continue
-        zagoria = f"{{{ZAGORIA_BMP2[0]}}}{ZAGORIA_BMP2[1]}"
         runtime_blocked = {zagoria} if zagoria in matched and known_zagoria_failure(base, [database]) else set()
         compile_failure = known_compile_failure(base, [database])
         if compile_failure:
@@ -325,30 +329,34 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
             candidates[destination].append(header)
 
     ready, held = [], []
+    held_issues_by_header = {}
     for world, headers in sorted(candidates.items()):
         draft = migration['worlds'][world]
         issues = []
+        issues_by_header = {}
         gaps = set(draft.get('remainingBehavior', []))
         remaining_resources = set()
         layer_repairs = set(draft['files']) if draft.get('existingLayerRepairs') else set()
         for header in sorted(headers):
             comparison = review['missions'][header]
             gaps.update(comparison.get('documentedGaps', []))
-            issues.extend(f'{header} — {issue}' for issue in comparison['issues']
-                          if not layer_repairs or issue != 'Unresolved external resource references')
+            header_issues = [issue for issue in comparison['issues']
+                             if not layer_repairs or issue != 'Unresolved external resource references']
             for entry in comparison.get('unresolvedExternalReferences', []):
                 reference = f"{{{entry['guid']}}}{entry['path']}"
                 if layer_repairs and layer_repairs.isdisjoint(entry['referencedBy']):
                     remaining_resources.add(reference)
                 else:
-                    issues.append(reference)
+                    header_issues.append(reference)
             if comparison['status'] != 'compare' and not comparison['issues']:
-                issues.append(f'{header} — comparison incomplete')
+                header_issues.append('comparison incomplete')
             advertised = draft.get('advertisedSlots', {}).get(header)
             if (advertised is not None and advertised != draft['verifiedPlayableSlots']
                     and header not in draft.get('reviewedCapacity', {})):
-                issues.append(f"{header} — {advertised} advertised slots, "
-                              f"{draft['verifiedPlayableSlots']} converted")
+                header_issues.append(f"{advertised} advertised slots, {draft['verifiedPlayableSlots']} converted")
+            issues_by_header[header] = sorted(set(header_issues))
+            issues.extend(issue if issue.startswith('{') else f'{header} — {issue}'
+                          for issue in header_issues)
         record = {'world': world, 'launchers': sorted(headers),
                   'behaviorGaps': sorted(gaps)}
         if draft.get('reviewedCapacity'):
@@ -359,6 +367,7 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
             record['remainingResources'] = sorted(remaining_resources)
         if issues:
             held.append({**record, 'issues': sorted(set(issues))})
+            held_issues_by_header.update(issues_by_header)
         else:
             ready.append(record)
 
@@ -404,13 +413,13 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
 
     selected = ready[:limit]
     draft_checks = {header: entry['behaviorGaps'] for entry in ready for header in entry['launchers']}
-    held_headers = {header for entry in held for header in entry['launchers']}
     recorded_checks = dict(previous_checks or {})
     file_notes = dict(previous_notes or {})
     runtime_candidates = []
-    cleared_committed = 0
     committed_metadata = {}
+    remaining_launchers = {}
     for header, row in sorted(review['missions'].items()):
+        world = row['world']
         gaps = sorted(set(recorded_checks.get(header, ()))
                       | set(row.get('documentedGaps', ())) | set(draft_checks.get(header, ())))
         notes = {note for note in gaps if authored_file_note(note)}
@@ -419,11 +428,21 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
         checks = sorted(set(gaps) - notes)
         if header in recorded_checks:
             recorded_checks[header] = checks
-        if row['status'] != 'compare' or header in held_headers:
+        if header in held_issues_by_header:
+            issues = held_issues_by_header[header] or ['Another launcher for this world is held']
+            remaining_launchers[header] = {'world': world, 'stage': 'Draft held', 'issues': issues}
+            continue
+        if row['status'] != 'compare':
+            blockers = migration['worlds'].get(world, {}).get('blockers', [])
+            remaining_launchers[header] = {
+                'world': world, 'stage': 'Conversion blocked' if blockers else 'File review',
+                'issues': row['issues'], 'conversionBlockers': blockers,
+            }
             continue
         if header in committed and header not in draft_checks:
-            cleared_committed += 1
             committed_metadata[header] = row.get('launcherMetadata', {})
+        else:
+            remaining_launchers[header] = {'world': world, 'stage': 'Ready to install', 'issues': []}
         if checks:
             recorded_checks[header] = checks
             runtime_candidates.append({'world': row['world'], 'launchers': [header],
@@ -436,8 +455,9 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
     return {
         'source': inventory['source'], 'target': inventory['target'],
         'committedLaunchersWithWorld': len(committed),
-        'committedLaunchersCleared': cleared_committed,
+        'committedLaunchersCleared': len(committed_metadata),
         'committedLauncherMetadata': committed_metadata,
+        'remainingLaunchers': remaining_launchers,
         'auditedAddonVersionsByLauncher': {header: row['auditedAddonVersions']
                                            for header, row in review['missions'].items()
                                            if row['status'] == 'compare' and row.get('auditedAddonVersions')},
@@ -477,6 +497,23 @@ def markdown(plan):
              'without relying on a staged draft.', '',
              '## Launcher file audit including staged drafts', '']
     lines.extend(f"- {status} · {count}" for status, count in sorted(plan['launcherFileChecks'].items()))
+    if remaining := plan.get('remainingLaunchers'):
+        counts = Counter(entry['stage'] for entry in remaining.values())
+        lines.extend(['', '## Remaining launchers', ''])
+        lines.extend(f'- {stage} · {count}' for stage, count in sorted(counts.items()))
+        lines.extend(['', 'Each launcher appears once. The same world can have multiple launchers. '
+                      'See `remainingLaunchers` in `plan.json` for the full issues and source locations.', '',
+                      '| Launcher | Stage | File issues or conversion rules |', '| --- | --- | --- |'])
+        for header, entry in remaining.items():
+            blockers = entry.get('conversionBlockers', ())
+            findings = sorted({specific_blocker(blocker) for blocker in blockers}) or entry['issues']
+            resource_count = sum(finding.startswith('{') for finding in findings)
+            if resource_count:
+                findings = [finding for finding in findings if not finding.startswith('{')
+                            and finding != 'Unresolved external resource references']
+                findings.append(f'{resource_count} unresolved external resource(s)')
+            details = '<br>'.join(str(finding).replace('|', '&#124;') for finding in findings)
+            lines.append(f"| `{header}` | {entry['stage']} | {details} |")
     if metadata := plan.get('committedLauncherMetadata'):
         lines.extend(['', '## GC launcher metadata on file-cleared Dev missions', '',
                       '| Metadata | Launchers |', '| --- | ---: |'])
