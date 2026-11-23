@@ -302,6 +302,7 @@ COBRA_DIGEST = '683b318ce93cabf75ae5b3b2fe0a1ce49f30e76a693e3c959e353a6bc51da3f4
 GMFX_AP_MINE = ('E1BBAB7F28FE8B0B', 'Prefabs/Systems/Mines/Mine_AP.et')
 DEPLOYED_PARACHUTE = ('9ADD554959C09197', 'Prefabs/DeployedParachutes/Core/DeployedParachuteMK4.et')
 WORKSHOP_DAMAGE_TARGETS = {
+    COBRA_PROVIDER: (COBRA_DIGEST, (('56E88FE5DDF6AA12', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Base.et'),)),
     'WCS_M2A2_63120AE07E6C0966': (
         '7544977a28637283cf8ae8830f4efeaba71688b06efc872c79344c7f0263a121',
         (('25BDE6AB2921AB8A', 'Prefabs/Vehicles/Tracked/M2A2/M2A2_BUSK_OD.et'),),
@@ -446,6 +447,13 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/HitTheMan/Beach Holiday to Mineraly/BeachHolidaytoMineraly.conf': (
+        '0efea21f96214b6ff48a003b938cf07f950b5102',
+        tuple((f'worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/{side}_Players/{side}_Players.layer',
+               blob) for side, blob in (('BLUFOR', '2cdfdee7c12327f6e112cd50461a96f2b8b68bc8'),
+                                        ('OPFOR', '6e23f1042beeb98dcf7b5b083709ed360f9be97c'))),
+        110, 90,
+    ),
     'Missions/TheLocalPub/OilRigRangos.conf': (
         '3cbbf3fea039dc0f84d984fe4123d5cf63b807c7',
         tuple((f'worlds/TheLocalPub/OilRigRangos/OilRigRangos_Layers/{layer}', blob) for layer, blob in (
@@ -1155,6 +1163,25 @@ ZARICHNE_NAVMESH_ALIASES = {
 }
 
 WORKSHOP_RESOURCE_ALIASES = {
+    ('28FA34E692783ACB', 'Prefabs/Items/GC_Facepaint_01_USSR.et'): (
+        'ACEFacepaintDev_68EAA4B96976D557', '28FA34E692783ACB', 'Prefabs/Items/ACE_Facepaint_01_USSR.et'),
+    ('3DD336DB69DCD4AC', 'Prefabs/Vehicles/Helicopters/Mi24/Mi24P_armed_R60.et'): (
+        'WCS_Mi-24V_628933A0D3A0D700', '3DD336DB69DCD4AC', 'Prefabs/Vehicles/Helicopters/Mi24/Mi24P_Armed_R60_X2.et'),
+    ('56E88FE5DDF6AA12', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_base.et'): (
+        COBRA_PROVIDER, '56E88FE5DDF6AA12', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Base.et'),
+    ('73BC3BBE9B36EF4D', 'Prefabs/Vehicles/Helicopters/AH1S/VehParts/Turret/M197_M299_Turret.et'): (
+        COBRA_PROVIDER, '73BC3BBE9B36EF4D', 'Prefabs/Vehicles/Helicopters/AH1S/VehParts/Turret/M197_Turret_M299_X2.et'),
+    ('5D3C2A4DF727EB59', 'UI/Textures/EditorPreviews/Vehicles/Helicopters/AH1S/AH1S_Marines_AIM9.edds'): (
+        COBRA_PROVIDER, '5D3C2A4DF727EB59', 'UI/Textures/EditorPreviews/Vehicles/Helicopters/AH1S/AH1S_Marines_AIM9_X2.edds'),
+    ('808D62E2814BD5B1', 'UI/Textures/EditorPreviews/Vehicles/Helicopters/AH1S/AH1S_Marines_M299.edds'): (
+        COBRA_PROVIDER, '808D62E2814BD5B1', 'UI/Textures/EditorPreviews/Vehicles/Helicopters/AH1S/AH1S_Marines_M299_X2.edds'),
+    ('C45C3238BFA3D3A9', 'Sounds/Weapons/Launchers/FIM92_Stinger/Weapons_Launchers_FIM92_Stinger_Lock.acp'): (
+        'WCS_Armaments_629B2BA37EFFD577', 'C45C3238BFA3D3A9',
+        'Sounds/Weapons/Launchers/FIM92_Stinger/WCS_Weapons_Launchers_FIM92_Stinger_Lock.acp'),
+    ('2FFB1076C8040CB4', 'Prefabs/Vehicles/Helicopters/Mi24/VehParts/Weapons/Mi24_Turret_base.et'): (
+        'WCS_Mi-24V_628933A0D3A0D700', '2FFB1076C8040CB4', 'Prefabs/Vehicles/Helicopters/Mi24/VehParts/Weapons/Mi24V_Turret_Base.et'),
+    ('54B4D76AFE0FA31B', 'UI/Textures/EditorPreviews/Vehicles/Helicopters/Mi24V/Mi24P_armed_R60.edds'): (
+        'WCS_Mi-24V_628933A0D3A0D700', '54B4D76AFE0FA31B', 'UI/Textures/EditorPreviews/Vehicles/Helicopters/Mi24V/Mi24P_Armed_R60_X2.edds'),
     ('59769013F69B1DE9', 'Prefabs/Vehicles/Wheeled/S105/S105_rally_wcs.et'): (
         'WCS_Armaments_629B2BA37EFFD577', '59769013F69B1DE9',
         'Prefabs/Vehicles/Wheeled/S105/S105_rally_WCS.et'),
@@ -2780,6 +2807,19 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
             continue
         for line, block in blocks(text):
             location = f'{path}:{line}'
+            if path == BEACH_HOLIDAY_BLUE and source.files[path] == BEACH_HOLIDAY_BLUE_BLOB:
+                ref = REF.search(block[0])
+                asset = BEACH_HOLIDAY_AIRCRAFT.get(ref[2]) if ref else None
+                cobra_parent = ('56E88FE5DDF6AA12', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Base.et')
+                if (asset and asset[1] and source.resources.get(ref[1]) == [ref[2]]
+                        and source.files.get(ref[2]) == asset[0] and cobra_parent in workshop_targets
+                        and all(cobra_parent[0] not in resources for resources in
+                                (local_resources, source_units.resources, dev_units.resources))):
+                    native = native_placement(block)
+                    if native:
+                        # The flag observer is migrated on the single referenced prefab.
+                        observed[(path, line)] = (native, [asset[1]])
+                        continue
             bebble = path == BEBBLE_OBJECTIVES and source.files[path] == BEBBLE_OBJECTIVES_BLOB
             if block[0].startswith('$grp '):
                 if not any('TILW_Flag_EntityDamage' in part for part in block):
@@ -3119,7 +3159,24 @@ ZARICHNE_LAV_BLOB = '2216e12d652b1340978cbd5cc4b652b262aec963'
 ZARICHNE_CREW_NAMES = ('LAVCrew1', 'LAVCrew2')
 ZARICHNE_MINE = 'worlds/HitTheMan/Battle For Zarichne/Mine_M15AT_EffectModuleEntity_HTM.et'
 ZARICHNE_WARHEAD = 'worlds/HitTheMan/Battle For Zarichne/Warhead_Mine_M15AT_HTM.et'
+BEACH_HOLIDAY = 'worlds/HitTheMan/Beach Holiday To Mineraly/'
+BEACH_HOLIDAY_LAYERS = BEACH_HOLIDAY + 'BeachHolidaytoMineraly_Layers/'
+BEACH_HOLIDAY_DEFAULT = BEACH_HOLIDAY_LAYERS + 'default.layer'
+BEACH_HOLIDAY_DEFAULT_BLOB = '8fcc23a5628083ffb70b10eb3b8ef322870eca48'
+BEACH_HOLIDAY_WAVES = BEACH_HOLIDAY_LAYERS + 'AI_Defenders/AI_Waves.layer'
+BEACH_HOLIDAY_WAVES_BLOB = '4829323a30d5063ca8b69d13d663bd4a9559c007'
+BEACH_HOLIDAY_APARTMENT = BEACH_HOLIDAY_LAYERS + 'AI_Defenders/AI_Defenders_Apartment.layer'
+BEACH_HOLIDAY_APARTMENT_BLOB = '444b585fc7ff80c8809ec566141476b9a244b087'
+BEACH_HOLIDAY_BLUE = BEACH_HOLIDAY_LAYERS + 'BLUFOR_Players/BLUFOR_Players.layer'
+BEACH_HOLIDAY_BLUE_BLOB = '2cdfdee7c12327f6e112cd50461a96f2b8b68bc8'
+BEACH_HOLIDAY_AIRCRAFT = {
+    BEACH_HOLIDAY + 'Prefab/AH1S_Marines_AIM9_Limited_HTM.et': ('c02db5fafc059fa494a8a087e89dc3ec345b8f01', 'AH1S_1'),
+    BEACH_HOLIDAY + 'Prefab/AH1S_Marines_M299_Limited_HTM2.et': ('5a34a85fea8f47f53f2caa01f2bf8aef1a2751af', 'AH1S_2'),
+    BEACH_HOLIDAY + 'Prefab/Mi24P_armed_R60_NOATGM_HTM.et': ('719366cae8992154dbdd7c72f74ac22318904a40', None),
+}
 REVIEWED_AREA_FLAG_WRITERS = {
+    BEACH_HOLIDAY_DEFAULT: (BEACH_HOLIDAY_DEFAULT_BLOB, {'Factory': 1}),
+    BEACH_HOLIDAY_WAVES: (BEACH_HOLIDAY_WAVES_BLOB, {'Waves': 1}),
     OIL_RIG_POPULATION_AREA[0]: (OIL_RIG_POPULATION_AREA[1], {'Hostage<': 1}),
     OLD_WOOD_STEPOFF[0]: (OLD_WOOD_STEPOFF[1], {'UK_STEPOFF': 1}),
     INTERSECTING_DEFAULT: (INTERSECTING_DEFAULT_BLOB, {'reinforce': 2}),
@@ -3140,6 +3197,8 @@ REVIEWED_AREA_FLAG_WRITERS = {
        for index, blob in enumerate(NAGALAM_AMBUSH_BLOBS, 1)},
 }
 REVIEWED_AREA_FLAG_READERS = {
+    BEACH_HOLIDAY_DEFAULT: (BEACH_HOLIDAY_DEFAULT_BLOB, 'event',
+                            {'Factory': ('Respawn Condition', 'Factory TP')}),
     OIL_RIG_POPULATION_FRAMEWORK[0]: (OIL_RIG_POPULATION_FRAMEWORK[1], 'event', {'Hostage<': ('CLEARFLAGS', 'UKMinVic')}),
     TRIFECTA_FRAMEWORK[0]: (TRIFECTA_FRAMEWORK[1], 'event with redundant clear', {
         f'STM_IN_{suffix}': (f'STM_{suffix}_EX', f'STM_NOT_IN_{suffix}')
@@ -3510,8 +3569,66 @@ CLEAN_HOUSE_PROTECTED_ASSETS = {
 }
 CLEAN_HOUSE_RANGE_TARGET = ('379D34B0D41DA810', 'Prefabs/Props/Military/Training/TargetInfantry_01.et')
 
+STASHED_CACHE_PREFABS = 'worlds/HelloCam3/Prefabs/'
+STASHED_CACHE_PINK_VARIANTS = {
+    'Props/Civilian/hc3_RadioSmall_01_Pink.et': '509ab070cba50f36bee3becebd7f65f4a30781b9',
+    'Vehicles/Wheeled/S105/hc3_S105_rally_pink.et': '9e3ea0da4b4e487acf2b27864fd44c05830f5a23',
+    'Weapons/Magazines/hc3_Magazine_545x39_AK_30rnd_Pink_Ball.et': '3830239668340f1c985d9f0c61eb18beda0b8196',
+    'Weapons/Rifles/AK74/Variants/hc3_Rifle_AK74N_Pink_PBS4.et': '71c9d954e96e84602d9c43c0db701c73fa62c856',
+    'Weapons/Rifles/AKS74U/Variants/hc3_Rifle_AKS74UN_Pink_PBS4.et': '2a4c9ff7a63d45c87a7bdefb56477cdf340a546c',
+}
+STASHED_CACHE_MATERIALS = {
+    'worlds/HelloCam3/Assets/Props/Civilian/RadioSmall_01/Data/hc3_RadioSmall_01_Pink.emat':
+        '2e6571e618bdb5b838068a5fc9788c074d526aa4',
+    'worlds/HelloCam3/Assets/Vehicles/Wheeled/S105/Data/hc3_S105Body_mat_pink.emat':
+        'c82337040d1f756742ceaca1ef7b32bc022fa0ad',
+    'worlds/HelloCam3/Assets/Vehicles/Wheeled/S105/Data/hc3_S105Body_mat_pink_int.emat':
+        'a2744e4bac3739073f86c112c67fb4caa5cfd10e',
+}
+STASHED_CACHE_GRIP_MATERIAL = 'worlds/HelloCam3/Assets/Weapons/Rifles/AK74/Data/hc3_AK74_Grip_Pink.emat'
+STASHED_CACHE_GRIP_TEXTURE = STASHED_CACHE_GRIP_MATERIAL.removesuffix('.emat') + '_BCR.edds'
+STASHED_CACHE_PLAYER_LAYER = ('worlds/HelloCam3/worlds/COOP_StashedCache/'
+                              'COOP_StashedCache_v2_Layers/playergroups.layer')
+STASHED_CACHE_MODE_BLOB = 'b43214648b8ca258155563b28c291f0f259de0cf'
+STASHED_CACHE_NATIVE_MODE = {
+    'RHS_AdditionalGameModeSettingsComponent', 'RHS_RadialMenuItemsComponent',
+    'SCR_CampaignBuildingManagerComponent', 'SCR_DataCollectorComponent',
+    'SCR_EntityCatalogManagerComponent', 'SCR_GroupsManagerComponent', 'SCR_HintManagerComponent',
+    'SCR_IdentityManagerComponent', 'SCR_NametagConfigComponent', 'SCR_NotificationSenderComponent',
+    'SCR_PerceivedFactionManagerComponent', 'SCR_RadialMenuGameModeComponent',
+    'SCR_RadialMenuItemsComponent', 'SCR_TextsTaskManagerComponent',
+}
+STASHED_CACHE_INHERITED_MODE = {
+    'SCR_GameModeHealthSettings', 'SCR_GameOverScreenManagerComponent',
+    'SCR_VotingManagerComponent', 'RplComponent',
+}
+STASHED_CACHE_LOBBY_MODE = {'SCR_PreGameGameModeStateComponent', 'SCR_ReconnectComponent',
+                           'SCR_RespawnSystemComponent'}
+STASHED_CACHE_COMMAND = 'Characters/Factions/OPFOR/USSR_Army/Naval_Infantry/'
+STASHED_CACHE_COMMAND_ROLES = {
+    'FBFAD3A8C271B0FC': ('hc3_Character_USSR_NI_CoyL.et', '1bd3a46ccf2eb4d1b9b224202138534f8918fe2d'),
+    'A454CAB60FF72E52': ('hc3_Character_USSR_NI_CSM.et', '326329aa3b514d392f6eb932cb9b471fe48311c2'),
+}
+
 
 def passive_asset(source, path):
+    if source.files[path] == STASHED_CACHE_MATERIALS.get(path):
+        return source.read(path)
+    if (path.startswith(STASHED_CACHE_PREFABS)
+            and source.files[path] == STASHED_CACHE_PINK_VARIANTS.get(path.removeprefix(STASHED_CACHE_PREFABS))):
+        # Keep the authored native radio interaction, vehicle and inventory variants.
+        return source.read(path)
+    if (path.startswith(STASHED_CACHE_PREFABS + STASHED_CACHE_COMMAND)
+            and (PurePosixPath(path).name, source.files[path]) in STASHED_CACHE_COMMAND_ROLES.values()):
+        return source.read(path)
+    if (aircraft := BEACH_HOLIDAY_AIRCRAFT.get(path)) and source.files[path] == aircraft[0]:
+        body = source.read(path)
+        if aircraft[1]:
+            lines, flag = damage_state_flag_placement(body.splitlines(), allow_multiple_states=True)
+            if flag != aircraft[1]:
+                raise ValueError('unexpected aircraft damage flag')
+            body = '\n'.join(lines) + '\n'
+        return re.sub(r'(?m)^( +)WCS_ArmamentWeapon(Group|Info) ', r'\1WCS_Armament_Weapon\2 ', body)
     if path.startswith(CLEAN_HOUSE + 'Prefabs/') and source.files[path] == CLEAN_HOUSE_PROTECTED_ASSETS.get(
             path.removeprefix(CLEAN_HOUSE + 'Prefabs/')):
         body = '\n'.join(migrate_native_components(source.read(path).splitlines())) + '\n'
@@ -5789,9 +5906,16 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
                     and source.files[canonical] == '857b299e53863d2008260e1e12cdc8a75a24bcf3'
                     and source.files[meta] == '39944bfeb464c3499c6f13d08ec8b02a1fb76c40'
                     and path == LOCAL_PROBLEMS_RADIO.replace('_Single.et', '_Multi.et'))
+                moved_stashed_texture = (
+                    owner == STASHED_CACHE_GRIP_MATERIAL
+                    and source.files.get(owner) == 'bfd6e5cf2f16e57f24937bdbfeba8fdd0fab71da'
+                    and (resource, canonical) == ('89A1B384262CD56F', STASHED_CACHE_GRIP_TEXTURE)
+                    and source.files[canonical] == '8da3bbe7c38650431926ac7e5cbdc65d6c81cee8'
+                    and source.files[meta] == 'de7d0d9283fa39f082f08dad82158970f115602c'
+                    and path == 'Assets/Weapons/Rifles/AK74/Data/AK74_Grip_Pink_BCR.edds')
                 if (not identity or identity[2].upper() != resource
                         or (path != canonical and identity[3] not in (path, canonical)
-                            and not (moved_material or moved_warhead or moved_garrison_radio))):
+                            and not (moved_material or moved_warhead or moved_garrison_radio or moved_stashed_texture))):
                     raise ValueError('resource path disagrees with metadata')
                 if any(other != canonical for other in dev.resources.get(resource, [])):
                     raise ValueError('Dev resource identity collision')
@@ -5871,6 +5995,8 @@ def reviewed_area_flag_readers(source, world):
 
 def reviewed_area_flag_reference_text(source, path):
     text = source.read(path)
+    if path == BEACH_HOLIDAY_DEFAULT and source.files[path] == BEACH_HOLIDAY_DEFAULT_BLOB:
+        return re.sub(r'(?m)^ +m_sDescription "Factory"$', '', text)
     if path == DESERT_SENTINEL_MARKERS and source.files[path] == DESERT_SENTINEL_MARKERS_BLOB:
         # These three marker descriptions are display text, not flag consumers.
         return re.sub(r'(?m)^ +m_sDescription "extract"$', '', text)
@@ -6128,6 +6254,10 @@ def area_rules(source, world, dev=None):
                             raise ValueError('extraction trigger may be controlled by mission scripts')
                         rule, area, details = extraction_rule(world, area_name, flag, fields, polygon=bool(shape))
                     elif trigger['kind'] == 'Faction' and trigger['guid'] == '8C576D46F6579229':
+                        if shared_writer and layer == BEACH_HOLIDAY_WAVES and flag == '"Waves"':
+                            # This option controls result callbacks. The silent
+                            # trigger writes its flag in every phase either way.
+                            fields = [field for field in fields if field.strip() != 'm_eventsOnlyDuringGame 0']
                         built, area, details = capture_instance(world, area_name, fields, polygon=bool(shape))
                         rule = built[flag]
                     else:
@@ -6602,7 +6732,8 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
     restrict_staging_combat = None
     briefing_leader_markers = None
     transform = {}
-    immediate_release = inherited_immediate_release
+    stashed_cache = source_blob == STASHED_CACHE_MODE_BLOB
+    immediate_release = inherited_immediate_release or stashed_cache
     construction = {}
     jip = {}
     mode_components_seen = False
@@ -6628,7 +6759,8 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
                     raise ValueError('custom legacy game mode components')
                 seen.add(header)
                 component_lines = root[component:stop + 1]
-                if WEATHER.fullmatch(header):
+                kind = header.strip().partition(' ')[0]
+                if WEATHER.fullmatch(header) or (stashed_cache and kind == 'SCR_TimeAndWeatherHandlerComponent'):
                     handler, environment = convert_weather(world, component_lines)
                     weather += handler
                 elif header == INIT_WEATHER and all(INIT_WEATHER_FIELD.fullmatch(field)
@@ -6646,8 +6778,15 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
                 elif header == replaced_tracker:
                     # The native marker placement owns the reviewed Intel tracking behavior.
                     pass
+                elif stashed_cache and kind in STASHED_CACHE_NATIVE_MODE:
+                    native_overrides.extend(component_lines)
+                elif stashed_cache and kind in STASHED_CACHE_INHERITED_MODE | STASHED_CACHE_LOBBY_MODE:
+                    # The exact archive settings are inherited or owned by native Lobby components.
+                    pass
+                elif stashed_cache and kind == 'PS_ObjectiveManager':
+                    # This authored table supplies a legacy debrief label with no registered objectives.
+                    pass
                 else:
-                    kind = header.strip().partition(' ')[0]
                     raise ValueError('custom legacy game mode component: ' + kind)
                 component = stop + 1
             index = end
@@ -6890,6 +7029,16 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     route_graph = outcome.get('orderedRouteFlags', {})
     route_flags = set(route_graph.get('areas', ()))
     route_observers = {}
+    supported_interactions = [record for record in row.get('interactionCandidate', {}).values()
+                              if isinstance(record, dict)]
+    required_teleport_flags = {flag for record in supported_interactions for flag in record.get('teleportRequiredFlags', [])}
+    required_interaction_flags = {flag for record in supported_interactions
+                                  for flag in record.get('interactionRequiredFlags', [])}
+    interaction_reads = Counter(flag for record in supported_interactions
+                                for field in ('interactionRequiredFlags', 'teleportRequiredFlags')
+                                for flag in record.get(field, []))
+    dormant_interaction_flags = set()
+    observed_teleport_flags = set()
     shared_writers = [record for area in row.get('captureCandidate', {}).values() for record in area.values()
                       if isinstance(record, dict) and 'areaFlagObserver' in record]
     shared_flags = {record['writesFlag'] for record in shared_writers}
@@ -6921,10 +7070,21 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'shared area flags', 'file': world,
                              'detail': 'discovery reset must match a verified legacy meta definition'})
         scripts = script_text(source)
+        if ('Factory' in writers and source.files.get(BEACH_HOLIDAY_APARTMENT) == BEACH_HOLIDAY_APARTMENT_BLOB
+                and BEACH_HOLIDAY_APARTMENT in source.layers[world.lower()]
+                and interaction_reads['Factory'] == 1):
+            observed_teleport_flags.add('Factory')
+            # The second apartment door uses the destination identifier as its
+            # flag. Every other occurrence is a destination, never a writer.
+            destination_free = re.sub(r'(?m)^ +m_locationName "FuelDepotPOS"$', '', closure)
+            if (interaction_reads['FuelDepotPOS'] == 1 and destination_free.count('"FuelDepotPOS"') == 1
+                    and 'FuelDepotPOS' not in scripts and not any(api in scripts for api in SCRIPT_FLAG_APIS)):
+                dormant_interaction_flags.add('FuelDepotPOS')
         unresolved = sorted(flag for flag, count in writers.items()
                             if not (readers[flag] or reviewed_reads[flag]) or f'"{flag}"' in scripts
                             or closure.count(f'"{flag}"') != count + readers[flag] + reviewed_reads[flag]
                             + (flag in reset_flags) + (flag in population_flags) + (flag in timer_writers)
+                            + (interaction_reads[flag] if flag in observed_teleport_flags else 0)
                             or (flag in reset_flags and (readers[flag] != 3
                                 or source.files.get(INTERSECTING_DEFAULT.replace('default.layer', 'Opfor.layer'))
                                 != '42a0e55cfa0d5197e995e1474a814e0a09e5ae5c')))
@@ -6965,6 +7125,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     converted_artillery = False
     converted_scenery_map = False
     inactive_placements = []
+    if 'FuelDepotPOS' in dormant_interaction_flags:
+        inactive_placements.append('The original apartment door to FuelDepotPOS has no flag producer and stays locked.')
     reused_layers = set()
     group_blocks = []
     area_names = []
@@ -6987,14 +7149,6 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         if path in DEPOT_SUPPLY_REVISIONS and source.files[path] == DEPOT_SUPPLY_REVISIONS[path][0]), None)
     cache_supply_depot = bool(script_flags) and framework_supported and depot_layer is not None
     event_flags.update(script_flags)
-    supported_interactions = [record for record in row.get('interactionCandidate', {}).values()
-                              if isinstance(record, dict)]
-    required_teleport_flags = {flag for record in supported_interactions for flag in record.get('teleportRequiredFlags', [])}
-    required_interaction_flags = {flag for record in supported_interactions
-                                  for flag in record.get('interactionRequiredFlags', [])}
-    interaction_reads = Counter(flag for record in supported_interactions
-                                for field in ('interactionRequiredFlags', 'teleportRequiredFlags')
-                                for flag in record.get(field, []))
     interaction_writers = {action['flag'] for record in supported_interactions for action in record.get('objectives', [])}
     startup_samples = outcome.get('startupSamples', [])
     event_flags.update(flag for sample in startup_samples for flag in sample['flags'])
@@ -7175,10 +7329,19 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                 group_body = remove_legacy_callsigns(group_body.splitlines())
                         if 'PK_EntityProtectorComponent' in group_body:
                             group_body = '\n'.join(migrate_native_components(group_body.splitlines())) + '\n'
+                        playable_members = {identity: asset['path'] for identity, asset in members.items()
+                                            if asset.get('playable')}
+                        if (layer == STASHED_CACHE_PLAYER_LAYER
+                                and source.files[layer] == '366271c69a72f3481a5bc1b61210d8283e80e36d'):
+                            for identity, (name, blob) in STASHED_CACHE_COMMAND_ROLES.items():
+                                path = STASHED_CACHE_COMMAND + name
+                                canonical = STASHED_CACHE_PREFABS + path
+                                if source.resources.get(identity) == [canonical] and source.files.get(canonical) == blob:
+                                    playable_members[identity] = 'Prefabs/' + path
                         converted, count, slots = convert_group_block(
                             group_body,
                             {identity: asset['path'] for identity, asset in members.items() if not asset.get('playable')},
-                            {identity: asset['path'] for identity, asset in members.items() if asset.get('playable')})
+                            playable_members)
                         result.append(converted)
                         group_blocks.append({'file': layer, 'line': line, 'groups': count, 'slots': slots})
                     except ValueError as exc:
@@ -7401,7 +7564,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
 
     observed_interaction_flags = {flag[1:-1] for flag in status_areas}
     if missing_flags := ((required_teleport_flags | required_interaction_flags)
-                         - (event_flags | interaction_writers | observed_interaction_flags)):
+                         - (event_flags | interaction_writers | observed_interaction_flags
+                            | observed_teleport_flags | dormant_interaction_flags)):
         blockers.append({'rule': 'mission interaction', 'file': world,
                          'detail': {'missingConvertedMatchFlagProducers': sorted(missing_flags)}})
     if status_areas:
@@ -8107,6 +8271,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare prefab default occupants, seat filters and crew orders on event-spawned vehicles.')
     if any(spawn.get('crewGroups') for spawn in spawner_audit):
         remaining.append('Compare explicit crew seating and group routes on timed vehicle spawns.')
+    if mode_index and source.files[mode_index[0]] == STASHED_CACHE_MODE_BLOB:
+        remaining.append('Compare the 06:00 Cloudy start, support actions, construction and faction catalogues.')
+        remaining.append('The legacy debrief displays a zero-score Major Loss label. GC Lobby displays its native after-action report.')
+    if (BEACH_HOLIDAY_DEFAULT in source.layers[world.lower()]
+            and source.files[BEACH_HOLIDAY_DEFAULT] == BEACH_HOLIDAY_DEFAULT_BLOB):
+        remaining.append('Compare the authored helicopter armament overrides and historical infrared lock delay.')
     if world == SEEDER_WORLD and spawned_assets:
         remaining.append('Compare successive main and side objectives, shared flag resets and scheduled AI crews in Match.')
     return ({} if blockers else draft), {

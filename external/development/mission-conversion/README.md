@@ -14,6 +14,27 @@ Omit `--stage` to compare without generating files. Use a new staging directory 
 
 Use the batch workflow for the catalog. The same rules process every legacy launcher. They assemble complete drafts when all placements and behavior in a world match supported rules. Unrecognized constructs stay in the inventory with their file, line where available and conversion rule. The inventory groups blockers by the number of worlds affected, so a shared rule can unblock several missions on the next run.
 
+### Remaining migration work
+
+The audit at Missions Dev `fb372db0` clears 254 of the 277 published launchers, all with native snapshots and verified portable manifests. Of the 23 remaining launchers, nine have generated drafts held on file checks and fourteen still need conversion rules. The generated `plan.md` and `inventory.json` carry the exact resource IDs, paths and rule failures for the current dependency graph. Review shared providers as a group, then use representative Match checks for each affected behavior family.
+
+| Launchers | Remaining blocker |
+| --- | --- |
+| Topdown, Combined Anti-Armor Team, Light Armored Recon, Mulladost Pass, Two Bloody Miles | The original Zagoria BMP-2 registers but cannot drive on the current engine. The tested successor changes crew station order, magazines and damage behavior. Two Bloody Miles also needs the remaining capture and placement checks. |
+| Abad Day in Kunar US TVT, Heaven and Hell, Hot Boxes | The original 1998 DCU rifleman parent is unavailable. Hot Boxes also uses the retired DCU rifle squad. |
+| Zherebets River Cache, Unowald Cache | Shared equipment and tracer references still need exact providers. The plan records each terrain dependency separately. |
+| Al Hadra Rumble, Nagalam Traffic Jam, Rocky Road | Retired Gulf War vehicle assets block the drafts or their damage objectives. Al Hadra also needs the tan TIGR. Nagalam also needs related vehicle parts and other equipment. |
+| Direction Found | The archived M113A3 passed its recovery check. The violet RDG-2 registration remains unavailable. |
+| Assad’s Last Stand V2 | The authored insurgent radio, shemagh and black shirt remain unresolved. |
+| Syrian Checkpoint | The original SAA jacket and trousers are missing. The separately recovered cap still needs a compatible graph. |
+| Station Smashers | The authored hostage sandals remain unavailable. |
+| Cobra’s Bite | The two authored USMC M3 MAAW roles remain unavailable. |
+| Factory Siege Redux | The authored 2003 woodland forward observer remains unresolved. |
+| Gull Bay Guns | The original RHS EMR squad leader remains unresolved. |
+| Stealthing Into Villa | Pregame objective and convoy selection, the faction catalogue, two roles and the mission-owned Hind still need rules or asset verification. |
+| Operation Arrowhead Iron Cipher | Extraction, intel and fallback spawns, flag producers, event deactivation and the tan TIGR need an integrated conversion. |
+| Commandos Reforged | The mission-specific Commandos manager, interactions, cleanup, aircraft and loadouts need an integrated conversion. |
+
 Run the planner from GC Lobby with a clean Missions Dev checkout. Use a fresh output directory when the commits or conversion rules change.
 
     $repo = '../gc-reforger-missions'
@@ -1896,6 +1917,26 @@ The two published framework placements both subscribe to Match entry. The isolat
 The component conversion preserves all 1,963 authored cleanup protections in the apartment, mounted PKM and magazine prefabs. It also keeps cleanup protection on the placed groups and firing target. Units Dev commit `59a69b5c` corrects the Flora senior rifleman's registration. The original medic, squad leader and sharpshooter GUIDs resolve to their native RHS Flora prefabs, and the authored group enables those player slots.
 
 Missions Dev commit `6f8e1df3` retains 66 playable slots. Workbench MCP session `logs_2026-11-22_23-48-12` captured 10,251 entities and all 66 roles. Commit `cd84f715` stores the snapshot. The full file audit reproduces all 313 earlier staged files and clears 252 of 277 launchers. Representative Match checks cover the setup and casualty notice timing, teleport use and preservation of the protected entities during startup cleanup.
+
+### Beach Holiday to Mineraly
+
+The converter preserves the published 110-player listing and the exact order of all 90 authored roles. The native faction policies keep zero CAF respawn tickets and two USSR tickets. The 500-metre `Waves` observer can publish before Match, while its five spawners schedule their original delays only in Match. The original 17.8-metre factory trigger retains its first-change latch and supplies the respawn condition and factory teleport. The apartment door to `FuelDepotPOS` stays locked because its flag has no producer. The converter checks the exact source layers and counts readers before applying these rules.
+
+The two mission-owned Cobras retain their vehicle registrations and one-shot hull damage flags. The Cobra and Mi-24 overrides retain their authored equipment and use the current WCS serialized container classes. Same-GUID path updates cover the moved WCS assets and USSR facepaint. The source trigger lifecycle and the current WCS prefab and script layouts were reviewed in Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7`.
+
+Missions Dev commit `72cfc16f` contains 28 new files and the reviewed settings update. All 313 preceding drafts and 252 earlier metadata records remained unchanged. Workbench MCP session `logs_2026-11-23_00-04-29` opened the full dependency graph and refreshed metadata from 728 authored entities. Missions Dev commit `31c53ff4` stores the audited snapshot. The portable manifest matches the saved header and registered world and lists 67 addon IDs. The export reproduced the earlier 252 manifests byte for byte.
+
+Workbench logged obsolete vehicle attachment links and two obsolete infrared missile startup delay fields. The links remain indexed for the shared follow-up covering vehicle preview and locked-vehicle removal. The installed WCS infrared module has no startup delay field. Historical three-second lock timing and the two live aircraft loadouts still require comparison, along with reinforcements, damage transitions, teleports and ticket changes in Match.
+
+### Stashed Cache v2
+
+Missions Dev commit `68eaee47` preserves all 63 ordered roles across nine placements. The converter uses the published stock rosters for two platoon headquarters and six rifle squads, preserving the appended commander and crew in each squad. The separate company headquarters keeps its five explicit slots, including its two mission-owned uniform and inventory overrides. The four authored FIA AI roles use their unchanged stock registrations. The full draft audit reproduced all 313 earlier files byte for byte.
+
+The conversion preserves the pink set dressing through its original prefab, material and texture IDs. It relocates references to their committed registrations. The mode keeps the authored 06:00 Cloudy start, RHS support menu, trench settings and factionless catalogues. Stock and Core modes already supply the authored health scale, end screen, voting and replication settings. The native rules keep the original casualty and objective notices and the eight placed reinforcement schedules. The source framework suppresses automatic endings. The original objective manager supplies a Major Loss debrief label at zero score because no objectives register with it. GC Lobby uses its native after-action report. The stock prefabs and legacy score consumers were checked through Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7`.
+
+Workbench MCP opened the full graph and refreshed metadata for 1,628 authored entities in `logs_2026-11-23_00-20-48`. The catalogue review verified that all six explicitly authored catalogues resolve to the base game. Missions Dev commit `fb372db0` stores the snapshot with 63 roles. Its portable export matches the committed header and registered world, lists 66 required addon IDs, and reports partial coverage of authored containers. The other 253 manifests reproduced byte for byte.
+
+The session instantiated the pink radio, two rifles and rally car. It also reported obsolete suspension and clutch fields in the rally car's inherited prefab, plus inherited faction and editor diagnostics. Vehicle movement, the radio interaction, support and building actions, and the reinforcement sequence remain in the representative Match queue.
 
 ### Battle For Zarichne
 

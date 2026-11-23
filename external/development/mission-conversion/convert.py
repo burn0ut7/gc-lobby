@@ -182,6 +182,10 @@ def main():
         '2CDFBF355F3410DD': 'Prefabs/Characters/Factions/CIV/Dockworker/Character_CIV_Dockworker_2.et',
         'D97EAE64721478F3': 'Prefabs/Characters/Factions/CIV/ConstructionWorker/Character_CIV_ConstructionWorker_Randomized.et',
         'D25BC9815A9F9E8D': 'Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AT.et',
+        'FF43925D26526B95': 'Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_AAT.et',
+        '677B515F119222C2': 'Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_SL.et',
+        '58E47E5A4D599432': 'Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_MG.et',
+        'CE33AB22F61F3365': 'Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Sharpshooter.et',
     }
     stock_ai.update({
         guid: f'Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_{role}.et'

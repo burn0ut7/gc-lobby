@@ -70,6 +70,17 @@ STOCK_FORCED_CALLSIGNS = {
     '68B49475034AE9C4', '68B49475050A0FED', '68B4947507BD96A1', '68B494750A66A9AD',
     '68B494753290ECAA', '68B494751EAA3C6F', '68B494751D89F7E5', '68B49475189DF08B',
 }
+NAVAL_FORCED_ROSTERS = {
+    '1BF443A793E269EB': ('0BC506AD47804A53', 'D4B48CB2120CD6E0', '0E4D9E3249328533',
+                         '34D564602573EDA1', '8CDEE565CB49D126'),
+    '250BBF11AA24076F': ('92DBBF345A677BC3', 'FF534E2B68E3D9D0', '27FB27EA116AC78C',
+                         'D2D6106D52DF6B0A', 'EFC353CC3FF4475A', '1F8E131008DE0DD1'),
+}
+NAVAL_CREW_ROLES = {
+    guid: 'Prefabs/Characters/Factions/OPFOR/USSR_Army/Naval_Infantry/Character_USSR_NI_' + role + '.et'
+    for guid, role in (('F3AB754B0209BEAC', 'CC'), ('4F56119D68E63FF8', 'Crew'))
+}
+NAVAL_FORCED_CALLSIGNS = {'1BF443A793E269EB': '68D456FF012B6C3A', '250BBF11AA24076F': '68D456FE79DBE6A7'}
 STOCK_FORCED_CHARACTERS = {
     resource: f'Prefabs/Characters/Factions/CIV/Dockworker/Character_CIV_Dockworker_{index}.et'
     for index, resource in enumerate(('C6FAF52907A544AC', '2CDFBF355F3410DD', '2366B9D00B40D3C7'), 1)
@@ -1199,6 +1210,18 @@ def convert_registered_group(lines, guid, source_units, dev_units, stock, locall
         reviewed_members.get(resource.upper()) == path or legacy_member(source_units, resource.upper(), False)
         for resource, path in authored_slots)
     switches = [line.strip() for line in lines if line.strip().startswith('m_bSetPlayable ')]
+    if not unverified_slots and switches == ['m_bSetPlayable 1'] and guid in NAVAL_FORCED_ROSTERS:
+        if not all(stock.contains(member, path) and not any(member in owned for owned in (
+                locally_owned, source_units.resources, dev_units.resources))
+                   for member, path in NAVAL_CREW_ROLES.items()):
+            raise ValueError('unverified naval crew roles')
+        paths = dict(stock_group['slots'])
+        spec = {'slots': [(member, paths[member]) for member in NAVAL_FORCED_ROSTERS[guid]],
+                'parent': (guid, stock_group['path'])}
+        members = {**reviewed_members, **NAVAL_CREW_ROLES, **dict(spec['slots'])}
+        placement = [line for line in lines if line.strip() != switches[0]]
+        return convert_stock_instance(placement, spec, source_units, dev_units, stock, locally_owned, members,
+                                      reviewed_callsigns={NAVAL_FORCED_CALLSIGNS[guid]})
     if not rosters and not unverified_slots and switches == ['m_bSetPlayable 1'] and guid in STOCK_FORCED_ROSTERS:
         registered = {resource: path for group, order in STOCK_FORCED_ROSTERS.items()
                       for resource, path in STOCK_AI_GROUPS[group]['slots'] if resource in order}
