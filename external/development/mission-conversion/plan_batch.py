@@ -284,17 +284,25 @@ def compare_provider_plans(baseline, candidate):
 
 def authored_file_note(note):
     # Carry forward file evidence from older plans that put it in the runtime queue.
+    if note in {
+        'The placed editor faction manager is inactive in the original layer order.',
+        'The two BRDMs wrote unused recon damage flags in the original mission.',
+        'The five generator light cleanup spawns miss the original world-postprocess callback. '
+        'The generator flags and messages remain active.',
+    }:
+        return True
     return re.fullmatch(
         r'The original (?:reinforcement waypoint .+ has no authored target'
         r'|reinforcement waypoint .+ names its spawner and leaves orders unchanged'
         r'|static waypoint link to .+ has no authored target'
         r'|static waypoint link to .+ names a group and leaves orders unchanged'
+        r'|assignment refers to the waypoint .+ as its group and leaves orders unchanged'
         r'|waypoint assignment for .+ has no authored group and does not run'
         r'|waypoint assignment for .+ names a spawner and does not run'
         r'|static vehicle link to .+ has no mission-layer target'
         r'|spawn at .+ has no authored anchor and does not run'
         r'|TrainArea door opener has no runtime component in the published legacy addon'
-        r'|template framework is empty and runs no mission events'
+        r'|(?:template|Summer Days) framework is empty and runs no mission events'
         r'|random flag block has no named flag to set'
         r'|notification [\dA-Fa-f]+ in .+ has no eligible recipient and does not display'
         r'|event .+ has no authored condition and does not run)\.', note
