@@ -15,7 +15,8 @@ from catalog import GC_HEADER, OBSOLETE_NAVMESH, REF, SOURCE_TEXT, Snapshot, TYP
 from dependencies import database_project, dependency_resources, pinned_databases
 from events import EVENT
 from install_batch import resource_databases, unregistered_references
-from launchers import META_NAME, WORLD_REF, authored_header_text, launcher, registered_identity, required_addon_versions
+from launchers import (META_NAME, WORLD_REF, advertised_player_slots, authored_header_text, launcher,
+                       registered_identity, required_addon_versions, snapshot_player_slots)
 from scenery import StockPrefabs
 from terrain_parents import LONGMOOR_PARENT, LONGMOOR_PROVIDER, has_reviewed_longmoor, is_longmoor_subscene
 from vehicle_crew import ZAGORIA_BMP2
@@ -224,6 +225,8 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
             'explicitRequiredAddons': bool(re.search(r'^\s*m_aRequiredAddonIds\s*\{\s*"', body, re.M)),
             'portableLaunchMetadata': any(path in target.files for path in (
                 header + '.launch.json', header.removesuffix('.conf') + '.launch.json')),
+            'advertisedPlayerSlots': advertised_player_slots(body),
+            'snapshotPlayerSlots': snapshot_player_slots(body),
         }
     return {
         'world': world,

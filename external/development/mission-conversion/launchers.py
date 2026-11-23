@@ -28,6 +28,8 @@ NATIVE_TYPES = {
     b'SCR_MissionHeaderScenarioFramework': b'GC_ScenarioFrameworkMissionHeader',
 }
 GENERATED = re.compile(r' m_GC_GeneratedMetadata GC_GeneratedMissionMetadata(?: "[^"]+")? \{')
+PLAYER_SLOT = re.compile(r'   GC_MissionMetadataSlot(?: "[^"]+")? \{')
+ADVERTISED_SLOTS = re.compile(r'^ m_iPlayerCount (\d+)[ \t]*$', re.M)
 ADDON_VERSIONS_FIELD = re.compile(r'^ m_aRequiredAddonVersions\b', re.M)
 ADDON_VERSION = re.compile(r'"([\da-fA-F]{16})=([0-9]+(?:\.[0-9]+){1,3})"')
 REVIEWED_VERSION_PINS = {
@@ -71,6 +73,21 @@ def authored_header_text(body):
             # The snapshot also records diagnostic origins, which are not engine resource paths.
             lines[start:stop + 1] = [''] * (stop - start + 1)
     return '\n'.join(lines)
+
+
+def snapshot_player_slots(body):
+    """Return the saved slot count, with None for headers without a native snapshot."""
+    lines = body.splitlines()
+    for start, line in enumerate(lines):
+        if GENERATED.fullmatch(line):
+            end = block_end(lines, start)
+            return sum(bool(PLAYER_SLOT.fullmatch(entry)) for entry in lines[start + 1:end])
+    return None
+
+
+def advertised_player_slots(body):
+    match = ADVERTISED_SLOTS.search(body)
+    return int(match[1]) if match else None
 
 
 def required_addon_versions(body):

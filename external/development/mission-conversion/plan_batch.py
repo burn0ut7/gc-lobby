@@ -480,6 +480,17 @@ def markdown(plan):
                       'The launcher resolves addon names in the snapshot to GUIDs and includes any manual catalogue IDs. '
                       'Portable files exported outside the checkout are counted by the exporter. '
                       'The published build still needs its own launch verification.'])
+        differences = [(header, advertised, captured) for header, checks in metadata.items()
+                       if (advertised := checks.get('advertisedPlayerSlots')) is not None
+                       and (captured := checks.get('snapshotPlayerSlots')) is not None
+                       and advertised != captured]
+        if differences:
+            lines.extend(['', '### Snapshot and advertised player counts', '',
+                          'Compare these rows with the authored roster and any reviewed capacity differences. '
+                          'The advertised count is the launcher listing.', '',
+                          '| Launcher | Advertised | Captured |', '| --- | ---: | ---: |'])
+            lines.extend(f'| `{header}` | {advertised} | {captured} |'
+                         for header, advertised, captured in differences)
     if pinned := plan.get('auditedAddonVersionsByLauncher'):
         lines.extend(['', '## Audited launcher version pins', '',
                       '| Launcher | Required addon versions |', '| --- | --- |'])

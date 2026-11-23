@@ -15,7 +15,7 @@ from boundaries import (ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_
                         convert_boundaries, convert_instance as convert_boundary_instance, group_members,
                         convert_child_outline, passive_shape_component)
 from briefings import QUOTED, block_end, guid, properties, target_names
-from catalog import OBSOLETE_NAVMESH, REF, SOURCE_TEXT
+from catalog import OBSOLETE_NAVMESH, REF, SOURCE_TEXT, VEHICLE_LINK
 from event_actions import (FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, VEHICLE_SPAWN,
                            render_crew_config, render_spawn, spawn_details)
 from vehicle_crew import (BMP1_PARENT, BMP1_TURRET_PARENT, CREW_CONFIG_FIELD, FLORA_CREW_CONFIG, MISSION_BMP1,
@@ -3184,12 +3184,36 @@ def named_placements(layers):
     return named
 
 
+def unsupported_vehicle_group_fields(block):
+    """Locate legacy fields that hide the adjacent child roster in the native loader."""
+    root = PLACED_ENTITY.fullmatch(block[0])
+    if not root or root['kind'] not in ('Vehicle', 'Tank', 'RHS_Tank'):
+        return ()
+    indent = '  ' if root['group'] else ' '
+    removed = []
+    for index in range(2, len(block) - 2):
+        if (block[index] != indent + '{'
+                or not re.match(r'^(?:\$grp )?SCR_AIGroup ', block[index + 1].removeprefix(indent + ' '))):
+            continue
+        previous = index - 1
+        if block[previous] == indent + 'm_bEnableMoveOnFreeze 0':
+            # The legacy field defaults to false. Preserve nondefault settings for review.
+            removed.append(previous)
+            previous -= 1
+        if block[previous].startswith(indent + 'm_sAttachmentGroupName ') and VEHICLE_LINK.fullmatch(block[previous]):
+            removed.append(previous)
+    return tuple(removed)
+
+
 def convert_vehicle_groups(block, convert_group_block):
     """Convert placed group children in the vehicle's original coordinate space."""
     root = PLACED_ENTITY.fullmatch(block[0])
     if (not root or root['kind'] not in ('Vehicle', 'Tank', 'RHS_Tank')
             or not any(re.match(r'^ +(?:\$grp )?SCR_AIGroup ', line) for line in block[1:])):
         return block, 0, 0
+    # The catalog records the original links for the deferred vehicle preview feature.
+    removed = set(unsupported_vehicle_group_fields(block))
+    block = [line for index, line in enumerate(block) if index not in removed]
     rendered = [block[0]]
     groups = slots = 0
     for name, fields in polygon_capture.members(block, root['group'], root['name']):
@@ -5244,6 +5268,15 @@ def repair_existing_layers(source, dev, world, aliases):
                 # Layers with unknown or independently edited markers need a file comparison.
                 pass
         updated = SYMBOLIC_MATCH_CONDITION.sub(lambda match: match['prefix'] + MATCH_PHASE_VALUE, updated)
+        if 'm_sAttachmentGroupName ' in updated or 'm_bEnableMoveOnFreeze 0' in updated:
+            try:
+                hidden_group_fields = {start - 1 + index for start, block in blocks(updated)
+                                       for index in unsupported_vehicle_group_fields(block)}
+            except ValueError:
+                hidden_group_fields = set()
+            if hidden_group_fields:
+                updated = ''.join(line for index, line in enumerate(updated.splitlines(keepends=True))
+                                  if index not in hidden_group_fields)
         if (path == SCREENING_AI_WORLD_LAYER and source.files.get(path) == SCREENING_AI_WORLD_SOURCE
                 and dev.files[path] in SCREENING_AI_WORLD_REVISIONS and updated.startswith('SCR_AIWorld {\n')):
             if native_world := screening_ai_world(dev):
