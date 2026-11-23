@@ -1,10 +1,13 @@
-[ComponentEditorProps(category: "GC Lobby/Spawning", description: "Fills selected vehicle compartments with an authored AI crew when the match starts.")]
+[ComponentEditorProps(category: "GC Lobby/Spawning", description: "Fills selected vehicle compartments with an authored AI crew during GC Lobby.")]
 class GC_VehicleCrewComponentClass : ScriptComponentClass
 {
 }
 
 class GC_VehicleCrewComponent : ScriptComponent
 {
+	[Attribute("0", UIWidgets.CheckBox, "Seat the AI crew as soon as the active lobby initializes, including before Match.")]
+	protected bool m_bSpawnBeforeMatch;
+
 	[Attribute("1", UIWidgets.CheckBox, "Include pilot compartments.")]
 	protected bool m_bAllowPilot;
 
@@ -63,7 +66,7 @@ class GC_VehicleCrewComponent : ScriptComponent
 
 	protected void OnLobbyPhaseChanged(SCR_EGameModeState phase)
 	{
-		if (phase != SCR_EGameModeState.GAME)
+		if (!IsCrewPhase(phase))
 			return;
 
 		m_Manager.m_OnLobbyPhaseChanged.Remove(OnLobbyPhaseChanged);
@@ -73,7 +76,7 @@ class GC_VehicleCrewComponent : ScriptComponent
 	protected void SpawnCrew()
 	{
 		IEntity owner = GetOwner();
-		if (!owner || !IsActiveMatch())
+		if (!owner || !CanRunCrew())
 			return;
 
 		SCR_BaseCompartmentManagerComponent compartments = SCR_BaseCompartmentManagerComponent.Cast(owner.FindComponent(SCR_BaseCompartmentManagerComponent));
@@ -157,15 +160,21 @@ class GC_VehicleCrewComponent : ScriptComponent
 		}
 	}
 
-	protected bool IsActiveMatch()
+	protected bool IsCrewPhase(SCR_EGameModeState phase)
+	{
+		return phase == SCR_EGameModeState.GAME || (m_bSpawnBeforeMatch
+			&& (phase == SCR_EGameModeState.PREGAME || phase == SCR_EGameModeState.SLOTTING || phase == SCR_EGameModeState.BRIEFING));
+	}
+
+	protected bool CanRunCrew()
 	{
 		return Replication.IsServer() && m_Manager && m_Manager == GC_LobbyManager.GetManager()
-			&& m_Manager.GetLobbyPhase() == SCR_EGameModeState.GAME;
+			&& IsCrewPhase(m_Manager.GetLobbyPhase());
 	}
 
 	protected void AssignOrders(AIGroup group, array<string> waypoints, bool initialOnly, bool skipUnavailable = false)
 	{
-		if (!group || !IsActiveMatch())
+		if (!group || !CanRunCrew())
 			return;
 		if (initialOnly)
 		{

@@ -17,6 +17,8 @@ CORE_BTR70_DIGEST = 'ae982b43b504904f7b97947e7fc45c83f584e46ce5f7fa8d7c08c05e386
 TIGR_DIRECTORY = 'Prefabs/Vehicles/Wheeled/TIGR/'
 CORE_TIGR_AGS17 = ('1C41EF46A9A977D0', TIGR_DIRECTORY + 'AGS/GAZ_TIGR_v2_AGS17.et')
 CORE_TIGR_TURRET_BASE = ('7F038AC225B7330B', TIGR_DIRECTORY + 'GAZ_TIGR_v2_Mounted_Turret_Base.et')
+# Light Armored Recon's pregame placement contains two verified AI scout roles.
+TIGR_PREGAME_PLACEMENT = 'bed562a8145aee1fa1d12a8063b9450f17d27ab8149b06fb56b646f275ef0982'
 K17_DIRECTORY = 'Prefabs/Vehicles/Wheeled/K17/'
 CORE_K17 = ('C84FF4497D058530', K17_DIRECTORY + 'APC_K17_Epoch_HTM1_AIGunner.et')
 CORE_K17_TURRET = ('3CED911741EF4D1A', K17_DIRECTORY + 'VehParts/Turret_K17_Epoch_HTM_AIGunner.et')
@@ -524,7 +526,7 @@ def render_crew_config(config, key, resolve_character, *, shadowed_names=(), pla
 
 
 def render_component(component, lines, resolve_character, single_turret, resolve_config=None, *,
-                     allow_default_crew=False, placed_names=()):
+                     allow_default_crew=False, placed_names=(), reviewed_pregame=False):
     configs = [i for i, line in enumerate(lines) if line.strip().startswith('m_crewConfig ')]
     if not configs:
         data = properties(lines, {'m_customCrew', 'm_noTurretDismount', 'm_idleGroup', 'm_pregameSpawn',
@@ -556,11 +558,15 @@ def render_component(component, lines, resolve_character, single_turret, resolve
     close = block_end(lines, index)
     deprecated = {'m_noTurretDismount', *('m_spawn' + seat for seat in SEAT_TYPES)}
     outer = properties(lines[:index] + lines[close + 1:], deprecated | {'m_pregameSpawn'})
-    if (outer.get('m_pregameSpawn', '0') != '0'
+    pregame = outer.get('m_pregameSpawn', '0')
+    if (pregame not in (('0', '1') if reviewed_pregame else ('0',))
             or any(outer[field] not in ('0', '1') for field in deprecated.intersection(outer))):
         raise ValueError('unsupported placed crew timing or deprecated seat fields')
     # The configured legacy path reads seat filters and dismount policy only from its config.
     config = crew_config_contents(lines[index:close + 1], resolve_config)
+    if pregame == '1':
+        return render_structured_placement(component, config, resolve_character, placed_names=placed_names,
+                                           before_match=True)
     if placed_names:
         return render_structured_placement(component, config, resolve_character, placed_names=placed_names)
     groups = [i for i, line in enumerate(config) if line.strip() == 'm_crewGroups {']
@@ -598,9 +604,10 @@ def render_component(component, lines, resolve_character, single_turret, resolve
     return crew_fields(component, flags, seated, roles, route)
 
 
-def render_structured_placement(component, config, resolve_character, *, placed_names=()):
+def render_structured_placement(component, config, resolve_character, *, placed_names=(), before_match=False):
     fields, _ = render_crew_config(config, component['id'], resolve_character, placed=True, placed_names=placed_names)
     return [f'  GC_VehicleCrewComponent {component["id"]} {{',
+            *(['   m_bSpawnBeforeMatch 1'] if before_match else []),
             *(line[5:] for line in fields), '  }']
 
 
@@ -727,6 +734,8 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
             or (units_owned and not (inherited_override or vehicle_overlay or units_vehicle or core_transfer))
             or not (stock.contains(guid, path) or external_vehicle or units_vehicle or local_vehicle)):
         raise ValueError('unverified crew vehicle ' + guid)
+    reviewed_pregame = (vehicle_overlay and (guid, path) == CORE_TIGR_AGS17
+                        and sha256('\n'.join(block).encode()).hexdigest() == TIGR_PREGAME_PLACEMENT)
     if resolve_character is None:
         def resolve_character(resource, path):
             return character_reference(resource, path, source_units, dev_units, stock, owned, external_ai,
@@ -748,7 +757,7 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
         replacement = render_component(
             component, lines[index + 1:end], resolve_character,
             single_turret, lambda guid, path: verified_crew_config(source_units, guid, path, owned),
-            allow_default_crew=allow_default_crew, placed_names=placed_names)
+            allow_default_crew=allow_default_crew, placed_names=placed_names, reviewed_pregame=reviewed_pregame)
         return [*lines[:index], *replacement, *lines[end + 1:]]
 
     def convert_children(lines, parents=()):
