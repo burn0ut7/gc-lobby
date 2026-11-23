@@ -42,6 +42,9 @@ MOVED_AI_PARENTS = {
         'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/2020/Character_SEP_SL.et',
 }
 REVIEWED_FORCED_CHARACTERS = {
+    # Public Enemies' two mobster groups force playability for their inherited roles.
+    '8F51ED5F532BB1E1': 'a66dc5b812d4a498af08bd67c1ab7845a2731aaaa2f8b9b43d3e2ae055eef910',
+    '4144099566E3DE33': 'b2fea681d00d188ad5b8731772b78350e83760cba0cf3019d066aa828140d35a',
     # The Local Problems company HQ forces playability on its one HVT role.
     'F32A660889248606': '1ac0586d142dab2e131b6d14d2de4269761ddb0d835144008c3711f506418041',
     # Gunfighter inherits force-playability from the USMC platoon HQ.

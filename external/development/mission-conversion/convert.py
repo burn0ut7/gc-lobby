@@ -1101,6 +1101,12 @@ def main():
         southwind_assets, southwind_groups, southwind_members = batch.reviewed_southwind_groups(
             source, dev, source_units, dev_units, stock, ai_loadouts)
         local_groups.update(southwind_groups)
+        public_enemies_world = batch.PUBLIC_ENEMIES + 'PublicEnemies.ent'
+        public_enemies_bosses = {resource: asset for resource, asset in spawned_assets.get(public_enemies_world, {}).items()
+                               if asset.get('playable')}
+        public_enemies_assets, public_enemies_groups = batch.public_enemies_groups(
+            source, dev, source_units, dev_units, stock, loadouts, public_enemies_bosses)
+        local_groups.update(public_enemies_groups)
         registered_groups = dict(british_groups)
         for identity, path in batch.LOCAL_PROBLEMS_GROUPS.items():
             if batch.verified_local_ai_group(source, dev, source_units, dev_units, stock, identity, path,
@@ -1124,7 +1130,8 @@ def main():
             return vehicle_crew.verified_crew_config(source_units, resource, path, locally_owned)
 
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
-                         asset_aliases, {**loadouts, **ai_loadouts, **southwind_assets, **oil_rig_assets, **reviewed_audio},
+                         asset_aliases, {**loadouts, **ai_loadouts, **southwind_assets, **oil_rig_assets,
+                                         **public_enemies_assets, **reviewed_audio},
                          spawned_assets,
                          convert_crew, resolve_spawn, resolve_crew,
                          resolve_crew_config, delayed_extractions,

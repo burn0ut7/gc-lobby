@@ -1496,6 +1496,10 @@ LOCAL_PROBLEMS_GROUPS = {
     'E86B8D95400DA31C': LOCAL_PROBLEMS_MILITIA + 'Militia_Rifle_Squad.et',
 }
 REVIEWED_NATIVE_ASSETS = {
+    'worlds/TheLocalPub/PublicEnemies/Configs/Factions/GC_Federal.conf':
+        '515c0a77a7e644da48fb4a40d4505570a7eadc252abc759baecada29387d6171',
+    'worlds/TheLocalPub/PublicEnemies/Configs/Factions/GC_Mobsters.conf':
+        '8eee8347f9d62082b7f717f6a98ceb1f953d38e5245791010b29f8487fb5d845',
     LOCAL_PROBLEMS_RADIO: 'b3f2f48fa135288210469d75cbd093e03636ef83e88fad0165dd9baf20f976ce',
     LOCAL_PROBLEMS_MILITIA + 'Militia_AT_Team.et': '05b1fdfb3e365e7ee397b792ee4dc21bec9e6926f057cf3bcec9ea62a7d58557',
     LOCAL_PROBLEMS_MILITIA + 'Militia_MG_Team.et': 'e0d808e8c2bb3dd64afa7389a75974274678127a61d5ccb78bbc9c0f2f28b82f',
@@ -4138,6 +4142,58 @@ def reviewed_oil_rig_group(source, dev, source_units, dev_units, loadouts):
     return {resource: (path, native)}, {resource: (path, parent, (old, native))}
 
 
+PUBLIC_ENEMIES = 'worlds/TheLocalPub/PublicEnemies/'
+PUBLIC_ENEMIES_GROUPS = {
+    '0DEBAC606FB62737': ('Blufor/Group_Federal_base.et', 'cd37b0e26504acbe6abaa860226602671346384f', None),
+    '2A325FD7A29810CD': ('Opfor/Group_Mobster_Base.et', '09d2fd173ea725d1706e4fc1607231738e6bf02f', None),
+    '05C8C3FD535E3087': ('Blufor/Group_Federal_CaptainTeam.et', '31216e35ed31f1988e95f6ee187672d1b3a85942', '0DEBAC606FB62737'),
+    '35CB89A86E6851DB': ('Blufor/Group_Federal_StandardTeam.et', '50225d881c06e18ceafc33c518bd1a5f26abdafb', '0DEBAC606FB62737'),
+    'FAE41331EAAB0399': ('Blufor/Group_Federal_ChiefTeam.et', 'a9d0487ca5aaf29281b0a2bb2ac1033d9298d3ca', '0DEBAC606FB62737'),
+    '1CE33BB24C41F43C': ('Opfor/Group_Mobster_GreyMobsters1.et', 'f2921961b7d3c2f1163af25d591b656cc8e73624', '2A325FD7A29810CD'),
+    '9115FB4624E4329C': ('Opfor/Group_Mobster_BrownMobsters1.et', 'd7518064178990b82b66197b6b65cb34440cfc25', '2A325FD7A29810CD'),
+}
+PUBLIC_ENEMIES_PLAYERS = 'PublicEnemies_Layers/OPFOR/Player.layer'
+PUBLIC_ENEMIES_BOSSES = {
+    # Grey also appears in the group's default roster, replaced by the placed roster.
+    'FB3DF47EABBAE7CF': ('6be396106379f16195e36a855072675e107b203f', '4144099566E3DE33', '1CE33BB24C41F43C', 2),
+    'E18FFF2A7564502A': ('5679ca8db278bbdc1924872b8c34354b822989a3', '8F51ED5F532BB1E1', '9115FB4624E4329C', 1),
+}
+
+
+def public_enemies_groups(source, dev, source_units, dev_units, stock, loadouts, bosses):
+    directory = PUBLIC_ENEMIES + 'Prefabs/AI/Groups/'
+    stock_group = ('000CD338713F2B5A', 'Prefabs/AI/Groups/Group_Base.et')
+    if (not stock or not stock.contains(*stock_group)
+            or any(stock_group[0] in snapshot.resources for snapshot in (source, dev, source_units, dev_units))
+            or bosses.keys() != PUBLIC_ENEMIES_BOSSES.keys()):
+        return {}, {}
+    members = {**{resource: entry[0] for resource, entry in loadouts.items()},
+               **{resource: entry['path'] for resource, entry in bosses.items()}}
+    assets, aliases = {}, {}
+    for resource, (relative, blob, parent) in PUBLIC_ENEMIES_GROUPS.items():
+        path = directory + relative
+        if (source.resources.get(resource) != [path] or source.files.get(path) != blob
+                or dev.resources.get(resource) not in (None, [path])
+                or any(resource in snapshot.resources for snapshot in (source_units, dev_units))):
+            return {}, {}
+        old = source.read(path)
+        if parent is None:
+            native = old.replace(' m_bSetPlayable 1\n', ' m_bPlayable 1\n', 1)
+        else:
+            slots = SLOTS.search(old)
+            if (not slots or REF.sub('', slots[1]).strip()
+                    or any(members.get(slot) != name for slot, name in REF.findall(slots[1]))):
+                return {}, {}
+            native = REF.sub(lambda _: f'"{{{parent}}}{assets[parent][0]}"', old, count=1)
+            # The saved leaf inherits its playable setting from the base.
+            aliases[resource] = (path, parent, (old.rstrip()[:-1] + ' m_bSetPlayable 1\n}',
+                                               native.rstrip()[:-1] + ' m_bPlayable 1\n}'))
+        if LEGACY.search(native) or (path in dev.files and dev.read(path).strip() != native.strip()):
+            return {}, {}
+        assets[resource] = (path, native)
+    return assets, aliases
+
+
 def reviewed_southwind_groups(source, dev, source_units, dev_units, stock, ai_loadouts):
     """Retain the mission's two native group prefabs and review all forced roles."""
     root = 'worlds/anteante101/Prefabs/group/FIA Rebel/'
@@ -4509,18 +4565,28 @@ def playable_objectives(source, dev, world, stock, local_resources, source_units
     civ_group = (f'{{{civ_id}}}{civ_path}' if verified_civilian_ai_group(local_resources, source_units, dev_units)
                  and ' m_faction "CIV"' in source_units.read(civ_path).splitlines()
                  and stock.contains('000CD338713F2B5A', 'Prefabs/AI/Groups/Group_Base.et') else None)
+    mobster_layer = PUBLIC_ENEMIES + PUBLIC_ENEMIES_PLAYERS
+    mobster_groups = {}
+    if (world == PUBLIC_ENEMIES + 'PublicEnemies.ent'
+            and source.files.get(mobster_layer) == 'fd7f293373f6398b2c4cf314199a015a79c07f36'
+            and all(source.files.get(PUBLIC_ENEMIES + 'Prefabs/AI/Groups/' + path) == blob
+                    for path, blob, _ in PUBLIC_ENEMIES_GROUPS.values())):
+        mobster_groups = {entry[2]: resource for resource, entry in PUBLIC_ENEMIES_BOSSES.items()}
     for layer in source.layers[world.lower()]:
         forced = ((line, group, None) for line, group in blocks(originals[layer])
                   if group[0].startswith('SCR_AIGroup ') and ' m_bSetPlayable 1' in group)
         civilian = named_ai_rosters(originals[layer], {civ_group}) if civ_group else ()
-        for line, group, inherited in chain(forced, civilian):
+        mobsters = ((line, group, mobster_groups[ref[1]]) for line, group in blocks(originals[layer])
+                    if (ref := REF.search(group[0])) and ref[1] in mobster_groups) if layer == mobster_layer else ()
+        for line, group, inherited in chain(forced, civilian, mobsters):
             if group.count(' m_aUnitPrefabSlots {') != 1:
                 continue
             faction = [match[1] for field in group if (match := re.fullmatch(r' m_faction "([\w.-]+)"', field))]
+            mobster = inherited in PUBLIC_ENEMIES_BOSSES
             if inherited and not faction:
-                faction = ['CIV']
-            if inherited and (faction != ['CIV'] or any(field.startswith((' m_bSetPlayable ', ' m_bPlayable '))
-                                                        for field in group)):
+                faction = ['GC_Mobster' if mobster else 'CIV']
+            if inherited and (any(field.startswith((' m_bSetPlayable ', ' m_bPlayable ')) for field in group)
+                              or faction != ['GC_Mobster' if mobster else 'CIV']):
                 continue
             if len(faction) != 1 or faction[0] in replacement_factions:
                 continue
@@ -4531,16 +4597,23 @@ def playable_objectives(source, dev, world, stock, local_resources, source_units
                 if not ref:
                     continue
                 resource, path = ref[1].upper(), ref[2]
+                expected_references = PUBLIC_ENEMIES_BOSSES[inherited][3] if mobster else 1
                 if (source.resources.get(resource) != [path] or dev.resources.get(resource) not in (None, [path])
                         or resource in source_units.resources or resource in dev_units.resources
                         or not path.startswith(world.rsplit('/', 1)[0] + '/')
-                        or corpus.upper().count('{' + resource + '}') != 1):
+                        or corpus.upper().count('{' + resource + '}') != expected_references):
                     continue
                 entity = source.read(path).splitlines()
                 parent = REF.search(entity[0]) if entity else None
-                if (not parent or not entity[0].startswith('SCR_ChimeraCharacter : ')
-                        or parent[1] in conflicting_ids or DAMAGE_TARGETS.get(parent[1]) != parent[2]
-                        or not parent[2].startswith('Prefabs/Characters/') or not stock.contains(*parent.groups())):
+                if not parent or not entity[0].startswith('SCR_ChimeraCharacter : '):
+                    continue
+                if mobster:
+                    blob, base, _, _ = PUBLIC_ENEMIES_BOSSES[inherited]
+                    if (resource != inherited or source.files.get(path) != blob or parent[1] != base
+                            or source.resources.get(base) != [parent[2]]):
+                        continue
+                elif (parent[1] in conflicting_ids or DAMAGE_TARGETS.get(parent[1]) != parent[2]
+                      or not parent[2].startswith('Prefabs/Characters/') or not stock.contains(*parent.groups())):
                     continue
                 try:
                     fields, death = damage_state_flag_placement(entity)
@@ -4548,7 +4621,7 @@ def playable_objectives(source, dev, world, stock, local_resources, source_units
                     end = block_end(fields, root)
                     marker = ['  PS_PlayableComponent "{5EFCC1946F475F15}" {', '   m_bIsPlayable 1', '  }']
                     playable = next((i for i in range(root + 1, end) if fields[i:i + len(marker)] == marker), None)
-                    if inherited and playable is None:
+                    if inherited and not mobster and playable is None:
                         continue
                     if playable is not None:
                         del fields[playable:playable + len(marker)]
@@ -6895,10 +6968,10 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     required_teleport_flags = {flag for record in supported_interactions for flag in record.get('teleportRequiredFlags', [])}
     required_interaction_flags = {flag for record in supported_interactions
                                   for flag in record.get('interactionRequiredFlags', [])}
+    interaction_reads = Counter(flag for record in supported_interactions
+                                for field in ('interactionRequiredFlags', 'teleportRequiredFlags')
+                                for flag in record.get(field, []))
     interaction_writers = {action['flag'] for record in supported_interactions for action in record.get('objectives', [])}
-    if missing_flags := (required_teleport_flags | required_interaction_flags) - (event_flags | interaction_writers):
-        blockers.append({'rule': 'mission interaction', 'file': world,
-                         'detail': {'missingConvertedMatchFlagProducers': sorted(missing_flags)}})
     startup_samples = outcome.get('startupSamples', [])
     event_flags.update(flag for sample in startup_samples for flag in sample['flags'])
     draw_by_flag = {flag: index for index, sample in enumerate(startup_samples) if sample['drawCount'] == 1
@@ -7113,10 +7186,14 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         for flag, check in status_checks.items():
                             # An event's display name is separate from the flag read by its condition.
                             name_fields = len(re.findall(r'^ +m_name ' + re.escape(flag) + r'\s*$', flag_references, re.M))
-                            status_only = row.get('captureCandidate', {}).get(f'{layer}:{line}', {}).get(
-                                flag[1:-1], {}).get('statusOnly')
+                            record = row.get('captureCandidate', {}).get(f'{layer}:{line}', {}).get(flag[1:-1], {})
+                            status_only = record.get('statusOnly')
+                            action_reads = interaction_reads[flag[1:-1]]
                             if (not any('m_Messages ' in item for item in check)
-                                    or flag_references.count(flag) != (0 if status_only else 1 + name_fields)
+                                    or (action_reads and (status_only or not record.get('stopsAfterFirstChange')
+                                                         or record.get('skipDiscovery')
+                                                         or flag[1:-1] in event_flags | interaction_writers))
+                                    or flag_references.count(flag) != (0 if status_only else 1 + name_fields + action_reads)
                                     or flag[1:-1] in script_text(source)):
                                 blockers.append({'rule': kind, 'file': layer, 'line': line,
                                                  'detail': 'capture flag may have an unconverted consumer ' + flag})
@@ -7160,6 +7237,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         converted_cover |= 'm_bAutoFrameMap 1' in converted
                         converted_passive_cover |= bool(PASSIVE_COVER.fullmatch(head))
                         converted_bare_map |= bool(BARE_SHAPE.fullmatch(head))
+                elif (layer == PUBLIC_ENEMIES + 'PublicEnemies_Layers/default.layer'
+                      and source.files[layer] == 'ba62e7b847c7e673b05b07e7cfe20511d2124ae8'
+                      and PERCEPTION.fullmatch(head)
+                      and block[2:-1] == [' SunDirectLightElevCurve {', '  SCR_Faction "{68A73D13C0414D66}" {',
+                                          '  }', ' }']):
+                    # This empty faction element supplies no native CurvePoint values.
+                    continue
                 elif ((perception := PERCEPTION.fullmatch(head))
                       and all(field.strip().partition(' ')[0] in SPAWNER_TRANSFORM and FIELD.fullmatch(field.strip())
                               for field in block[1:-1])
@@ -7281,6 +7365,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         except ValueError as exc:
             blockers.append({'rule': 'layer conversion', 'file': layer, 'detail': str(exc)})
 
+    observed_interaction_flags = {flag[1:-1] for flag in status_areas}
+    if missing_flags := ((required_teleport_flags | required_interaction_flags)
+                         - (event_flags | interaction_writers | observed_interaction_flags)):
+        blockers.append({'rule': 'mission interaction', 'file': world,
+                         'detail': {'missingConvertedMatchFlagProducers': sorted(missing_flags)}})
     if status_areas:
         names = {event.get('eventName', event['name']) for event in rules.values()}
         trackers = {flag[1:-1]: 'GC_MigrationAreaStatus_' + guid(world + '/status/' + flag)
@@ -7289,7 +7378,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             blockers.append({'rule': 'framework events', 'file': world,
                              'detail': 'generated area status tracker name collides with a mission event'})
         else:
-            rule_text += '\n'.join(render_capture_trackers(world, trackers, status_areas, set())) + '\n'
+            published = observed_interaction_flags & (required_teleport_flags | required_interaction_flags)
+            rule_text += '\n'.join(render_capture_trackers(world, trackers, status_areas, set(), published)) + '\n'
+            event_flags.update(published)
     if mode is None:
         blockers.append({'rule': 'mode placement', 'file': world})
     else:

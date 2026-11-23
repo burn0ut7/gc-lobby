@@ -1044,7 +1044,7 @@ def render_controlled_event(key, name, term, actions, captures, capture_messages
     return [*result, '     }', '    }']
 
 
-def render_capture_trackers(world, tracked_areas, captures, capture_messages):
+def render_capture_trackers(world, tracked_areas, captures, capture_messages, published_flags=()):
     lines = []
     for flag, name in sorted(tracked_areas.items()):
         key = world + '/capture tracker/' + flag
@@ -1053,7 +1053,10 @@ def render_capture_trackers(world, tracked_areas, captures, capture_messages):
                       '     m_aConditions {', *check, '     }', '     m_aActions {',
                       f'      GC_MessageAction "{{{guid(key + "/log")}}}" {{',
                       f'       m_sMessage "{name}"', '       m_iDelivery 2',
-                      '      }', '     }', '    }'])
+                      '      }'])
+        if flag in published_flags:
+            lines.extend(render_flag_write(key + '/flag', flag))
+        lines.extend(['     }', '    }'])
     return lines
 
 
