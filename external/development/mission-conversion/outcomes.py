@@ -1744,6 +1744,12 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         fields = body[i + 1:block_end(body, i)]
         loc = event_origins.get(i, f'{path}:{i + base + 2}')
         fields, omitted_cleanup = remove_late_cleanup(fields, late_cleanup_refs, cleanup_names)
+        villa_match_markers = (compound and event[1] == '66EC03365DFFC751'
+                               and source.files[path] == '3cf1bfd80d2ccf4d78ad37e074c6ef6759db894e'
+                               and 'EscapeBlufor' in event_flags)
+        if villa_match_markers:
+            # Both verified writers fire in Match and set the flag after ten seconds.
+            fields = [field for field in fields if field != '   m_pregameEvent 1']
         label = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
         if supplemental and i not in event_origins and label != '"SetupTimer"':
             # The props placement owns the shared flag set in the legacy scene.
@@ -1808,7 +1814,8 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 redundant_clears=redundant_clears,
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
-            if not term.get('pregameSample') and any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):
+            if villa_match_markers or (not term.get('pregameSample') and any(
+                    leaf.get('flag') in match_only_flags for leaf in leaves(term))):
                 term['requiresMatch'] = True
             suffixes = {f' ({delay:f}s)' for delay in actions}
             if not suffixes and term['trigger'] == 'Match start':

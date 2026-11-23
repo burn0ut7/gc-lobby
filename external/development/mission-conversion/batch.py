@@ -299,10 +299,15 @@ GMFX_PROVIDER = 'GameMasterFX_5994AD5A9F33BE57'
 GMFX_DIGEST = '09a2e7a14300b916b1eaea43446d39d1d3334209e692e50d29406233962f7c80'
 COBRA_PROVIDER = 'WCS_AH-1S_64CB39E57377C861'
 COBRA_DIGEST = '683b318ce93cabf75ae5b3b2fe0a1ce49f30e76a693e3c959e353a6bc51da3f4'
+COBRA_DAMAGE_PARENT = ('56E88FE5DDF6AA12', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Base.et')
+HIND_PROVIDER = 'WCS_Mi-24V_628933A0D3A0D700'
+HIND_DIGEST = 'dd565719ee18758cc875dca490b3d05dd19a002df0a1a4e4af90767d9e91b4f8'
+HIND_DAMAGE_PARENT = ('65ED07118C75B32F', 'Prefabs/Vehicles/Helicopters/Mi24/Mi24V_Armed_UPK23_X2.et')
 GMFX_AP_MINE = ('E1BBAB7F28FE8B0B', 'Prefabs/Systems/Mines/Mine_AP.et')
 DEPLOYED_PARACHUTE = ('9ADD554959C09197', 'Prefabs/DeployedParachutes/Core/DeployedParachuteMK4.et')
 WORKSHOP_DAMAGE_TARGETS = {
-    COBRA_PROVIDER: (COBRA_DIGEST, (('56E88FE5DDF6AA12', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Base.et'),)),
+    COBRA_PROVIDER: (COBRA_DIGEST, (COBRA_DAMAGE_PARENT,)),
+    HIND_PROVIDER: (HIND_DIGEST, (HIND_DAMAGE_PARENT,)),
     'WCS_M2A2_63120AE07E6C0966': (
         '7544977a28637283cf8ae8830f4efeaba71688b06efc872c79344c7f0263a121',
         (('25BDE6AB2921AB8A', 'Prefabs/Vehicles/Tracked/M2A2/M2A2_BUSK_OD.et'),),
@@ -332,6 +337,10 @@ WORKSHOP_DAMAGE_TARGETS = {
     ),
 }
 WORKSHOP_SPAWN_PREFABS = {
+    'WCS_Armaments_629B2BA37EFFD577': (
+        '11a4b537297275db86e7b2773df7770b893d5d1f1d5d11ad928d4fbc141a072e',
+        (('962C400354E4BD6C', 'Prefabs/Weapons/Launchers/9K38_IGLA/Launcher_9K38_IGLA.et'),),
+    ),
     'ParachuteFramework_65930CB4CD0237B2': (
         'ccb22523ba0040cb9d9206a7ab0ae7e5b4411b1704bde39e3e4a7953416e3042',
         (DEPLOYED_PARACHUTE,),
@@ -2046,6 +2055,8 @@ REVIEWED_SPAWNED_MARKERS = {
         '8246d5e01642372cc3e1e71714c846059d5ee937e6abf54f0d75f33e8380131e',
     'worlds/FloridaMan/Prefabs/Setpeice/opfor_notice_marker.et':
         '219df188327c2f3a4b1ff82b6efa0e81e3775f4f68a44877d51a902e5e86c4c5',
+    'worlds/HitTheMan/Stealthing Into Villa/Prefab/IglaMarkerV4.et':
+        'e72a1e4b722ee7d53311090cbeb05283315b39edf096f6e3b51eafa17c0d82e9',
 }
 BULGES_RED_MATERIAL = (
     '196D8860670DE1B9',
@@ -2803,17 +2814,18 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
     layers = source.layers[world.lower()]
     for path in layers:
         text = source.read(path)
-        if 'TILW_Flag_EntityDamage' not in text:
+        aircraft_layer = REVIEWED_AIRCRAFT_LAYERS.get(path)
+        if 'TILW_Flag_EntityDamage' not in text and not aircraft_layer:
             continue
         for line, block in blocks(text):
             location = f'{path}:{line}'
-            if path == BEACH_HOLIDAY_BLUE and source.files[path] == BEACH_HOLIDAY_BLUE_BLOB:
+            if aircraft_layer and source.files[path] == aircraft_layer[0]:
                 ref = REF.search(block[0])
-                asset = BEACH_HOLIDAY_AIRCRAFT.get(ref[2]) if ref else None
-                cobra_parent = ('56E88FE5DDF6AA12', 'Prefabs/Vehicles/Helicopters/AH1S/AH1S_Base.et')
+                asset = REVIEWED_AIRCRAFT.get(ref[2]) if ref and ref[2] in aircraft_layer[2] else None
+                parent = aircraft_layer[1]
                 if (asset and asset[1] and source.resources.get(ref[1]) == [ref[2]]
-                        and source.files.get(ref[2]) == asset[0] and cobra_parent in workshop_targets
-                        and all(cobra_parent[0] not in resources for resources in
+                        and source.files.get(ref[2]) == asset[0] and parent in workshop_targets
+                        and all(parent[0] not in resources for resources in
                                 (local_resources, source_units.resources, dev_units.resources))):
                     native = native_placement(block)
                     if native:
@@ -3169,10 +3181,19 @@ BEACH_HOLIDAY_APARTMENT = BEACH_HOLIDAY_LAYERS + 'AI_Defenders/AI_Defenders_Apar
 BEACH_HOLIDAY_APARTMENT_BLOB = '444b585fc7ff80c8809ec566141476b9a244b087'
 BEACH_HOLIDAY_BLUE = BEACH_HOLIDAY_LAYERS + 'BLUFOR_Players/BLUFOR_Players.layer'
 BEACH_HOLIDAY_BLUE_BLOB = '2cdfdee7c12327f6e112cd50461a96f2b8b68bc8'
-BEACH_HOLIDAY_AIRCRAFT = {
+VILLA = 'worlds/HitTheMan/Stealthing Into Villa/'
+VILLA_HIND = VILLA + 'Prefab/Mi24V_armed_UPK1_HTM.et'
+VILLA_OPFOR = VILLA + 'StealthingIntoVilla_Layers/OPFOR_Players/OPFOR_Players.layer'
+REVIEWED_AIRCRAFT = {
     BEACH_HOLIDAY + 'Prefab/AH1S_Marines_AIM9_Limited_HTM.et': ('c02db5fafc059fa494a8a087e89dc3ec345b8f01', 'AH1S_1'),
     BEACH_HOLIDAY + 'Prefab/AH1S_Marines_M299_Limited_HTM2.et': ('5a34a85fea8f47f53f2caa01f2bf8aef1a2751af', 'AH1S_2'),
     BEACH_HOLIDAY + 'Prefab/Mi24P_armed_R60_NOATGM_HTM.et': ('719366cae8992154dbdd7c72f74ac22318904a40', None),
+    VILLA_HIND: ('193c535e8cb1e6bc8bb41f308bb1e4b749d4cc20', 'HindDestroyed'),
+}
+REVIEWED_AIRCRAFT_LAYERS = {
+    BEACH_HOLIDAY_BLUE: (BEACH_HOLIDAY_BLUE_BLOB, COBRA_DAMAGE_PARENT,
+                        {path for path in REVIEWED_AIRCRAFT if path.startswith(BEACH_HOLIDAY)}),
+    VILLA_OPFOR: ('5daa19731dbdcc75bd45833e0f17285b384dbe2a', HIND_DAMAGE_PARENT, {VILLA_HIND}),
 }
 REVIEWED_AREA_FLAG_WRITERS = {
     BEACH_HOLIDAY_DEFAULT: (BEACH_HOLIDAY_DEFAULT_BLOB, {'Factory': 1}),
@@ -3621,7 +3642,7 @@ def passive_asset(source, path):
     if (path.startswith(STASHED_CACHE_PREFABS + STASHED_CACHE_COMMAND)
             and (PurePosixPath(path).name, source.files[path]) in STASHED_CACHE_COMMAND_ROLES.values()):
         return source.read(path)
-    if (aircraft := BEACH_HOLIDAY_AIRCRAFT.get(path)) and source.files[path] == aircraft[0]:
+    if (aircraft := REVIEWED_AIRCRAFT.get(path)) and source.files[path] == aircraft[0]:
         body = source.read(path)
         if aircraft[1]:
             lines, flag = damage_state_flag_placement(body.splitlines(), allow_multiple_states=True)
@@ -5033,7 +5054,7 @@ def reviewed_spawn_type(source, resource, path, types):
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
                  resolve_crew_config=None, shadowed_names=(), missing_waypoints=(), self_waypoints=(),
                  capture_latches=None, single_draw_flags=(), derived_conditions=None, dormant_flags=(), allow_bare=False,
-                 local_files_markers=False, grouped_actions=None, shared_schedule=None):
+                 local_files_markers=False, grouped_actions=None, shared_schedule=None, startup_sample_flags=()):
     root = placed_spawner_root(block[0], allow_bare)
     if not root:
         raise ValueError('unverified placed spawner prefab')
@@ -5098,7 +5119,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             raise ValueError('invalid placed spawner phase')
         flag = data.get('m_conditionFlag', '""')
         if (pregame == '1' and flag != '""'
-                and (not re.fullmatch(FLAG_NAME, flag) or flag[1:-1] not in single_draw_flags)):
+                and (not re.fullmatch(FLAG_NAME, flag) or flag[1:-1] not in startup_sample_flags)):
             raise ValueError('pregame spawner needs a verified pregame flag producer')
         if 'scale' in data and (not isfinite(scale := float(data['scale'])) or scale <= 0):
             raise ValueError('spawner scale must be positive and finite')
@@ -5227,6 +5248,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
             audit[-1]['allowsDuplicateSpawnName'] = True
         if flag[1:-1] in single_draw_flags:
             audit[-1]['startupChoice'] = flag[1:-1]
+        elif startup_delay and flag[1:-1] in startup_sample_flags:
+            audit[-1]['startupSample'] = flag[1:-1]
         if 'scale' in data:
             audit[-1]['anchorScale'] = data['scale']
         if absent:
@@ -5278,7 +5301,7 @@ def shadowed_crew_names(source, world, layers):
 
 
 def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, blockers, resolve_crew, resolve_crew_config,
-                   single_draw_flags, derived_conditions, area_placements):
+                   single_draw_flags, derived_conditions, area_placements, *, startup_sample_flags):
     placements, schedules, audit = {}, [], []
     attached = defaultdict(list)
     layers = {path: text for path in source.layers[world.lower()]
@@ -5317,6 +5340,7 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                         source=source, resolve_crew_config=resolve_crew_config, shadowed_names=shadowed,
                         missing_waypoints=missing_waypoints, self_waypoints=self_waypoints,
                         capture_latches=capture_latches, single_draw_flags=single_draw_flags,
+                        startup_sample_flags=startup_sample_flags,
                         derived_conditions=derived_conditions, dormant_flags=dormant,
                         local_files_markers=source.files[layer] == LOCAL_FILES_SPAWNER_LAYERS.get(layer),
                         allow_bare=(layer, source.files[layer]) in REVIEWED_BARE_SPAWNER_LAYERS,
@@ -5474,7 +5498,7 @@ def resource_aliases(workshop, units, stock):
             if reference in registered_collimators:
                 aliases[resource, collimator_prefix + old] = reference
         hind_path = 'Prefabs/Vehicles/Helicopters/Mi24/'
-        hind = ('65ED07118C75B32F', hind_path + 'Mi24V_Armed_UPK23_X2.et')
+        hind = HIND_DAMAGE_PARENT
         hind_refs = (hind, ('A8C732BE755F8BD0', hind_path + 'Mi24V_Base.et'),
                      ('8FCC897602A4BEB1', hind_path + 'VehParts/Weapons/Mi24V_Turret_9M120_X4.et'))
         transport_variants = {
@@ -5482,8 +5506,8 @@ def resource_aliases(workshop, units, stock):
             'Mi24V_transport.et': ('F889C67BFCAD2CF7', hind_path + 'Mi24V_Transport.et'),
         }
         registered = workshop_resources(workshop, {
-            'WCS_Mi-24V_628933A0D3A0D700': (
-                'dd565719ee18758cc875dca490b3d05dd19a002df0a1a4e4af90767d9e91b4f8',
+            HIND_PROVIDER: (
+                HIND_DIGEST,
                 (*hind_refs, *transport_variants.values())),
         })
         if set(hind_refs) <= registered:
@@ -7155,6 +7179,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     draw_by_flag = {flag: index for index, sample in enumerate(startup_samples) if sample['drawCount'] == 1
                     for flag in sample['flags']}
     single_draw_flags = set(draw_by_flag)
+    startup_sample_flags = {flag for sample in startup_samples for flag in sample['flags']}
     cleared_event_flags = {action['clearsFlag'] for event in rules.values() for action in event.get('convertedActions', [])
                            if 'clearsFlag' in action and not action.get('reviewedExternalFlagClear')}
     required_event_flags = {term['flag'] for term in terms if term['trigger'] == 'event flag'} | cleared_event_flags
@@ -7173,7 +7198,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         spawners, schedules, spawner_audit, attached = world_spawners(source, world, resolve_spawn, captures,
                                                            set(objective_flags) | event_flags | shared_flags, used_flags, blockers,
                                                            resolve_crew, resolve_crew_config, single_draw_flags,
-                                                           outcome.get('derivedSpawnerConditions'), area_placements)
+                                                           outcome.get('derivedSpawnerConditions'), area_placements,
+                                                           startup_sample_flags=startup_sample_flags)
         for location, (checks, areas) in area_placements.items():
             layer, line = location
             area_lines = areas.splitlines()
@@ -8261,7 +8287,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(event.get('startupVehicles') for event in rules.values()):
         remaining.append('Compare pregame vehicle placement, crew seating and delays across the transition to Match.')
     if outcome.get('startupSamples'):
-        if any(spawn.get('startupInitializationSeconds') and spawn['startupChoice'] for spawn in prefab_spawns):
+        if any(spawn.get('startupSample') for spawn in prefab_spawns):
+            remaining.append('Compare the startup draws and verify each selected spawn in its authored phase.')
+        elif any(spawn.get('startupInitializationSeconds') and spawn['startupChoice'] for spawn in prefab_spawns):
             remaining.append('Compare the single startup draw and verify each selected spawn in its authored phase.')
         else:
             remaining.append('Compare startup flag draws and verify selected events activate only in Match.')
