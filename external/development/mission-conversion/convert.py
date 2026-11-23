@@ -623,8 +623,9 @@ def main():
                                            'TILW_PrefabSpawnerEntity')):
             spawned = batch.spawned_objectives(source, dev, world, stock, locally_owned, workshop_damage_resources,
                                                rhs=rhs_database)
+            spawned.update(batch.reviewed_villa_escape(source, dev, world))
             if spawned:
-                asset_flags = [item['flag'] for item in spawned.values()]
+                asset_flags = [item['flag'] for item in spawned.values() if 'flag' in item]
                 if (len(asset_flags) != len(set(asset_flags)) or set(asset_flags) & set(objective_flags)
                         or objectives.keys() & spawned.keys()):
                     row.setdefault('interactionCandidate', {})['spawnedObjectives'] = {
@@ -632,6 +633,7 @@ def main():
                 else:
                     objectives.update(spawned)
                     objective_flags = set(objective_flags) | set(asset_flags)
+                    bound_area_flags.update(item['flag'] for item in spawned.values() if item.get('boundArea'))
                     batch_interactions[world] = (objective_flags, interaction_placements)
                     spawned_assets[world] = objectives
                     row.setdefault('interactionCandidate', {})['spawnedObjectives'] = {

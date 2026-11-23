@@ -3184,6 +3184,12 @@ BEACH_HOLIDAY_BLUE_BLOB = '2cdfdee7c12327f6e112cd50461a96f2b8b68bc8'
 VILLA = 'worlds/HitTheMan/Stealthing Into Villa/'
 VILLA_HIND = VILLA + 'Prefab/Mi24V_armed_UPK1_HTM.et'
 VILLA_OPFOR = VILLA + 'StealthingIntoVilla_Layers/OPFOR_Players/OPFOR_Players.layer'
+VILLA_DEFAULT = VILLA + 'StealthingIntoVilla_Layers/default.layer'
+VILLA_DEFAULT_BLOB = '3cf1bfd80d2ccf4d78ad37e074c6ef6759db894e'
+VILLA_ESCAPE_TRIGGER = ('D344EE6C304890DD', VILLA + 'Prefab/BluforEscapeTrigger.et',
+                        'dcf0f545b012295af1641e6ed3a96017220c8443')
+VILLA_ESCAPE_BOUNDARY = ('80437C58E91B0A3E', VILLA + 'Prefab/AO_Draw_Escape_BLU_Prefab.et',
+                         'c90046ff90d0690c0e1aa7f5ed64578d9fe6eff1')
 VILLA_CONVOY_LAYER = VILLA_OPFOR.replace('OPFOR_Players.layer', 'FIA_RandomizedTrucks.layer')
 VILLA_CONVOY_LAYER_BLOB = '8b538f02ffd668927c84e6d50c593e74e63cb9f8'
 VILLA_CONVOY_PREFABS = VILLA + 'Prefab/QRF Relief Convoy/'
@@ -4694,6 +4700,52 @@ def authored_spawn_references(source, world):
                 continue
 
 
+def reviewed_villa_escape(source, dev, world):
+    if (VILLA_DEFAULT not in source.layers[world.lower()]
+            or source.files.get(VILLA_DEFAULT) != VILLA_DEFAULT_BLOB):
+        return {}
+    refs = Counter((resource, path) for resource, path, _ in authored_spawn_references(source, world))
+    for resource, path, blob in (VILLA_ESCAPE_TRIGGER, VILLA_ESCAPE_BOUNDARY):
+        if (source.files.get(path) != blob or source.resources.get(resource) != [path]
+                or dev.resources.get(resource) not in (None, [path]) or refs[resource, path] != 1):
+            return {}
+    closure = '\n'.join(source.read(path) for path in sorted(source.closure(world))
+                        if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
+    scripts = script_text(source)
+    if (closure.count('"BluforEscaped"') != 3 or literal_flag_reads(closure, 'BluforEscaped') != 2
+            or 'BluforEscaped' in scripts or any(api in scripts for api in SCRIPT_FLAG_APIS)):
+        return {}
+    resource, path, _ = VILLA_ESCAPE_TRIGGER
+    legacy = source.read(path).splitlines()
+    component_end = block_end(legacy, 2)
+    checks, area, details = capture_instance(path, 'EscapeAOTrigger', [' coords 0 0 0', *legacy[component_end+1:-1]])
+    flag, condition = next(iter(checks.items()))
+    observer = render_area_flag_observer(path, 'EscapeAOTrigger', flag, condition, details['stopsAfterFirstChange'])
+    observer[0] = observer[0].replace('GC_AreaFlagObserver ', 'm_Observer GC_AreaFlagObserver ', 1)
+    component = [f'  GC_BoundAreaFlagComponent "{{{guid(path + "/bound area")}}}" {{',
+                 *(line[1:] for line in observer), '  }']
+    native = area.splitlines()
+    native[1:1] = [legacy[1], *legacy[2:component_end], *component, legacy[component_end]]
+    assets = {resource: {'path': path, 'body': '\n'.join(native) + '\n', 'flag': flag[1:-1],
+                         'boundArea': True, 'audit': details}}
+
+    resource, path, _ = VILLA_ESCAPE_BOUNDARY
+    legacy = source.read(path).splitlines()
+    fields = '\n'.join(legacy[2:-1])
+    # The disabled editor-only cover contributes no framing. The native AO supplies replication.
+    fields = fields.replace('  TILW_CoverMapComponent "{66EC24A8B99D8E4D}" {\n   Enabled 0\n  }\n', '')
+    fields = fields.replace('  RplComponent "{66EC24A8B99D8E81}" {\n   Streamable Disabled\n  }\n', '')
+    rendered, count = convert_boundary_instance(fields.splitlines(), '', extended_shapes=True, standalone=True, bare=True)
+    overlay, limit = (block for _, block in blocks(rendered))
+    if count != 32 or not limit[0].startswith('GC_AOLimitEntity '):
+        raise ValueError('Villa escape boundary needs the reviewed 32-point limit and its map overlay')
+    # Both drawings share the AO entity, transform and lifetime.
+    limit[2:2] = overlay[2:block_end(overlay, 1)]
+    limit.insert(1, legacy[1])
+    assets[resource] = {'path': path, 'body': '\n'.join(limit) + '\n'}
+    return assets
+
+
 def spawned_objectives(source, dev, world, stock, local_resources, workshop_targets=(), *, rhs=None):
     """Identify mission-owned objective prefabs referenced by a standard spawn."""
     reviewed = {}
@@ -5194,6 +5246,10 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         if pregame not in ('0', '1'):
             raise ValueError('invalid placed spawner phase')
         flag = data.get('m_conditionFlag', '""')
+        if (location == VILLA_DEFAULT + ':4128' and source.files.get(VILLA_DEFAULT) == VILLA_DEFAULT_BLOB
+                and flag == '"Sirens"' and 'Sirens' in flags):
+            # Both writers are Match events with a ten-second delay, after legacy spawner initialization.
+            pregame = '0'
         if (pregame == '1' and flag != '""'
                 and (not re.fullmatch(FLAG_NAME, flag) or flag[1:-1] not in startup_sample_flags)):
             raise ValueError('pregame spawner needs a verified pregame flag producer')
