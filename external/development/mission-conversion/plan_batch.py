@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 from dependencies import database_project, installed_version
-from review import known_compile_failure, known_zagoria_failure
+from review import COBRA_WORLD, cobra_aircraft_loadout_changes, known_compile_failure, known_zagoria_failure
 from scenery import StockPrefabs
 from vehicle_crew import ZAGORIA_BMP2
 
@@ -232,10 +232,16 @@ def historical_provider_candidates(plan, roots, base):
         compile_failure = known_compile_failure(base, [database])
         if compile_failure:
             runtime_blocked = matched
+        cobra_references = {ref for ref in matched if COBRA_WORLD in drafts.get(ref, ())}
+        loadout_changes = cobra_aircraft_loadout_changes([database], {ref[1:17] for ref in cobra_references})
+        changed_references = {ref: loadout_changes[ref[1:17]] for ref in sorted(cobra_references)
+                              if ref[1:17] in loadout_changes}
+        usable_matches = matched - runtime_blocked
         exact_worlds = {world for ref in matched for world in drafts.get(ref, ())}
         conversion_worlds = {world for ref in matched for world in conversion.get(ref, {}).get('worlds', ())}
-        sole_conversion = {world for ref in matched - runtime_blocked
-                           for world in conversion.get(ref, {}).get('onlyReportedBlocker', ())}
+        sole_conversion = {world for ref in usable_matches
+                           for world in conversion.get(ref, {}).get('onlyReportedBlocker', ())
+                           if world != COBRA_WORLD or ref not in changed_references}
         review_worlds = {world for entry in alternates for world in (
             *drafts.get(entry['reference'], ()), *conversion.get(entry['reference'], {}).get('worlds', ()))}
         candidates.append({
@@ -246,8 +252,10 @@ def historical_provider_candidates(plan, roots, base):
             'alternateRegistrations': alternates, 'reviewWorlds': sorted(review_worlds),
             **({'reviewedSuccessors': successors} if successors else {}),
             'runtimeBlockedReferences': sorted(runtime_blocked),
+            **({'loadoutChanges': changed_references} if changed_references else {}),
             **({'runtimeFailure': compile_failure} if compile_failure else {}),
-            'onlyMissingPackage': sorted(world for world in exact_worlds if held[world] <= matched - runtime_blocked),
+            'onlyMissingPackage': sorted(world for world in exact_worlds if held[world] <= usable_matches
+                                         and (world != COBRA_WORLD or not held[world] & changed_references.keys())),
         })
     return sorted(candidates, key=lambda row: (
         -len(row['onlyMissingPackage']), -len(row['onlyReportedConversionBlocker']),
@@ -646,7 +654,7 @@ def markdown(plan):
         lines.extend(['', '## Historical addon versions for missing resources', '',
                       'Package coverage counts exact resource IDs and paths. '
                       'Alternate registrations require asset comparison. '
-                      'Exact matches with a verified runtime failure are excluded from package coverage. '
+                      'Exact matches with a verified runtime failure or loadout change are excluded from package coverage. '
                       'Audit the full dependency graph with the selected version before delivery.', '',
                       '| Addon | Version | Drafts with all blockers covered | Drafts with exact matches | Blocked conversions with exact matches | Alternatives to verify |',
                       '| --- | --- | ---: | ---: | ---: | ---: |'])
@@ -657,6 +665,8 @@ def markdown(plan):
         for entry in archives:
             for reference in entry['runtimeBlockedReferences']:
                 lines.extend(['', f"- `{entry['addonId']} {entry['version']}` · `{reference}` failed runtime verification."])
+            for reference, change in entry.get('loadoutChanges', {}).items():
+                lines.extend(['', f"- `{entry['addonId']} {entry['version']}` · `{reference}` · {change}"])
             for alternate in entry['alternateRegistrations']:
                 label = f"`{entry['addonId']} {entry['version']}` for `{alternate['reference']}`"
                 details = [f"original ID at `{path}`" for path in alternate['sameIdPaths']]

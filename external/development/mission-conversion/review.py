@@ -37,6 +37,10 @@ ZAGORIA_DRIVETRAIN_FAILURE = {
 }
 ENGINE_19037_DATABASE = 'd65ebb14b5c9b2baaef1dfafd9b653f51a6ce11f9815585cf8b5ada88dd4e58a'
 COMPILE_FAILURES_19037 = {
+    'WCS_Armaments_629B2BA37EFFD577': (
+        'WCS Armaments 6.0.24',
+        {'data.pak': 'ce1edb7c83a1ed9674aed86fa48ab175d92053f58dda23d99c89abb43fb9faad'},
+    ),
     'ChungusBoltGuns_61BD6595183FCEBD': (
         'Chungus Bolt Guns 1.0.57',
         {'data.pak': 'd262083e654a4d4952b88c901d257377de03329b6df0c7204359dcc8a38e5550'},
@@ -46,6 +50,30 @@ COMPILE_FAILURES_19037 = {
         {
             'data.pak': 'a67d244ff2c39d54e8e125ed99cae9414b08f5fd63e9c0330509651a5788aca0',
             'data001.pak': 'b46102f727ff78598ced30ce669ce0c4c9ca015ceb844dc4c64cc1014e8b3ca8',
+        },
+    ),
+}
+COBRA_WORLD = 'worlds/Jub/CobrasBite/Cobras_bite.ent'
+COBRA_AIRCRAFT_LOADOUT_CHANGES = {
+    'SagesAH1Z_68981B7716C2E9DB': (
+        {
+            '490351706cbc4f2c31263a2e5c05a6b9cd352cc70962a99521731a8703ad358d',
+            '14c35b47bc5dfd865feb3529339c97b0e2b934d9ddb9a26c15b49e64485a3789',
+        },
+        {
+            '10340BBEDA1F26E8': 'The AH-1Z M299 variant changes from sixteen BGM-71 missiles to eight AGM-114Ks.',
+            '124BF96EFF7BDEB0': 'The AH-1Z rocket variant changes from 76 M229 rockets to 52 mixed M229 and M247 rockets.',
+        },
+    ),
+    'SagesUH1Y_691955E004F3DD9C': (
+        {
+            'a9ede14af4b300c37a89abcb3bb816ea3a852a5cf8591181656b27dd58ea8b7c',
+            '5a8a485a45d368181aa15042140900f41e13a2af1af5ca2649b03d75640f7f30',
+            'c052d3031a44e3bd0273fcfe514eddf540fb2af7fb86116f7060ce63d88a882a',
+            'a7c19f5b36f79301ef184d32a348df456cd75da6e611141e9de26f9873cb5222',
+        },
+        {
+            '6F57BF4E759DF6DF': 'The UH-1Y removes the authored WCS rocket station and changes the flight HUD bindings.',
         },
     ),
 }
@@ -124,6 +152,22 @@ def known_compile_failure(stock, providers):
     return None
 
 
+def cobra_aircraft_loadout_changes(providers, references):
+    changes = {}
+    for database in providers:
+        spec = COBRA_AIRCRAFT_LOADOUT_CHANGES.get(database.parent.name)
+        if not spec:
+            continue
+        digests, differences = spec
+        affected = differences.keys() & references
+        archive = database.with_name('data.pak')
+        if affected and archive.is_file():
+            with archive.open('rb') as package:
+                if file_digest(package, 'sha256').hexdigest() in digests:
+                    changes.update({guid: differences[guid] for guid in affected})
+    return changes
+
+
 def verified_metsala_navigation(snapshot, world):
     if (world != METSALA_WORLD or METSALA_AI_LAYER not in snapshot.layers[world.lower()]
             or snapshot.files.get(METSALA_AI_LAYER) != METSALA_REBUILT_AI_LAYER):
@@ -187,7 +231,7 @@ def inspect(snapshot, paths):
 
 
 def compare_mission(source, target, header, notes, dependencies, stock, unresolved=None, longmoor=False,
-                    provider_issue=None, zagoria_failure=None):
+                    provider_issue=None, zagoria_failure=None, resource_changes=None):
     issues = [provider_issue] if provider_issue else []
     try:
         world, resource, _ = launcher(source, target, header)
@@ -240,6 +284,8 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
         issues.append('Mission-owned resource identities or paths need review')
     if missing:
         issues.append('Unresolved external resource references')
+    if world == COBRA_WORLD and resource_changes:
+        issues.extend(resource_changes[guid] for guid in sorted({guid for guid, _ in refs} & resource_changes.keys()))
     failed_vehicle_refs = []
     if zagoria_failure:
         for owner in sorted(refs.get(ZAGORIA_BMP2, ())):
@@ -664,6 +710,8 @@ def main():
                     zagoria_failure = known_zagoria_failure(stock, chosen_providers)
                 if pins and not provider_issue:
                     provider_issue = known_compile_failure(stock, chosen_providers)
+                resource_changes = cobra_aircraft_loadout_changes(
+                    chosen_providers, {guid for guid, _ in references})
                 for header in group:
                     terrain_issue = None
                     if not provider_issue and pins:
@@ -673,7 +721,7 @@ def main():
                             terrain_issue = known_terrain_failure(stock, chosen_providers, parent_refs, target, world)
                     issue = provider_issue or terrain_issue
                     missions[header] = compare_mission(source, target, header, notes, chosen_dependencies, stock,
-                                                       unresolved, longmoor, issue, zagoria_failure)
+                                                       unresolved, longmoor, issue, zagoria_failure, resource_changes)
                     if pins and not issue:
                         missions[header]['auditedAddonVersions'] = dict(pins)
         except (OSError, ValueError) as exc:
