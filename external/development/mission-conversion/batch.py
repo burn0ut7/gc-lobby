@@ -16,6 +16,9 @@ from boundaries import (ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_
                         convert_child_outline, passive_shape_component)
 from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import OBSOLETE_NAVMESH, REF, SOURCE_TEXT, VEHICLE_LINK
+from commandos import (MODE_LAYER as COMMANDOS_MODE_LAYER, OBJECTIVES_LAYER as COMMANDOS_OBJECTIVES_LAYER,
+                       WORLD as COMMANDOS_WORLD, audit_objectives as audit_commandos_objectives,
+                       objective_flags as commandos_objective_flags)
 from event_actions import (FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, VEHICLE_SPAWN,
                            render_crew_config, render_spawn, spawn_details)
 from vehicle_crew import (BMP1_PARENT, BMP1_TURRET_PARENT, CREW_CONFIG_FIELD, FLORA_CREW_CONFIG, MISSION_BMP1,
@@ -2213,7 +2216,6 @@ def startup_cleanup(block, *, preserve_children=False):
     return '\n'.join([*output, ''])
 
 
-COMMANDOS_OBJECTIVES_LAYER = 'worlds/arc/CommandosReforged/CommandosReforged_Layers/objectives.layer'
 COMMANDOS_OBJECTIVES_BLOB = 'c173a7dc7e159bccc8c9764500392838742b7316'
 COMMANDOS_BLACK_HAWK = 'worlds/arc/CommandosReforged/Prefabs/Blackhawk_OBJ.et'
 COMMANDOS_BLACK_HAWK_PARENT = ('1529FD2C6A8162A1', 'Prefabs/Vehicles/Helicopters/AUS_MH60/AUS_UH60_Pylon_Quad_Hydra.et')
@@ -2223,11 +2225,6 @@ COMMANDOS_DEFAULT_MARKER = 'worlds/arc/CommandosReforged/Prefabs/Marker_Any.et'
 COMMANDOS_INTERACTION = 'worlds/arc/CommandosReforged/Prefabs/Objective_Interact.et'
 COMMANDOS_INTERACTION_BLOB = '3da7cdb4a2c03e31897fffb8b254c2b497a09bc1'
 COMMANDOS_INTERACTION_COMPONENT = guid('Commandos/Objective_Interact/component')
-
-
-def commandos_objective_flags(name):
-    key = guid('Commandos/objective/' + name)
-    return f'Commandos_{key}_Active', f'Commandos_{key}_Complete'
 
 
 def commandos_interactions(block):
@@ -7669,6 +7666,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 faction_assets=None, archived_crew=None):
     draft, blockers = {}, []
     reviewed_replacements = {}
+    commandos_objectives = None
     if row.get('playtestCandidate') or row.get('raceConversion'):
         return {}, {'status': 'explicit recipe'}
     if not row['headers']:
@@ -8278,6 +8276,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if mode is None:
         blockers.append({'rule': 'mode placement', 'file': world})
     else:
+        if world == COMMANDOS_WORLD and mode_index[0] == COMMANDOS_MODE_LAYER:
+            try:
+                commandos_objectives = audit_commandos_objectives(source, mode)
+            except ValueError as exc:
+                blockers.append({'rule': 'Commandos objective authoring', 'file': COMMANDOS_MODE_LAYER,
+                                 'detail': str(exc)})
         if route_flags != route_observers.keys():
             blockers.append({'rule': 'route scoring', 'file': world,
                              'detail': 'not all route scoring area observers could be placed'})
@@ -9030,6 +9034,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         **({'reviewedReplacements': reviewed_replacements} if reviewed_replacements else {}),
         **({'unusedRandomFlags': unused_flags} if unused_flags else {}),
         **({'placedSpawners': spawner_audit} if spawner_audit else {}),
+        **({'commandosObjectives': commandos_objectives} if commandos_objectives else {}),
         **({'remainingBehavior': remaining} if remaining else {}),
     }
 
