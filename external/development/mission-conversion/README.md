@@ -18,14 +18,14 @@ Use the batch workflow for the catalog. The same rules process every legacy laun
 
 The audit at local Missions Dev `7e9c7ce8` with Units Dev `95f6c363` clears 267 of the 277 published launchers on files. All 267 have native snapshots and exported portable manifests. The ten remaining launchers have generated drafts held on 34 distinct external resource references. The generated `plan.md` lists each held launcher and any file-cleared launchers awaiting a snapshot. Its `plan.json` records file issues and source locations under `remainingLaunchers`. Review shared providers as a group, then use representative Match checks for each affected behavior family.
 
-| Launchers | Remaining blocker |
-| --- | --- |
-| Abad Day in Kunar US TVT, Heaven and Hell, Hot Boxes | The original 1998 DCU rifleman parent is unavailable. Kunar also needs the two 2004 Humvee variants. Hot Boxes still needs the retired DCU rifle squad. |
-| Al Hadra Rumble, Nagalam Traffic Jam, Rocky Road | Retired Gulf War vehicle assets block the drafts or their damage objectives. Al Hadra's original tan TIGR is registered in a package that fails current-engine compilation. Nagalam also needs related vehicle parts and equipment. |
-| Syrian Checkpoint | The original SAA jacket and trousers are missing. The trousers are storage destinations for five roles. Prontos Brit Kit 1.2.47 resolves the authored cap. |
-| Cobra’s Bite | The archived aircraft load on the current engine with isolated compatibility aliases. The BGM-71 guidance, launch and collision behavior, cockpit input and automatic flare response still differ or need verification. |
-| Factory Siege Redux | The original woodland forward observer is unavailable. The published group stalls after its first two agents and never enables its playable roles. Removing the reference makes four roles playable and changes the roster. |
-| Gull Bay Guns | RHS 0.7.2265 contains the original EMR squad leader. Its archive fails to compile on the current engine. The role and weapon need a compatible provider. |
+| Launchers | Original provider or source lead | Remaining blocker |
+| --- | --- | --- |
+| Abad Day in Kunar US TVT, Heaven and Hell, Hot Boxes | Reforged Army Studios Early 2000s US Military, `60B134EF0216CF4D`. Expanded US Military is the vehicle lead for Kunar. | The original 1998 DCU rifleman parent is unavailable. Kunar also needs the two 2004 Humvee variants. Hot Boxes still needs the retired DCU rifle squad. |
+| Al Hadra Rumble, Nagalam Traffic Jam, Rocky Road | Reforged Army Studios Expanded US Military, `633A0D1A01943BD8`, is the lead for the Gulf War vehicles. Tactical Flava 1.3.5, `5D550926D43F1409`, registers Al Hadra's tan TIGR. | Retired vehicles block the drafts or their damage objectives. The Tactical Flava archive fails current-engine compilation. Nagalam also needs related parts and equipment. |
+| Syrian Checkpoint | Reforged Army Studios Early 2000s US Military, `60B134EF0216CF4D`. | The original SAA jacket and trousers are missing. The trousers are storage destinations for five roles. Prontos Brit Kit 1.2.47 resolves the authored cap. |
+| Cobra’s Bite | TheLastSage123's Sages UH1Y and SagesAH1Z. The tested authoring-era archive pair is 1.0.10 and 1.0.23. | The archived aircraft load on the current engine with isolated compatibility aliases. The BGM-71 guidance, launch and collision behavior, cockpit input and automatic flare response still differ or need verification. |
+| Factory Siege Redux | The woodland forward observer uses a GC Units path. Its exact prefab is absent from the inspected Units history and authoring-era release. | The published group stalls after its first two agents and never enables its playable roles. Removing the reference makes four roles playable and changes the roster. |
+| Gull Bay Guns | RHS Status Quo 0.7.2265 registers the original EMR squad leader. | The archive fails to compile on the current engine. The role and weapon need a compatible provider. |
 
 ### Final batch smoke test
 
