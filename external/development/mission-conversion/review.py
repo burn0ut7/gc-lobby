@@ -91,6 +91,7 @@ COMPILE_FAILURES_19037 = {
     ),
 }
 COBRA_WORLD = 'worlds/Jub/CobrasBite/Cobras_bite.ent'
+AUS_ARMED_UH60 = ('48F288F5BFF10D8B', 'Prefabs/Vehicles/Helicopters/AUS_MH60/AUS_UH60_armed.et')
 COBRA_AIRCRAFT_LOADOUT_CHANGES = {
     'SagesAH1Z_68981B7716C2E9DB': (
         (
@@ -465,6 +466,8 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
               if world == METSALA_WORLD and target.files.get(METSALA_AI_LAYER) == METSALA_REBUILT_AI_LAYER else []),
             *(['Compare issued equipment and slot presentation for the restored historical MSV80 roles.']
               if any('/MotorRifle_MSV80/Legacy/Character_USSR_Legacy_MSV80_' in path for _, path in refs) else []),
+            *(['Compare armed AUS UH-60 minigun use and overheating on the retained addon graph.']
+              if AUS_ARMED_UH60 in refs else []),
         ],
     }
 
