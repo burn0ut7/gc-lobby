@@ -18,7 +18,8 @@ from briefings import QUOTED, block_end, guid, properties, target_names
 from catalog import OBSOLETE_NAVMESH, REF, SOURCE_TEXT
 from event_actions import (FLAG_NAME, NUMBER, SPAWN, SPAWN_FIELDS, SPAWN_NAME, VEHICLE_SPAWN,
                            render_crew_config, render_spawn, spawn_details)
-from vehicle_crew import (CREW_CONFIG_FIELD, FLORA_CREW_CONFIG, VERIFIED_DEFAULT_CREW, ZAGORIA_BMP2, crew_config_contents,
+from vehicle_crew import (BMP1_PARENT, BMP1_TURRET_PARENT, CREW_CONFIG_FIELD, FLORA_CREW_CONFIG, MISSION_BMP1,
+                          MISSION_BMP1_TURRET, VERIFIED_DEFAULT_CREW, ZAGORIA_BMP2, crew_config_contents,
                           split_crew_block, verified_core_btr70_transfer)
 from events import EVENT, LEGACY_FLAG, peak_flags
 from extraction import DEFAULT_STATUS as EXTRACTION_STATUS, condition as extraction_condition
@@ -5179,6 +5180,18 @@ def reviewed_faction_assets(source, dev, source_units, dev_units):
 
 def replace_registered_paths(text, source, dev, aliases):
     return REF.sub(lambda ref: registered_alias(ref[1].upper(), ref[2], source, dev, aliases) or ref[0], text)
+
+
+def verified_mission_bmp1(source, dev, aliases, external_parents):
+    if any(external_parents.get(identity) != path for identity, path in (BMP1_PARENT, BMP1_TURRET_PARENT)):
+        return False
+    for (identity, path), blob in ((MISSION_BMP1, '81543b5b2b7666a89471ecd1e4a41c276b95aa10'),
+                                   (MISSION_BMP1_TURRET, '27da82e29525946edfa1d13de0c1b64e8976b4d2')):
+        if (source.resources.get(identity) != [path] or dev.resources.get(identity) != [path]
+                or source.files[path] != blob
+                or replace_registered_paths(source.read(path), source, dev, aliases).strip() != dev.read(path).strip()):
+            return False
+    return True
 
 
 SYMBOLIC_MATCH_CONDITION = re.compile(

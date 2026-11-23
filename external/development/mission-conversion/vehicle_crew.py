@@ -14,6 +14,14 @@ from scenery import StockPrefabs
 ZAGORIA_BMP2 = ('1EF865DC4E3F7E0B', 'IFV/BMP2/BMP2_Olive_test.et')
 CORE_BTR70 = ('1C5FE7B7FF49BB8D', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_Base.et')
 CORE_BTR70_DIGEST = 'ae982b43b504904f7b97947e7fc45c83f584e46ce5f7fa8d7c08c05e386eee74'
+K17_DIRECTORY = 'Prefabs/Vehicles/Wheeled/K17/'
+CORE_K17 = ('C84FF4497D058530', K17_DIRECTORY + 'APC_K17_Epoch_HTM1_AIGunner.et')
+CORE_K17_TURRET = ('3CED911741EF4D1A', K17_DIRECTORY + 'VehParts/Turret_K17_Epoch_HTM_AIGunner.et')
+K17_PARENT = ('F86AB1BD36B33407', K17_DIRECTORY + 'APC_K17_Epoch.et')
+MISSION_BMP1 = ('7CE967DF2F6E2618', 'worlds/HitTheMan/Prefabs/Vehicles/BMP1_Desert_ZU_HTM.et')
+MISSION_BMP1_TURRET = ('82DCF62EFF4E9303', 'worlds/HitTheMan/Prefabs/Vehicles/BaconZU23_Turret_NotEditable_HTM.et')
+BMP1_PARENT = ('1DC01AAACFFA8B63', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_Base.et')
+BMP1_TURRET_PARENT = ('E2E3D404C065544F', 'Prefabs/Vehicles/Static/BaconZU23/BaconZU23_Turret.et')
 SEPARATIST_RIFLEMAN_RENAME = (
     '917322E3B14A77B7',
     'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/Character_GC_SEPARATIST_Rifleman.et',
@@ -22,7 +30,7 @@ SEPARATIST_RIFLEMAN_RENAME = (
 VEHICLE = re.compile(
     r'(?P<group>\$grp )?(?:Vehicle|Tank|Turret)(?: (?P<name>[\w.-]+))? : '
     r'"\{(?P<guid>[\da-fA-F]{16})\}(?P<path>Prefabs/(?:Vehicles|Weapons/Tripods)/[^"]+\.et|'
-    + re.escape(ZAGORIA_BMP2[1]) + r')" \{')
+    + '|'.join(re.escape(path) for _, path in (ZAGORIA_BMP2, MISSION_BMP1)) + r')" \{')
 COMPOSITION = re.compile(r'(?P<group>\$grp )?(?P<kind>GenericEntity|StaticModelEntity)(?: (?P<name>[\w.-]+))? : "[^"]+" \{')
 PLACED_CHILD = re.compile(r'(GenericEntity|GameEntity|Turret)(?: [\w.-]+)?'
                           r'(?: : ' + REF.pattern + r')? \{')
@@ -42,6 +50,8 @@ WORKSHOP_VEHICLES = {
                          'Prefabs/Weapons/Tripods/6G10/Deployable_Tripod_6G10_AGS17.et'),
     '19A9036206E23B23': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/AGS/GAZ_TIGR_v2_AGS17_Tan.et'),
+    'CEFC2B5C4334CADB': ('TacticalFlava-TIGR_DEADC0DE00000003',
+                         'Prefabs/Vehicles/Wheeled/TIGR/AGS/GAZ_TIGR_v2_AGS17_PAG17.et'),
     '0144F571F1998FC4': ('WCS_BMP-1_5E524E4FEECCA92B', 'Prefabs/Vehicles/Tracked/BMP1/BMP1_FIA.et'),
     '1A407760EEAE4156': ('ZU-23_5C9AD9EF76F6B5EA', 'Prefabs/Vehicles/Static/BaconZU23/BaconZU23_Turret_Deployed.et'),
     '9AEDF323A812F9ED': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/BRDM2/BRDM2_AFRF.et'),
@@ -224,6 +234,9 @@ UNITS_CREW_PREFABS = {
 }
 WORKSHOP_VEHICLE_PARENTS = {
     '8A883ABED22B6E27': ('WCS_SpaceCore_5E389BB9F58B79A6', 'Prefabs/Vehicles/Core/Tracked_Base.et'),
+    K17_PARENT[0]: ('RHS-StatusQuo_595F2BF2F44836FB', K17_PARENT[1]),
+    BMP1_PARENT[0]: ('WCS_BMP-1_5E524E4FEECCA92B', BMP1_PARENT[1]),
+    BMP1_TURRET_PARENT[0]: ('ZU-23_5C9AD9EF76F6B5EA', BMP1_TURRET_PARENT[1]),
 }
 FLORA_CREW_CONFIG = '47ABFE35CED7D5AA'
 FLORA_CREW_GROUP = 'TILW_CrewGroup "{64F2F8212EF64955}"'
@@ -607,6 +620,22 @@ def verified_core_btr70_transfer(guid, path, source_units, dev_units, stock):
             and sha256(dev_units.read(path).strip().encode()).hexdigest() == CORE_BTR70_DIGEST)
 
 
+def verified_core_k17_transfer(resource, path, source_units, dev_units, stock, owned, external_parents):
+    if ((resource, path) != CORE_K17 or not stock
+            or external_parents.get(K17_PARENT[0]) != K17_PARENT[1]
+            or any(K17_PARENT[0] in resources for resources in (owned, source_units.resources, dev_units.resources))
+            or not stock.contains('DF5979FDE2682F70', 'Prefabs/Vehicles/Wheeled/LAV25/VehParts/Turret/LAV25_turret_base.et')):
+        return False
+    # The published Core vehicle differs only by its turret reference path. The turret body is identical.
+    for (identity, file), blob in ((CORE_K17, 'e0bac34582522648cf5e8581c52193043d762206'),
+                                   (CORE_K17_TURRET, 'a0b2980966e8b71f0eda206da4834fecae3cc157')):
+        if (identity in owned or identity in source_units.resources or dev_units.resources.get(identity) != [file]
+                or dev_units.files.get(file) != blob
+                or f' Name "{{{identity}}}{file}"' not in dev_units.read(file + '.meta').splitlines()):
+            return False
+    return True
+
+
 def verified_units_crew_prefab(guid, path, source_units, dev_units, stock, owned, external_parents):
     spec = UNITS_CREW_PREFABS.get(guid)
     if (not spec or path != spec[0]
@@ -639,7 +668,7 @@ def verified_crew_config(source_units, guid, path, owned):
 
 
 def convert(block, source_units, dev_units, stock, owned, external_vehicles=None, external_ai=None, *,
-            external_parents=None, placed_names=(), resolve_character=None):
+            external_parents=None, placed_names=(), resolve_character=None, reviewed_local_vehicle=None):
     if not any('TILW_VehicleCrewComponent' in line for line in block):
         return block
     vehicle = VEHICLE.fullmatch(block[0])
@@ -664,8 +693,10 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
     units_vehicle = (vehicle or vehicle_host) and units_owned and verified_units_crew_prefab(
         guid, path, source_units, dev_units, stock, owned, external_parents or {})
     core_transfer = vehicle and verified_core_btr70_transfer(guid, path, source_units, dev_units, stock)
-    if (guid in owned or (units_owned and not (inherited_override or vehicle_overlay or units_vehicle or core_transfer))
-            or not (stock.contains(guid, path) or external_vehicle or units_vehicle)):
+    local_vehicle = vehicle and (guid, path) == reviewed_local_vehicle and not units_owned
+    if ((guid in owned and not local_vehicle)
+            or (units_owned and not (inherited_override or vehicle_overlay or units_vehicle or core_transfer))
+            or not (stock.contains(guid, path) or external_vehicle or units_vehicle or local_vehicle)):
         raise ValueError('unverified crew vehicle ' + guid)
     if resolve_character is None:
         def resolve_character(resource, path):

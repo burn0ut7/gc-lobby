@@ -242,6 +242,9 @@ def main():
                 parser.error(str(exc))
 
     def resolve_spawn(objectives, resource, path, *, group=False, vehicle=False):
+        if not group and vehicle_crew.verified_core_k17_transfer(
+                resource, path, source_units, dev_units, stock, locally_owned, external_vehicle_parents):
+            return path
         if vehicle:
             if (external_vehicles.get(resource) == path
                     and not any(resource in owned for owned in
@@ -318,16 +321,20 @@ def main():
 
     def convert_crew(block, *, placed_names=()):
         ref = REF.search(block[0])
+        reviewed_local_vehicle = None
         if (ref and vehicle_crew.VEHICLE.fullmatch(block[0])
                 and any('TILW_VehicleCrewComponent' in line for line in block)):
             guid = ref[1].upper()
             alias = batch.registered_alias(guid, ref[2], source, dev, asset_aliases)
             if alias and REF.fullmatch(alias)[1] == guid:
                 block = [block[0][:ref.start()] + alias + block[0][ref.end():], *block[1:]]
+            if ((guid, ref[2]) == vehicle_crew.MISSION_BMP1
+                    and batch.verified_mission_bmp1(source, dev, asset_aliases, external_vehicle_parents)):
+                reviewed_local_vehicle = vehicle_crew.MISSION_BMP1
         return vehicle_crew.convert(block, source_units, dev_units, stock, locally_owned,
                                     external_vehicles, external_ai, external_parents=external_vehicle_parents,
                                     resolve_character=resolve_crew,
-                                    placed_names=placed_names)
+                                    placed_names=placed_names, reviewed_local_vehicle=reviewed_local_vehicle)
 
     ai_loadouts = local_loadouts.collect_ai(source, dev, source_units, dev_units, stock) if args.batch else {}
     out = {}

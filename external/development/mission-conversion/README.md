@@ -2093,6 +2093,14 @@ Units Dev commit `557c9461` updates the saved paths of eleven roles across the f
 
 The audit now converts waves 1, 3, 4 and 5 and their eleven group spawns. Wave 2 is held on the K-17 AI Gunner variant. Units Dev has the original prefab and metadata blobs, but the metadata names a different path. The placed BMP-1 and TIGR crews and the retired USMC MAAW role also remain open. The full audit reviewed 277 launchers and reproduced all 330 existing draft files byte for byte. Live reinforcement and crew timing remain in the representative runtime queue.
 
+### Cobra’s Bite vehicle crews
+
+Units Dev commit `c4ae7a7d` corrects the K-17 hull and turret registrations and updates the hull’s turret reference. The two GUIDs remain fixed. The published Core archive supplied both prefab bodies in Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7`. The turret body matches byte for byte, and the hull differs only by its turret path. The converter verifies both registrations, both prefab bodies and their stock or RHS parents before allowing a spawn. The comparison verified nine Wave 2 K-17 spawns with their original anchors, fractional delays, waypoint assignments and ten ordered crew characters each.
+
+The shared crew converter accepts the verified mission-owned BMP-1 after the saved hull matches the source with only registered path updates and its original ZU-23 turret body matches exactly. Cobra’s Bite keeps all four of these BMP-1 placements. Two TIGRs retain their original Tactical Flava GUID, variant and 16 ordered crew roles across both vehicles. Match checks still cover driver, gunner and cargo seating and routing.
+
+The roster now depends on the missing USMC M3 MAAW gunner `6CA5BE07728357DE` and assistant `4EA7CF8765E83F76`. Missions commit `69d1524a` explicitly changed both slots from the original MAAW pair. The current registered MAAW pair cannot establish the authored M3 loadouts. Keep Cobra’s Bite in review until the two exact assets or equivalent source loadouts can be verified.
+
 ### Combined Anti-Armor Team
 
 The converter verifies the source framework and spawner layers and binds the eight `UK_KIA` spawns to the same UK AI casualty threshold used by the authored events. All eight retain their 180.9-second delay after the threshold is met during Match and their original RHS effect prefab. Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7` verifies the prefab and trigger parent. The audit records 14 converted placed spawners.
