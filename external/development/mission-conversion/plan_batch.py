@@ -32,14 +32,17 @@ REVIEWED_SUCCESSORS = {
         'replacement': ('34FC742220830895',
                         'Prefabs/Vehicles/Wheeled/TIGR/AGS/GAZ_TIGR_v2_AGS17_PAG17_Tan.et'),
         'packageSha256': 'bb6919f63ab887967c20d224a6fdd67395d4cc142d6ecaf3efdb69e66f78c859',
-        'comparisonBasis': 'a prefab comparison against Tactical Flava 1.3.5',
+        'comparisonBasis': 'a prefab and native comparison against Tactical Flava 1.3.5',
+        'gameVersion': '1.9.0.37',
         'findings': [
             'The tan turret and its three inherited prefab bodies match the archive.',
             'The hull changes affiliation from USSR to TF_RF.',
-            'The archived hull serializes three fuel nodes, with two sharing tank ID 2. The current hull serializes two.',
-            'The original tan leaf explicitly sets the rear-left passenger orientation. The current leaf leaves it to the inherited configuration.',
-            'Effective fuel, seat behavior and vehicle operation remain unverified.',
+            'Both variants expose the same seven named compartments in the same order.',
+            'The archived hull starts with 219 of 267 litres across three nodes. The current hull starts with 146 of 178 across two.',
+            'The current inherited rear-left passenger point has the same local orientation as the explicit archived point.',
+            'Driving and vehicle interactions remain unverified.',
         ],
+        'sessions': ['logs_2026-11-23_08-16-44', 'logs_2026-11-23_08-16-53'],
     },
 }
 
