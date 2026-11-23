@@ -34,7 +34,19 @@ ZAGORIA_DRIVETRAIN_FAILURE = {
     '34bdc51bf145db76207ac0e04b6225168928765a157517e7f7b851b8dc87de7c': '1.0.26',
 }
 ENGINE_19037_DATABASE = 'd65ebb14b5c9b2baaef1dfafd9b653f51a6ce11f9815585cf8b5ada88dd4e58a'
-BOLT_GUNS_57_ARCHIVE = 'd262083e654a4d4952b88c901d257377de03329b6df0c7204359dcc8a38e5550'
+COMPILE_FAILURES_19037 = {
+    'ChungusBoltGuns_61BD6595183FCEBD': (
+        'Chungus Bolt Guns 1.0.57',
+        {'data.pak': 'd262083e654a4d4952b88c901d257377de03329b6df0c7204359dcc8a38e5550'},
+    ),
+    'TacticalFlava_5D550926D43F1409': (
+        'Tactical Flava 1.3.5',
+        {
+            'data.pak': 'a67d244ff2c39d54e8e125ed99cae9414b08f5fd63e9c0330509651a5788aca0',
+            'data001.pak': 'b46102f727ff78598ced30ce669ce0c4c9ca015ceb844dc4c64cc1014e8b3ca8',
+        },
+    ),
+}
 RUHA_032_REGISTRY = 'fb4911e6b81561933d73cbb1eeb734e97d1fe20bd08bb8f6797949e28f77a8b4'
 RUHA_WORLD = ('31A1248EA401F22C', 'worlds/Ruha.ent')
 METSALA_WORLD = 'worlds/Til/MetsalaAirfield/MetsalaAirfield.ent'
@@ -94,12 +106,19 @@ def known_compile_failure(stock, providers):
     if sha256(stock.data).hexdigest() != ENGINE_19037_DATABASE:
         return None
     for database in providers:
-        package = database.with_name('data.pak')
-        if database.parent.name != 'ChungusBoltGuns_61BD6595183FCEBD' or not package.is_file():
+        spec = COMPILE_FAILURES_19037.get(database.parent.name)
+        if not spec:
             continue
-        with package.open('rb') as native:
-            if file_digest(native, 'sha256').hexdigest() == BOLT_GUNS_57_ARCHIVE:
-                return 'Chungus Bolt Guns 1.0.57 fails script compilation on Reforger 1.9.0.37'
+        title, archives = spec
+        for name, digest in archives.items():
+            package = database.with_name(name)
+            if not package.is_file():
+                break
+            with package.open('rb') as native:
+                if file_digest(native, 'sha256').hexdigest() != digest:
+                    break
+        else:
+            return f'{title} fails script compilation on Reforger 1.9.0.37'
     return None
 
 
