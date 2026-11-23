@@ -27,6 +27,20 @@ REVIEWED_SUCCESSORS = {
         ],
         'sessions': ['logs_2026-11-22_20-03-55', 'logs_2026-11-22_20-04-06'],
     },
+    ('DEADC0DE00000003', '1.6.1'): {
+        'legacy': '04227AB09A9C86D2',
+        'replacement': ('34FC742220830895',
+                        'Prefabs/Vehicles/Wheeled/TIGR/AGS/GAZ_TIGR_v2_AGS17_PAG17_Tan.et'),
+        'packageSha256': 'bb6919f63ab887967c20d224a6fdd67395d4cc142d6ecaf3efdb69e66f78c859',
+        'comparisonBasis': 'a prefab comparison against Tactical Flava 1.3.5',
+        'findings': [
+            'The tan turret and its three inherited prefab bodies match the archive.',
+            'The hull changes affiliation from USSR to TF_RF.',
+            'The archived hull serializes three fuel nodes, with two sharing tank ID 2. The current hull serializes two.',
+            'The original tan leaf explicitly sets the rear-left passenger orientation. The current leaf leaves it to the inherited configuration.',
+            'Effective fuel, seat behavior and vehicle operation remain unverified.',
+        ],
+    },
 }
 
 
@@ -204,7 +218,7 @@ def historical_provider_candidates(plan, roots, base):
                     successors.append({
                         'reference': reference, 'replacement': f'{{{identity}}}{path}',
                         'sourceLaunchers': sorted(related), 'findings': spec['findings'],
-                        'gameVersion': spec['gameVersion'], 'sessions': spec['sessions'],
+                        **{key: spec[key] for key in ('gameVersion', 'sessions', 'comparisonBasis') if key in spec},
                         'packageSha256': spec['packageSha256'],
                     })
         if not matched and not alternates and not successors:
@@ -612,10 +626,12 @@ def markdown(plan):
                 details.extend(f"original path under ID `{identity}`" for identity in alternate['samePathIds'])
                 lines.extend(['', f"- {label} has " + ', '.join(details) + '.'])
             for successor in entry.get('reviewedSuccessors', ()):
+                basis = successor.get('comparisonBasis')
+                if not basis:
+                    basis = f"tests on Reforger {successor['gameVersion']}"
                 lines.extend(['', f"- `{entry['addonId']} {entry['version']}` · "
                               f"`{successor['replacement']}` is a reviewed successor for "
-                              f"`{successor['reference']}` with differences observed on "
-                              f"Reforger {successor['gameVersion']}. "
+                              f"`{successor['reference']}` with differences found during {basis}. "
                               + ' '.join(successor['findings'])])
                 for launcher in successor['sourceLaunchers']:
                     lines.append(f'  - `{launcher}` references the original asset.')
