@@ -2138,3 +2138,18 @@ The same fixture found zero initial bounds on all five startup group prefabs at 
 Legacy commit `84fee72d` removed all four `SpawnPos1` through `SpawnPos4` definitions when it added randomized BMP-2 placements. Their four instructions remain in the published default layer, which matches the Git source after normalizing line endings. The original framework skips a spawn when its named anchor is absent. Workbench MCP confirmed that all four names are absent on the inherited Ruha terrain in session `logs_2026-11-22_19-46-23`, lines 30882–30885. The audit uses the existing missing-anchor rule for the four reviewed instruction IDs and records each action's inactive state.
 
 The archived graph now generates an 11-file draft with all 28 playable slots and no conversion-rule blockers. The verified Zagoria drivetrain failure still holds the draft. The eight separately placed BMP-2 spawners retain their original vehicle registrations and startup selection. The standard audit reproduced all 330 earlier draft hashes and all 244 launcher metadata records.
+
+### Zagoria drivetrain comparison
+
+An isolated Arland test compared the archived 1.0.26 hull, the 1.0.46 Olive hull, and three overrides of the original hull under the same gear, throttle and gradual clutch engagement. The authored and current simulations both name the same sixteen wheel pivots in the same order.
+
+| Trial | Distance after 450 samples | Engine RPM | Dedicated session |
+| --- | ---: | ---: | --- |
+| Original hull with the differential bypass and 125 kW setting | 2.21 m | 0 | `logs_2026-11-22_19-54-08` |
+| Original hull with the complete 1.0.46 simulation | 3.73 m | 2,008 | `logs_2026-11-22_19-55-46` |
+| Original hull with the complete 1.0.46 simulation, mass and center of mass | 4.93 m | 2,101 | `logs_2026-11-22_19-59-03` |
+| Complete 1.0.46 Olive hull | 78.78 m | 2,401 | `logs_2026-11-22_19-57-47` |
+
+The stock truck control travelled 61.71–62.77 m across the four trials. The archived unmodified vehicle registered zero wheels. The first override registered all sixteen and retained the same sixteen runtime seats in the same type order. Transplanting the later simulation restored engine operation but failed to reproduce the current hull's sustained movement. The original and current prefabs reference different collision meshes and have different entity classes. The tests do not isolate which difference accounts for the remaining motion gap.
+
+The complete 1.0.46 Olive variant retains the ordered slot names, default occupant references and direct main weapon references in the hull, the gunner turret and the commander turret. Its revised door and hatch behavior, damage and ammunition storage still need comparison in the current engine before the converter can use it. The archived drivetrain hold remains in place for Topdown, Combined Anti-Armor Team, Light Armored Recon, Mulladost Pass and Two Bloody Miles. [Zagoria BMP-2 release history](https://reforger.armaplatform.com/workshop/6730D59067916E3D/changelog)
