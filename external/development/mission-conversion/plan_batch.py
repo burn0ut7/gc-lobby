@@ -449,7 +449,12 @@ def summarize(inventory, review, limit, previous_checks=None, previous_notes=Non
             recorded_checks[header] = checks
         if header in held_issues_by_header:
             issues = held_issues_by_header[header] or ['Another launcher for this world is held']
-            remaining_launchers[header] = {'world': world, 'stage': 'Draft held', 'issues': issues}
+            remaining = {'world': world, 'stage': 'Draft held', 'issues': issues}
+            roster_refs = [entry for entry in row.get('unresolvedExternalReferences', ())
+                           if entry.get('orderedRosterSlots')]
+            if roster_refs:
+                remaining['orderedRosterBlockers'] = roster_refs
+            remaining_launchers[header] = remaining
             continue
         if row['status'] != 'compare':
             blockers = migration['worlds'].get(world, {}).get('blockers', [])

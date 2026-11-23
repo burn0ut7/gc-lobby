@@ -304,6 +304,38 @@ def inspect(snapshot, paths):
     return areas, declarations, references
 
 
+def unresolved_roster_slots(snapshot, missing):
+    """Locate unresolved resources within explicitly ordered serialized rosters."""
+    by_file = defaultdict(dict)
+    for entry in missing:
+        for owner in entry['referencedBy']:
+            by_file[owner][entry['guid'], entry['path']] = entry
+    for owner, references in sorted(by_file.items()):
+        lines = snapshot.read(owner).splitlines()
+        for field_index, field in enumerate(lines):
+            if field.strip() != 'm_aUnitPrefabSlots {':
+                continue
+            try:
+                end = block_end(lines, field_index)
+            except ValueError:
+                continue
+            rows = lines[field_index + 1:end]
+            if any(REF.sub('', line).strip() for line in rows):
+                continue
+            slots = [(guid.upper(), path, line_number)
+                     for line_number, row in enumerate(rows, field_index + 2)
+                     for guid, path in REF.findall(row)]
+            indent = len(field) - len(field.lstrip())
+            declaration = next((line.strip() for line in reversed(lines[:field_index])
+                                if line.rstrip().endswith('{') and len(line) - len(line.lstrip()) < indent), '')
+            for number, (guid, path, line_number) in enumerate(slots, 1):
+                if entry := references.get((guid, path)):
+                    entry.setdefault('orderedRosterSlots', []).append({
+                        'file': owner, 'line': line_number, 'declaration': declaration.removesuffix(' {'),
+                        'slot': number, 'slotCount': len(slots),
+                    })
+
+
 def compare_mission(source, target, header, notes, dependencies, stock, unresolved=None, longmoor=False,
                     provider_issue=None, zagoria_failure=None, resource_changes=None):
     issues = [provider_issue] if provider_issue else []
@@ -358,6 +390,7 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
         issues.append('Mission-owned resource identities or paths need review')
     if missing:
         issues.append('Unresolved external resource references')
+        unresolved_roster_slots(target, missing)
     if world == COBRA_WORLD and resource_changes:
         issues.extend(resource_changes[guid] for guid in sorted({guid for guid, _ in refs} & resource_changes.keys()))
     failed_vehicle_refs = []
