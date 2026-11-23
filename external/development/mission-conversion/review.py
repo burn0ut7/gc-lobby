@@ -37,6 +37,21 @@ ENGINE_19037_DATABASE = 'd65ebb14b5c9b2baaef1dfafd9b653f51a6ce11f9815585cf8b5ada
 BOLT_GUNS_57_ARCHIVE = 'd262083e654a4d4952b88c901d257377de03329b6df0c7204359dcc8a38e5550'
 RUHA_032_REGISTRY = 'fb4911e6b81561933d73cbb1eeb734e97d1fe20bd08bb8f6797949e28f77a8b4'
 RUHA_WORLD = ('31A1248EA401F22C', 'worlds/Ruha.ent')
+METSALA_WORLD = 'worlds/Til/MetsalaAirfield/MetsalaAirfield.ent'
+METSALA_AI_LAYER = 'worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/default.layer'
+METSALA_REBUILT_AI_LAYER = '27ea3707474bd54ba6c1805b55358f0c6ef33be3'
+# Each digest covers the ordered Git blob IDs of all native tile containers, including empty ones.
+METSALA_NAVIGATION = {
+    'LowRes': ('44D8CCBCD595E168', '607923fb2ab75c76965b6c98076d9f97a477899b',
+               '3a61a35d2442cf558ac508918274b5c8183ad8a6', 256,
+               'e8ae6e05a9264731cd936cb167f8e59a16d2c83d5984257e909b939d6bddcd67'),
+    'Soldiers': ('660113E972F23E6E', '6f720d75fbe9bbd2fea39925a4cd9d607036ff98',
+                 '3abd6f8b8b450a87ed8c8eeb3b05e27640e0b303', 1163,
+                 '67c6e0e26d792eb8fec8f28b80c49c66c9230be4d06888ed0e15a6cb574b35d4'),
+    'Vehicles': ('4D4B7AF9DFC2EBB1', '922a8eebcec339f952ffd1d75654dcbe39c5a0ce',
+                 '836a3fd6cf9b54ce5a32cecc64dde9b0fc9585c5', 1163,
+                 'a4c85ef1076bc192f27fa14a6c41af211c47ddc5bfe93e43a3236a5fbc2a176f'),
+}
 SCREENING_RUNTIME_LAYER = 'worlds/HitTheMan/Screening The Orb/ScreeningTheOrb_Layers/default.layer'
 SCREENING_RUNTIME_BLOB = '3eac40a7befe19671fbd9abb4e8e78714a804dd0'
 LEGACY_PRESENTATION_RESOURCES = {
@@ -88,13 +103,34 @@ def known_compile_failure(stock, providers):
     return None
 
 
-def known_terrain_failure(stock, providers, references):
+def verified_metsala_navigation(snapshot, world):
+    if (world != METSALA_WORLD or METSALA_AI_LAYER not in snapshot.layers[world.lower()]
+            or snapshot.files.get(METSALA_AI_LAYER) != METSALA_REBUILT_AI_LAYER):
+        return False
+    directory = str(PurePosixPath(world).parent / 'Navmeshes')
+    for profile, (guid, index, metadata, count, ordered_digest) in METSALA_NAVIGATION.items():
+        stem = f'Metsala_{profile}'
+        path = f'{directory}/{stem}.nmn'
+        if (snapshot.files.get(path) != index or snapshot.files.get(path + '.meta') != metadata
+                or not registered_identity(snapshot, guid, path)
+                or len(snapshot.navmesh_tiles(path)) != count):
+            return False
+        prefix = f'{directory}/.NavData/{stem}/navData_'
+        tiles = [snapshot.files.get(f'{prefix}{i}.ntile') for i in range(count)]
+        if not all(tiles) or sha256(bytes.fromhex(''.join(tiles))).hexdigest() != ordered_digest:
+            return False
+    return True
+
+
+def known_terrain_failure(stock, providers, references, snapshot, world):
     if RUHA_WORLD not in references or sha256(stock.data).hexdigest() != ENGINE_19037_DATABASE:
         return None
     for database in providers:
         if database.parent.name == 'Ruha_653CB36244ADBE0F':
             with database.open('rb') as native:
                 if file_digest(native, 'sha256').hexdigest() == RUHA_032_REGISTRY:
+                    if verified_metsala_navigation(snapshot, world):
+                        return None
                     return 'Ruha 0.3.2 navigation meshes are obsolete on Reforger 1.9.0.37'
     return None
 
@@ -250,6 +286,9 @@ def compare_mission(source, target, header, notes, dependencies, stock, unresolv
               else []),
             *(['Verify Screening The Orb exterior reinforcements at 2 and 12 seconds after the shared area flag changes.']
               if SCREENING_RUNTIME_LAYER in outgoing else []),
+            *(['Compare Metsala capture notices, the timed RHS support and the CDF timeout during Match.',
+               'Compare Metsala aircraft station actions, firing, and patrol completion in a client match.']
+              if world == METSALA_WORLD and target.files.get(METSALA_AI_LAYER) == METSALA_REBUILT_AI_LAYER else []),
             *(['Compare issued equipment and slot presentation for the restored historical MSV80 roles.']
               if any('/MotorRifle_MSV80/Legacy/Character_USSR_Legacy_MSV80_' in path for _, path in refs) else []),
         ],
@@ -610,7 +649,7 @@ def main():
                         world_match = WORLD_REF.search(target.read(header))
                         if world_match and (world := world_match[3]) in target.files:
                             parent_refs = {(guid.upper(), path) for guid, path in REF.findall(target.read(world))}
-                            terrain_issue = known_terrain_failure(stock, chosen_providers, parent_refs)
+                            terrain_issue = known_terrain_failure(stock, chosen_providers, parent_refs, target, world)
                     issue = provider_issue or terrain_issue
                     missions[header] = compare_mission(source, target, header, notes, chosen_dependencies, stock,
                                                        unresolved, longmoor, issue, zagoria_failure)

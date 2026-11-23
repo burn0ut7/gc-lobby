@@ -187,9 +187,18 @@ def merge_metadata_header(dev, header, world, capture, body):
     world_files = dev.closure(world) | {header + '.meta'}
     world_files.update(path + '.meta' for path in tuple(world_files) if path + '.meta' in dev.files)
     for path in sorted(world_files):
-        original = dev.read_raw(path)
         captured = (capture / path).read_bytes()
-        if original.replace(b'\r\n', b'\n') != captured.replace(b'\r\n', b'\n'):
+        if path.lower().endswith(('.nmn', '.ntile')):
+            # Verify native bytes directly against the tree without spawning Git for every tile.
+            original = dev.files[path]
+            digest = hashlib.new('sha1' if len(original) == 40 else 'sha256')
+            digest.update(f'blob {len(captured)}\0'.encode('ascii'))
+            digest.update(captured)
+            matches = digest.hexdigest() == original
+        else:
+            original = dev.read_raw(path)
+            matches = original.replace(b'\r\n', b'\n') == captured.replace(b'\r\n', b'\n')
+        if not matches:
             raise ValueError(f'{path} differs from the captured Dev world')
     exported = (capture / header).read_text(encoding='utf-8-sig')
     matches = list(WORLD_REF.finditer(exported))
