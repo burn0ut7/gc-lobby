@@ -358,6 +358,14 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
             # The published role cannot load the snood and its reviewed parent has no face item.
             item, item_path = GREEN_SNOOD
             body = body.replace(f'     Prefab "{{{item}}}{item_path}"\n', '     Prefab ""\n', 1)
+        if guid == 'A81A92DB1AB9FB50' and source.files[path] == 'eaee0e778b143bfd50cba256f3045301c5a38cc6':
+            # The native grenadier must override its inherited faction component by identity.
+            faction = '  SCR_CharacterFactionAffiliationComponent "{65F4D2AF76F4D7D3}" {\n   "faction affiliation" "SAA"'
+            if (sha256('\n'.join(inheritance(dev_units, resource)).encode()).hexdigest()
+                    != 'f5b437346efe6b07161b82ca79aabab891ec11c3208e6c94135071de22784d73'
+                    or body.count(faction) != 1):
+                return None
+            body = body.replace(faction, faction.replace('65F4D2AF76F4D7D3', '6A48B3CBA562504E'), 1)
         compared = normalize_references(body) if normalize_references and path in dev.files else body
         if (dev.resources.get(guid) not in (None, [path])
                 or (path in dev.files and compared.strip() != dev.read(path).strip())):
