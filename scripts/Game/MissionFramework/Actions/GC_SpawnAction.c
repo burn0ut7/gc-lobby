@@ -2,7 +2,7 @@
 [BaseContainerProps(), BaseContainerCustomStringTitleField("Spawn Action")]
 class GC_SpawnAction : GC_ActionBase
 {
-	[Attribute("", UIWidgets.Object, "Choose Prefab, AI Group or Crewed Vehicle. Spawns once each time this action runs. Use the event's conditions, repeatability and Delay to control when it happens.")]
+	[Attribute("", UIWidgets.Object, "Choose the prefab, group or vehicle configuration. Spawns once each time this action runs. Use the event's conditions, repeatability and Delay to control when it happens.")]
 	ref GC_PrefabSpawn m_Spawn;
 
 	[Attribute("0", UIWidgets.CheckBox, "With Schedule Action enabled, queue this spawn during pregame, slotting or briefing. Once queued it stays due until this world ends.")]
@@ -25,7 +25,7 @@ class GC_SpawnAction : GC_ActionBase
 [BaseContainerProps(), BaseContainerCustomStringTitleField("Prefab")]
 class GC_PrefabSpawn
 {
-	[Attribute("", UIWidgets.ResourceNamePicker, "Prefab to create. Its own components control its normal behavior. Playable groups are lobby slots and cannot be spawned by this action.", "et")]
+	[Attribute("", UIWidgets.ResourceNamePicker, "Prefab to create. Use the Staging Playable Group configuration for a playable roster.", "et")]
 	ResourceName m_sPrefab;
 	[Attribute("", UIWidgets.EditComboBox, "Exact name of an existing entity. Its position and direction are used for the spawn. No automatic ground placement or clear-space search is performed.", enums: {ParamEnum("", "", "gc-choices:2:GC_EntityReferenceChoices")})]
 	string m_sLocation;
@@ -68,6 +68,13 @@ class GC_PrefabSpawn
 	}
 
 	//------------------------------------------------------------------------------------------------
+	protected bool AcceptsSpawnedEntity(IEntity entity)
+	{
+		SCR_AIGroup group = SCR_AIGroup.Cast(entity);
+		return !group || !group.IsPlayable();
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! Called through the manager's current-engine/server authority gate.
 	bool Execute(GC_MissionRuleEngine source = null)
 	{
@@ -102,8 +109,7 @@ class GC_PrefabSpawn
 			return false;
 		GC_SpawnAttempt attempt = new GC_SpawnAttempt();
 		attempt.m_RuleSource = source;
-		SCR_AIGroup group = SCR_AIGroup.Cast(entity);
-		if ((group && group.IsPlayable()) || !Configure(entity, attempt))
+		if (!AcceptsSpawnedEntity(entity) || !Configure(entity, attempt))
 		{
 			attempt.Rollback();
 			SCR_EntityHelper.DeleteEntityAndChildren(entity);
@@ -142,6 +148,45 @@ class GC_AIGroupSpawn : GC_PrefabSpawn
 		if (!group)
 			return false;
 		return GC_WaypointOrders.Apply(group, m_aWaypoints);
+	}
+}
+
+[BaseContainerProps(), BaseContainerCustomStringTitleField("Staging Playable Group")]
+class GC_StagingPlayableGroupSpawn : GC_PrefabSpawn
+{
+	//------------------------------------------------------------------------------------------------
+	override bool ExecuteAt(IEntity location, GC_MissionRuleEngine source, bool allowAnchorName = false)
+	{
+		GC_LobbyManager manager = GC_LobbyManager.GetManager();
+		if (!manager || !manager.GC_HasFrameworkSource(source))
+			return false;
+
+		SCR_EGameModeState phase = manager.GetLobbyPhase();
+		if (!GC_LobbyPhase.IsValid(phase) || GC_LobbyPhase.IsAtOrAfter(phase, SCR_EGameModeState.GAME))
+			return false;
+
+		return super.ExecuteAt(location, source, allowAnchorName);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	override protected bool Prepare(IEntitySource source)
+	{
+		if (!source || !source.GetClassName().ToType().IsInherited(SCR_AIGroup))
+			return false;
+
+		bool playable;
+		source.Get("m_bPlayable", playable);
+		return playable;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	override protected bool AcceptsSpawnedEntity(IEntity entity)
+	{
+		SCR_AIGroup group = SCR_AIGroup.Cast(entity);
+		GC_LobbyManager manager = GC_LobbyManager.GetManager();
+		return group && group.IsPlayable() && manager && Replication.FindItemId(group) != RplId.Invalid()
+			&& group.m_aUnitPrefabSlots && !group.m_aUnitPrefabSlots.IsEmpty()
+			&& manager.GetSlotsForGroup(group).Count() == group.m_aUnitPrefabSlots.Count();
 	}
 }
 
