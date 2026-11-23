@@ -6869,6 +6869,11 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                                 child_outline=convert_child_outline)[0])
                 elif kind == 'PS_ManuaMarkerRender':
                     result.append(convert_hover_camera(block, f'{layer}:{line}'))
+                elif head == polygon_capture.STARTUP_AREA:
+                    try:
+                        result.append(polygon_capture.startup_areas(block, f'{layer}:{line}', resolve_spawn))
+                    except ValueError as exc:
+                        blockers.append({'rule': 'startup area spawner', 'file': layer, 'line': line, 'detail': str(exc)})
                 elif BARE_SHAPE.fullmatch(head) and 'Prefabs/WEGenerators/Markers/PG_MarkerGenerator_' in body:
                     result.append(convert_baked_marker_generator(block, source, dev))
                     converted_scenery_map = True
@@ -7567,6 +7572,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         remaining.append('Compare placed crew arrival at Match start, compartment order and gunner dismount policy.')
     if any('m_aCrewGroups {' in crew for crew in placed_crew_fields):
         remaining.append('Compare multi-station seat reservation, empty seats and separate AI groups.')
+    if any(isinstance(body, str) and 'm_bCheckRootBoundsAtPoint 1' in body for body in draft.values()):
+        remaining.append('Compare all startup group placements, point contact rejection and terrain alignment.')
     if crew_waypoints:
         remaining.append('Compare placed crew waypoint order, delay and separate idle turret grouping.')
     if any(isinstance(body, str) and '{823CA4130CE90077}' in body for body in draft.values()):

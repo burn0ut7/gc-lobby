@@ -28,6 +28,8 @@ class GC_AreaPrefabSpawnerComponent : ScriptComponent
 	protected bool m_bSpawnOnInit;
 	[Attribute("1", UIWidgets.CheckBox, "Reject water detected at the terrain sample. Finite river volumes above the bed may be missed. Disable for deliberate seabed placement; this does not float objects on water.")]
 	protected bool m_bAvoidWater;
+	[Attribute("0", UIWidgets.CheckBox, "Reject terrain sample points inside a physical root entity's bounds. Intended for prefabs with no initial bounds, such as AI groups.")]
+	protected bool m_bCheckRootBoundsAtPoint;
 	[Attribute("1", UIWidgets.CheckBox, "Choose a random heading for each object. Unchecked uses the spawner's world heading.")]
 	protected bool m_bRandomYaw;
 	[Attribute("1", UIWidgets.CheckBox, "Align pitch and roll with the terrain surface while preserving the chosen heading. Unchecked keeps objects upright.")]
@@ -166,7 +168,9 @@ class GC_AreaPrefabSpawnerComponent : ScriptComponent
 	//------------------------------------------------------------------------------------------------
 	protected bool PreparePlacement(BaseWorld world, GC_SpawnPolygon polygon, GC_AreaSpawnEntry entry, vector position, float heading, out vector transform[4])
 	{
-		position[1] = SCR_TerrainHelper.GetTerrainY(position, world);
+		position[1] = SCR_TerrainHelper.GetTerrainY(position, world, m_bCheckRootBoundsAtPoint);
+		if (m_bCheckRootBoundsAtPoint && !world.QueryEntitiesByAABB(position, position, ContinueUnlessPhysicalRoot))
+			return false;
 		if (m_bAvoidWater && ChimeraWorldUtils.TryGetWaterSurfaceSimple(world, position))
 			return false;
 		if (m_bRandomYaw)
@@ -199,6 +203,12 @@ class GC_AreaPrefabSpawnerComponent : ScriptComponent
 				return false;
 		}
 		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected bool ContinueUnlessPhysicalRoot(IEntity entity)
+	{
+		return entity != entity.GetRootParent() || !entity.GetPhysics();
 	}
 
 	//------------------------------------------------------------------------------------------------

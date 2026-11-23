@@ -1,14 +1,18 @@
-"""Read capture polygons and carry their authored map overlays in place."""
+"""Read legacy capture and spawning polygons and preserve their placements."""
+from hashlib import sha256
 import re
 
 from boundaries import floats, passive_shape_component, validate_polygon
-from briefings import block_end, properties
+from briefings import block_end, guid, properties
+from catalog import REF
 
 SHAPE = re.compile(r'(?P<group>\$grp )?PolylineShapeEntity(?: (?P<name>[\w.-]+))? \{')
 MEMBER = re.compile(r' (?:([\w.-]+) )?\{')
 QUOTED_MEMBER = re.compile(r' ("[\w.-]+") \{')
 POINT = re.compile(r'ShapePoint "\{[\da-fA-F]{16}\}" \{')
 COMPONENT = re.compile(r'  (TILW_MapShapeComponent|RplComponent) "\{([\da-fA-F]{16})\}" \{')
+STARTUP_AREA = '$grp PolylineShapeEntity : "{CAAEFE4F33007CA6}Prefabs/Utils/TILW_AreaPrefabSpawner.et" {'
+RECON_STARTUP_AREA = '9f12aa276cc2141b026c53f8477773cfb72c4430b464ad94034be5e7943f5111'
 
 
 def members(block, grouped, name, *, allow_quoted=False):
@@ -75,7 +79,7 @@ def read(lines, trigger_pattern, *, startup_prefab=None):
             continue
         elif line == ' {':
             end = block_end(lines, index)
-            head = trigger_pattern.fullmatch(lines[index + 1].strip())
+            head = trigger_pattern and trigger_pattern.fullmatch(lines[index + 1].strip())
             if (not head or head['group'] or block_end(lines, index + 1) != end - 1):
                 raise ValueError('polygon requires one capture trigger child')
             child = (head, [item[1:] for item in lines[index + 2:end - 1]])
@@ -85,7 +89,7 @@ def read(lines, trigger_pattern, *, startup_prefab=None):
             raise ValueError('unsupported polygon capture field ' + field)
         placement.extend(lines[index:end + 1])
         index = end + 1
-    if origin is None or not vertices or not child:
+    if origin is None or not vertices or (trigger_pattern and not child):
         raise ValueError('capture requires a polygon, explicit origin and one trigger child')
     if 'IsClosed' not in seen:
         # Legacy capture uses the full ring whether its editor shape is closed or not.
@@ -96,6 +100,41 @@ def read(lines, trigger_pattern, *, startup_prefab=None):
         placement.append(' IsClosed 1')
     validate_polygon(vertices, origin, yaw)
     return placement, child, len(vertices)
+
+
+def startup_areas(block, source_location, resolve_spawn):
+    # Only these measured group prefabs have a confirmed point-sized initial footprint.
+    if sha256('\n'.join(block).encode()).hexdigest() != RECON_STARTUP_AREA:
+        raise ValueError('startup spawn needs reviewed prefab bounds and placement')
+    output = []
+    for area_index, (name, fields) in enumerate(members(block, True, None)):
+        component_key = '68FF32617B5D1B1F'
+        if name or fields[:2] != [' components {', f'  TILW_AreaSpawningComponent "{{{component_key}}}" {{']:
+            raise ValueError('unexpected startup spawn component')
+        end = block_end(fields, 0)
+        settings = properties(fields[2:end - 1], {'m_prefabs', 'm_bRandomYaw', 'm_bContactCheck'})
+        if settings.get('m_bRandomYaw') != '0' or settings.get('m_bContactCheck') != '1':
+            raise ValueError('startup spawn contact or rotation needs review')
+        references = settings.get('m_prefabs', '')
+        if REF.sub('', references).strip():
+            raise ValueError('invalid startup spawn prefab roster')
+        placement, _, _ = read(fields[end + 1:], None)
+        entries = []
+        for index, (resource, path) in enumerate(REF.findall(references)):
+            if resolve_spawn(resource, path, group=True) != path:
+                raise ValueError('unverified startup spawn group ' + resource)
+            entry = guid(f'{source_location}/{area_index}/{index}')
+            entries.extend([f'    GC_AreaSpawnEntry "{{{entry}}}" {{',
+                            f'     m_sPrefab "{{{resource}}}{path}"', '    }'])
+        if not entries:
+            raise ValueError('empty startup spawn roster')
+        output.extend(['PolylineShapeEntity {', ' components {',
+                       f'  GC_AreaPrefabSpawnerComponent "{{{component_key}}}" {{',
+                       '   m_aPrefabs {', *entries, '   }',
+                       '   m_bAvoidWater 0', '   m_bRandomYaw 0', '   m_bCheckRootBoundsAtPoint 1',
+                       '   m_iAttemptsPerObject 256', '  }', ' }',
+                       *placement, ' LineColor 1 0 0 1', '}'])
+    return '\n'.join(output) + '\n'
 
 
 def polygon_components(lines, *, startup_prefab=None):
