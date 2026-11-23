@@ -38,6 +38,10 @@ LOCAL_PROBLEMS_GARRISON_ROLES = {
     '635bae4af183ca6d6c9f867207e865be2d787219': '5A1F1BD88FC6C6E9',
     'f369b0a8eb8eb997cf1588ef52c928bee085940b': 'F0F0A8C16C9901B8',
 }
+REVIEWED_HISTORICAL_PARENTS = {
+    # The convoy officer inherited the archived playable company commander.
+    'A50E1A5B20D1D731': 'aac51a27d54bbef7063beb56044880adbb759c66',
+}
 MOVED_AI_PARENTS = {
     ('4C362B06571604F9', 'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/Character_GC_SEPARATIST_SL.et'):
         'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/2020/Character_SEP_SL.et',
@@ -187,8 +191,12 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
         resource, parent_path = parent[1].upper(), parent[2]
         parent_asset = evaluate(resource, seen | {guid}) if resource in source.resources else None
         historical = None
-        if verified_forced and resource not in owned and resource not in source_units.resources:
+        reviewed_historical_parent = source.files[path] == REVIEWED_HISTORICAL_PARENTS.get(guid)
+        if resource not in owned and (reviewed_historical_parent or (
+                verified_forced and resource not in source_units.resources)):
             historical = (historical_parents or {}).get((resource, parent_path))
+        if reviewed_historical_parent and not historical:
+            return None
         published_parent = stock_character(resource, parent_path, stock)
         inherits_published_playability = (published_parent and resource not in owned
                                           and resource not in source_units.resources
@@ -197,7 +205,8 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
         inherited_playable = (bool(parent_asset) or verified_playable_parent or legacy_member(source_units, resource, False)
                               or inherits_published_playability)
         try:
-            body, removed = migrate_playability(text, inherited_playable=inherited_playable or verified_forced)
+            body, removed = migrate_playability(
+                text, inherited_playable=inherited_playable or verified_forced or reviewed_historical_parent)
         except ValueError:
             return None
         if LEGACY.search(body):
