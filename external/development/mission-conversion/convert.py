@@ -242,6 +242,9 @@ def main():
                 parser.error(str(exc))
 
     def resolve_spawn(objectives, resource, path, *, group=False, vehicle=False):
+        if not group and vehicle_crew.verified_core_t72b_transfer(
+                resource, path, source_units, dev_units, stock, locally_owned, external_vehicle_parents):
+            return path
         if not group and vehicle_crew.verified_core_k17_transfer(
                 resource, path, source_units, dev_units, stock, locally_owned, external_vehicle_parents):
             return path
@@ -276,13 +279,21 @@ def main():
                 if not ancestry[0].startswith('SCR_AIGroup '):
                     return None
                 stock_members = {}
+                reviewed_members = {}
                 inherited = next((slots[1] for body in ancestry if (slots := SLOTS.search(body))), '')
                 for member, member_path in REF.findall(inherited):
                     member = member.upper()
                     if not any(member in owner for owner in owners) and stock.contains(member, member_path):
                         stock_members[member] = member_path
+                    elif member not in locally_owned and member in source_units.resources and member in dev_units.resources:
+                        try:
+                            resolve_crew(member, member_path, allow_legacy_playable=False)
+                        except ValueError:
+                            continue
+                        reviewed_members[member] = member_path
                 verified_members = external_ai | stock_members
-                convert_ai_instance([], resource, source_units, dev_units, locally_owned, verified_members)
+                convert_ai_instance([], resource, source_units, dev_units, locally_owned, verified_members,
+                                    reviewed_ai_members=reviewed_members)
                 for parent in inheritance(dev_units, resource):
                     slots = SLOTS.search(parent)
                     if not slots:
@@ -295,7 +306,8 @@ def main():
                                          source_units, dev_units, member, member_path))):
                             continue
                         if (dev_units.resources.get(member) != [member_path]
-                                or not (local_loadouts.unchanged_units_parent(source_units, dev_units, member)
+                                or not (member in reviewed_members
+                                        or local_loadouts.unchanged_units_parent(source_units, dev_units, member)
                                         or reviewed_ai_member_ancestry(
                                             member, inheritance(source_units, member),
                                             inheritance(dev_units, member), dev_units)

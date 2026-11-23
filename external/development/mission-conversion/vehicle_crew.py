@@ -14,6 +14,8 @@ from scenery import StockPrefabs
 ZAGORIA_BMP2 = ('1EF865DC4E3F7E0B', 'IFV/BMP2/BMP2_Olive_test.et')
 CORE_BTR70 = ('1C5FE7B7FF49BB8D', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_Base.et')
 CORE_BTR70_DIGEST = 'ae982b43b504904f7b97947e7fc45c83f584e46ce5f7fa8d7c08c05e386eee74'
+CORE_T72B = ('726286E1F9570EA1', 'Prefabs/Vehicles/Tracked/T-72B/T72B_base.et')
+CORE_T72A = ('BC07885176C7FF8A', 'Prefabs/Vehicles/Tracked/T-72A/T72A_base.et')
 TIGR_DIRECTORY = 'Prefabs/Vehicles/Wheeled/TIGR/'
 CORE_TIGR_AGS17 = ('1C41EF46A9A977D0', TIGR_DIRECTORY + 'AGS/GAZ_TIGR_v2_AGS17.et')
 CORE_TIGR_TURRET_BASE = ('7F038AC225B7330B', TIGR_DIRECTORY + 'GAZ_TIGR_v2_Mounted_Turret_Base.et')
@@ -300,7 +302,7 @@ def character_reference(guid, path, source_units, dev_units, stock, owned, exter
     if guid in owned or not path.startswith('Prefabs/Characters/'):
         raise ValueError('unverified crew character ' + guid)
     if guid in source_units.resources or guid in dev_units.resources:
-        if (not (unchanged_units_parent(source_units, dev_units, guid)
+        if (not (unchanged_units_parent(source_units, dev_units, guid, force_playable=True)
                  or unchanged_disabled_playability(source_units, dev_units, guid))
                 or (not allow_legacy_playable and legacy_member(source_units, guid, False))):
             raise ValueError('crew character ancestry needs review ' + guid)
@@ -684,6 +686,18 @@ def verified_units_crew_prefab(guid, path, source_units, dev_units, stock, owned
     before = tuple(sha256(body.strip().encode()).hexdigest() for body in inheritance(source_units, guid))
     after = tuple(sha256(body.strip().encode()).hexdigest() for body in inheritance(dev_units, guid))
     return before == source_hashes and after == dev_hashes
+
+
+def verified_core_t72b_transfer(guid, path, source_units, dev_units, stock, owned, external_parents):
+    """Verify the published Core hull and the combined Core and Units parent in Units Dev."""
+    identity, file = CORE_T72A
+    return (stock and (guid, path) == CORE_T72B and guid not in owned and guid not in source_units.resources
+            and identity not in owned and dev_units.resources.get(guid) == [path]
+            and all(f' Name "{{{resource}}}{name}"' in dev_units.read(name + '.meta').splitlines()
+                    for resource, name in (CORE_T72B, CORE_T72A))
+            and sha256(dev_units.read(path).strip().encode()).hexdigest()
+                == '87ed4c4bf29f798f88fba416cc5dd544f7adf61ab6ca43df543a7bea0998c3e8'
+            and verified_units_crew_prefab(identity, file, source_units, dev_units, stock, owned, external_parents))
 
 
 def verified_crew_config(source_units, guid, path, owned):

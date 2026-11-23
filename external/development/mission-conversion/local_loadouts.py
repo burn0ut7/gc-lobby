@@ -8,6 +8,7 @@ from briefings import QUOTED, block_end, properties
 from catalog import REF
 from groups import (inheritance, inherits_legacy_playable_base, legacy_member, reviewed_native_ancestry,
                     stock_character, stock_wrapper_ancestry_matches)
+from launchers import META_NAME
 
 CHARACTER = re.compile(r'SCR_ChimeraCharacter : "\{[\da-fA-F]{16}\}[^"\n]+\.et" \{')
 PLAYABLE = '  PS_PlayableComponent "{5EFCC1946F475F15}" {'
@@ -105,20 +106,30 @@ def migrate_playability(text, *, inherited_playable=False):
             lines[end:end] = [EDITABLE, EDITABLE_INFO, name, '   }\n', '  }\n']
         else:
             index = editable[0]
-            if len(editable) != 1 or lines[index:index + 2] != [EDITABLE, EDITABLE_INFO]:
+            if len(editable) != 1 or lines[index] != EDITABLE:
                 raise ValueError('existing character presentation needs review')
-            info_end = block_end(lines, index + 1)
-            names = [i for i in range(index + 2, info_end) if lines[i].startswith('    Name ')]
-            if (len(names) > 1 or (names and not re.fullmatch(QUOTED, lines[names[0]].removeprefix('    Name ').strip()))
-                    or any(line.startswith('   m_UIInfo ') for line in lines[info_end + 1:block_end(lines, index)])):
+            editable_end = block_end(lines, index)
+            info = [i for i in range(index + 1, editable_end) if lines[i].startswith('   m_UIInfo ')]
+            if len(info) > 1 or (info and lines[info[0]] != EDITABLE_INFO):
                 raise ValueError('existing character presentation needs review')
-            if names:
-                lines[names[0]] = name
+            if info:
+                info_start, = info
+                info_end = block_end(lines, info_start)
+                names = [i for i in range(info_start + 1, info_end) if lines[i].startswith('    Name ')]
+                if len(names) > 1 or (names and not re.fullmatch(QUOTED, lines[names[0]].removeprefix('    Name ').strip())):
+                    raise ValueError('existing character presentation needs review')
+                if names:
+                    lines[names[0]] = name
+                else:
+                    lines.insert(info_start + 1, name)
+                    if info_start < component:
+                        component += 1
+                        stop += 1
             else:
-                lines.insert(index + 2, name)
-                if index < component:
-                    component += 1
-                    stop += 1
+                lines[editable_end:editable_end] = [EDITABLE_INFO, name, '   }\n']
+                if editable_end < component:
+                    component += 3
+                    stop += 3
     del lines[component:stop + 1]
     return ''.join(lines), True
 
@@ -129,10 +140,21 @@ def unchanged_units_parent(source_units, dev_units, resource, *, force_playable=
         before = inheritance(source_units, resource)
         after = inheritance(dev_units, resource)
         native_before = []
-        for text in before:
+        for index, text in enumerate(before):
             parent = REF.search(text.partition('\n')[0])
             inherited = force_playable or bool(parent and legacy_member(source_units, parent[1], False))
-            native_before.append(migrate_playability(text, inherited_playable=inherited)[0])
+            native = migrate_playability(text, inherited_playable=inherited)[0]
+            if (parent and (paths := source_units.resources.get(parent[1]))
+                    and paths == dev_units.resources.get(parent[1])
+                    and len(paths) == 1 and paths[0] != parent[2]):
+                current, = paths
+                registration = META_NAME.search(dev_units.read(current + '.meta'))
+                if (registration and (registration[2], registration[3]) == (parent[1], current)
+                        and PurePosixPath(current).name == PurePosixPath(parent[2]).name):
+                    updated = native.replace(parent[0], f'"{{{parent[1]}}}{current}"', 1)
+                    if index < len(after) and updated.partition('\n')[0] == after[index].partition('\n')[0]:
+                        native = updated
+            native_before.append(native)
     except ValueError:
         return False
     if not before or not after or any(not CHARACTER.fullmatch(text.partition('\n')[0]) for text in (*before, *after)):

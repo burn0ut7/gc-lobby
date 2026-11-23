@@ -350,7 +350,8 @@ def acyclic_meta_definitions(definitions):
     return {flag: lines for flag, lines in definitions.items() if flag in available}, gap
 
 
-def derived_flags_with_known_readers(source, world, framework_path, body, definitions, spawner_reads):
+def derived_flags_with_known_readers(source, world, framework_path, body, definitions, spawner_reads,
+                                    redundant_clears):
     """Return definitions with fully accounted readers and their first unresolved flag."""
     if not definitions:
         return definitions, None
@@ -366,7 +367,8 @@ def derived_flags_with_known_readers(source, world, framework_path, body, defini
                         for path in sorted(source.closure(world))
                         if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
     unverified = {flag for flag in definitions
-                  if content.count(flag) != literal_uses[flag] + spawner_reads.get(flag[1:-1], 0) + 1}
+                  if content.count(flag) != (literal_uses[flag] + spawner_reads.get(flag[1:-1], 0)
+                                             + redundant_clears.get(flag[1:-1], 0) + 1)}
     if not unverified:
         return definitions, None
     dependencies = {
@@ -630,7 +632,7 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                direct_control=False, empty_hint=None, missing_group_waypoint=None, sampled_pregame_flags=(),
                supply_comparison=False, reviewed_script_calls=None, reviewed_script_type=None,
                unused_vehicle_name=None, replacement_flag=None, clearable_flags=(), ordered_events=(),
-               inactive_control_targets=(), concrete_crushers=False, spawn_companions=None):
+               inactive_control_targets=(), concrete_crushers=False, spawn_companions=None, redundant_clears=None):
     actions = defaultdict(list)
     notices = []
     assignments = []
@@ -720,9 +722,20 @@ def read_event(fields, key, flags, captures, ai, compound, objective_flags, even
                                                              and replacement_flag == 'Helo1'
                                                              and identity == '687B646FFB0D7242'))
                     converted_actions.append(details)
+                elif (action_match and action_match[1] == 'TILW_EditMapItemInstruction' and last == j + 1):
+                    # The published instruction only changes named targets.
+                    body = []
+                    converted_actions.append({'instruction': action_match[1], 'instructionId': action_match[2],
+                                              'omittedEmptyMapEdit': True})
                 elif action_match:
                     delay, body, details = compile_action(action_match, fields[j + 1:last], key, hidden_briefings)
                     flag = details.get('setsFlag') or details.get('clearsFlag')
+                    if (flag and redundant_clears and redundant_clears.get(action_match[2]) == details.get('clearsFlag') == flag
+                            and f'"{flag}"' in derived):
+                        details.pop('clearsFlag')
+                        details['omittedRedundantDerivedClear'] = flag
+                        flag = None
+                        body = []
                     if (spawn_companions and details.get('clearsFlag') and flag.startswith('STM_IN_')
                             and flag in objective_flags and delay == 0):
                         details['omittedFalseClear'] = flag
@@ -1561,6 +1574,14 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             if flag in objective_flags:
                 flag_reads[flag] += 1
     event_flags = instruction_flags(source, world, path, body, scripts, flag_reads) if scripts is not None else ()
+    river_layers = 'worlds/TheLocalPub/RiverStandoff/RiverStandoff_Layers/'
+    redundant_clears = {}
+    if (compound and (path, source.files[path]) == (river_layers + 'default.layer', '33c97af9b3adf7695ef8e0c68ba9cd21fbe45e4a')
+            and source.files.get(river_layers + 'BLUFOR/Vehicles.layer') == 'abdf3fadd2d16e9b11abd31d7db8e1bd335b1f91'
+            and {'BradDead', 'AmmoDead', 'RepairDead', 'FuelDead', 'CommandDead'} <= set(objective_flags)):
+        # The five destruction flags latch. A higher exact count has already
+        # cleared the lower derived flag and that lower count cannot recur.
+        redundant_clears = {'6A88F1F5ED31F328': 'RegWin', '6A88F1F5F3190751': 'MinWin'}
     definitions, derived, identity_flags, derived_gap = {}, {}, set(), None
     if compound:
         try:
@@ -1572,7 +1593,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
             acyclic, derived_gap = acyclic_meta_definitions(definitions)
             derived, unverified = derived_flags_with_known_readers(
                 source, world, path, body, acyclic,
-                spawner_reads if derived_spawners_audit is not None else {})
+                spawner_reads if derived_spawners_audit is not None else {}, Counter(redundant_clears.values()))
             if unverified:
                 derived_gap = derived_gap or 'meta flag has another producer or unsupported use: ' + unverified
             identity_flags = identities
@@ -1738,6 +1759,7 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
                 inactive_control_targets=inactive_control_targets,
                 concrete_crushers=concrete_crushers,
                 spawn_companions=spawn_companions,
+                redundant_clears=redundant_clears,
                 missing_term=(event[1] in reviewed_missing_terms and
                               (not controls or text.count(label) == 1 and name not in scripts)))
             if not term.get('pregameSample') and any(leaf.get('flag') in match_only_flags for leaf in leaves(term)):

@@ -302,6 +302,10 @@ COBRA_DIGEST = '683b318ce93cabf75ae5b3b2fe0a1ce49f30e76a693e3c959e353a6bc51da3f4
 GMFX_AP_MINE = ('E1BBAB7F28FE8B0B', 'Prefabs/Systems/Mines/Mine_AP.et')
 DEPLOYED_PARACHUTE = ('9ADD554959C09197', 'Prefabs/DeployedParachutes/Core/DeployedParachuteMK4.et')
 WORKSHOP_DAMAGE_TARGETS = {
+    'WCS_M2A2_63120AE07E6C0966': (
+        '7544977a28637283cf8ae8830f4efeaba71688b06efc872c79344c7f0263a121',
+        (('25BDE6AB2921AB8A', 'Prefabs/Vehicles/Tracked/M2A2/M2A2_BUSK_OD.et'),),
+    ),
     GMFX_PROVIDER: (
         GMFX_DIGEST,
         (*GMFX_AMMO_TARGETS,
@@ -7982,6 +7986,9 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     if any(path.endswith('.layer') and isinstance(body, str) and '{BC07885176C7FF8A}' in body
            for path, body in draft.items()):
         remaining.append('Compare T-72A compartments, storage and appearance against the published addon stack.')
+    if any(path.endswith('.layer') and isinstance(body, str) and '{726286E1F9570EA1}' in body
+           for path, body in draft.items()):
+        remaining.append('Compare T-72B crew and cargo compartments, inventory, damage and vehicle movement against the published addon stack.')
     if any('m_bShareIdleGunnerGroup 1' in body for body in draft.values() if isinstance(body, str)):
         remaining.append('Compare boarding, idle turret grouping and delayed waypoints for spawned vehicle crews.')
     if any(item['trigger'] == 'peak player loss' and item.get('inverted')
