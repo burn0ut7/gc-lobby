@@ -140,10 +140,13 @@ FLAG_FIELD = re.compile(r'^\s+m_flagName (' + FLAG_NAME + r')\s*$')
 META_FLAG = re.compile(r'^  TILW_MetaFlag "\{[\da-fA-F]{16}\}" \{$')
 META_FLAG_FIELD = re.compile(r'^\s+m_flagName (' + EVENT_LABEL + r')\s*$')
 SCRIPT_FLAG_APIS = ('AdjustMissionFlag', 'IsMissionFlag', 'GetFlagSetCopy', 'm_flagSet')
-# The reviewed source produces US_KIA, while this notice consumes USMC_KIA.
+# These reviewed layers produce US_KIA while the copied notice consumes USMC_KIA.
 DORMANT_NOTICES = {
     ('a75e404c331abce5185f315f47f533d9b8eccf00',
      'worlds/Jub/MissionWithAssets/MissionWithAssets_Layers/default.layer',
+     '65DAD44B20B959A8'): '"USMC_KIA"',
+    ('a75e404c331abce5185f315f47f533d9b8eccf00',
+     'worlds/Jub/LightArmoredRecon/LightArmoredRecon_Layers/default.layer',
      '65DAD44B20B959A8'): '"USMC_KIA"',
 }
 REVIEWED_MISSING_TERMS = {
