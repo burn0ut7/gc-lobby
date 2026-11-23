@@ -1,4 +1,5 @@
 """Read Commandos objective settings and authored references for the native port."""
+import json
 import re
 from collections import Counter
 from pathlib import PurePosixPath
@@ -25,6 +26,7 @@ KINDS = {
     'GC_CommandosTracker': 'tracker',
     'GC_CommandosDefectorDestroy': 'defector',
 }
+NATIVE_KINDS = {'interaction': 0, 'destruction': 1, 'tracker': 2, 'defector': 3}
 TEXT_FIELDS = {'m_name', 'm_objectiveCompletedMsg', 'm_briefingDescription'}
 OBJECTIVE_FIELDS = TEXT_FIELDS | {'m_markerPrefab', 'm_chance', 'm_blacklist'}
 
@@ -38,6 +40,32 @@ def saved_text(value):
     if not re.fullmatch(QUOTED, value):
         raise ValueError('invalid Commandos objective text')
     return value[1:-1]
+
+
+def render_manager(objectives, briefing):
+    def field(name, value):
+        return f'{name} {json.dumps(value, ensure_ascii=False)}'
+
+    contents = briefing.body.replace('\n', '\n   ')
+    lines = [MANAGER, '   ' + field('m_sDefectorPageTitle', saved_text(briefing.title)),
+             '   m_sDefectorPageContent ' + contents, '   m_aObjectives {']
+    for name, row in objectives.items():
+        kind = row['kind']
+        lines.extend([
+            f'    GC_CommandosObjective "{{{row["identity"]}}}" {{',
+            '     ' + field('m_sName', name),
+            '     ' + field('m_sBriefing', row['briefing']),
+            '     ' + field('m_sCompletionMessage', row['completionMessage']),
+            '     ' + field('m_iCompletionDelay', row['completionDelaySeconds']),
+            '     ' + field('m_eKind', NATIVE_KINDS[kind]),
+            '     ' + field('m_sAvailabilityFlag', row['availabilityFlag']),
+            '     ' + field('m_sCompletionFlag', row['completionFlag']),
+        ])
+        if kind == 'defector':
+            lines.extend(['     ' + field('m_fChance', row['chance']), '     m_aExcludedRoles {',
+                          *('      ' + json.dumps(role) for role in row['excludedRoles']), '     }'])
+        lines.append('    }')
+    return '\n'.join([*lines, '   }', '  }']) + '\n'
 
 
 def definitions(source, mode):
@@ -147,4 +175,5 @@ def audit_objectives(source, mode):
         },
         'definitions': objectives,
         'disabledRegistrationOverrides': disabled_overrides,
+        'nativeManagerComponent': render_manager(objectives, briefing),
     }
