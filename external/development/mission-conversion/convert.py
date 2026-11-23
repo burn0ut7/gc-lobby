@@ -314,7 +314,7 @@ def main():
                                     workshop_spawn_resources, reviewed_assets=reviewed_audio, aliases=asset_aliases)
 
     def resolve_crew(resource, path, *, allow_legacy_playable=True):
-        if (resource, path) in archived_crew:
+        if (resource, path) in archived_crew or ai_loadouts.get(resource, (None,))[0] == path:
             return f'"{{{resource}}}{path}"'
         return vehicle_crew.character_reference(resource, path, source_units, dev_units, stock, locally_owned,
                                                 external_ai, allow_legacy_playable=allow_legacy_playable)
@@ -1099,6 +1099,12 @@ def main():
         southwind_assets, southwind_groups, southwind_members = batch.reviewed_southwind_groups(
             source, dev, source_units, dev_units, stock, ai_loadouts)
         local_groups.update(southwind_groups)
+        registered_groups = dict(british_groups)
+        for identity, path in batch.LOCAL_PROBLEMS_GROUPS.items():
+            if batch.verified_local_ai_group(source, dev, source_units, dev_units, stock, identity, path,
+                                             external_ai, ai_loadouts, rhs_database):
+                slots = REF.findall(batch.SLOTS.search(source.read(path))[1])
+                registered_groups[identity, path] = {'path': path, 'slots': slots}
 
         def convert_group_block(body, reviewed_ai_members=None, reviewed_playable_members=None):
             group = REF.search(body.partition('\n')[0])
@@ -1110,7 +1116,7 @@ def main():
                                reviewed_ai_members={**native_ai_members, **(reviewed_ai_members or {})},
                                forced_external=forced_external,
                                rhs=rhs_database, uk=uk_database, local_aliases=local_groups,
-                               restored_rosters=restored_rosters, workshop_groups=british_groups)
+                               restored_rosters=restored_rosters, workshop_groups=registered_groups)
 
         def resolve_crew_config(resource, path):
             return vehicle_crew.verified_crew_config(source_units, resource, path, locally_owned)

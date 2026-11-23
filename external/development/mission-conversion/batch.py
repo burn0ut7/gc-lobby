@@ -429,6 +429,12 @@ BARE_SPAWNER = re.compile(r'(?P<group>\$grp )?TILW_PrefabSpawnerEntity(?: (?P<na
 REVIEWED_BARE_SPAWNER_LAYERS = {
     ('worlds/Corax/TF141/COOPXX_Loose Ends_V1/COOPXX_LooseEnds_V1_Layers/AI.layer',
      'f5d07d2c876a4ffae1a82146a65e5fabed52b5ea'),
+    ('worlds/Cunnah/Local_Problems/Local_Problems_Layers/Bomber.layer',
+     '3453aac53509f5ad8d27bfa143ce994614376940'),
+    ('worlds/Cunnah/Local_Problems/Local_Problems_Layers/INDFOR_AI.layer',
+     'b3bd80efa9adf365db55b1bfa8e45413b9fed6f6'),
+    ('worlds/Cunnah/Local_Problems/Local_Problems_Layers/OPFOR_AI.layer',
+     '90bf857673479e4a3eb2ebe70a561d4a1a40ca47'),
 }
 SPAWNER_TRANSFORM = {'coords', 'angles', 'angleX', 'angleY', 'angleZ'}
 STOCK_TERRAIN_PARENTS = {
@@ -1478,7 +1484,22 @@ UNITS_PREFAB_ALIASES = {
         '5575080709db948fbfb8f0a84fe746aa32e3f72aec97ccbc41ff02e5ea8bb741'),
 }
 RASMAN_AA_GROUP = 'worlds/HotMic/Prefabs/Characters/Afghan/GC_INS_Afghan_Squad_WithAA_HotMIc.et'
+LOCAL_PROBLEMS_MILITIA = 'worlds/Cunnah/Prefabs/Groups/INDFOR/Militia/'
+LOCAL_PROBLEMS_DEFAULT = 'worlds/Cunnah/Local_Problems/Local_Problems_Layers/default.layer'
+LOCAL_PROBLEMS_DEFAULT_BLOB = '7cce7d507e5d9cc83c4899fe9050b48adcd32508'
+LOCAL_PROBLEMS_RADIO = 'worlds/Cunnah/Prefabs/Items/Equipment/Radios/Radio_R187P1_Garrison_Single.et'
+LOCAL_PROBLEMS_ROADBLOCKS = ('worlds/Cunnah/Local_Problems/Local_Problems_Layers/OPFOR_AI.layer',
+                             '90bf857673479e4a3eb2ebe70a561d4a1a40ca47')
+LOCAL_PROBLEMS_GROUPS = {
+    '6B10747A3401270A': LOCAL_PROBLEMS_MILITIA + 'Militia_AT_Team.et',
+    '7B626931CD41BC3F': LOCAL_PROBLEMS_MILITIA + 'Militia_MG_Team.et',
+    'E86B8D95400DA31C': LOCAL_PROBLEMS_MILITIA + 'Militia_Rifle_Squad.et',
+}
 REVIEWED_NATIVE_ASSETS = {
+    LOCAL_PROBLEMS_RADIO: 'b3f2f48fa135288210469d75cbd093e03636ef83e88fad0165dd9baf20f976ce',
+    LOCAL_PROBLEMS_MILITIA + 'Militia_AT_Team.et': '05b1fdfb3e365e7ee397b792ee4dc21bec9e6926f057cf3bcec9ea62a7d58557',
+    LOCAL_PROBLEMS_MILITIA + 'Militia_MG_Team.et': 'e0d808e8c2bb3dd64afa7389a75974274678127a61d5ccb78bbc9c0f2f28b82f',
+    LOCAL_PROBLEMS_MILITIA + 'Militia_Rifle_Squad.et': '02731df540593fd4f1dd11c2ed5fcfbd97d9c81891b44d334084f0869bc3ecb1',
     # Oil Rig Rangos uses the stock warhead parent and the original Anizay fuel effect.
     'worlds/TheLocalPub/OilRigRangos/Prefabs/Weapons/Warheads/Explosions/Explosion_Tnt_Large.et':
         '8601adcda3595b20f8342e7ec8d866785a22826174f72ab9f6c921cb68474d8f',
@@ -3909,7 +3930,7 @@ def verified_local_ai_group(source, dev, source_units, dev_units, stock, resourc
         body = passive_asset(source, path)
     except ValueError:
         return False
-    if (not body.startswith('SCR_AIGroup : ') or (path in dev.files and body != dev.read(path))):
+    if (not body.startswith(('SCR_AIGroup : ', 'SCR_AIGroup {')) or (path in dev.files and body != dev.read(path))):
         return False
     parent = REF.search(body.partition('\n')[0])
     roster = SLOTS.search(body)
@@ -4813,7 +4834,7 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                 # The legacy spawner passes waypoints only to spawned AI groups.
                 ignored_effect_waypoints, waypoints = waypoints, []
         group = bool(ref and (ref[2].startswith('Prefabs/Groups/') or
-                              reviewed_spawn_type(source, ref[1].upper(), ref[2], 'SCR_AIGroup : ')))
+                              reviewed_spawn_type(source, ref[1].upper(), ref[2], ('SCR_AIGroup : ', 'SCR_AIGroup {'))))
         absent = next((point for point in waypoints if point[1:-1] in missing_waypoints), None) if group else None
         if absent:
             waypoints = [point for point in waypoints if point != absent]
@@ -4866,6 +4887,10 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                   if group_waypoints else [])
         actions = defaultdict(list)
         crew_groups = []
+        duplicate_roadblock_name = (source.files.get(LOCAL_PROBLEMS_ROADBLOCKS[0]) == LOCAL_PROBLEMS_ROADBLOCKS[1]
+                                    and location.startswith(LOCAL_PROBLEMS_ROADBLOCKS[0] + ':')
+                                    and anchor in {'Road_Block_Tech', 'Road_Block_Tech2'}
+                                    and details['area'] == 'Bomber_Target_Vic')
         for sequence, delay in enumerate(timings):
             spawn_key = f'{key}/{sequence}'
             kind = 'GC_AIGroupSpawn' if group else 'GC_PrefabSpawn'
@@ -4878,6 +4903,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                 if reserve_next_seat:
                     fields.insert(0, '        m_bReserveNextCrewSeat 1')
                 kind = 'GC_CrewedVehicleSpawn'
+            if duplicate_roadblock_name:
+                fields = [*fields, '        m_bAllowDuplicateName 1']
             scheduled = str(Decimal(delay) + startup_delay) if startup_delay else delay
             seconds, action = render_spawn({**details, 'delay': scheduled}, spawn_key, kind, fields)
             actions[seconds].extend(action)
@@ -4908,6 +4935,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                       'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in group_waypoints], **term})
         if startup_delay:
             audit[-1]['startupInitializationSeconds'] = startup_delay
+        if duplicate_roadblock_name:
+            audit[-1]['allowsDuplicateSpawnName'] = True
         if flag[1:-1] in single_draw_flags:
             audit[-1]['startupChoice'] = flag[1:-1]
         if 'scale' in data:
@@ -5568,9 +5597,14 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
                                  and source.files.get(owner) == '4e4194d349321ca4fe86ef3d4c317a8cbf837476'
                                  and resource == '1D1694497FF79C23' and canonical == ZARICHNE_WARHEAD
                                  and path == 'worlds/HitTheMan/Battle For Rasman/Warhead_Mine_M15AT_HTM.et')
+                moved_garrison_radio = (
+                    resource == '19311332068509C9' and canonical == LOCAL_PROBLEMS_RADIO
+                    and source.files[canonical] == '857b299e53863d2008260e1e12cdc8a75a24bcf3'
+                    and source.files[meta] == '39944bfeb464c3499c6f13d08ec8b02a1fb76c40'
+                    and path == LOCAL_PROBLEMS_RADIO.replace('_Single.et', '_Multi.et'))
                 if (not identity or identity[2].upper() != resource
                         or (path != canonical and identity[3] not in (path, canonical)
-                            and not (moved_material or moved_warhead))):
+                            and not (moved_material or moved_warhead or moved_garrison_radio))):
                     raise ValueError('resource path disagrees with metadata')
                 if any(other != canonical for other in dev.resources.get(resource, [])):
                     raise ValueError('Dev resource identity collision')
@@ -6321,7 +6355,8 @@ def mode_children(lines, disable_photo=False, lock_editor=False):
     editor_prefab = NO_PHOTO_EDITOR if disable_photo else STAGED_ACCESS_EDITOR if lock_editor else None
     index = 1
     while index < len(lines) - 1:
-        match = re.fullmatch(r'  (\w+)(?: "[\da-fA-F]{16}")? \{', lines[index])
+        name = ' FactionManager' if lines[index] == '  SCR_FactionManager FactionManager {' else ''
+        match = re.fullmatch(r'  (\w+)(?: "[\da-fA-F]{16}")? \{', lines[index].replace(name + ' {', ' {', 1))
         if not match or match[1] in seen:
             raise ValueError('custom or duplicate legacy mode child: ' + lines[index].strip())
         kind = match[1]
@@ -6335,7 +6370,7 @@ def mode_children(lines, disable_photo=False, lock_editor=False):
             coords = []
             if rest and rest[0].startswith('   coords ') and FIELD.fullmatch(rest[0].strip()):
                 coords, rest = rest[:1], rest[1:]
-            output.extend(['  SCR_FactionManager {', '   ID "6ADC9BB66394BE46"', *coords])
+            output.extend([f'  SCR_FactionManager{name} {{', '   ID "6ADC9BB66394BE46"', *coords])
             if rest:
                 if (len(rest) < 3 or rest[0] != '   Factions {' or block_end(rest, 0) != len(rest) - 1
                         or LEGACY.search('\n'.join(rest))):
@@ -7371,6 +7406,16 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                 blockers.append({'rule': 'named crew group', 'file': world,
                                  'detail': 'crew group name conflicts with another entity: ' + name})
         anchor_source, anchor_blob, missing_anchors = REVIEWED_MISSING_SPAWN_ANCHORS.get(world, (None, None, ()))
+        local_problems = (world == 'worlds/Cunnah/Local_Problems/Local_Problems.ent'
+                          and source.files.get(LOCAL_PROBLEMS_DEFAULT) == LOCAL_PROBLEMS_DEFAULT_BLOB)
+        local_problems_bomber = (local_problems and len(spawned_names.get('Bomber_Vic', ())) == 1
+                                 and not named.get('Bomber_Vic') and any(
+                                     spawn['spawnName'] == 'Bomber_Vic' and spawn['trigger'] == 'pregame start'
+                                     for spawn in spawner_audit))
+        local_roadblocks = (local_problems and not named.get('Bomber_Target_Vic')
+                           and len(spawned_names.get('Bomber_Target_Vic', ())) == 2
+                           and {spawn['spawnAnchor'] for spawn in spawner_audit if spawn.get('allowsDuplicateSpawnName')}
+                               == {'Road_Block_Tech', 'Road_Block_Tech2'})
         for spawn in prefab_spawns:
             anchor, name = spawn['spawnAnchor'], spawn['spawnName']
             resource = REF.fullmatch(spawn['prefab'])[1].upper()
@@ -7397,8 +7442,12 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             choices = spawned_names[name]
             mutually_exclusive = (None not in choices and len(set(choices)) == len(choices)
                                   and len({draw_by_flag.get(choice) for choice in choices}) == 1)
-            if (len(named.get(anchor, [])) != 1
-                    or (name and ((len(choices) > 1 and not mutually_exclusive and name not in temporary_names
+            tracked_bomber = (spawn.get('sourceEvent') == 'Explode_Bomb'
+                              and ((local_problems_bomber and anchor == 'Bomber_Vic')
+                                   or (local_roadblocks and anchor == 'Bomber_Target_Vic')))
+            authored_duplicate = local_roadblocks and name == 'Bomber_Target_Vic'
+            if ((len(named.get(anchor, [])) != 1 and not tracked_bomber)
+                    or (name and ((len(choices) > 1 and not authored_duplicate and not mutually_exclusive and name not in temporary_names
                                    and name not in rotating_names)
                                   or (name in named and not replacement)))):
                 blockers.append({'rule': 'prefab spawn', 'file': world,
@@ -7439,6 +7488,15 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             if event.get('name') == 'LAVWaypoint' and source.files.get(ZARICHNE_DEFAULT) == ZARICHNE_DEFAULT_BLOB:
                 placed_crews = {name for name in ZARICHNE_CREW_NAMES if placed_crew_names[name] == 1
                                 and name not in crew_name_counts}
+            if local_problems:
+                for spawn in spawner_audit:
+                    if spawn['trigger'] not in ('pregame start', 'Match start') or spawn['spawnDelaysSeconds'] != ['0']:
+                        continue
+                    for group in spawn.get('crewGroups', ()):
+                        name = group.get('groupName')
+                        if (name in {'Bomber', 'Tech_1', 'Tech_2', 'truck_blockade'} and crew_name_counts[name] == 1
+                                and not group.get('shadowedByAnchor')):
+                            earlier_crews[name] = ('0', group['waypoints'])
             gaps, no_ops = waypoint_gaps(named, active_orders, spawned_names, script_text(source), earlier_crews,
                                         placed_crews=placed_crews)
             self_waypoints.extend(no_ops)

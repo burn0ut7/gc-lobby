@@ -52,7 +52,7 @@ class StockPrefabs:
 
 SCENERY_CLASS = r'(?:GenericEntity|StaticModelEntity|Tree|DecalEntity|SCR_DestructibleBuildingEntity|SCR_DestructibleEntity|SCR_IndestructibleEnvironmentalEntity)'
 NAME = r'[\w.\-]+'
-WAYPOINT_CLASS = r'(?:SCR_AIWaypoint|SCR_DefendWaypoint|SCR_SearchAndDestroyWaypoint|SCR_TimedWaypoint|SCR_BoardingWaypoint|SCR_EntityWaypoint|SCR_SuppressWaypoint|SCR_BoardingTimedWaypoint|SCR_BoardingEntityWaypoint|AIWaypointCycle)'
+WAYPOINT_CLASS = r'(?:SCR_AIWaypoint|SCR_DefendWaypoint|SCR_SearchAndDestroyWaypoint|SCR_TimedWaypoint|SCR_BoardingWaypoint|SCR_EntityWaypoint|SCR_SuppressWaypoint|SCR_BoardingTimedWaypoint|SCR_BoardingEntityWaypoint|SCR_AIAnimationWaypoint|AIWaypointCycle)'
 ROOT = re.compile(rf'(?P<group>\$grp )?(?P<kind>{SCENERY_CLASS}|{WAYPOINT_CLASS})(?: {NAME})? : "\{{(?P<guid>[\da-fA-F]{{16}})\}}(?P<path>[^"]+\.et)" \{{')
 NUMBER = r'[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?'
 FIELD = re.compile(rf'(?:(?:coords|angles) {NUMBER} {NUMBER} {NUMBER}|(?:angleX|angleY|angleZ|scale) {NUMBER})')

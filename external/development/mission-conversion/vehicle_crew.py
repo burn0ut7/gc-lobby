@@ -45,6 +45,8 @@ CREW_CONFIG_FIELD = 'm_crewConfig TILW_CrewConfig ' + SERIALIZED_ID
 CREW_CONFIG_REFERENCE = re.compile(CREW_CONFIG_FIELD + r' : ' + REF.pattern + r' \{')
 SEAT_TYPES = ('Pilot', 'Turret', 'Cargo')
 WORKSHOP_VEHICLES = {
+    '1DF4C30C130D8FAD': ('RHS-StatusQuo_595F2BF2F44836FB',
+                         'Prefabs/Vehicles/Wheeled/K4386/K4386_Armed_Camo.et'),
     '130214331292D6B5': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Weapons/Tripods/Tripod_SPG9.et'),
     ZAGORIA_BMP2[0]: ('Zagoria89BMP2_6730D59067916E3D', ZAGORIA_BMP2[1]),
     CORE_TIGR_AGS17[0]: ('TacticalFlava-TIGR_DEADC0DE00000003', CORE_TIGR_AGS17[1]),

@@ -577,6 +577,10 @@ def native_group_component(lines, start, end):
     header = lines[start].strip()
     if FORMATION.fullmatch(header):
         return True
+    if re.fullmatch(r'SCR_AIGroupSettingsComponent "\{[\da-fA-F]{16}\}" \{', header):
+        fields = '\n'.join(line.strip() for line in lines[start + 1:end])
+        return bool(re.fullmatch(r'm_aDefaultSettings \{\nSCR_AIGroupFormationSetting "\{[\da-fA-F]{16}\}" \{\n'
+                                 r'm_eFormation (?:Wedge|Line|Column|StaggeredColumn)\n\}\n\}', fields))
     if header == 'Persistence "{654CB71D928E041B}" {':
         return end == start + 2 and lines[start + 1].strip() == 'Enabled 0'
     if header == 'SCR_CallsignBaseComponent "{65455E36B9829D54}" {':
@@ -1242,13 +1246,13 @@ def group_layer(text, source_units, dev_units, stock, locally_owned, reviewed_ca
         if not match:
             raise ValueError('mixed layer or custom group declaration')
         guid = match['guid'].upper()
+        path = REF.search(lines[i])[2]
+        stock_group = (workshop_groups or {}).get((guid, path)) if allow_stock_ai else None
         local = (local_aliases or {}).get(guid)
-        if guid in locally_owned and (not local or REF.search(lines[i])[2] != local[0]):
+        if guid in locally_owned and not stock_group and (not local or path != local[0]):
             raise ValueError('mission-owned group ' + guid)
         spec = WRAPPERS['groups'].get(guid) if guid not in source_units.resources and stock else None
         native_group = allow_stock_ai and (guid in STOCK_AI_GROUPS or guid in RHS_AI_GROUPS or guid == UK_FIRETEAM)
-        path = REF.search(lines[i])[2]
-        stock_group = (workshop_groups or {}).get((guid, path)) if allow_stock_ai else None
         if not stock_group and native_group and guid not in source_units.resources and guid not in dev_units.resources:
             stock_group = (verified_uk_fireteam(path, stock, uk, locally_owned, source_units, dev_units)
                            if guid == UK_FIRETEAM else

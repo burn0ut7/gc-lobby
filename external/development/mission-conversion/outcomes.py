@@ -187,6 +187,8 @@ REVIEWED_INACTIVE_FLAGS = {
         ('7fecb24882a1c6a5b22b7ab2e78d8c6b0685f040', '"23"', 2),
     'worlds/Wade/NightSeizure/NightSeizure_Layers/default.layer':
         ('1db6432dc54bc23c48b8c94d1d310657fc473ee2', '"Intel"', 2),
+    'worlds/Cunnah/Local_Problems/Local_Problems_Layers/default.layer':
+        ('7cce7d507e5d9cc83c4899fe9050b48adcd32508', '"OPFOR_In_Town"', 2),
     'worlds/Perfk/AbadDayinKunarUS/AbadDayinKunarUS_Layers/default.layer':
         ('4168c2d93063db3291d03b9e5b81f37f55477e4d', '"Objective"', 1),
     'worlds/Perfk/AbadDayinKunarUSSR/AbadDayinKunarUSSR_Layers/default.layer':
@@ -566,6 +568,9 @@ def read_term(lines, flags, captures, ai, objective_flags, event_flags, depth=0,
         if invert == '0' and flag in inactive:
             return {'trigger': 'inactive flag' if depth else 'dormant', 'flag': flag[1:-1],
                     'reason': 'no legacy flag producer', 'requiresMatch': True}
+        if invert == '1' and depth and flag in inactive:
+            return {'trigger': 'inactive flag', 'flag': flag[1:-1], 'inverted': True,
+                    'reason': 'no legacy flag producer', 'requiresMatch': True}
         raise ValueError('unresolved or unsupported outcome flag ' + flag)
     kind = match[1]
     threshold = COUNT_FIELDS.get(kind)
@@ -890,7 +895,8 @@ def render_check(term, key, captures, capture_messages, tracked_areas):
     trigger = term['trigger']
     if trigger == 'inactive flag':
         return [f'      GC_GameModeStateCondition "{{{guid(key + "/inactive flag")}}}" {{',
-                f'       m_eGameModeState {MATCH_PHASE_VALUE}', '       m_bRequireOtherState 1', '      }']
+                f'       m_eGameModeState {MATCH_PHASE_VALUE}',
+                *([] if term.get('inverted') else ['       m_bRequireOtherState 1']), '      }']
     if trigger in ('interaction flag', 'event flag'):
         check = [f'      GC_MissionFlagCondition "{{{guid(key + "/objective")}}}" {{',
                  f'       m_sFlagName "{term["flag"]}"']

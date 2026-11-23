@@ -31,6 +31,8 @@ class GC_PrefabSpawn
 	string m_sLocation;
 	[Attribute("", UIWidgets.EditBox, "Optional unique name for the new entity. Leave empty when spawning repeatedly. If this name is already in use, nothing spawns.")]
 	string m_sEntityName;
+	[Attribute("0", UIWidgets.CheckBox, "Preserve an authored duplicate entity name for legacy name lookup.")]
+	bool m_bAllowDuplicateName;
 
 	//------------------------------------------------------------------------------------------------
 	bool IsValid()
@@ -41,7 +43,7 @@ class GC_PrefabSpawn
 	//------------------------------------------------------------------------------------------------
 	bool IsValidAtAnchor()
 	{
-		return !m_sPrefab.IsEmpty();
+		return !m_sPrefab.IsEmpty() && (!m_bAllowDuplicateName || !m_sEntityName.IsEmpty());
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -83,7 +85,7 @@ class GC_PrefabSpawn
 		BaseWorld world = GetGame().GetWorld();
 		if (location.GetWorld() != world)
 			return false;
-		if (!m_sEntityName.IsEmpty())
+		if (!m_sEntityName.IsEmpty() && !m_bAllowDuplicateName)
 		{
 			IEntity existing = world.FindEntityByName(m_sEntityName);
 			if (existing && !(allowAnchorName && m_sEntityName == location.GetName()) && !GC_PhaseEntitySet.AllowsNameReuse(m_sEntityName))

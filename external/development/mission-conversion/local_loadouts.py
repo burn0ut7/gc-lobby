@@ -32,11 +32,18 @@ REVIEWED_RHS_PILOT_PARENT = (
 )
 OIL_RIG_LOADOUTS = 'worlds/TheLocalPub/OilRigRangos/Prefabs/Characters/Factions/'
 OIL_RIG_RIFLEMAN_PARENT = '4AF2023E868540E7'
+LOCAL_PROBLEMS_GARRISON_ROLES = {
+    'a24fb95e895f54d644372590e2eb8b9430b344e5': '7E590EDD929739E4',
+    '635bae4af183ca6d6c9f867207e865be2d787219': '5A1F1BD88FC6C6E9',
+    'f369b0a8eb8eb997cf1588ef52c928bee085940b': 'F0F0A8C16C9901B8',
+}
 MOVED_AI_PARENTS = {
     ('4C362B06571604F9', 'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/Character_GC_SEPARATIST_SL.et'):
         'Prefabs/Characters/Factions/OPFOR/GC_SEPARATIST/2020/Character_SEP_SL.et',
 }
 REVIEWED_FORCED_CHARACTERS = {
+    # The Local Problems company HQ forces playability on its one HVT role.
+    'F32A660889248606': '1ac0586d142dab2e131b6d14d2de4269761ddb0d835144008c3711f506418041',
     # Gunfighter inherits force-playability from the USMC platoon HQ.
     '6249D34810999F63': '8b74873ea5a2cbb6a1673fbdcbc3b0f65d1606c3f98c02b4dfe4843e9dff574b',
     # Trifecta explicitly enables the PATRIOT HQ group and its mission-local roles.
@@ -225,10 +232,13 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
             else:
                 registered_rhs_pilot = (rhs and (source.files[path], resource, parent_path) == REVIEWED_RHS_PILOT_PARENT
                                         and rhs.contains(resource, parent_path))
+                registered_rhs_garrison = (rhs and LOCAL_PROBLEMS_GARRISON_ROLES.get(source.files[path]) == resource
+                                           and rhs.contains(resource, parent_path))
                 registered_oil_rig_role = (resource == OIL_RIG_RIFLEMAN_PARENT and path.startswith(OIL_RIG_LOADOUTS)
                                            and (external_roles or {}).get(resource) == (parent_path, parent_path))
                 if not (removed or verified_forced) or not (
-                        registered_rhs_pilot or registered_oil_rig_role or stock.contains(resource, parent_path)):
+                        registered_rhs_pilot or registered_rhs_garrison or registered_oil_rig_role
+                        or stock.contains(resource, parent_path)):
                     return None
         if (guid == '730C15295DBF4543' and source.files[path] == '90e7c82588520852e48f88e85f35bcbeb29b27ef'
                 and GREEN_SNOOD in unavailable
