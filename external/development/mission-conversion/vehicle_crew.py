@@ -88,6 +88,8 @@ WORKSHOP_VEHICLES = {
                          'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM_1P29.et'),
     '8E7F7A0368CE8805': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM_Green_1P29.et'),
+    '8D50E85934A28531': ('TacticalFlava-TIGR_DEADC0DE00000003',
+                         'Prefabs/Vehicles/Wheeled/TIGR/PKP/GAZ_TIGR_v2_PKM_Tan.et'),
     '95A220DF8D6E2543': ('TacticalFlava-TIGR_DEADC0DE00000003',
                          'Prefabs/Vehicles/Wheeled/TIGR/ArbaletDM/GAZ_TIGR_v2_Arbalet_KORD_Green.et'),
     '953523CFE2DB9769': ('M113APC_5E5C154FEE1094BB', 'Prefabs/Vehicles/Tracked/M113/M113_APC_MERDC.et'),

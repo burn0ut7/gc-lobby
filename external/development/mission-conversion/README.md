@@ -16,7 +16,7 @@ Use the batch workflow for the catalog. The same rules process every legacy laun
 
 ### Remaining migration work
 
-The audit at Missions Dev `2c2e0cdc` clears 255 of the 277 published launchers, all with native snapshots and verified portable manifests. Of the 22 launchers still held by the file audit, nine have generated drafts and thirteen still need conversion rules. The generated `plan.md` and `inventory.json` carry the exact resource IDs, paths and rule failures for the current dependency graph. Review shared providers as a group, then use representative Match checks for each affected behavior family.
+The audit at Missions Dev `f2dd0ebd` clears 256 of the 277 published launchers, all with native snapshots and verified portable manifests. Of the 21 launchers still held by the file audit, nine have generated drafts and twelve still need conversion rules. The generated `plan.md` and `inventory.json` carry the exact resource IDs, paths and rule failures for the current dependency graph. Review shared providers as a group, then use representative Match checks for each affected behavior family.
 
 | Launchers | Remaining blocker |
 | --- | --- |
@@ -31,7 +31,6 @@ The audit at Missions Dev `2c2e0cdc` clears 255 of the 277 published launchers, 
 | Cobra’s Bite | The two authored USMC M3 MAAW roles remain unavailable. |
 | Factory Siege Redux | The authored 2003 woodland forward observer remains unresolved. |
 | Gull Bay Guns | The original RHS EMR squad leader remains unresolved. |
-| Operation Arrowhead Iron Cipher | Extraction, intel and fallback spawns, flag producers, event deactivation and the tan TIGR need an integrated conversion. |
 | Commandos Reforged | The mission-specific Commandos manager, interactions, cleanup, aircraft and loadouts need an integrated conversion. |
 
 Run the planner from GC Lobby with a clean Missions Dev checkout. Use a fresh output directory when the commits or conversion rules change.
@@ -2317,3 +2316,15 @@ The stock truck control travelled 61.71–62.77 m across the four trials. The ar
 The complete 1.0.46 Olive variant retains the slot names, default occupant references and direct main weapon references in the saved hull and turrets. Dedicated sessions `logs_2026-11-22_20-03-55` and `logs_2026-11-22_20-04-06` confirmed that all sixteen seats were accessible and could spawn their default occupants. The two turret stations appear in reverse order at runtime, so an authored crew list can put its gunner in the commander's station. The newer hull retains 21 inventory items and changes both 30 mm magazine prefab IDs. Its armor-piercing projectile has different damage and hit effects. The original hull's 1,500-health Main physical hit zone is absent. These results apply to the exact reviewed packages on Reforger 1.9.0.37. [Zagoria BMP-2 release history](https://reforger.armaplatform.com/workshop/6730D59067916E3D/changelog)
 
 The batch plan reports the verified 1.0.46 successor alongside all five affected launchers when supplied its archived package. Package coverage still requires the authored asset. Topdown, Combined Anti-Armor Team, Light Armored Recon, Mulladost Pass and Two Bloody Miles remain held on the drivetrain and replacement differences.
+
+### Operation Arrowhead Iron Cipher
+
+Missions Dev commit `ad62cadf` installs all 28 playable slots and 45 scheduled placements. The converter keeps the one-of-nine intel draw, the three-of-ten antiaircraft draw, and the ten deployments gated by US presence. The fallback phase still requires all four transport damage flags and schedules all 16 reinforcements. The two original extraction outcomes still deactivate each other on their authored schedules.
+
+The fallback area keeps all 12 points, its map outline and its 60-second out-of-bounds timer. The replacement area spawns at five seconds, the old area is removed at 5.1 seconds, and the alternate extraction marker spawns after one second. The published TilW AO prefab confirms that the cover frame is disabled and the outline inherits an inverted fill. The native rules also preserve the original 500- and 80-metre intel checks and the 30.5-metre fallback extraction area with a ten-second hold.
+
+The tan TIGR keeps the exact Tactical Flava registration. Its tan turret inherits the reviewed PKP turret and changes the material only. The four UK fallback groups retain their original role ordering and registrations. Units Dev commit `2c02a9a5` updates the two inherited rifle-section references to the registered LAW80 path under the original role ID. The file comparison reproduces the preceding 313 draft files byte for byte.
+
+Workbench MCP session `logs_2026-11-23_01-42-22` captured 275 authored entities and 28 playable slots on the full dependency graph. Missions Dev commit `f2dd0ebd` stores the native snapshot and the translated author catalogue. The original author block remains intact. The asset capture records Takistan, British Forces and Tactical Flava TIGR. The live fallback sequence, crew placement and outcome timing remain in the representative Match queue. Workbench ignored the six legacy SOAR vehicle links and reported an inherited flare cooldown field in the armed H-60 chain at lines 29118–29131. The links stay in the deferred vehicle preview inventory.
+
+The portable manifest verifies the committed header and scenario identities and lists 76 required addons, including the terrain and both reviewed vehicle and group providers. The preceding 255 manifests remain byte-for-byte identical.

@@ -152,6 +152,7 @@ def main():
     workshop_spawn_resources = ()
     workshop_spawn_groups = ()
     british_groups = {}
+    british_fallback_groups = set()
     workshop_damage_resources = ()
     external_vehicle_parents = {}
     archived_crew = {}
@@ -236,6 +237,8 @@ def main():
                     asset_aliases.update(batch.stock_library_aliases(source, stock, occupied))
                     british_groups = batch.verified_british_ai_groups(args.workshop_addons, stock, locally_owned,
                                                                     source_units, dev_units)
+                    british_fallback_groups = batch.verified_british_fallback_groups(
+                        args.workshop_addons, stock, locally_owned, source_units, dev_units)
                 asset_aliases.update(batch.reviewed_units_asset_paths(source_units, dev_units))
                 if args.workshop_addons:
                     unavailable = batch.unavailable_optional_resources(
@@ -265,6 +268,8 @@ def main():
                     path = f'worlds/Perfk/Prefabs/Groups/{name}'
             owners = (locally_owned, source_units.resources, dev_units.resources)
             identity = (resource, path)
+            if identity in british_fallback_groups:
+                return path
             if ((identity in british_groups or identity in workshop_spawn_groups)
                     and not any(resource in owner for owner in owners)):
                 return path
@@ -633,6 +638,7 @@ def main():
             spawned = batch.spawned_objectives(source, dev, world, stock, locally_owned, workshop_damage_resources,
                                                rhs=rhs_database)
             spawned.update(batch.reviewed_villa_escape(source, dev, world))
+            spawned.update(batch.reviewed_iron_cipher_assets(source, dev, world, stock))
             if spawned:
                 asset_flags = [item['flag'] for item in spawned.values() if 'flag' in item]
                 if (len(asset_flags) != len(set(asset_flags)) or set(asset_flags) & set(objective_flags)

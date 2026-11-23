@@ -401,6 +401,24 @@ BRITISH_1983_GROUPS = {
     '7EA45A04944D66B8': ('Team_AT', ('8C380664085E4A89', 'E06C3284B49AC5A7')),
     'A54348BD64AE32BB': ('GunGroup', ('2C69231254D1AEDB', 'D005E20AE7CB8431', '327FBCA6B02BC5A8')),
 }
+UK_1989_RIFLE_SECTION = (
+    'FB08033A33E826D5', UK_GROUP_DIRECTORY + '1989/Light Infantry/Group_UK_1989_REG_RifleSection.et')
+UK_1989_RIFLE_SECTION_BLOBS = ('57dcd8d9d38e0253cc87f0bbaa2b859d092dbe63',
+                               '751db058fa3720d7ec29183d3ba6c2f7a896d29a')
+BRITISH_1989_FALLBACK_GROUPS = {
+    'A0C411E558DF236F': 'Regulars_GunGroup',
+    '756BBB58355968B1': 'Regulars_PlatoonHQ',
+    '711B73BBB94DAEF8': 'SpecialForces_Patrol',
+}
+BRITISH_1989_FALLBACK_ROLES = {
+    '7D7C6FBCBA40F45D': 'Regulars/SectionCommander', 'F9E2E97FA21AA133': 'Regulars/Section2IC',
+    'D0F124C1610D3232': 'Regulars/LSW', 'B10659FFD99279DC': 'Regulars/Rifleman_LAT_LAW80',
+    '4AF2023E868540E7': 'Regulars/Rifleman', 'F487760AB6777BF3': 'Regulars/PlatoonLeader',
+    'B9CFB916A26682D6': 'Regulars/Sergeant', '323D2A366A8DAEED': 'Regulars/RTO',
+    '59DC74EF0ECF7E49': 'Regulars/Medic', '6FAAF2B4A124BA7F': 'SpecialForces/SL',
+    '6471B09A37F58FD4': 'SpecialForces/RTO', '58BD727F9736FC19': 'SpecialForces/Medic',
+    'CF564BD6D0DA773A': 'SpecialForces/LMG',
+}
 METSALA_VEHICLE_LAYER = 'worlds/Til/MetsalaAirfield/MetsalaAirfield_Layers/ru.layer'
 METSALA_VEHICLE_BLOB = 'd2b64a9a0d8d2081238c2aff1ee520b4b42a6b61'
 METSALA_HIND = '{658B80A790C7EFA7}Prefabs/Vehicles/Helicopters/Mi24/Mi24V_armed_9M114.et'
@@ -3201,6 +3219,20 @@ VILLA_ESCAPE_TRIGGER = ('D344EE6C304890DD', VILLA + 'Prefab/BluforEscapeTrigger.
                         'dcf0f545b012295af1641e6ed3a96017220c8443')
 VILLA_ESCAPE_BOUNDARY = ('80437C58E91B0A3E', VILLA + 'Prefab/AO_Draw_Escape_BLU_Prefab.et',
                          'c90046ff90d0690c0e1aa7f5ed64578d9fe6eff1')
+IRON_CIPHER = 'worlds/Jub/OperationArrowheadIronCipher/'
+IRON_CIPHER_LAYERS = IRON_CIPHER + 'OperationArrowheadIronCipher_Layers/'
+IRON_CIPHER_DEFAULT_BLOB = 'ea4e6b40efcf8df9119bff025c64adea1448eaaa'
+IRON_CIPHER_INTEL = ('13A9833A6EEB870A', 'worlds/Wade/NightSeizure/Prefabs/Intel.et',
+                     '729184282a8fd64e84ae6b16f01da6b0469827e3')
+IRON_CIPHER_AO = ('EAD42D9E3F10491B', IRON_CIPHER + 'Prefabs/AO2.et',
+                  '4a4b6eea551653c85ba78ce033c117066b4a85a6')
+IRON_CIPHER_MARKER = ('7BE5411E75A669E2', IRON_CIPHER + 'Prefabs/EP2.et',
+                      'ae4bab70759ef97429f1cf0480eefb9e595a85c3')
+IRON_CIPHER_EXTRACT_LAYER = IRON_CIPHER_LAYERS + 'SYSTEMS/Triggers/Extract.layer'
+IRON_CIPHER_RADIUS_PREFABS = {
+    'CC335FCAB3776616': (IRON_CIPHER + 'Prefabs/Extract.et', 'c5f6d5a0010e8c2c741e7ac9a60d6fc66165aab3'),
+    '76B07D8520A22B06': (IRON_CIPHER + 'Prefabs/intelex2.et', '4536378bf14aef31a80e187d971a81b19804d521'),
+}
 VILLA_CONVOY_LAYER = VILLA_OPFOR.replace('OPFOR_Players.layer', 'FIA_RandomizedTrucks.layer')
 VILLA_CONVOY_LAYER_BLOB = '8b538f02ffd668927c84e6d50c593e74e63cb9f8'
 VILLA_CONVOY_PREFABS = VILLA + 'Prefab/QRF Relief Convoy/'
@@ -4377,13 +4409,13 @@ def reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed
 def reviewed_oil_rig_group(source, dev, source_units, dev_units, loadouts):
     resource = '558D7D02AE68982F'
     path = 'worlds/TheLocalPub/OilRigRangos/Prefabs/Groups/OPFOR/ECO forces/Group_ECO_RifleTeam_P.et'
-    parent = 'FB08033A33E826D5'
-    parent_path = 'Prefabs/Groups/BLUFOR/British Forces/1989/Light Infantry/Group_UK_1989_REG_RifleSection.et'
+    parent, parent_path = UK_1989_RIFLE_SECTION
     if (source.resources.get(resource) != [path] or source.files.get(path) != '183f4e56be96f6ac6d928aa5cdb86f1c8da0ddef'
             or dev.resources.get(resource) not in (None, [path]) or parent in source.resources or parent in dev.resources
             or any(resource in snapshot.resources or snapshot.resources.get(parent) != [parent_path]
-                   or snapshot.files.get(parent_path) != '57dcd8d9d38e0253cc87f0bbaa2b859d092dbe63'
-                   for snapshot in (source_units, dev_units))):
+                   for snapshot in (source_units, dev_units))
+            or source_units.files.get(parent_path) != UK_1989_RIFLE_SECTION_BLOBS[0]
+            or dev_units.files.get(parent_path) not in UK_1989_RIFLE_SECTION_BLOBS):
         return {}, {}
     old = source.read(path)
     if any(loadouts.get(member, (None,))[0] != name for member, name in REF.findall(SLOTS.search(old)[1])):
@@ -4711,6 +4743,50 @@ def authored_spawn_references(source, world):
                 continue
 
 
+def spawned_boundary_prefab(rendered, count, expected, identity):
+    overlay, limit = (block for _, block in blocks(rendered))
+    if (count != expected or not overlay[0].startswith('PolylineShapeEntity ')
+            or not limit[0].startswith('GC_AOLimitEntity ')):
+        raise ValueError('spawned boundary needs its reviewed limit and map overlay')
+    # Both drawings share the AO entity, transform and lifetime.
+    limit[2:2] = overlay[2:block_end(overlay, 1)]
+    limit.insert(1, identity)
+    return '\n'.join(limit) + '\n'
+
+
+def reviewed_iron_cipher_assets(source, dev, world, stock):
+    if (world != IRON_CIPHER + 'OperationArrowheadIronCipher.ent'
+            or source.files.get(IRON_CIPHER_LAYERS + 'default.layer') != IRON_CIPHER_DEFAULT_BLOB
+            or source.files.get(IRON_CIPHER_LAYERS + 'SYSTEMS/Triggers/IntelSpawns.layer')
+                != '6ada30e7d895c3f661ba1994b300e50622512b89'):
+        return {}
+    refs = Counter((resource, path) for resource, path, _ in authored_spawn_references(source, world))
+    assets = {}
+    for (resource, path, blob), expected in ((IRON_CIPHER_INTEL, 9), (IRON_CIPHER_AO, 1), (IRON_CIPHER_MARKER, 1)):
+        if (source.files.get(path) != blob or source.resources.get(resource) != [path]
+                or dev.resources.get(resource) not in (None, [path]) or refs[resource, path] != expected):
+            return {}
+        legacy = source.read(path).splitlines()
+        if resource == IRON_CIPHER_INTEL[0]:
+            parent = REF.search(legacy[0])
+            if not stock or not stock.contains(*parent.groups()):
+                return {}
+            body = source.read(path)
+        elif resource == IRON_CIPHER_AO[0]:
+            # The standard TilW AO inherits a disabled cover component and an enabled limit.
+            rendered, count = convert_boundary_instance(legacy[2:-1], '', extended_shapes=True)
+            body = spawned_boundary_prefab(rendered, count, 12, legacy[1])
+        else:
+            fields = '\n'.join([legacy[0], *legacy[2:]]) + '\n'
+            marker = convert_layer(fields, dev, draw_order=True)[0].splitlines()
+            marker.insert(1, legacy[1])
+            body = '\n'.join(marker) + '\n'
+        if LEGACY.search(body) or (path in dev.files and dev.read(path).strip() != body.strip()):
+            return {}
+        assets[resource] = {'path': path, 'body': body}
+    return assets
+
+
 def reviewed_villa_escape(source, dev, world):
     if (VILLA_DEFAULT not in source.layers[world.lower()]
             or source.files.get(VILLA_DEFAULT) != VILLA_DEFAULT_BLOB):
@@ -4747,13 +4823,7 @@ def reviewed_villa_escape(source, dev, world):
     fields = fields.replace('  TILW_CoverMapComponent "{66EC24A8B99D8E4D}" {\n   Enabled 0\n  }\n', '')
     fields = fields.replace('  RplComponent "{66EC24A8B99D8E81}" {\n   Streamable Disabled\n  }\n', '')
     rendered, count = convert_boundary_instance(fields.splitlines(), '', extended_shapes=True, standalone=True, bare=True)
-    overlay, limit = (block for _, block in blocks(rendered))
-    if count != 32 or not limit[0].startswith('GC_AOLimitEntity '):
-        raise ValueError('Villa escape boundary needs the reviewed 32-point limit and its map overlay')
-    # Both drawings share the AO entity, transform and lifetime.
-    limit[2:2] = overlay[2:block_end(overlay, 1)]
-    limit.insert(1, legacy[1])
-    assets[resource] = {'path': path, 'body': '\n'.join(limit) + '\n'}
+    assets[resource] = {'path': path, 'body': spawned_boundary_prefab(rendered, count, 32, legacy[1])}
     return assets
 
 
@@ -5186,6 +5256,48 @@ def workshop_resources(workshop, packages):
         database = StockPrefabs(registry)
         approved.update(reference for reference in references if database.contains(*reference))
     return approved
+
+
+def verified_british_fallback_groups(workshop, stock, locally_owned, source_units, dev_units):
+    base = ('000CD338713F2B5A', 'Prefabs/AI/Groups/Group_Base.et')
+    occupied = locally_owned | source_units.resources.keys() | dev_units.resources.keys()
+    if not workshop or not stock or base[0] in occupied or not stock.contains(*base):
+        return set()
+    groups = {(resource, UK_GROUP_DIRECTORY + '1989/Group_UK_1989_' + name + '.et')
+              for resource, name in BRITISH_1989_FALLBACK_GROUPS.items()}
+    required = groups | {
+        ('6521AB6151C0A7C8', UK_GROUP_DIRECTORY + '1989/Group_UK_1989_Regulars_Base.et'),
+        ('D1850DAD5D572363', UK_GROUP_DIRECTORY + '1983/Group_UK_1983_SpecialForces_Base.et'),
+        ('FA77FB102E05692C', UK_GROUP_DIRECTORY + 'Group_UK_Base.et'),
+        ('542CBB6908CA71D8', 'Prefabs/Characters/Factions/BLUFOR/UK_Army/Character_UK_Base.et'),
+    }
+    unit_overrides = {
+        '7D7C6FBCBA40F45D': 'Light Infantry/Character_UK_1989_Regulars_SectionCommander.et',
+        'F487760AB6777BF3': 'Light Infantry/Character_UK_1989_Regulars_PlatoonLeader.et',
+        'B9CFB916A26682D6': 'Light Infantry/Character_UK_1989_Regulars_Sergeant.et',
+        '6FAAF2B4A124BA7F': 'Special Forces/Character_UK_1989_SpecialForces_SL.et',
+    }
+    role_dir = 'Prefabs/Characters/Factions/BLUFOR/UK_Army/1989/'
+    for resource, relative in unit_overrides.items():
+        path = role_dir + relative
+        if (resource in locally_owned or source_units.resources.get(resource) != [path]
+                or dev_units.resources.get(resource) != [path]
+                or not unchanged_units_parent(source_units, dev_units, resource)):
+            return set()
+    for resource, role in BRITISH_1989_FALLBACK_ROLES.items():
+        category, name = role.split('/')
+        required.add((resource, f'{role_dir}{category}/Character_UK_1989_{category}_{name}.et'))
+    if any(resource in occupied and resource not in unit_overrides for resource, _ in required):
+        return set()
+    if workshop_resources(workshop, {
+            UK_PROVIDER: ('fb3135513cb2abc077d891353cb83420c765a77186ecd751615fb683a7851350', required),
+    }) != required:
+        return set()
+    resource, path = UK_1989_RIFLE_SECTION
+    if (resource not in locally_owned and source_units.resources.get(resource) == dev_units.resources.get(resource) == [path]
+            and (source_units.files[path], dev_units.files[path]) == UK_1989_RIFLE_SECTION_BLOBS):
+        groups.add(UK_1989_RIFLE_SECTION)
+    return groups
 
 
 def verified_british_ai_groups(workshop, stock, locally_owned, source_units, dev_units):
@@ -6434,6 +6546,25 @@ def omit_empty_capture_outline(fields):
     return [*fields[:start], *fields[stop + 1:]]
 
 
+def iron_cipher_radius_placement(source, block):
+    reference = REF.search(block[0])
+    prefab = IRON_CIPHER_RADIUS_PREFABS.get(reference[1]) if reference else None
+    if not prefab:
+        return block
+    path, blob = prefab
+    if (reference[2] != path or source.files.get(path) != blob
+            or source.resources.get(reference[1]) != [path]):
+        return block
+    parent, _, *fields = source.read(path).splitlines()
+    overrides = {line.strip().partition(' ')[0] for line in block[1:-1]}
+    # These reviewed placements override scalar values. Keep entire inherited
+    # blocks for the intel entity names and the authored presence messages.
+    inherited = [field for field in fields[:-1] if
+                 not (field.startswith(' ') and not field.startswith('  ')
+                      and field.strip().partition(' ')[0] in overrides)]
+    return [parent, *inherited, *block[1:]]
+
+
 def area_rules(source, world, dev=None):
     conditions, placements, audit = {}, {}, {}
     references = None
@@ -6446,6 +6577,9 @@ def area_rules(source, world, dev=None):
         if not any(f'TILW_{kind}TriggerEntity' in text for kind in ('Extraction', 'Faction', 'Presence')):
             continue
         for line, block in blocks(text):
+            if (layer == IRON_CIPHER_EXTRACT_LAYER
+                    and source.files[layer] == '929203d8bd170d964eaf9ed22997e6fcc2d700ae'):
+                block = iron_cipher_radius_placement(source, block)
             if layer == ROUTE_OBSTACLE_LAYER and source.files[layer] == ROUTE_OBSTACLE_LAYER_BLOB:
                 try:
                     checks, converted, records = route_obstacle_placements(source, world, block, conditions)
