@@ -3184,6 +3184,17 @@ BEACH_HOLIDAY_BLUE_BLOB = '2cdfdee7c12327f6e112cd50461a96f2b8b68bc8'
 VILLA = 'worlds/HitTheMan/Stealthing Into Villa/'
 VILLA_HIND = VILLA + 'Prefab/Mi24V_armed_UPK1_HTM.et'
 VILLA_OPFOR = VILLA + 'StealthingIntoVilla_Layers/OPFOR_Players/OPFOR_Players.layer'
+VILLA_CONVOY_LAYER = VILLA_OPFOR.replace('OPFOR_Players.layer', 'FIA_RandomizedTrucks.layer')
+VILLA_CONVOY_LAYER_BLOB = '8b538f02ffd668927c84e6d50c593e74e63cb9f8'
+VILLA_CONVOY_PREFABS = VILLA + 'Prefab/QRF Relief Convoy/'
+VILLA_OLD_CONVOY_PREFABS = VILLA + 'Prefab/2nd Soviet Faction/'
+VILLA_CONVOY_FLAGS = ('TruckSpawn2', 'TruckSpawn1', 'TruckSpawn3')
+VILLA_CONVOY_GROUPS = {
+    'F99AE6CF35749D42': ('ConvoyCommand', '9aa1ea5b2d3e84bc591ca6e7f61a1f15e49a8572', 1),
+    '7C78E50CA7AF6C54': ('ConvoyEscort_1', '69404e071bd52c95bc6c18f2ee8aeda76ff003bd', 0),
+    '102CD1EC1B6BE37A': ('ConvoyEscort_2', 'b85cac917e3125154e10dbd5e66cf0b5a60a4ae8', 3),
+}
+VILLA_CONVOY_MARKER = ('603A005CC6689857', 'FuelTruckMarkerV4.et', 'fde2d7d86ce66030062527c54fca5ca98122c147')
 REVIEWED_AIRCRAFT = {
     BEACH_HOLIDAY + 'Prefab/AH1S_Marines_AIM9_Limited_HTM.et': ('c02db5fafc059fa494a8a087e89dc3ec345b8f01', 'AH1S_1'),
     BEACH_HOLIDAY + 'Prefab/AH1S_Marines_M299_Limited_HTM2.et': ('5a34a85fea8f47f53f2caa01f2bf8aef1a2751af', 'AH1S_2'),
@@ -3745,10 +3756,7 @@ def passive_asset(source, path):
         if path in REVIEWED_SPAWNED_MARKERS:
             if sha256(body.strip().encode()).hexdigest() != REVIEWED_SPAWNED_MARKERS[path]:
                 raise ValueError('spawned marker needs review')
-            root, identity, *fields = body.splitlines()
-            marker, _ = convert_layer('\n'.join([root, *fields]) + '\n', draw_order=True, source=source)
-            head, rest = marker.split('\n', 1)
-            return '\n'.join([head, identity, rest])
+            return spawned_marker_prefab(source, body)
         if path in REVIEWED_LOCKED_M113:
             digest, native_lock = REVIEWED_LOCKED_M113[path]
             if sha256(body.strip().encode()).hexdigest() != digest:
@@ -4153,6 +4161,73 @@ def playable_group_prefab(body, path):
         return body.replace('\n}', '\n m_bPlayable 1\n}', 1)
     return body.replace('\n m_bSetPlayable 1\n', '\n m_bPlayable 1\n').replace(
         '\n m_sCustomNameSet ', '\n m_sGC_Description ')
+
+
+def spawned_marker_prefab(source, body):
+    root, identity, *fields = body.splitlines()
+    marker, _ = convert_layer('\n'.join([root, *fields]) + '\n', draw_order=True, source=source)
+    head, rest = marker.split('\n', 1)
+    return '\n'.join([head, identity, rest])
+
+
+def reviewed_villa_convoy(source, dev, source_units, dev_units, loadouts):
+    if source.files.get(VILLA_CONVOY_LAYER) != VILLA_CONVOY_LAYER_BLOB:
+        return {}
+    parent = 'Prefabs/Groups/OPFOR/Russia/1980s/MotorRifle_MSV80/Group_USSR_MSV80_MotRifleSquad.et'
+    original = ('Prefabs/Groups/OPFOR/Russia/1980s/Motorised Rifles (BTR-Early)/P/'
+                'Group_USSR_MSV80_MotRifleSquad_P.et')
+    group_id = '7544247CE7FBC839'
+    if any(snapshot.resources.get(group_id) != [parent] or snapshot.files.get(parent) != blob
+           for snapshot, blob in ((source_units, 'c48ef10d43bb4021854289a3ef55d8624b38fae8'),
+                                  (dev_units, '927cdcdb7558631932885635c1ee3ea63871c03c'))):
+        return {}
+    assets = {}
+    for resource, (name, blob, squad) in VILLA_CONVOY_GROUPS.items():
+        path = VILLA_CONVOY_PREFABS + name + '.et'
+        old = VILLA_OLD_CONVOY_PREFABS + name + '.et'
+        if (source.files.get(path) != blob or source.resources.get(resource) != [path]
+                or dev.resources.get(resource) not in (None, [path])):
+            return {}
+        body = source.read(path)
+        head = REF.search(body.partition('\n')[0])
+        slots = SLOTS.search(body)
+        if slots:
+            if head.groups() != (group_id, original):
+                return {}
+            members = REF.findall(slots[1])
+            if len(members) != 3 or any(
+                    guid not in loadouts or not authored.startswith(VILLA_OLD_CONVOY_PREFABS)
+                    or loadouts[guid][0] != VILLA_CONVOY_PREFABS + PurePosixPath(authored).name
+                    for guid, authored in members):
+                return {}
+            body = body.replace(head[0], f'"{{{group_id}}}{parent}"', 1)
+            body = REF.sub(lambda ref: f'"{{{ref[1]}}}{loadouts[ref[1]][0]}"'
+                          if ref.groups() in members else ref[0], body)
+            count = len(members)
+        else:
+            predecessor = assets.get(head[1], {})
+            if head[2] != predecessor.get('legacyPath'):
+                return {}
+            body = body.replace(head[0], f'"{{{head[1]}}}{predecessor["path"]}"', 1)
+            count = predecessor['startupSlots']
+        body = remove_legacy_callsigns(body.splitlines()).replace(' components {\n }\n', '')
+        body = body.replace('\n m_sCustomNameSet ', '\n m_sGC_Description ', 1)
+        fields = [' m_bPlayable 1', *(f' {field} "{value}"' for field, value in
+                                      zip(INDEX.values(), (0, 0, squad), strict=True))]
+        native = '\n'.join([*body.splitlines()[:-1], *fields, '}', ''])
+        if path in dev.files and dev.read(path).strip() != native.strip():
+            return {}
+        assets[resource] = {'path': path, 'legacyPath': old, 'body': native, 'startupSlots': count}
+    resource, name, blob = VILLA_CONVOY_MARKER
+    path = VILLA_CONVOY_PREFABS + name
+    if (source.files.get(path) != blob or source.resources.get(resource) != [path]
+            or dev.resources.get(resource) not in (None, [path])):
+        return {}
+    native = spawned_marker_prefab(source, source.read(path))
+    if path in dev.files and dev.read(path).strip() != native.strip():
+        return {}
+    assets[resource] = {'path': path, 'legacyPath': VILLA_OLD_CONVOY_PREFABS + name, 'body': native}
+    return assets
 
 
 def verified_local_ai_group(source, dev, source_units, dev_units, stock, resource, path, external_ai,
@@ -5054,7 +5129,8 @@ def reviewed_spawn_type(source, resource, path, types):
 def placed_spawn(block, location, resolve_resource, captures, flags, used_flags, resolve_crew, *, source,
                  resolve_crew_config=None, shadowed_names=(), missing_waypoints=(), self_waypoints=(),
                  capture_latches=None, single_draw_flags=(), derived_conditions=None, dormant_flags=(), allow_bare=False,
-                 local_files_markers=False, grouped_actions=None, shared_schedule=None, startup_sample_flags=()):
+                 local_files_markers=False, grouped_actions=None, shared_schedule=None, startup_sample_flags=(),
+                 reviewed_startup_assets=None):
     root = placed_spawner_root(block[0], allow_bare)
     if not root:
         raise ValueError('unverified placed spawner prefab')
@@ -5142,7 +5218,13 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                 ref = REF.fullmatch(data['m_prefab'])
                 # The legacy spawner passes waypoints only to spawned AI groups.
                 ignored_effect_waypoints, waypoints = waypoints, []
-        group = bool(ref and (ref[2].startswith('Prefabs/Groups/') or
+        startup_asset = (reviewed_startup_assets or {}).get(ref[1].upper(), {}) if ref else {}
+        relocated = startup_asset.get('legacyPath') == ref[2] if ref else False
+        startup_slots = startup_asset.get('startupSlots', 0) if relocated else 0
+        if startup_slots and (not startup_delay or flag[1:-1] not in single_draw_flags or waypoints or config is not None
+                              or spawned_name != f'"{PurePosixPath(startup_asset["path"]).stem}"'):
+            raise ValueError('playable group requires an exclusive staging choice and its authored name')
+        group = bool(ref and (startup_slots or ref[2].startswith('Prefabs/Groups/') or
                               reviewed_spawn_type(source, ref[1].upper(), ref[2], ('SCR_AIGroup : ', 'SCR_AIGroup {'))))
         absent = next((point for point in waypoints if point[1:-1] in missing_waypoints), None) if group else None
         if absent:
@@ -5167,10 +5249,15 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                           'trigger': 'inactive flag', 'flag': flag[1:-1],
                           **({'missingGroupWaypoint': absent[1:-1]} if absent else {})})
             continue
+        def resolve_spawn_prefab(resource, path):
+            if relocated:
+                return startup_asset['path']
+            return resolve_resource(resource, path, group=group)
+
         details = spawn_details({
             'm_prefab': data.get('m_prefab', ''), 'm_locationName': f'"{anchor}"',
             'm_setEntityName': spawned_name, 'm_executionDelay': '0',
-        }, lambda resource, path: resolve_resource(resource, path, group=group))
+        }, resolve_spawn_prefab)
         term = {'trigger': 'pregame start' if startup_delay else 'Match start'}
         if flag != '""':
             check = captures.get(flag, ())
@@ -5203,6 +5290,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
         for sequence, delay in enumerate(timings):
             spawn_key = f'{key}/{sequence}'
             kind = 'GC_AIGroupSpawn' if group else 'GC_PrefabSpawn'
+            if startup_slots:
+                kind = 'GC_StagingPlayableGroupSpawn'
             if config is not None:
                 fields, crew_groups = render_crew_config(config, spawn_key, resolve_crew,
                                                          shadowed_names=shadowed_names,
@@ -5244,6 +5333,8 @@ def placed_spawn(block, location, resolve_resource, captures, flags, used_flags,
                       'spawnDelaysSeconds': timings, 'groupWaypoints': [point[1:-1] for point in group_waypoints], **term})
         if startup_delay:
             audit[-1]['startupInitializationSeconds'] = startup_delay
+        if startup_slots:
+            audit[-1]['startupPlayableSlots'] = startup_slots
         if duplicate_roadblock_name:
             audit[-1]['allowsDuplicateSpawnName'] = True
         if flag[1:-1] in single_draw_flags:
@@ -5301,7 +5392,7 @@ def shadowed_crew_names(source, world, layers):
 
 
 def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, blockers, resolve_crew, resolve_crew_config,
-                   single_draw_flags, derived_conditions, area_placements, *, startup_sample_flags):
+                   single_draw_flags, derived_conditions, area_placements, *, startup_sample_flags, spawned_assets):
     placements, schedules, audit = {}, [], []
     attached = defaultdict(list)
     layers = {path: text for path in source.layers[world.lower()]
@@ -5310,6 +5401,8 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
     shadowed = shadowed_crew_names(source, world, layers) if any('m_entityName ' in text for text in layers.values()) else ()
     for layer, text in layers.items():
         try:
+            startup_assets = (spawned_assets if layer == VILLA_CONVOY_LAYER
+                              and source.files[layer] == VILLA_CONVOY_LAYER_BLOB else None)
             town_schedule = [] if (layer == NAGALAM_TOWN_SPAWN_LAYER
                                    and source.files[layer] == NAGALAM_TOWN_SPAWN_BLOB) else None
             dormant = dormant_spawner_flags(source, world, layer)
@@ -5341,6 +5434,7 @@ def world_spawners(source, world, resolve_spawn, captures, flags, used_flags, bl
                         missing_waypoints=missing_waypoints, self_waypoints=self_waypoints,
                         capture_latches=capture_latches, single_draw_flags=single_draw_flags,
                         startup_sample_flags=startup_sample_flags,
+                        reviewed_startup_assets=startup_assets,
                         derived_conditions=derived_conditions, dormant_flags=dormant,
                         local_files_markers=source.files[layer] == LOCAL_FILES_SPAWNER_LAYERS.get(layer),
                         allow_bare=(layer, source.files[layer]) in REVIEWED_BARE_SPAWNER_LAYERS,
@@ -7199,7 +7293,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                                            set(objective_flags) | event_flags | shared_flags, used_flags, blockers,
                                                            resolve_crew, resolve_crew_config, single_draw_flags,
                                                            outcome.get('derivedSpawnerConditions'), area_placements,
-                                                           startup_sample_flags=startup_sample_flags)
+                                                           startup_sample_flags=startup_sample_flags,
+                                                           spawned_assets=spawned_assets)
         for location, (checks, areas) in area_placements.items():
             layer, line = location
             area_lines = areas.splitlines()
@@ -8033,6 +8128,20 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     captures_audit = [record for trigger in row.get('captureCandidate', {}).values()
                       for record in trigger.values() if isinstance(record, dict)]
     startup_slots = sum(record.get('startupPlayableSlots', 0) for record in captures_audit)
+    if VILLA_CONVOY_LAYER in source.layers[world.lower()] and any(
+            asset.get('startupSlots') for asset in spawned_assets.values()):
+        authored_groups = {name: spawned_assets[resource]['startupSlots']
+                           for resource, (name, _, _) in VILLA_CONVOY_GROUPS.items()}
+        observed = Counter((item['startupChoice'], item['spawnName'], item['startupPlayableSlots'])
+                           for item in spawner_audit if 'startupPlayableSlots' in item)
+        expected = Counter((flag, name, count) for flag in VILLA_CONVOY_FLAGS
+                           for name, count in authored_groups.items())
+        if (observed != expected or not any(tuple(sample['flags']) == VILLA_CONVOY_FLAGS
+                                             and sample['drawCount'] == 1 for sample in startup_samples)):
+            blockers.append({'rule': 'startup roster', 'file': VILLA_CONVOY_LAYER,
+                             'detail': 'expected all three groups for each choice in the same exclusive draw'})
+        else:
+            startup_slots += sum(authored_groups.values())
     slots = sum(complete_rosters) + sum(entry['slots'] for entry in group_blocks) + startup_slots
     advertised = {}
     for header in row['headers']:
@@ -8040,6 +8149,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         if count:
             advertised[header] = int(count[1])
     remaining = inactive_placements
+    if any(item.get('startupPlayableSlots') for item in spawner_audit):
+        remaining.append('Compare the selected convoy roster, callsigns, vehicle positions and marker audience.')
     if converted_hornbeams:
         remaining.append('The two retired hornbeams use current destructible trees of the same varieties. '
                          'Historical damage thresholds and break physics remain unverified.')

@@ -1110,6 +1110,10 @@ def main():
             published_playable_parents={current for (identity, _), current in aircrew_roles.items()
                                         if identity == current[0]})
         reviewed_members = {guid: asset[0] for guid, asset in loadouts.items()}
+        villa_world = batch.VILLA + 'StealthingIntoVilla.ent'
+        villa_convoy = batch.reviewed_villa_convoy(source, dev, source_units, dev_units, loadouts)
+        if villa_convoy:
+            spawned_assets.setdefault(villa_world, {}).update(villa_convoy)
         local_groups = batch.reviewed_group_aliases(source, dev, source_units, dev_units, stock, reviewed_members,
                                                     rhs_database)
         oil_rig_assets, oil_rig_groups = batch.reviewed_oil_rig_group(source, dev, source_units, dev_units, loadouts)
