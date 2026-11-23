@@ -541,6 +541,11 @@ def markdown(plan):
                       'The launcher resolves addon names in the snapshot to GUIDs and includes any manual catalogue IDs. '
                       'Portable files exported outside the checkout are counted by the exporter. '
                       'The published build still needs its own launch verification.'])
+        missing_snapshots = [header for header, checks in metadata.items()
+                             if not checks.get('generatedSnapshot')]
+        if missing_snapshots:
+            lines.extend(['', '### File-cleared launchers awaiting native snapshots', ''])
+            lines.extend(f'- `{header}`' for header in missing_snapshots)
         differences = [(header, advertised, captured) for header, checks in metadata.items()
                        if (advertised := checks.get('advertisedPlayerSlots')) is not None
                        and (captured := checks.get('snapshotPlayerSlots')) is not None

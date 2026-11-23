@@ -2177,6 +2177,18 @@ FSM_FACTION_IMAGE_LAYERS = {
     'worlds/FSM/Worlds/TVTUnowaldCache/TVT72UnowaldCache_Layers/default.layer':
         '9fbb5ad9e5bd14fed3a320bd044b412360efbd9b',
 }
+# The published crate spawns violet M18s and leaves 20 RDG-2 slots unfilled.
+# The published hostage has no footwear. Keeping the empty override prevents inherited boots.
+REVIEWED_EMPTY_EQUIPMENT = {
+    'worlds/Blue/DirectionFound/DirectionFound_Layers/OPFOR/Static.layer': (
+        'ceafa90ee0cc7e2e5732f7a5e19906ec6c3dff10',
+        ('5F564E0FA5F27D1E', 'Prefabs/Weapons/Grenades/RDG-2/Smoke_RDG2_Violet.et'),
+    ),
+    'worlds/arc/StationSmashers/Prefabs/Hostage_StationSmashers.et': (
+        'f55fc541b1e18e61e045a171e75fa85f602b50be',
+        ('800C77C171F53691', 'Prefabs/Characters/Footwear/Sandale.et'),
+    ),
+}
 
 
 def blocks(text):
@@ -6577,6 +6589,12 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
     for owner in files:
         if PurePosixPath(owner).suffix.lower() not in SOURCE_TEXT:
             continue
+        if (equipment := REVIEWED_EMPTY_EQUIPMENT.get(owner)) and source.files.get(owner) == equipment[0]:
+            resource, path = equipment[1]
+            field = rf'(?m)^( +Prefab) "\{{{resource}\}}{re.escape(path)}"$'
+            if (resource not in source.resources and resource not in dev.resources
+                    and equipment[1] not in asset_aliases and len(re.findall(field, draft[owner])) == 1):
+                draft[owner] = re.sub(field, r'\1 ""', draft[owner], count=1)
         if (owner in FSM_FACTION_IMAGE_LAYERS
                 and source.files.get(owner) == FSM_FACTION_IMAGE_LAYERS[owner]
                 and FSM_FACTION_IMAGE_ID not in source.resources):
