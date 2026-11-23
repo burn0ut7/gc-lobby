@@ -891,6 +891,12 @@ REVIEWED_MISSING_SPAWN_ANCHORS = {
         RUHA_PHASE_LAYER, RUHA_PHASE_BLOB,
         {('660D35BA2C88B6D2', 'Phase2_Smoke1'), ('660D35BBEF2F1785', 'Phase3_Smoke1')},
     ),
+    'worlds/Jub/LightArmoredRecon/LightArmoredRecon.ent': (
+        'worlds/Jub/LightArmoredRecon/LightArmoredRecon_Layers/default.layer',
+        '6c5a7598c2308f558fa7cc47e04fcf3e696bfb3c',
+        {('6A3B7A7E7370D2A7', 'SpawnPos1'), ('6A3B7A7D8C6566BB', 'SpawnPos2'),
+         ('6A3B7A7D83B720FA', 'SpawnPos3'), ('6A3B7A7CCB7AEA59', 'SpawnPos4')},
+    ),
 }
 REVIEWED_MISSING_ORDER_GROUPS = {
     'worlds/HitTheMan/Bradley Leads The Way/BradleyLeadsTheWay.ent': (
