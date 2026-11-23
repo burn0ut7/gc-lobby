@@ -16,7 +16,7 @@ Use the batch workflow for the catalog. The same rules process every legacy laun
 
 ### Remaining migration work
 
-The audit at local Missions Dev `ebe9b5b5` with Units Dev `95f6c363` clears 267 of the 277 published launchers on files. The 266 previously committed launchers have native snapshots and exported portable manifests. Assad V2 is installed locally and awaits its capture. The ten remaining launchers have generated drafts held on 34 distinct external resource references. The generated `plan.md` lists each held launcher and any file-cleared launchers awaiting a snapshot. Its `plan.json` records file issues and source locations under `remainingLaunchers`. Review shared providers as a group, then use representative Match checks for each affected behavior family.
+The audit at local Missions Dev `7e9c7ce8` with Units Dev `95f6c363` clears 267 of the 277 published launchers on files. All 267 have native snapshots and exported portable manifests. The ten remaining launchers have generated drafts held on 34 distinct external resource references. The generated `plan.md` lists each held launcher and any file-cleared launchers awaiting a snapshot. Its `plan.json` records file issues and source locations under `remainingLaunchers`. Review shared providers as a group, then use representative Match checks for each affected behavior family.
 
 | Launchers | Remaining blocker |
 | --- | --- |
@@ -2129,6 +2129,8 @@ RHS 0.10.3948 registers both original clothing assets. Its Game module fails to 
 RHS removed the shemagh and T-Shirt v2 in 0.12.4405 on May 12, 2025. The Central Anizay crew prefabs were authored in January, and Assad V2 first referenced them on August 13. The verified current RHS registry set lacks both resources and their archived asset chains. In dedicated session `logs_2026-11-23_07-51-02`, lines 2867–3093, the unresolved references produced an empty rifleman hat slot and an empty AT jacket slot. Explicit empty overrides reproduced the equipped clothing and every item and quantity. Omitting the slot overrides equipped the inherited FIA hat and jacket. The converter sets the two empty overrides only for the exact recovered crew blobs and reviewed RHS registry set. The rest of the authored kits and the archived RadioShortage 1.0.17 pin are retained. The batch installer verified and installed 22 files in Missions Dev `ebe9b5b5`. Native Lobby metadata capture and representative vehicle crew and Match checks follow the installation. [RHS 0.12 release history](https://docs.rhsmods.org/rhs-status-quo-user-documentation/arma-reforger/rhs-status-quo/changelog/0.12#id-0.12.4405)
 
 The dedicated follow-up used the full retained graph with the original radio wrapper and RadioShortage 1.0.17. The authored and empty variants matched all 41 inventory items for the rifleman and all 38 for the AT role, including one original radio per character. See `logs_2026-11-23_07-55-52`, lines 4212–4463. The catalog audit changed only the two reviewed crew prefabs across 261 staged files.
+
+Workbench MCP captured 379 entities and all 63 advertised slots with the full project mounted and archived RadioShortage 1.0.17 alongside it. Missions Dev `7e9c7ce8` stores the native snapshot. The portable manifest matches the committed header hash and lists 69 required addon IDs, including Anizay and RadioShortage with its version pin. The catalog has 267 file-cleared launchers with native and portable metadata. Vehicle crew and Match events still need representative verification.
 
 ### Cold War Domination vehicle replacements
 
