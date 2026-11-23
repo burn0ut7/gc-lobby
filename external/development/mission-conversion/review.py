@@ -36,6 +36,25 @@ ZAGORIA_DRIVETRAIN_FAILURE = {
     '2ab682cd9149241db9e939ef257102993644ad7b489d1d36767b219ca93da028': '1.0.29',
 }
 ENGINE_19037_DATABASE = 'd65ebb14b5c9b2baaef1dfafd9b653f51a6ce11f9815585cf8b5ada88dd4e58a'
+RHS_COMPILE_FAILURES_19037 = {
+    'd2a54dc8098d94e542a0d642c754605cd224efb0362c55b07282c353bf118254': (
+        'RHS Status Quo 0.7.2265',
+        {
+            'data.pak': 'f37c05e17668a19cd8da25dde74034529f39523def23371995534a819c2d3751',
+            'data001.pak': '4e81819cadae0ae3d9b2e2cfaadd45d25b497bac0612df72b6dfc3a59255f2e1',
+            'data002.pak': '58e6912bb77af167dc6116bb53d606240af859fce1987dac621ccd9ab1f48045',
+        },
+    ),
+    '7aa90a96c4112ea579dc7d9826b51357442b7e60fde0ceb83277a54df4d9024f': (
+        'RHS Status Quo 0.10.3948',
+        {
+            'data.pak': 'b05f8621573e02419acc4d87c37da02c40b81a66da64d976d087e80c2ddee9c6',
+            'data001.pak': 'b284feb0d9693719ac01c1fa2d6d15caaa20b4cef2e76cacc18f867ace807270',
+            'data002.pak': '4bc562575a81100a0191963880f5b44c0fb91031b468d8edb2941a68de606311',
+            'data003.pak': '62998245cabbef9be63d5385b452145e1f1ea256302d71b362386064b6f8fa91',
+        },
+    ),
+}
 COMPILE_FAILURES_19037 = {
     'WCS_Armaments_629B2BA37EFFD577': (
         'WCS Armaments 6.0.24',
@@ -137,6 +156,8 @@ def known_compile_failure(stock, providers):
         return None
     for database in providers:
         spec = COMPILE_FAILURES_19037.get(database.parent.name)
+        if database.parent.name == 'RHS-StatusQuo_595F2BF2F44836FB':
+            spec = RHS_COMPILE_FAILURES_19037.get(sha256(database.read_bytes()).hexdigest())
         if not spec:
             continue
         title, archives = spec

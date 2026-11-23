@@ -1178,6 +1178,8 @@ def main():
         def resolve_crew_config(resource, path):
             return vehicle_crew.verified_crew_config(source_units, resource, path, locally_owned)
 
+        archived_crew.update(batch.reviewed_assad_radio(source, dev, source_units, dev_units,
+                                                       args.historical_workshop))
         out = batch.plan(source, dev, report, out, batch_areas, batch_interactions, convert_group_block,
                          asset_aliases, {**loadouts, **ai_loadouts, **southwind_assets, **oil_rig_assets,
                                          **public_enemies_assets, **reviewed_audio},

@@ -33,6 +33,11 @@ ADVERTISED_SLOTS = re.compile(r'^ m_iPlayerCount (\d+)[ \t]*$', re.M)
 ADDON_VERSIONS_FIELD = re.compile(r'^ m_aRequiredAddonVersions\b', re.M)
 ADDON_VERSION = re.compile(r'"([\da-fA-F]{16})=([0-9]+(?:\.[0-9]+){1,3})"')
 REVIEWED_VERSION_PINS = {
+    'Missions/Hot Mic/AssadsLastStandV2.conf': (
+        'c50954c801f78618e414667673248114d1aa9045',
+        (('worlds/HotMic/AssadsLastStandV2/AssadsLastStandV2_Layers/props.layer',
+          '15d7559e5c9b917375979b7d6f0090e5360771a8', '5F0415B04485E3FB=1.0.17'),),
+    ),
     'Missions/Blue/TVT39_Direction_Found.conf': (
         'ca24752458e9292e2d69668ccd46ed318c2abcc5',
         (('worlds/Blue/DirectionFound/DirectionFound_Layers/BLUFOR/Static.layer',

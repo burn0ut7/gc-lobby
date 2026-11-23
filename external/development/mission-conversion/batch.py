@@ -76,6 +76,10 @@ ARCHIVED_AAS_CREW = {
     'C18E05B3F6ACAB13': ('AT', 'd2cbbfe146c86a98cb93444380e2ae7ce0258fcb',
                          'daf412d61e6dc8a23318bcbd5b2d16f6adbd9e50'),
 }
+ASSAD_RADIO_PATH = 'Prefabs/Items/Equipment/Radios/Radio_R187P1_OLD_Multi_Insurgent.et'
+ASSAD_RADIO_ID = '139770CBE58E0303'
+ASSAD_RADIO_PARENT = ('D55C4F07EF14A878', 'Prefabs/Items/Equipment/Radios/Radio_R187P1_OLD_Multi.et')
+ASSAD_RADIO_OWNER = 'worlds/arc/AAS/CentralAnizay/Prefabs/'
 EMPTY_LEGACY_CUTSCENE = [
     '  PS_CutsceneManager "{60E6C661B81E7619}" {',
     '   m_aCutscenes {',
@@ -6471,6 +6475,33 @@ ARCHIVED_MISSION_IMAGES = {
 }
 
 
+def reviewed_assad_radio(source, dev, source_units, dev_units, historical_roots):
+    if (source.files.get(ASSAD_FRAMEWORK_LAYER) != ASSAD_FRAMEWORK_BLOB
+            or source.files.get(ASSAD_LAYERS + 'props.layer') != '15d7559e5c9b917375979b7d6f0090e5360771a8'
+            or ASSAD_RADIO_ID in source.resources or ASSAD_RADIO_ID in dev_units.resources):
+        return {}
+    packages = {'RadioShortage_5F0415B04485E3FB': (
+        '5453642a49e561c5c9023aa181a652d159a9e9b97617181c9e3d41e80fd8a594', (ASSAD_RADIO_PARENT,),
+    )}
+    if not any(ASSAD_RADIO_PARENT in workshop_resources(root, packages) for root in historical_roots):
+        return {}
+    body, meta = (
+        check_output(['git', '-C', str(source_units.repo), 'cat-file', 'blob', blob])
+        .decode('utf-8-sig').replace('\r\n', '\n')
+        for blob in ('07e4ef7566c79c5d227c734771dedf710cf367f9', 'e3cdd5b02cba976d1286eabfd9d7c5681098436d')
+    )
+    identity = META_NAME.search(meta)
+    parent = REF.search(body.partition('\n')[0])
+    if (not identity or identity.groups()[1:3] != (ASSAD_RADIO_ID, ASSAD_RADIO_PATH)
+            or not parent or parent.groups() != ASSAD_RADIO_PARENT
+            or dev.resources.get(ASSAD_RADIO_ID, [ASSAD_RADIO_PATH]) != [ASSAD_RADIO_PATH]):
+        raise ValueError('original Assad radio identity or parent changed')
+    if any(path in dev.files and dev.read(path).strip() != content.strip()
+           for path, content in ((ASSAD_RADIO_PATH, body), (ASSAD_RADIO_PATH + '.meta', meta))):
+        raise ValueError('original Assad radio would overwrite different Dev content')
+    return {(ASSAD_RADIO_ID, ASSAD_RADIO_PATH): (body, meta)}
+
+
 def reviewed_archived_mission_crew(source, dev, stock):
     """Restore the original AI-only crew assets removed with Central Anizay AAS."""
     if (not stock or source.files.get(ASSAD_FRAMEWORK_LAYER) != ASSAD_FRAMEWORK_BLOB
@@ -6567,9 +6598,13 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
                     except ValueError as exc:
                         blockers.add((owner, path, str(exc)))
                 return ref[0]
-            if crew := archived_crew.get((resource, path)):
+            if recovered := archived_crew.get((resource, path)):
+                if resource == ASSAD_RADIO_ID and owner not in {
+                        ASSAD_RADIO_OWNER + f'Character_GC_INSURGENT_AAS_{role}.et'
+                        for role, _, _ in ARCHIVED_AAS_CREW.values()}:
+                    return ref[0]
                 if path not in draft and path not in dev.files:
-                    draft[path], draft[path + '.meta'] = crew
+                    draft[path], draft[path + '.meta'] = recovered
                     files.append(path)
                 return ref[0]
             if ((archived := ARCHIVED_MISSION_IMAGES.get((resource, path)))
