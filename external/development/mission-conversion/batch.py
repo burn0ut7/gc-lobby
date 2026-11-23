@@ -1248,6 +1248,9 @@ WORKSHOP_RESOURCE_ALIASES = {
     ('309FB429B1BB6ACC', 'Sounds/Vehicles/Tracked/Vehicles_Track_l.acp'): (
         'WCS_SpaceCore_5E389BB9F58B79A6', '309FB429B1BB6ACC',
         'Sounds/Vehicles/_SharedData/Tracks/Vehicles_Tracks_Left.acp'),
+    ('DD496B0736385E78', 'Prefabs/Weapons/Magazines/Magazine_M240_Coax/Box_762x51_M240C_450rnd_4AP_1Tracer.et'): (
+        'WCS_SpaceCore_5E389BB9F58B79A6', 'DD496B0736385E78',
+        'Prefabs/Weapons/Magazines/Magazine_M240_Coax/Box_762x51_M240C_450rnd_4AP_1SLAPT.et'),
     ('30E1AF152CEB078A', 'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_IFV_BMP1_Wheel_Road.et'): (
         'WCS_BMP-1_5E524E4FEECCA92B', '30E1AF152CEB078A',
         'Prefabs/Vehicles/Tracked/BMP1/VehParts/Wheels/VehPart_BMP1_Wheel_Road.et'),

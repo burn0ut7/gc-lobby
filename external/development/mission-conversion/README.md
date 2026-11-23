@@ -2198,7 +2198,9 @@ Workbench logged dependency resource errors and pathfinding tile errors during t
 
 The converter verifies the original convoy spawner layer and compiles all 127 placements into one Match event that commits when `Mission_Started` satisfies the authored `TownSpawnActive` expression. Each native action keeps its own timer, anchor, group resource ID and ordered waypoints. A separate source-to-draft comparison verified all 127 transforms and actions, including the relative order of the 14 groups due at 7,560 seconds. The assembled mission uses 68 rules. During representative Match testing, check that the first positive flag schedules each action once and that the committed sequence continues if the flag clears.
 
-The batch added 43 reviewed draft files and reproduced all 287 prior files byte for byte. Nagalam remains held on 22 unresolved equipment and vehicle references, including the Gulf War variants, the 2004 assets and the M240 coaxial magazine. The inventory lists the exact GUIDs and paths. The existing historical provider check recorded the unavailability of Expanded US Military 1.0.3. The draft has yet to run in Workbench with its full dependency graph.
+The batch added 43 reviewed draft files and reproduced all 287 prior files byte for byte. The inventory lists the exact GUIDs and paths for the unresolved Gulf War variants and 2004 assets. The existing historical provider check recorded the unavailability of Expanded US Military 1.0.3. The draft has yet to run in Workbench with its full dependency graph.
+
+WCS Space Core registers the original coax magazine ID at the current `4AP_1SLAPT` path. Its prefab has a 450-round capacity and maps four M993 AP rounds to one M959 tracer. Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7` confirms the prefab and ammunition table. The batch changes only the path in nine authored references and leaves 21 other equipment and vehicle checks open. The full audit retains all 257 cleared launchers and their metadata. The dependency recovery section now lists alternate paths and providers for each original ID in the published draft queue.
 
 ### Countdown
 

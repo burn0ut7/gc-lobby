@@ -79,7 +79,9 @@ def resource_recovery_queue(resources, held):
         {'reference': reference, 'worlds': sorted(affected_worlds[reference]),
          'onlyMissingAsset': sorted(single_asset_worlds[reference]),
          'registeredInDevGraph': any(entry['declaredDependency'] for entry in
-                                    references[reference]['registrations'])}
+                                    references[reference]['registrations']),
+         'alternateRegisteredPaths': [entry for entry in references[reference]['registrations']
+                                      if entry['path'] != references[reference]['path']]}
         for reference in sorted(affected_worlds, key=lambda ref: (
             -len(single_asset_worlds[ref]), -len(affected_worlds[ref]), ref))
     ]
@@ -571,6 +573,18 @@ def markdown(plan):
             registered = 'Yes' if entry['registeredInDevGraph'] else 'No'
             lines.append(f"| `{entry['reference']}` | {len(entry['onlyMissingAsset'])} | "
                          f"{len(entry['worlds'])} | {registered} |")
+        aliases = [(entry['reference'], registration)
+                   for entry in plan['resourceRecoveryQueue']
+                   for registration in entry.get('alternateRegisteredPaths', ())]
+        if aliases:
+            lines.extend(['', '### Installed paths for the original resource IDs', '',
+                          'Compare the registered asset with the authors’ intended behavior before applying a path change.', '',
+                          '| Legacy resource | Registered path | Provider | In Dev graph |',
+                          '| --- | --- | --- | --- |'])
+            for reference, registration in aliases:
+                in_graph = 'Yes' if registration['declaredDependency'] else 'No'
+                lines.append(f"| `{reference}` | `{registration['path']}` | "
+                             f"`{registration['provider']}` | {in_graph} |")
     if conversions := plan.get('conversionResourceQueue'):
         lines.extend(['', '## Missing resources reported by roster conversion', '',
                       '| Legacy resource | Only reported blocker | Affected worlds |',
