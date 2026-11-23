@@ -9,6 +9,7 @@ from pathlib import PurePosixPath
 import re
 from subprocess import CalledProcessError, check_output
 
+import stage_zagoria
 from arc_capture import (CAPTURE_EDITOR_FIELDS, CAPTURE_TRANSFORM, LONGMOOR_CURRENT_PARENT,
                          LONGMOOR_LEGACY_PARENT, capture_instance, capture_messages, capture_status_texts, faction_keys)
 from boundaries import (ROOT as AO_SHAPE, BARE_SHAPE, PASSIVE_COVER, STANDALONE_SHAPE,
@@ -9095,7 +9096,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
 
 def plan(source, dev, report, staged, area_placements, interactions, convert_group_block, asset_aliases,
          local_loadouts, spawned_assets, convert_crew, resolve_spawn, resolve_crew, resolve_crew_config, delayed_extractions,
-         faction_assets=None, archived_crew=None, historical_roots=()):
+         faction_assets=None, archived_crew=None, historical_roots=(), zagoria_assets=None):
     results, emitted, totals, families = {}, {}, Counter(), Counter()
     for world, row in report['worlds'].items():
         draft, result = world_draft(source, dev, world, row, staged, area_placements.get(world, {}),
@@ -9104,6 +9105,11 @@ def plan(source, dev, report, staged, area_placements, interactions, convert_gro
                                     partial(resolve_spawn, spawned_assets.get(world, {})), resolve_crew,
                                     resolve_crew_config, delayed_extractions.get(world), faction_assets, archived_crew,
                                     historical_roots)
+        if zagoria_assets and draft and world in stage_zagoria.PLACEMENTS:
+            result['zagoriaPlacements'] = stage_zagoria.repair_draft(world, draft, zagoria_assets)
+            result['files'] = sorted(draft)
+            result.setdefault('remainingBehavior', []).append(
+                'Compare driver handling, crew seating, weapons and cargo on the original-hull Zagoria repair.')
         results[world] = result
         totals[result['status']] += 1
         families.update({blocker['rule'] for blocker in result.get('blockers', [])})

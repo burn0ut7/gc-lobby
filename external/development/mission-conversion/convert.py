@@ -41,6 +41,7 @@ from scenery import StockPrefabs, placements
 from race_ruha import ruha_files, WORLD as RUHA_WORLD
 from race_day import PRIOR_KUNAR_LAYERS, race_files, WORLD as RACE_WORLD
 import wetfeet
+from stage_zagoria import staged_assets as staged_zagoria_assets
 
 
 PREPARED_SETTINGS_SOURCE = 'a75e404c331abce5185f315f47f533d9b8eccf00'
@@ -101,12 +102,21 @@ def main():
     parser.add_argument('--include-arc-capture-candidates', action='store_true', help='assemble the reviewed Arc capture missions')
     parser.add_argument('--include-bugout-candidate', action='store_true', help='assemble the reviewed Bug Out mission')
     parser.add_argument('--batch', action='store_true', help='stage complete drafts from common conversion rules and report blockers')
+    parser.add_argument('--zagoria-stage', type=Path, help='include the reviewed original-hull BMP-2 child in batch drafts')
     args = parser.parse_args()
     if args.batch:
         if not (args.stage and args.units and args.base_database):
             parser.error('--batch requires --stage, --units and --base-database')
         args.include_outcomes = True
         args.stage_marker_candidates = True
+    zagoria_assets = None
+    if args.zagoria_stage:
+        if not args.batch:
+            parser.error('--zagoria-stage requires --batch')
+        try:
+            zagoria_assets = staged_zagoria_assets(args.zagoria_stage)
+        except (OSError, ValueError) as exc:
+            parser.error(str(exc))
     if args.include_bugout_candidate and not (args.stage and args.units and args.base_database and args.workshop_addons):
         parser.error('Bug Out requires --stage, --units, --base-database and --workshop-addons')
     if args.include_industrial_candidate:
@@ -1175,7 +1185,7 @@ def main():
                          convert_crew, resolve_spawn, resolve_crew,
                          resolve_crew_config, delayed_extractions,
                          batch.reviewed_faction_assets(source, dev, source_units, dev_units), archived_crew,
-                         args.historical_workshop)
+                         args.historical_workshop, zagoria_assets=zagoria_assets)
     if args.stage:
         staged_bytes = {path: contents if isinstance(contents, bytes) else contents.encode()
                         for path, contents in out.items()}

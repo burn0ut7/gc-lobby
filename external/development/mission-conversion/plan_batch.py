@@ -778,6 +778,7 @@ def main():
                         help='report gained and lost file clearance against a plan for the same mission revisions')
     parser.add_argument('--output', required=True, type=Path, help='output directory outside the addons')
     parser.add_argument('--batch-size', default=10, type=int, help='maximum worlds in the suggested batch')
+    parser.add_argument('--zagoria-stage', type=Path, help='stage containing the reviewed original-hull BMP-2 child')
     parser.add_argument('--previous-plan', type=Path, help='carry forward runtime checks from the previous batch')
     args = parser.parse_args()
     if args.batch_size < 1:
@@ -803,8 +804,10 @@ def main():
         common = ['--missions', args.missions, '--source', args.source, '--dev', args.dev,
                   '--base-database', args.base_database, '--workshop-addons', args.workshop_addons]
         archives = [item for path in args.historical_workshop for item in ('--historical-workshop', path)]
+        zagoria = ['--zagoria-stage', args.zagoria_stage] if args.zagoria_stage else []
         run_tool('convert', [*common, '--batch', '--units', args.units, '--units-source', args.units_source,
-                             '--units-dev', args.units_dev, *archives, '--stage', stage, '--report', inventory])
+                             '--units-dev', args.units_dev, *archives, *zagoria,
+                             '--stage', stage, '--report', inventory])
         providers = [item for path in dependencies for item in ('--dependency', path)]
         run_tool('review', [*common, *providers, *archives, '--inventory', inventory, '--draft-stage', stage,
                             '--report', review, '--summary', output / 'review.md'])
