@@ -5,6 +5,9 @@ class GC_PeakFactionPopulationComponentClass : SCR_BaseGameModeComponentClass
 
 class GC_PeakFactionPopulationComponent : SCR_BaseGameModeComponent
 {
+	[Attribute("", UIWidgets.Object, "Optional mission flags written in order after each Match population sample.")]
+	protected ref array<ref GC_PeakFactionPopulationFlag> m_aObservedFlags;
+
 	protected GC_LobbyGameMode m_Mode;
 	protected bool m_bRecountPending;
 	protected bool m_bHasSample;
@@ -99,6 +102,22 @@ class GC_PeakFactionPopulationComponent : SCR_BaseGameModeComponent
 				m_mPeak.Set(key, count);
 		}
 		m_bHasSample = true;
+		if (!m_aObservedFlags || m_aObservedFlags.IsEmpty())
+			return;
+		GC_LobbyManager manager = GC_LobbyManager.GetManager();
+		if (!manager)
+			return;
+		foreach (GC_PeakFactionPopulationFlag flag : m_aObservedFlags)
+		{
+			if (!flag || flag.m_sName.IsEmpty() || flag.m_fRatio < 0 || flag.m_fRatio > 1 || !factions.GetFactionByKey(flag.m_sFaction))
+				continue;
+			manager.GC_PublishPopulationFlag(this, flag.m_sName, ReachedLossThreshold(flag.m_sFaction, flag.m_fRatio));
+		}
+	}
+
+	protected bool ReachedLossThreshold(FactionKey faction, float ratio)
+	{
+		return m_mLiving.Get(faction) <= m_mPeak.Get(faction) * (1 - ratio);
 	}
 
 	bool HasLostProportion(FactionKey faction, float ratio, bool inverted = false)
@@ -107,9 +126,19 @@ class GC_PeakFactionPopulationComponent : SCR_BaseGameModeComponent
 		if (!IsActiveMatch() || !m_bHasSample || !factions || !factions.GetFactionByKey(faction))
 			return false;
 
-		bool reached = m_mLiving.Get(faction) <= m_mPeak.Get(faction) * (1 - ratio);
-		return reached != inverted;
+		return ReachedLossThreshold(faction, ratio) != inverted;
 	}
+}
+
+[BaseContainerProps(), BaseContainerCustomStringTitleField("m_sName")]
+class GC_PeakFactionPopulationFlag
+{
+	[Attribute("", UIWidgets.EditBox, "Name of the Boolean mission flag to assign.")]
+	string m_sName;
+	[Attribute("", UIWidgets.Auto, "Faction whose living players are counted.")]
+	FactionKey m_sFaction;
+	[Attribute("1", UIWidgets.Slider, "Loss as a proportion of the historical peak.", "0 1 0.01")]
+	float m_fRatio;
 }
 
 [BaseContainerProps(), BaseContainerCustomStringTitleField("Peak Faction Population Drop")]

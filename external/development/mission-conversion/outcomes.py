@@ -1422,12 +1422,18 @@ def remove_late_cleanup(fields, refs, names):
     return result, omitted
 
 
+OIL_RIG_WORLD = 'worlds/TheLocalPub/OilRigRangos/OilRigRangos.ent'
+OIL_RIG_LAYERS = OIL_RIG_WORLD.removesuffix('.ent') + '_Layers/'
+OIL_RIG_POPULATION_FRAMEWORK = (OIL_RIG_LAYERS + 'default.layer', '5e0837d0820a24bb50b0cbbf72ffa1c075ba02d6')
+OIL_RIG_POPULATION_AREA = (OIL_RIG_LAYERS + 'Systems/Core.layer', '964662eb622f536b1715ef335f7e72cf6b2d756e')
+
+
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
                      extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None,
                      derived_audit=None, identity_flags_audit=None, meta_dividers_audit=None, discovery_resets_audit=None,
                      match_only_flags=(), startup_samples_audit=None,
                      interaction_reads=None, spawner_reads=None, derived_spawners_audit=None, route_graph_audit=None,
-                     replacement_flags=None, bound_clearable_flags=()):
+                     replacement_flags=None, bound_clearable_flags=(), population_flags_audit=None):
     captures = captures or {}
     notification_audit = notification_audit or {}
     extraction_spawns = extraction_spawns or {}
@@ -1508,6 +1514,16 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     if ends_match and not compound:
         return [], {}, 'instance ends the mission and needs a separate runtime port'
     flags = peak_flags(body)
+    shared_population_flag = '"Hostage<"'
+    if (compound and population_flags_audit is not None and world == OIL_RIG_WORLD
+            and (path, source.files[path]) == OIL_RIG_POPULATION_FRAMEWORK
+            and source.files.get(OIL_RIG_POPULATION_AREA[0]) == OIL_RIG_POPULATION_AREA[1]
+            and shared_population_flag[1:-1] in objective_flags
+            and flags.get(shared_population_flag) == ('CIV', '1')
+            and scripts is not None and shared_population_flag[1:-1] not in scripts):
+        # The area and population sample independently write this scalar flag.
+        # Its readers must observe the state after either writer.
+        population_flags_audit[shared_population_flag[1:-1]] = flags.pop(shared_population_flag)
     ai = peak_flags(body, AI_FLAG) if compound else {}
     if set(ai) & set(flags) or len({faction for faction, _ in ai.values()}) > 1:
         return [], {}, 'ambiguous AI casualty faction tracking'

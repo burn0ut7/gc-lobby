@@ -9,7 +9,7 @@ from vehicle_crew import SEAT_TYPES, SERIALIZED_ID, crew_roles, render_crew_conf
 
 INSTRUCTION = re.compile(r'^    (TILW_\w+Instruction) "\{([\da-fA-F]{16})\}" \{$')
 NUMBER = r'\d+(?:\.\d+)?'
-FLAG_NAME = r'"[\w.-]+(?: +[\w.-]+)*"'
+FLAG_NAME = r'"[\w.<>-]+(?: +[\w.<>-]+)*"'
 CLOCK_FIELDS = ('m_iHours', 'm_iMinutes', 'm_iSeconds')
 FACTION_VISIBILITY = re.compile(r'TILW_FactionVisibility "\{[\da-fA-F]{16}\}" \{([^{}]*)\}')
 SPAWN = re.compile(r'    TILW_SpawnPrefabInstruction "\{([\da-fA-F]{16})\}" \{')

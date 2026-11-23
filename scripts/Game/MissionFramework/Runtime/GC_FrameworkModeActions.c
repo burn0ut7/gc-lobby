@@ -61,6 +61,13 @@ modded class GC_LobbyManager
 	}
 
 	//------------------------------------------------------------------------------------------------
+	bool GC_PublishPopulationFlag(GC_PeakFactionPopulationComponent observer, string name, bool answer)
+	{
+		return observer && observer.GetOwner() == GetOwner() && AreMissionInteractionsActive()
+			&& m_MissionRuleEngine.AssignObservedFlag(name, answer);
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! Shared dispatch for script actions and sampled conditions; false means unavailable, not a false answer.
 	bool GC_RunFrameworkScript(GC_MissionRuleEngine source, GC_MissionScript script, out bool result)
 	{

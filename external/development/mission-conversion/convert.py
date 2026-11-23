@@ -665,6 +665,7 @@ def main():
                 discovery_resets_audit = []
                 startup_samples_audit = []
                 route_graph_audit = {}
+                population_flags_audit = {}
                 match_only_flags = {flag for candidate in row.get('damageFlagCandidates', {}).values()
                                     for flag in candidate.get('placedDestructionFlags', [])}
                 if delayed:
@@ -698,7 +699,8 @@ def main():
                     spawner_reads=(Counter(batch.placed_spawner_flag_reads(source, source.layers[world.lower()]))
                                    + bound_spawner_reads) if args.batch else None,
                     derived_spawners_audit=derived_spawners_audit if args.batch else None,
-                    route_graph_audit=route_graph_audit if args.batch else None)
+                    route_graph_audit=route_graph_audit if args.batch else None,
+                    population_flags_audit=population_flags_audit if args.batch else None)
                 outcome = {'events': outcome_audit}
                 if derived_audit:
                     outcome['derivedFlags'] = derived_audit
@@ -714,6 +716,8 @@ def main():
                     outcome['startupSamples'] = startup_samples_audit
                 if route_graph_audit:
                     outcome['orderedRouteFlags'] = route_graph_audit
+                if population_flags_audit:
+                    outcome['populationFlags'] = population_flags_audit
                 if gap:
                     outcome['gap'] = gap
                 if rules:

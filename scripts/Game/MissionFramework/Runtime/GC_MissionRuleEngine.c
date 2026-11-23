@@ -495,6 +495,15 @@ class GC_MissionRuleEngine
 	}
 
 	//------------------------------------------------------------------------------------------------
+	bool AssignObservedFlag(string name, bool answer)
+	{
+		if (!m_bRunning || m_eGameModeState != SCR_EGameModeState.GAME || name.IsEmpty()
+			|| m_mFlagDefinitions.Contains(name) || (m_DerivedFlags && m_DerivedFlags.Owns(name)))
+			return false;
+		return SetFlag(name, answer);
+	}
+
+	//------------------------------------------------------------------------------------------------
 	bool SetFlag(string name, bool answer)
 	{
 		if (!m_bRunning || name.IsEmpty() || (m_DerivedFlags && m_DerivedFlags.Owns(name)))

@@ -40,6 +40,7 @@ from outcomes import (ASSAD_FRAMEWORK_BLOB, ASSAD_FRAMEWORK_LAYER, CONCRETE_COUN
                       FOOD_MARKET_OUTCOME_LAYER, FRAMEWORK, INTERDICTION_OUTCOME_LAYER,
                       INTERSECTING_DEFAULT, INTERSECTING_DEFAULT_BLOB, MATCH_PHASE_VALUE,
                       NAGALAM_AMBUSH_BLOBS, NAGALAM_AMBUSH_LAYERS, NAGALAM_LAYERS,
+                      OIL_RIG_POPULATION_AREA, OIL_RIG_POPULATION_FRAMEWORK,
                       RUHA_PHASE_BLOB, RUHA_PHASE_LAYER, RUHA_UNIT_NAMES, SCRIPT_FLAG_APIS,
                       SEEDER_REPLACEMENT_LAYER, SEEDER_REPLACEMENT_LAYER_BLOB,
                       SUPPLY_OUTCOME_BLOB, SUPPLY_OUTCOME_LAYER,
@@ -3007,6 +3008,7 @@ ZARICHNE_CREW_NAMES = ('LAVCrew1', 'LAVCrew2')
 ZARICHNE_MINE = 'worlds/HitTheMan/Battle For Zarichne/Mine_M15AT_EffectModuleEntity_HTM.et'
 ZARICHNE_WARHEAD = 'worlds/HitTheMan/Battle For Zarichne/Warhead_Mine_M15AT_HTM.et'
 REVIEWED_AREA_FLAG_WRITERS = {
+    OIL_RIG_POPULATION_AREA[0]: (OIL_RIG_POPULATION_AREA[1], {'Hostage<': 1}),
     INTERSECTING_DEFAULT: (INTERSECTING_DEFAULT_BLOB, {'reinforce': 2}),
     SCREENING_AREA_LAYER: (SCREENING_AREA_BLOB, SCREENING_AREA_FLAGS),
     **{f'{CONCRETE_CRUSHERS_LAYERS}PhaseTwoRedfor/{location}.layer':
@@ -3025,6 +3027,7 @@ REVIEWED_AREA_FLAG_WRITERS = {
        for index, blob in enumerate(NAGALAM_AMBUSH_BLOBS, 1)},
 }
 REVIEWED_AREA_FLAG_READERS = {
+    OIL_RIG_POPULATION_FRAMEWORK[0]: (OIL_RIG_POPULATION_FRAMEWORK[1], 'event', {'Hostage<': ('CLEARFLAGS', 'UKMinVic')}),
     TRIFECTA_FRAMEWORK[0]: (TRIFECTA_FRAMEWORK[1], 'event with redundant clear', {
         f'STM_IN_{suffix}': (f'STM_{suffix}_EX', f'STM_NOT_IN_{suffix}')
         for suffix in TRIFECTA_PLACED_EXTRACTS
@@ -6318,7 +6321,7 @@ def mode_children(lines, disable_photo=False, lock_editor=False):
 def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, objective_flags=(), damage_flags=None,
                 *, dynamic_respawn_factions=(), area_flag_observers=(), cache_supply_depot=False,
                 inherited_immediate_release=False, capture_phase_entities=False, source_blob=None,
-                derived_flag_containers=(), replaced_tracker=None):
+                derived_flag_containers=(), replaced_tracker=None, population_flags=None):
     if not MODE.fullmatch(root[0]):
         raise ValueError('custom legacy game mode')
     weather, environment, freeze = '', '', 0
@@ -6491,10 +6494,16 @@ def render_mode(world, root, preset, additional_rules, zones, ai_faction=None, o
    m_sPrefabsToBuildResource "{{D2527D9AA5B4A33E}}Configs/Editor/PlaceableEntities/Compositions/Compositions_FreeRoamBuilding.conf"
   }}
 '''
-    if additional_rules:
-        settings += f'''  GC_PeakFactionPopulationComponent "{{{guid(world + '/population')}}}" {{
-  }}
-'''
+    if additional_rules or population_flags:
+        settings += f'  GC_PeakFactionPopulationComponent "{{{guid(world + "/population")}}}" {{\n'
+        if population_flags:
+            settings += '   m_aObservedFlags {\n'
+            for flag, (faction, ratio) in population_flags.items():
+                identity = guid(f'{world}/population flag/{flag}')
+                settings += (f'    GC_PeakFactionPopulationFlag "{{{identity}}}" {{\n'
+                             f'     m_sName "{flag}"\n     m_sFaction "{faction}"\n     m_fRatio {ratio}\n    }}\n')
+            settings += '   }\n'
+        settings += '  }\n'
     if ai_faction:
         settings += f'''  GC_LivingAndDeadAIComponent "{{{guid(world + '/ai population')}}}" {{
    m_sFaction "{ai_faction}"
@@ -6614,6 +6623,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
     shared_writers = [record for area in row.get('captureCandidate', {}).values() for record in area.values()
                       if isinstance(record, dict) and 'areaFlagObserver' in record]
     shared_flags = {record['writesFlag'] for record in shared_writers}
+    population_flags = outcome.get('populationFlags', {})
     if shared_writers:
         closure = '\n'.join(reviewed_area_flag_reference_text(source, path) for path in source.closure(world)
                             if PurePosixPath(path).suffix.lower() in SOURCE_TEXT)
@@ -6634,7 +6644,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
         scripts = script_text(source)
         unresolved = sorted(flag for flag, count in writers.items()
                             if not (readers[flag] or reviewed_reads[flag]) or f'"{flag}"' in scripts
-                            or closure.count(f'"{flag}"') != count + readers[flag] + reviewed_reads[flag] + (flag in reset_flags)
+                            or closure.count(f'"{flag}"') != count + readers[flag] + reviewed_reads[flag]
+                            + (flag in reset_flags) + (flag in population_flags)
                             or (flag in reset_flags and (readers[flag] != 3
                                 or source.files.get(INTERSECTING_DEFAULT.replace('default.layer', 'Opfor.layer'))
                                 != '42a0e55cfa0d5197e995e1474a814e0a09e5ae5c')))
@@ -7118,6 +7129,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
             layer, index = mode_index
             rendered = render_mode(world, mode, preset or '', rule_text, zones, ai_faction,
                                    set(objective_flags) | event_flags, damage_flags,
+                                   population_flags=population_flags,
                                    dynamic_respawn_factions=edited_factions,
                                    cache_supply_depot=cache_supply_depot,
                                    inherited_immediate_release=(

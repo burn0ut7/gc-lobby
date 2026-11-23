@@ -172,7 +172,7 @@ def latched_script_event(key, name, condition, delay, action):
 
 
 PEAK_FLAG = re.compile(r'^  TILW_FactionPlayersKilledFlag "\{[\da-fA-F]{16}\}" \{$')
-LEGACY_FLAG = re.compile(r'"[\w.-]+(?: [\w.-]+)*"')
+LEGACY_FLAG = re.compile(r'"[\w.<>-]+(?: [\w.<>-]+)*"')
 
 
 def peak_flags(lines, declaration=PEAK_FLAG):
