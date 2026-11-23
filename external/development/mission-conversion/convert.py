@@ -316,6 +316,8 @@ def main():
     def resolve_crew(resource, path, *, allow_legacy_playable=True):
         if (resource, path) in archived_crew or ai_loadouts.get(resource, (None,))[0] == path:
             return f'"{{{resource}}}{path}"'
+        if resource not in locally_owned and (alias := asset_aliases.get((resource, path))) and alias[0] == resource:
+            path = alias[1]
         return vehicle_crew.character_reference(resource, path, source_units, dev_units, stock, locally_owned,
                                                 external_ai, allow_legacy_playable=allow_legacy_playable)
 
@@ -1088,7 +1090,7 @@ def main():
             source, dev, source_units, dev_units, stock,
             normalize_references=lambda body: batch.replace_registered_paths(body, source, dev, asset_aliases),
             unavailable=unavailable, historical_parents=historical_roles, rhs=rhs_database,
-            external_roles=forced_external,
+            external_roles=forced_external, uk=uk_database,
             published_playable_parents={current for (identity, _), current in aircrew_roles.items()
                                         if identity == current[0]})
         reviewed_members = {guid: asset[0] for guid, asset in loadouts.items()}

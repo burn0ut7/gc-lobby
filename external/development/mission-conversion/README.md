@@ -1853,6 +1853,12 @@ The spawner conversion retains the original Militia AI templates, the two native
 
 Workbench MCP session `logs_2026-11-22_22-18-05` captured 152 entities and all 40 playable slots under the full declared graph. Missions Dev commits `262894ca` and `20569a2a` store the native snapshot and the verified Bad Orb parent-world provider. The scan recorded partial authored resource coverage, with inherited ammo and particle diagnostics in lines 31965–31976. Keep equipment and full Match behavior in the representative runtime queue.
 
+### Bebble Island Raid
+
+Missions Dev commit `5941cb5c` matches all 75 reviewed files and retains all 77 playable roles. The converter verifies the original British Forces parent registrations and the unchanged GC Units ancestry of the Argentine roles referenced under the former Top Malo House paths. Nine Special Forces loadouts keep their wirecutters in their authored inventory positions through the same verified compatibility prefab used elsewhere in the migration.
+
+All 19 framework events retain their conditions and authored delays. One startup draw selects one of three ammo locations, and the chosen crate spawns five seconds after Match starts. The source HVT instance overrides its prefab's damage flag with `HVTDead`. The conversion retains that observer, native AI activation and the sentry movement lock. All six ZU trucks keep their original positions, locks, gunner roles and destruction flags. The three fuel tanks keep their original material overrides and destruction flags. Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7` verified the native ammo and fuel parents and the original ZU vehicle. The file audit reproduced all 313 prior staged files byte for byte. Representative Match checks cover the startup draw, sentry behavior, grouped destruction, crew placement and the outcome tiers.
+
 ### Battle For Zarichne
 
 Missions Dev commit `18dee842` retains the 110-player advertised capacity and all 80 original playable roles. Two independent radius observers preserve the shared `Compound` flag and its two event readers and eight timed spawns. Fifteen minefield markers stay on their original parent placements with their original transforms and faction visibility. The mission's two custom mine assets keep their registered resource IDs, with the obsolete cross-mission warhead path corrected.

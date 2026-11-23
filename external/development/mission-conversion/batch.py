@@ -2713,6 +2713,50 @@ def fia_cache_damage_placement(block, stock, source_units, dev_units, local_reso
     return native, [flag]
 
 
+BEBBLE_ROOT = 'worlds/TheLocalPub/BebbleIslandRaid/'
+BEBBLE_OBJECTIVES = BEBBLE_ROOT + 'BebbleIslandRaid_Layers/OBJECTIVES.layer'
+BEBBLE_OBJECTIVES_BLOB = 'd7ac84420272fa4c521c6ca0e66aaa521cf9bf86'
+BEBBLE_HVT = BEBBLE_ROOT + 'Prefabs/Characters/Factions/OPFOR/GC_ARG/1980_Regulars/Character_GC_ARG_1980_HVT.et'
+BEBBLE_HVT_BLOB = '409f34968af01738fb4edf42e71f5301bf1b8b9c'
+BEBBLE_FUEL = (BEBBLE_ROOT + 'Prefabs/Structures/Industrial/Containers/FuelTanks/FuelTank_01/FuelTank_01_green.et')
+BEBBLE_FUEL_BLOB = '3dcda1664a20d2fe6cf3225c7a35efefd70cb386'
+BEBBLE_AMMO = BEBBLE_ROOT + 'Prefabs/Props/Military/Camps/AmmoBox.et'
+BEBBLE_AMMO_BLOB = '82eb89185ff8846f84933861e4d50ed31834fc87'
+BEBBLE_AMMO_BASE = ('4CC2C69DE1AEF103', 'Prefabs/Props/Core/DestructibleMultiPhase_Props_Base.et')
+BEBBLE_FUEL_BASE = ('C604699791656656', 'Prefabs/Structures/Industrial/Containers/FuelTanks/FuelTank_01/FuelTank_01_Base.et')
+BEBBLE_ZU = ('FD109F3702AAB392', 'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ZU23.et')
+BEBBLE_AI_ONLY = '  PS_PlayableComponent "{5EFCC1946F475F15}" {\n   m_bIsPlayable 0\n  }\n'
+BEBBLE_SPECIAL_FORCES = (BEBBLE_ROOT + 'Prefabs/Characters/Factions/BLUFOR/UK_Army/1983/Special Forces/'
+                         'Character_UK_1983_SpecialForces_')
+BEBBLE_WIRECUTTER_ROLES = {
+    BEBBLE_SPECIAL_FORCES + role + '_P.et': blob for role, blob in (
+        ('2IC', '2a32b664b478c861fd0808100c5c8dfb16f8c7f1'),
+        ('CO', '14b4a183b6e0cec3fce62e1dff81184b9d378003'),
+        ('Gren', '08bdbb8a45374a61230e01f682e681c427043abb'),
+        ('PSG', '2dfeeebf391dd210c323319e4926799853f59c2a'),
+        ('RecceSL', '3f7cae63a4c3a9d0956546e2e590448bd33305e1'),
+        ('RecceTrooper', '34ebdfc985b77986aa3043469a759029505e5720'),
+        ('Runner', '2b1293df9cf0a53f42b3093a1acfc02e78ed330b'),
+        ('SL', '8cba77ce8d732d6ad8c335e1bc12598837bc12d4'),
+        ('XO', '74ad483fecf95c6deaf017a51fa99fbc02318c87'),
+    )
+}
+BEBBLE_WIRECUTTER = BEBBLE_ROOT + 'Prefabs/Items/Equipment/Wirecutters.et'
+
+
+def bebble_hvt_placement(block):
+    # The placement overrides the damage component's prefab flag along with the
+    # character's faction, loadout and presentation fields.
+    body = '\n'.join(block).replace(BEBBLE_AI_ONLY, '', 1)
+    body = body.replace('   ' + LEGACY_SENTRY_TREE + '\n  }',
+                        '  }\n  GC_StaticSentryComponent "{' + guid('migration/static sentry') + '}" {\n  }', 1)
+    converted, flag = damage_state_flag_placement(body.splitlines(), allow_multiple_states=True)
+    result = native_placement(converted, reviewed_character=True)
+    if not result or flag != 'HVTDead':
+        raise ValueError('unsupported Bebble HVT placement')
+    return result, [flag]
+
+
 def damage_flag_rules(source, world, stock, local_resources, source_units, dev_units, rhs=None, *,
                       workshop_targets=(), convert_crew):
     placements, audit, candidates = {}, {}, defaultdict(list)
@@ -2724,13 +2768,22 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
             continue
         for line, block in blocks(text):
             location = f'{path}:{line}'
+            bebble = path == BEBBLE_OBJECTIVES and source.files[path] == BEBBLE_OBJECTIVES_BLOB
             if block[0].startswith('$grp '):
                 if not any('TILW_Flag_EntityDamage' in part for part in block):
                     continue
                 try:
+                    ref = REF.search(block[0])
+                    authored_fuel = (bebble and ref and ref.groups() == ('E3295327B3F5929F', BEBBLE_FUEL)
+                                     and source.files.get(BEBBLE_FUEL) == BEBBLE_FUEL_BLOB
+                                     and stock and stock.contains(*BEBBLE_FUEL_BASE) and BEBBLE_FUEL_BASE[0] not in local_resources
+                                     and all(BEBBLE_FUEL_BASE[0] not in units.resources for units in (source_units, dev_units)))
+                    authored_zu = (bebble and ref and ref.groups() == BEBBLE_ZU and BEBBLE_ZU in workshop_targets
+                                   and all(BEBBLE_ZU[0] not in units.resources for units in (source_units, dev_units)))
                     observed[(path, line)] = grouped_damage_placement(
                         block, stock, local_resources, source_units, dev_units, rhs,
-                        workshop_targets=workshop_targets)
+                        workshop_targets=workshop_targets, reviewed_local=bool(authored_fuel),
+                        convert_crew=convert_crew if authored_zu else None)
                 except ValueError as exc:
                     audit[location] = {'gap': str(exc)}
                 continue
@@ -2746,6 +2799,11 @@ def damage_flag_rules(source, world, stock, local_resources, source_units, dev_u
                 continue
             try:
                 ref = REF.search(block[0])
+                if (bebble and ref and ref.groups() == ('BEC1AB7A6E6C97B0', BEBBLE_HVT)
+                        and source.files.get(BEBBLE_HVT) == BEBBLE_HVT_BLOB
+                        and unchanged_units_parent(source_units, dev_units, 'BB64738FA06CE9D1')):
+                    observed[(path, line)] = bebble_hvt_placement(block)
+                    continue
                 if not ref or not stock or ref[1].upper() in local_resources:
                     raise ValueError('unverified damage objective prefab or component placement')
                 authored = (ref[1].upper(), ref[2])
@@ -2907,17 +2965,19 @@ def verified_rhs_damage(resource, path, source_units, dev_units, rhs):
     return True
 
 
-def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs, *, workshop_targets=()):
+def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs, *, workshop_targets=(),
+                             reviewed_local=False, convert_crew=None):
     ref = REF.search(block[0])
     if (not ref or not re.match(
-            r'^\$grp (Vehicle|Tank|RHS_Tank|GameEntity|GenericEntity|StaticModelEntity|SCR_ChimeraCharacter) ', block[0])
-            or ref[1].upper() in owned):
+            r'^\$grp (Vehicle|Tank|RHS_Tank|GameEntity|GenericEntity|StaticModelEntity|SCR_ChimeraCharacter|SCR_DestructibleBuildingEntity) ', block[0])
+            or (ref[1].upper() in owned and not reviewed_local)):
         raise ValueError('unverified grouped damage objective prefab')
     resource, path = ref[1].upper(), ref[2]
     is_character = block[0].startswith('$grp SCR_ChimeraCharacter ')
     registered = ((stock and DAMAGE_TARGETS.get(resource) == path and stock.contains(resource, path))
                   or (resource, path) in workshop_targets)
-    verified_target = registered and resource not in source_units.resources and resource not in dev_units.resources
+    verified_target = ((registered or reviewed_local)
+                       and resource not in source_units.resources and resource not in dev_units.resources)
     reviewed_units = UNITS_DAMAGE_TARGETS.get((resource, path))
     if not verified_target and reviewed_units:
         blob, parent, parent_override = reviewed_units
@@ -2950,7 +3010,8 @@ def grouped_damage_placement(block, stock, owned, source_units, dev_units, rhs, 
             if member[setting] in shared_settings:
                 member.insert(setting + 1, '   m_bClearOnMismatch 1')
         lines.extend([f' {name} {{' if name else ' {', *(' ' + part for part in member[1:-1]), ' }'])
-    native = native_placement([*lines, block[-1]], reviewed_character=is_character)
+    lines.append(block[-1])
+    native = native_placement(convert_crew(lines) if convert_crew else lines, reviewed_character=is_character)
     if not native or not flags:
         raise ValueError('grouped damage placement has another legacy component')
     return native, flags
@@ -3428,6 +3489,13 @@ OIL_RIG_DELETED_GUNNER = 'D8F7C335536E5786'
 
 
 def passive_asset(source, path):
+    if source.files.get(BEBBLE_OBJECTIVES) == BEBBLE_OBJECTIVES_BLOB:
+        if path == BEBBLE_HVT and source.files[path] == BEBBLE_HVT_BLOB:
+            # The only placement supplies the effective HVTDead observer.
+            return source.read(path).replace(BEBBLE_AI_ONLY, '', 1).replace(
+                '  TILW_Flag_EntityDamage "{65AD042580CF7A6F}" {\n   m_flagName "HVT"\n  }\n', '', 1)
+        if path == BEBBLE_FUEL and source.files[path] == BEBBLE_FUEL_BLOB:
+            return source.read(path).replace('  TILW_Flag_EntityDamage "{65DA917B80071341}" {\n  }\n', '', 1)
     if (path == OIL_RIG_FACTION and source.files[path] == 'f0d3f76d2cf7ba98a5e5510f7225861eb405d262'
             and OIL_RIG_DELETED_GUNNER not in source.resources):
         # The publisher removed this variant from the addon and roster but left its catalog entry.
@@ -4357,9 +4425,14 @@ def spawned_objectives(source, dev, world, stock, local_resources, workshop_targ
                     replacement = reviewed_replacement_vehicle(source, resource, path, corpus)
                 reviewed_overrides = (replacement and (path == SEEDER_BUILDABLE_MI8
                     or path.removeprefix(SEEDER_REPLACEMENT_DIR) in SEEDER_TRUCK_BLOBS))
-                native, flag = spawned_damage_objective(block, stock, local_resources, workshop_targets,
-                                                        vehicle=vehicle, replacement=bool(replacement), rhs=rhs,
-                                                        reviewed_overrides=bool(reviewed_overrides))
+                if (path == BEBBLE_AMMO and source.files[path] == BEBBLE_AMMO_BLOB and not vehicle
+                        and stock and stock.contains(*BEBBLE_AMMO_BASE) and BEBBLE_AMMO_BASE[0] not in local_resources):
+                    lines, flag = damage_state_flag_placement(block)
+                    native = '\n'.join(lines) + '\n'
+                else:
+                    native, flag = spawned_damage_objective(block, stock, local_resources, workshop_targets,
+                                                            vehicle=vehicle, replacement=bool(replacement), rhs=rhs,
+                                                            reviewed_overrides=bool(reviewed_overrides))
                 kind = {'destroyed': True, **({'vehicle': True} if vehicle else {})}
                 if replacement:
                     if flag != replacement['flag']:
@@ -5273,6 +5346,14 @@ def registered_alias(resource, path, source, dev, aliases):
 
 def reviewed_units_asset_paths(source_units, dev_units):
     aliases = {}
+    arg_root = 'Prefabs/Characters/Factions/OPFOR/GC_ARG/1980_Regulars/'
+    for identity in ('98167A5BFF14B2F2', '9FE2A9738832231C', 'BB64738FA06CE9D1', 'D557EF5068CAAD87',
+                     'DB5AFCA42285E34F', 'ED0F3A045287A1B4', 'F0205A51BCCCE2C8'):
+        paths = dev_units.resources.get(identity, ())
+        if (len(paths) == 1 and paths[0].startswith(arg_root) and paths == source_units.resources.get(identity)
+                and unchanged_units_parent(source_units, dev_units, identity)):
+            path, = paths
+            aliases[identity, 'worlds/TheLocalPub/TopMaloHouse/' + path] = identity, path
     icon = '5E4DDEE56C6D4D16'
     original = 'worlds/Blue/TheBearWentOvertheMountain2/Assets/Mujahadeen.edds'
     current = 'Images/GC_MUJ_icon.edds'
@@ -5511,6 +5592,15 @@ def reviewed_archived_mission_crew(source, dev, stock):
     return restored
 
 
+def reviewed_wirecutter_inventory(source, owner):
+    blob = source.files.get(owner)
+    if owner == GRAVETTE_WIRECUTTER_ROLE and blob == '0c1bdbf6239721b499105469fed6b5520a4ee099':
+        return GRAVETTE_WIRECUTTER, owner + '.meta'
+    if blob and BEBBLE_WIRECUTTER_ROLES.get(owner) == blob:
+        return BEBBLE_WIRECUTTER, BEBBLE_SPECIAL_FORCES + '2IC_P.et.meta'
+    return None
+
+
 def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_assets, faction_assets, archived_crew):
     files = list(draft)
     blockers = set()
@@ -5546,10 +5636,9 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
                     return ref[0]
                 return f'"{{{identity}}}{destination}"'
             if ((resource, path) == ('8554ED3F088BADA6', WIRECUTTER_PREFAB[1])
-                    and owner == GRAVETTE_WIRECUTTER_ROLE
-                    and source.files.get(owner) == '0c1bdbf6239721b499105469fed6b5520a4ee099'
-                    and WIRECUTTER_PREFAB in asset_aliases):
-                destination = GRAVETTE_WIRECUTTER
+                    and WIRECUTTER_PREFAB in asset_aliases
+                    and (wirecutter := reviewed_wirecutter_inventory(source, owner))):
+                destination, metadata_source = wirecutter
                 identity = guid(destination)
                 if identity in source.resources or dev.resources.get(identity) not in (None, [destination]):
                     blockers.add((owner, path, 'wirecutter compatibility prefab identity collision'))
@@ -5560,7 +5649,7 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
                     ' ID "508AB2013EEE1E00"', *wirecutter_inventory_fields(), '}', '',
                 ])
                 draft[destination + '.meta'] = replace_reference(
-                    source.read(owner + '.meta'), META_NAME, identity, destination)
+                    source.read(metadata_source), META_NAME, identity, destination)
                 return f'"{{{identity}}}{destination}"'
             if faction := faction_assets.get((resource, path)):
                 identity, destination, assets = faction

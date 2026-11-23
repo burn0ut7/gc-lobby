@@ -138,7 +138,7 @@ def unchanged_units_parent(source_units, dev_units, resource, *, force_playable=
 
 
 def collect(source, dev, source_units, dev_units, stock, *, normalize_references=None, unavailable=(),
-            historical_parents=None, published_playable_parents=(), rhs=None, external_roles=None):
+            historical_parents=None, published_playable_parents=(), rhs=None, external_roles=None, uk=None):
     """Return approved asset bodies by unique source GUID."""
     approved = {}
     owned = source.resources.keys() | dev.resources.keys()
@@ -236,8 +236,12 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
                                            and rhs.contains(resource, parent_path))
                 registered_oil_rig_role = (resource == OIL_RIG_RIFLEMAN_PARENT and path.startswith(OIL_RIG_LOADOUTS)
                                            and (external_roles or {}).get(resource) == (parent_path, parent_path))
+                registered_bebble_role = (
+                    uk and path.startswith('worlds/TheLocalPub/BebbleIslandRaid/Prefabs/Characters/Factions/BLUFOR/')
+                    and parent_path.startswith('Prefabs/Characters/Factions/BLUFOR/UK_Army/1983/SpecialForces/')
+                    and uk.contains(resource, parent_path))
                 if not (removed or verified_forced) or not (
-                        registered_rhs_pilot or registered_rhs_garrison or registered_oil_rig_role
+                        registered_rhs_pilot or registered_rhs_garrison or registered_oil_rig_role or registered_bebble_role
                         or stock.contains(resource, parent_path)):
                     return None
         if (guid == '730C15295DBF4543' and source.files[path] == '90e7c82588520852e48f88e85f35bcbeb29b27ef'
