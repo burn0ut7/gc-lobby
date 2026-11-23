@@ -128,6 +128,13 @@ COBRA_AIRCRAFT_LOADOUT_CHANGES = {
         ),
     ),
 }
+COBRA_PROJECTILE_PROVIDER = 'WCS_Armaments_629B2BA37EFFD577'
+COBRA_PROJECTILE_PACKAGE = '11a4b537297275db86e7b2773df7770b893d5d1f1d5d11ad928d4fbc141a072e'
+COBRA_PROJECTILE_CHANGES = {
+    '10340BBEDA1F26E8': 'WCS Armaments 9.0.2 changes the archived AH-1Z BGM-71 safety distance.',
+    '124BF96EFF7BDEB0': 'WCS Armaments 9.0.2 changes the archived AH-1Z M229 launch speed and mass.',
+    '6F57BF4E759DF6DF': 'WCS Armaments 9.0.2 changes the archived UH-1Y M229 launch speed and mass.',
+}
 RUHA_032_REGISTRY = 'fb4911e6b81561933d73cbb1eeb734e97d1fe20bd08bb8f6797949e28f77a8b4'
 RUHA_WORLD = ('31A1248EA401F22C', 'worlds/Ruha.ent')
 METSALA_WORLD = 'worlds/Til/MetsalaAirfield/MetsalaAirfield.ent'
@@ -206,8 +213,9 @@ def known_compile_failure(stock, providers):
     return None
 
 
-def cobra_aircraft_loadout_changes(providers, references):
+def cobra_aircraft_loadout_changes(providers, references, *, registered=frozenset()):
     changes = {}
+    projectile_hosts = COBRA_PROJECTILE_CHANGES.keys() & references & registered
     for database in providers:
         variants = COBRA_AIRCRAFT_LOADOUT_CHANGES.get(database.parent.name, ())
         relevant = [(digests, differences) for digests, differences in variants
@@ -219,6 +227,13 @@ def cobra_aircraft_loadout_changes(providers, references):
             for digests, differences in relevant:
                 if digest in digests:
                     changes.update({guid: differences[guid] for guid in differences.keys() & references})
+        if projectile_hosts and database.parent.name == COBRA_PROJECTILE_PROVIDER and archive.is_file():
+            with archive.open('rb') as package:
+                digest = file_digest(package, 'sha256').hexdigest()
+            if digest == COBRA_PROJECTILE_PACKAGE:
+                for guid in sorted(projectile_hosts):
+                    # A changed aircraft preset already requires review regardless of its ammunition provider.
+                    changes.setdefault(guid, COBRA_PROJECTILE_CHANGES[guid])
     return changes
 
 
@@ -765,7 +780,8 @@ def main():
                 if pins and not provider_issue:
                     provider_issue = known_compile_failure(stock, chosen_providers)
                 resource_changes = cobra_aircraft_loadout_changes(
-                    chosen_providers, {guid for guid, _ in references})
+                    chosen_providers, {guid for guid, _ in references},
+                    registered={guid for guid, _ in references - unresolved})
                 for header in group:
                     terrain_issue = None
                     if not provider_issue and pins:
