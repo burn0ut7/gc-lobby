@@ -208,8 +208,9 @@ class GC_BriefingViewComponent : SCR_ScriptedWidgetComponent
         }
 
         GC_Briefing briefing;
-        if (m_LobbyManager)
-            briefing = m_LobbyManager.GetBriefing(row.GetBriefingOrder());
+        PlayerController playerController = GetGame().GetPlayerController();
+        if (m_LobbyManager && playerController)
+            briefing = m_LobbyManager.GetBriefingForPlayer(playerController.GetPlayerId(), row.GetBriefingOrder());
 
         ShowBriefing(briefing, row.GetDisplayOrder());
     }
@@ -347,7 +348,7 @@ class GC_BriefingViewComponent : SCR_ScriptedWidgetComponent
         }
 
         ShowBriefing(
-            m_LobbyManager.GetBriefing(selectedRow.GetBriefingOrder()),
+            m_LobbyManager.GetBriefingForPlayer(playerController.GetPlayerId(), selectedRow.GetBriefingOrder()),
             selectedRow.GetDisplayOrder());
     }
 
