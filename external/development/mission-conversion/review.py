@@ -55,6 +55,24 @@ RHS_COMPILE_FAILURES_19037 = {
         },
     ),
 }
+ARCHIVED_COMPILE_FAILURES_19037 = {
+    'RHS-StatusQuo_595F2BF2F44836FB': RHS_COMPILE_FAILURES_19037,
+    'TacticalFlava_5D550926D43F1409': {
+        '75245f4be1f85bedf59a7018d7493fb98a9483f0302aba6755334b0c73f1e14d': (
+            'Tactical Flava 1.5.15',
+            {
+                'data.pak': '3300736b3cd58a41feebefb27ee2587ac6c4f61b1ddfbd1a94e43609c4795a27',
+                'data001.pak': '73ef44d2aba0694b2e7f14048cbb51df1fdd70c3d66f80b69d693930e89766f3',
+            },
+        ),
+    },
+    'WCS_Armaments_629B2BA37EFFD577': {
+        '5707a5443307ab4f80195bbc372a60ae37566244ad7164fe5dc93b8a8c39dde6': (
+            'WCS Armaments 6.0.25',
+            {'data.pak': 'e5961c164acfdafda77560c575849f386ecfe33a7680e156a26f56810b8b76c0'},
+        ),
+    },
+}
 COMPILE_FAILURES_19037 = {
     'WCS_Armaments_629B2BA37EFFD577': (
         'WCS Armaments 6.0.24',
@@ -169,9 +187,10 @@ def known_compile_failure(stock, providers):
     if sha256(stock.data).hexdigest() != ENGINE_19037_DATABASE:
         return None
     for database in providers:
-        spec = COMPILE_FAILURES_19037.get(database.parent.name)
-        if database.parent.name == 'RHS-StatusQuo_595F2BF2F44836FB':
-            spec = RHS_COMPILE_FAILURES_19037.get(sha256(database.read_bytes()).hexdigest())
+        name = database.parent.name
+        spec = COMPILE_FAILURES_19037.get(name)
+        if versions := ARCHIVED_COMPILE_FAILURES_19037.get(name):
+            spec = versions.get(sha256(database.read_bytes()).hexdigest(), spec)
         if not spec:
             continue
         title, archives = spec
