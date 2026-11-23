@@ -75,25 +75,39 @@ COMPILE_FAILURES_19037 = {
 COBRA_WORLD = 'worlds/Jub/CobrasBite/Cobras_bite.ent'
 COBRA_AIRCRAFT_LOADOUT_CHANGES = {
     'SagesAH1Z_68981B7716C2E9DB': (
-        {
-            '490351706cbc4f2c31263a2e5c05a6b9cd352cc70962a99521731a8703ad358d',
-            '14c35b47bc5dfd865feb3529339c97b0e2b934d9ddb9a26c15b49e64485a3789',
-        },
-        {
-            '10340BBEDA1F26E8': 'The AH-1Z M299 variant changes from sixteen BGM-71 missiles to eight AGM-114Ks.',
-            '124BF96EFF7BDEB0': 'The AH-1Z rocket variant changes from 76 M229 rockets to 52 mixed M229 and M247 rockets.',
-        },
+        (
+            {
+                '490351706cbc4f2c31263a2e5c05a6b9cd352cc70962a99521731a8703ad358d',
+                '14c35b47bc5dfd865feb3529339c97b0e2b934d9ddb9a26c15b49e64485a3789',
+            },
+            {
+                '10340BBEDA1F26E8': 'The AH-1Z M299 variant changes from sixteen BGM-71 missiles to eight AGM-114Ks.',
+                '124BF96EFF7BDEB0': 'The AH-1Z rocket variant changes from 76 M229 rockets to 52 mixed M229 and M247 rockets.',
+            },
+        ),
     ),
     'SagesUH1Y_691955E004F3DD9C': (
-        {
-            'a9ede14af4b300c37a89abcb3bb816ea3a852a5cf8591181656b27dd58ea8b7c',
-            '5a8a485a45d368181aa15042140900f41e13a2af1af5ca2649b03d75640f7f30',
-            'c052d3031a44e3bd0273fcfe514eddf540fb2af7fb86116f7060ce63d88a882a',
-            'a7c19f5b36f79301ef184d32a348df456cd75da6e611141e9de26f9873cb5222',
-        },
-        {
-            '6F57BF4E759DF6DF': 'The UH-1Y removes the authored WCS rocket station and changes the flight HUD bindings.',
-        },
+        (
+            {
+                'a9ede14af4b300c37a89abcb3bb816ea3a852a5cf8591181656b27dd58ea8b7c',
+                '5a8a485a45d368181aa15042140900f41e13a2af1af5ca2649b03d75640f7f30',
+                'c052d3031a44e3bd0273fcfe514eddf540fb2af7fb86116f7060ce63d88a882a',
+                'a7c19f5b36f79301ef184d32a348df456cd75da6e611141e9de26f9873cb5222',
+                '0814bc9c0977c0af27d88370bf6ff4ec938a1e7917ae1e4ad301bd44609c833e',
+            },
+            {
+                '6F57BF4E759DF6DF': 'The UH-1Y removes the authored WCS rocket station and changes the flight HUD bindings.',
+            },
+        ),
+        (
+            {
+                'e284172fc612b40f73dd86bf7e6a0b2dc7d16766fdade43ee1a490cbaaca8c57',
+                '003345b305fb906ab638c3c58a45398c46ac0b38b6f6521471af62567f6bb34d',
+            },
+            {
+                '6F57BF4E759DF6DF': 'The UH-1Y replaces the original M260 rocket station with LAU-68 at different mount offsets.',
+            },
+        ),
     ),
 }
 RUHA_032_REGISTRY = 'fb4911e6b81561933d73cbb1eeb734e97d1fe20bd08bb8f6797949e28f77a8b4'
@@ -176,16 +190,16 @@ def known_compile_failure(stock, providers):
 def cobra_aircraft_loadout_changes(providers, references):
     changes = {}
     for database in providers:
-        spec = COBRA_AIRCRAFT_LOADOUT_CHANGES.get(database.parent.name)
-        if not spec:
-            continue
-        digests, differences = spec
-        affected = differences.keys() & references
+        variants = COBRA_AIRCRAFT_LOADOUT_CHANGES.get(database.parent.name, ())
+        relevant = [(digests, differences) for digests, differences in variants
+                    if differences.keys() & references]
         archive = database.with_name('data.pak')
-        if affected and archive.is_file():
+        if relevant and archive.is_file():
             with archive.open('rb') as package:
-                if file_digest(package, 'sha256').hexdigest() in digests:
-                    changes.update({guid: differences[guid] for guid in affected})
+                digest = file_digest(package, 'sha256').hexdigest()
+            for digests, differences in relevant:
+                if digest in digests:
+                    changes.update({guid: differences[guid] for guid in differences.keys() & references})
     return changes
 
 
