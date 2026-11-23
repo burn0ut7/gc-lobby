@@ -474,6 +474,13 @@ STOCK_TERRAIN_PARENTS = {
     'worlds/Eden/Eden.ent': '853E92315D1D9EFE',
 }
 REVIEWED_CAPACITY = {
+    'Missions/arc/CommandosReforged.conf': (
+        '0869d9b0064e352e3963157fb2431b0ecbbbc805',
+        tuple((f'worlds/arc/CommandosReforged/CommandosReforged_Layers/players_{side}.layer', blob)
+              for side, blob in (('us', '5d85e00025f1fb2a1635c6c75f1dd9bcd04e9db2'),
+                                 ('ru', 'c570e980592b6fae8842b3da616af89dc8c1947b'))),
+        60, 62,
+    ),
     'Missions/HitTheMan/Beach Holiday to Mineraly/BeachHolidaytoMineraly.conf': (
         '0efea21f96214b6ff48a003b938cf07f950b5102',
         tuple((f'worlds/HitTheMan/Beach Holiday To Mineraly/BeachHolidaytoMineraly_Layers/{side}_Players/{side}_Players.layer',
@@ -1465,7 +1472,11 @@ RHIB_LEGACY_MOUNT_LAYERS = {
     '338ce4c121323ef57ed329ee547a1e1b2886c354',  # Oil Rig Rangos
 }
 RHIB_CURRENT_MOUNT_LAYERS = {'10cceaf84b88a05e2c3cad314b005f18334dba38'}  # Taking Trenches
-WIRECUTTER_LAYER_BLOBS = {'7673b673c619b44b0f80cfb54d029b5cdd208350', 'f5c094b3c8f19c596b5f44c2b903f6942e0c0874'}
+WIRECUTTER_LAYER_BLOBS = {
+    '7673b673c619b44b0f80cfb54d029b5cdd208350',
+    'f5c094b3c8f19c596b5f44c2b903f6942e0c0874',
+    '0f1ca2152e82aab22f40edde9c9922deeea15006',
+}
 WIRECUTTER_PREFAB = ('42232FFE6E7AC415', 'Prefabs/Items/Core/Wirecutters/wirecutters.et')
 GRAVETTE_WIRECUTTER_ROLE = 'worlds/ac337/prefab/1980s SF and Partners/Partner Force/AC_PF_Rifleman_Ladder_P.et'
 GRAVETTE_WIRECUTTER = 'worlds/ac337/prefab/Gravette_Wirecutters.et'
@@ -1816,6 +1827,22 @@ REVIEWED_NATIVE_ASSETS = {
         'ae267b03015662a0badcfa9210ce86ca18d1c3bf2e06efe19fe8b0b009fe4813',
     'worlds/arc/CommandosReforged/Prefabs/BLU/Barret_m107a1_IR.et':
         '38e719f739bb51dc4924dd16f6ddc92a3a476aaf0c91b6c03bffc8ac1a738ab8',
+    'worlds/arc/CommandosReforged/Prefabs/BLU/Helmet_MICH2000_norotos_velcro_green2_commandos.et':
+        '0956a322e5d26e91df76f5b8e85cb9dc76a456f107512879ba4682870cab5033',
+    'worlds/arc/CommandosReforged/Prefabs/BLU/MG_M240_Light_MDO_CDOS.et':
+        '583ad6a6e38cb6863bd6e50ac2a9d2947680bea1b20a6cf81f29a9648cc57f4e',
+    'worlds/arc/CommandosReforged/Prefabs/BLU/Rifle_M4A1_BLOCK_0_NT4_Commandos.et':
+        '835e0cabe44a21797067c46f759f502f8531d880ba75a97a70ff3bd3235dd56e',
+    'worlds/arc/CommandosReforged/Prefabs/BLU/Rifle_M4A1_M203_RAS_TA31RCO_PEQ_CDOS.et':
+        '48d78a9377e2de9bf5118875e5c0d10aff2534d6a70747af56f56d2ea9a50935',
+    'worlds/arc/CommandosReforged/Prefabs/BLU/Rifle_SCAR_H_STD_SemiBlack_CDOS.et':
+        '778c3261098ca5fe0f322dae7db533e34acce57e255a070838d05c9c65e0b54d',
+    'worlds/arc/CommandosReforged/Prefabs/BLU/Rifle_SCAR_SSR_CDOS.et':
+        'e8c0ec56083f1bc8cd9fd7afb4c2392af31d5c9781e7e880bed03d5567774ac3',
+    'worlds/arc/CommandosReforged/Prefabs/Mi8MT_armed1_Comandos.et':
+        'eda92f4784b14a363777023e2569de33ffc2f78619955514d0cea57594fc5c44',
+    'worlds/arc/CommandosReforged/Prefabs/Mi8MT_Flare_Dispenser.et':
+        '7277ee6977ccc500797df702bb6083be82708853cbf9181d12048b0e202dee6b',
     'worlds/HitTheMan/Prefabs/Vehicles/BMP1_ZSU_base_HTM.et':
         '25b2f4c66289a46fd029a1c0fae3e072d35b1c858982b8a873221d98791d5a1f',
     'worlds/HitTheMan/Prefabs/Vehicles/BaconZU23_Turret_NotEditable_HTM.et':
@@ -6146,6 +6173,13 @@ FSM_ORANGE_TRACER_BLOBS = {
     FSM_ORANGE_MATERIAL[1]: '465bceae7b76d8445fc5e5bc4517b3906af854e1',
     FSM_ORANGE_MATERIAL[1] + '.meta': '3a8008691c74cc0d2978afb7ae10bcce84bb304e',
 }
+COMMANDOS_DOG_ROOT = 'worlds/arc/CommandosReforged/'
+COMMANDOS_DOG_RESOURCES = {
+    '0E59A495FEB3F552': 'Prefabs/Dog.et',
+    '7A0FB5C37F8437B2': 'Prefabs/Dog_Knife.et',
+    '8A390301136E2634': 'Assets/DogBark.acp',
+}
+COMMANDOS_DOG_TREE_HASH = '4b0be8c33ab42a87feb1da36b6ce4a0e771e6a9e195cc1909a7fe415ebf9a593'
 
 
 def fsm_orange_tracer_assets(source, dev, aliases):
@@ -6167,6 +6201,38 @@ def fsm_orange_tracer_assets(source, dev, aliases):
             if existing != body:
                 raise ValueError('Orange tracer asset would overwrite different Dev content')
         files[path] = body
+    return files
+
+
+def commandos_dog_assets(source, dev, aliases):
+    paths = {COMMANDOS_DOG_ROOT + name for name in (*COMMANDOS_DOG_RESOURCES.values(), 'Assets/DogBark.wav')}
+    paths.update(path for path in source.files if path.startswith(COMMANDOS_DOG_ROOT + 'Assets/Dog/')
+                 and not path.endswith(('.meta', 'German Shepherd Dog.txo')))
+    paths = sorted(paths | {path + '.meta' for path in paths if path + '.meta' in source.files})
+    signature = sha256('\n'.join(f'{path} {source.files.get(path)}' for path in paths).encode()).hexdigest()
+    if signature != COMMANDOS_DOG_TREE_HASH:
+        raise ValueError('Commandos dog resource tree changed')
+    files = {}
+    for path in paths:
+        suffix = PurePosixPath(path).suffix.lower()
+        if suffix in SOURCE_TEXT | {'.meta', '.acp'}:
+            body = source.read_raw(path).decode('utf-8-sig').replace('\r\n', '\n')
+            body = replace_registered_paths(body, source, dev, aliases)
+            if suffix == '.meta':
+                identity = META_NAME.search(body)
+                target = path.removesuffix('.meta')
+                if (not identity or source.resources.get(identity[2]) != [target]
+                        or dev.resources.get(identity[2]) not in (None, [target])):
+                    raise ValueError('Commandos dog resource identity collision')
+                body = replace_reference(body, META_NAME, identity[2], target)
+            if path in dev.files and dev.read_raw(path).decode('utf-8-sig').replace('\r\n', '\n') != body:
+                raise ValueError('Commandos dog resource would overwrite different Dev content')
+        else:
+            body = source.read_raw(path)
+            if path in dev.files and dev.read_raw(path) != body:
+                raise ValueError('Commandos dog asset would overwrite different Dev content')
+        if path not in dev.files:
+            files[path] = body
     return files
 
 
@@ -6262,6 +6328,16 @@ def migrate_assets(source, dev, draft, asset_aliases, local_loadouts, spawned_as
 
         def relocate(ref):
             resource, path = ref[1].upper(), ref[2]
+            if (dog_path := COMMANDOS_DOG_RESOURCES.get(resource)) and path == COMMANDOS_DOG_ROOT + dog_path:
+                if path not in draft and path not in dev.files:
+                    try:
+                        assets = commandos_dog_assets(source, dev, asset_aliases)
+                        if any(name in draft and draft[name] != body for name, body in assets.items()):
+                            raise ValueError('Commandos dog resource differs from an earlier draft')
+                        draft.update(assets)
+                    except ValueError as exc:
+                        blockers.add((owner, path, str(exc)))
+                return ref[0]
             if crew := archived_crew.get((resource, path)):
                 if path not in draft and path not in dev.files:
                     draft[path], draft[path + '.meta'] = crew
@@ -7815,6 +7891,19 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         group_blocks.append({'file': layer, 'line': line, 'groups': count, 'slots': slots})
                     except ValueError as exc:
                         blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
+                elif (kind == 'SCR_ChimeraCharacter' and line == 50
+                      and layer == 'worlds/arc/CommandosReforged/CommandosReforged_Layers/players_us.layer'
+                      and source.files[layer] == '5d85e00025f1fb2a1635c6c75f1dd9bcd04e9db2'):
+                    # These placed appearances explicitly disabled role selection.
+                    converted, count = re.subn(
+                        r'(?m)^  components \{\n   PS_PlayableComponent "\{5EFCC1946F475F15\}" \{\n'
+                        r'    m_bIsPlayable 0\n   \}\n  \}\n', '', body)
+                    native = native_placement(converted.splitlines(), reviewed_character=True)
+                    if count != 5 or not native or 'EC6F888025ED54EF' not in local_loadouts:
+                        blockers.append({'rule': kind, 'file': layer, 'line': line,
+                                         'detail': 'reviewed static Commandos riflemen need their native prefab'})
+                    else:
+                        result.append(native)
                 elif kind == 'PK_EntityDeleter':
                     try:
                         result.append(startup_cleanup(block))

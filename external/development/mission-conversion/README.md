@@ -31,7 +31,7 @@ The audit at Missions Dev `f2dd0ebd` clears 256 of the 277 published launchers, 
 | Cobra’s Bite | The two authored USMC M3 MAAW roles remain unavailable. |
 | Factory Siege Redux | The authored 2003 woodland forward observer remains unresolved. |
 | Gull Bay Guns | The original RHS EMR squad leader remains unresolved. |
-| Commandos Reforged | The mission-specific Commandos manager, interactions, cleanup, aircraft and loadouts need an integrated conversion. |
+| Commandos Reforged | The objective manager, interaction prefabs, radar cleanup and Black Hawk objective need an integrated conversion. |
 
 Run the planner from GC Lobby with a clean Missions Dev checkout. Use a fresh output directory when the commits or conversion rules change.
 
@@ -2328,3 +2328,11 @@ The tan TIGR keeps the exact Tactical Flava registration. Its tan turret inherit
 Workbench MCP session `logs_2026-11-23_01-42-22` captured 275 authored entities and 28 playable slots on the full dependency graph. Missions Dev commit `f2dd0ebd` stores the native snapshot and the translated author catalogue. The original author block remains intact. The asset capture records Takistan, British Forces and Tactical Flava TIGR. The live fallback sequence, crew placement and outcome timing remain in the representative Match queue. Workbench ignored the six legacy SOAR vehicle links and reported an inherited flare cooldown field in the armed H-60 chain at lines 29118–29131. The links stay in the deferred vehicle preview inventory.
 
 The portable manifest verifies the committed header and scenario identities and lists 76 required addons, including the terrain and both reviewed vehicle and group providers. The preceding 255 manifests remain byte-for-byte identical.
+
+### Commandos Reforged roster and equipment
+
+The converter now preserves 62 ordered slots across three US groups and nine Russian groups. The published header advertises 60 players. The five riflemen placed separately in the US layer stay outside the selectable roster. The rifleman, pilot and officer bases resolve under their original RHS registrations. The conversion keeps the Commandos footprint, tracking and objective registrations authored on the associated roles. It removes four TilW observers that wrote `OBJ_5_KIA` or `OBJ_6_KIA`. The published world and mission scripts contain no readers of either flag.
+
+The equipment pass retains five custom weapon prefabs, the issued helmet, the Mi-8 fuel and flare-dispenser overrides, and three wirecutter placements. Reforger MCP catalogue `e0d20a56b57142b0962d3327fc78b6f7` supplied the RHS, Tactical Flava and WCS prefab ancestry for the attachment and dispenser checks. The shared wirecutter conversion restores the original inventory settings. The dog pack carries 26 original files with the prefab, mesh, import sources, materials, textures, sound project and recording. The dependency audit resolves the authored references in its prefabs and material files, including the links stored in the mesh metadata and sound project.
+
+The objective manager and its objective registrations still require a native runtime port. The original startup cleanup destroys its own entity tree after the world-postprocess callback. The radar child registers an objective and marker during initialization before that removal, so the port needs to preserve that order.

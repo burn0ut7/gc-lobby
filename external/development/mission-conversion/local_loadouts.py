@@ -5,7 +5,7 @@ from pathlib import PurePosixPath
 import re
 
 from briefings import QUOTED, block_end, properties
-from catalog import REF
+from catalog import REF, SOURCE_TEXT
 from groups import (inheritance, inherits_legacy_playable_base, legacy_member, reviewed_native_ancestry,
                     stock_character, stock_wrapper_ancestry_matches)
 from launchers import META_NAME
@@ -17,6 +17,10 @@ EDITABLE_INFO = '   m_UIInfo SCR_EditableEntityUIInfo "{5298E609432D192D}" {\n'
 GREEN_SNOOD = ('DBFF84DD336E1065',
                'Prefabs/Characters/HeadGear/Masks/Masks_Keela_Snood/Masks_Keela_Snood_GRN.et')
 LEGACY = re.compile(r'\b(?:PS|TILW)_\w+')
+REVIEWED_MISSION_CHARACTER_BASES = {
+    '720A8AEF1DB6795F': ('worlds/arc/CommandosReforged/Prefabs/Commandos_Character_Base.et',
+                        '085c5603d72debcad9a21122c90fba889a34cb80'),
+}
 MOVED_CHARACTER_PARENTS = {
     ('60E1492FD0E1529B', 'Missions/Huska/Prefabs/Character_RHS_USAF_USCM_HeliPilot_P.et'):
         'Missions/Huska/Prefabs/Character_RHS_USAF_USMC_HeliPilot_P.et',
@@ -31,6 +35,30 @@ REVIEWED_RHS_PILOT_PARENT = (
     '42A502E3BB727CEC',
     'Prefabs/Characters/Factions/BLUFOR/RHS_USAF/RHS_USAF_USMC_MEF/Character_RHS_USAF_USMC_HeliPilot.et',
 )
+COMMANDOS_VSR_RIFLEMAN = (
+    '3CEC77A6686C1BA3',
+    'Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VSR/Character_RHS_RF_MSV_VSR_Rifleman.et',
+)
+COMMANDOS_RHS_ROOTS = {
+    'worlds/arc/CommandosReforged/Prefabs/OP/Character_GC_Cdos_Rifleman_P.et':
+        '03536ee311fafd1a2bb6cda2b597ec6102fa11fa',
+    'worlds/arc/CommandosReforged/Prefabs/OP/Character_GC_Cdos_Pilot_P.et':
+        '53b48a21a7c1f756601c794ae9d52e253e546321',
+}
+COMMANDOS_OFFICER_PARENT = (
+    'CC3E84140343D82E',
+    'Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VSR/Character_RHS_RF_MSV_VSR_Officer.et',
+)
+COMMANDOS_UNUSED_CASUALTY_FLAGS = {
+    'worlds/arc/CommandosReforged/Prefabs/OP/Character_GC_Cdos_BASECOMMANDER_P.et':
+        ('64821cb589dbcedcc8d76674b128b9e12cd01363', '6476D65DBEC04167', 'OBJ_5_KIA'),
+    'worlds/arc/CommandosReforged/Prefabs/OP/Character_GC_Cdos_PolOfficer_P.et':
+        ('e47725253bad03b4c2a01ef87f5f367182b53edd', '65EA3858B7156DBC', 'OBJ_5_KIA'),
+    'worlds/arc/CommandosReforged/Prefabs/OP/Character_GC_Cdos_DOG.et':
+        ('9976a68da1f8bb086976fe647bbdbe261c32ec22', '65DF2580DCFE6FAA', 'OBJ_6_KIA'),
+    'worlds/arc/CommandosReforged/Prefabs/OP/Character_GC_Cdos_SCIENTIST.et':
+        ('71f34d0b85023660c5010d530903cd7025145481', '6476D65CD08FA080', 'OBJ_6_KIA'),
+}
 OIL_RIG_LOADOUTS = 'worlds/TheLocalPub/OilRigRangos/Prefabs/Characters/Factions/'
 OIL_RIG_RIFLEMAN_PARENT = '4AF2023E868540E7'
 LOCAL_PROBLEMS_GARRISON_ROLES = {
@@ -166,6 +194,29 @@ def unchanged_units_parent(source_units, dev_units, resource, *, force_playable=
     return reviewed_native_ancestry(tuple(native_before), after, dev_units)
 
 
+def commandos_roster_body(source, source_units, path, text):
+    spec = COMMANDOS_UNUSED_CASUALTY_FLAGS.get(path)
+    if not spec or source.files[path] != spec[0]:
+        return None
+    root = 'worlds/arc/CommandosReforged/'
+    layers = root + 'CommandosReforged_Layers/'
+    headquarters = 'Prefabs/Groups/OPFOR/Russia/2020/AFRF_MotorRifles_2010s/P/AFRF_MotRifles_2020_PHQ_P.et'
+    if (source.files.get(layers + 'players_ru.layer') != 'c570e980592b6fae8842b3da616af89dc8c1947b'
+            or source_units.resources.get('312B31A3D81EF88A') != [headquarters]
+            or ' m_bSetPlayable 1' not in source_units.read(headquarters).splitlines()):
+        return None
+    world = root + 'CommandosReforged.ent'
+    flag = spec[2]
+    mentions = sum(source.read(item).count(f'"{flag}"') for item in source.closure(world)
+                   if PurePosixPath(item).suffix.lower() in SOURCE_TEXT)
+    if mentions != 2 or any(flag.encode() in source.read_raw(item)
+                            for item in source.files if item.lower().endswith('.c')):
+        return None
+    # The Commandos handlers own objective completion. These flags have no readers.
+    observer = f'  TILW_Flag_EntityDamage "{{{spec[1]}}}" {{\n   m_flagName "{flag}"\n  }}\n'
+    return text.replace(observer, '', 1) if text.count(observer) == 1 else None
+
+
 def collect(source, dev, source_units, dev_units, stock, *, normalize_references=None, unavailable=(),
             historical_parents=None, published_playable_parents=(), rhs=None, external_roles=None, uk=None):
     """Return approved asset bodies by unique source GUID."""
@@ -182,6 +233,9 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
         if not path.lower().startswith(('worlds/', 'missions/')) or PurePosixPath(path).suffix.lower() != '.et':
             return None
         text = source.read(path)
+        commandos_role = commandos_roster_body(source, source_units, path, text)
+        if commandos_role is not None:
+            text = commandos_role
         expected = REVIEWED_FORCED_CHARACTERS.get(guid)
         verified_forced = expected and sha256(text.strip().encode()).hexdigest() == expected
         first = text.partition('\n')[0]
@@ -268,14 +322,22 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
                                         and rhs.contains(resource, parent_path))
                 registered_rhs_garrison = (rhs and LOCAL_PROBLEMS_GARRISON_ROLES.get(source.files[path]) == resource
                                            and rhs.contains(resource, parent_path))
+                registered_commandos_role = (
+                    rhs
+                    and ((source.files[path] == COMMANDOS_RHS_ROOTS.get(path)
+                          and (resource, parent_path) == COMMANDOS_VSR_RIFLEMAN)
+                         or (commandos_role is not None and (resource, parent_path) == COMMANDOS_OFFICER_PARENT))
+                    and rhs.contains(resource, parent_path))
                 registered_oil_rig_role = (resource == OIL_RIG_RIFLEMAN_PARENT and path.startswith(OIL_RIG_LOADOUTS)
                                            and (external_roles or {}).get(resource) == (parent_path, parent_path))
                 registered_bebble_role = (
                     uk and path.startswith('worlds/TheLocalPub/BebbleIslandRaid/Prefabs/Characters/Factions/BLUFOR/')
                     and parent_path.startswith('Prefabs/Characters/Factions/BLUFOR/UK_Army/1983/SpecialForces/')
                     and uk.contains(resource, parent_path))
-                if not (removed or verified_forced) or not (
-                        registered_rhs_pilot or registered_rhs_garrison or registered_oil_rig_role or registered_bebble_role
+                mission_base = REVIEWED_MISSION_CHARACTER_BASES.get(guid) == (path, source.files[path])
+                if not (removed or verified_forced or mission_base or commandos_role is not None) or not (
+                        registered_rhs_pilot or registered_rhs_garrison or registered_commandos_role
+                        or registered_oil_rig_role or registered_bebble_role
                         or stock.contains(resource, parent_path)):
                     return None
         if (guid == '730C15295DBF4543' and source.files[path] == '90e7c82588520852e48f88e85f35bcbeb29b27ef'
