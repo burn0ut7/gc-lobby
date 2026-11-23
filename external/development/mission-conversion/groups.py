@@ -239,6 +239,7 @@ RHS_AI_ROLES = {
     '1701B425406974A0': 'SL', '234A37EC8608DFAC': 'Rifleman', '727CB9BA48D9407A': 'SR_GL',
     'A5548567111B86FD': 'AR', 'AFF07941936347BB': 'AAT', 'F11CCA20FCC74AA3': 'AT',
     '4FDBB4B22FD4640B': 'Spotter_GL',
+    'E2453749C99515CD': 'Scout',
 }
 
 
@@ -259,10 +260,13 @@ def rhs_ai_characters(workshop):
         characters[guid] = flora + f'Character_RHS_RF_MSV_Flora_{role}.et'
     characters['A0CAC00219D7EF55'] = ('Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Summer/'
                                       'Character_RHS_RF_MSV_VKPO_S_Rifleman.et')
+    summer = 'Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Summer/'
     for guid, role in {'47E5851C66B52637': 'SR_GL', 'B4474D20DB777AB6': 'AR',
-                       '5C75226D45102461': 'Rifleman'}.items():
-        characters[guid] = ('Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Summer/RandomSoldiers/'
-                            f'Character_RHS_RF_MSV_VKPO_S_{role}_Random.et')
+                       '5C75226D45102461': 'Rifleman', 'E00F026736ABB6E8': 'AT',
+                       '98F5A79FC694BFC7': 'AAT', '6454E9AA5DD32684': 'LAT'}.items():
+        characters[guid] = summer + f'RandomSoldiers/Character_RHS_RF_MSV_VKPO_S_{role}_Random.et'
+    characters['F1E1A7A59FE370C6'] = summer + 'Character_RHS_RF_MSV_VKPO_S_Crew.et'
+    characters['2E0D284F521C5696'] = summer + 'Character_RHS_RF_MSV_VKPO_S_CC.et'
     characters.update({guid: path for group in RHS_AI_GROUPS.values() for guid, path in group['slots']})
     for guid, role in {'9D7859DE5E1DA3AB': 'AR', '8DE84439090A3D21': 'SR', '918062BE34F7C4D7': 'CC',
                        'E0E062BD23185D62': 'AMG', 'E1EAB80D1FE2C5FE': 'Sergeant'}.items():

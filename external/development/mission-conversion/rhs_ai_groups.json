@@ -1,4 +1,40 @@
 {
+  "220AE7CEE8B2A12F": {
+    "path": "Prefabs/Groups/OPFOR/RHS_AFRF/MSV/VKPO_Summer/Group_RHS_RF_MSV_VKPO_S_RadioReconTeam.et",
+    "sha256": "36fbafaedde3cb05bfebd85b20623d0ff8f978f3364dc755cb9a8cdbf905f901",
+    "inheritedGroups": [
+      ["217AB4493CAB5362", "Prefabs/Groups/OPFOR/RHS_AFRF/MSV/VKPO_Summer/Group_RHS_RF_MSV_VKPO_S_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["06127C628A0588EB", "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Summer/RandomSoldiers/Character_RHS_RF_MSV_VKPO_S_SL_Random.et"],
+      ["6A556A340D5AF1E5", "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Summer/RandomSoldiers/Character_RHS_RF_MSV_VKPO_S_Scout_RTO_Random.et"],
+      ["84D4D1150FF68014", "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Summer/RandomSoldiers/Character_RHS_RF_MSV_VKPO_S_Scout_RadioRecon_Random.et"]
+    ]
+  },
+  "85591815191600FC": {
+    "path": "Prefabs/Groups/OPFOR/RHS_AFRF/MSV/VKPO_Summer/Group_RHS_RF_MSV_VKPO_S_SentryTeam.et",
+    "sha256": "af930176009d39589b49eceb27d1d3587a21a3ba5942b911350459f8a362dc7f",
+    "inheritedGroups": [
+      ["217AB4493CAB5362", "Prefabs/Groups/OPFOR/RHS_AFRF/MSV/VKPO_Summer/Group_RHS_RF_MSV_VKPO_S_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["5C75226D45102461", "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Summer/RandomSoldiers/Character_RHS_RF_MSV_VKPO_S_Rifleman_Random.et"]
+    ]
+  },
+  "C22DD62FE52FDE29": {
+    "path": "Prefabs/Groups/OPFOR/RHS_AFRF/MSV/VKPO_Summer/Group_RHS_RF_MSV_VKPO_S_ReconTeam.et",
+    "sha256": "47899e3404cabed4a25f43002077a7760dbd1c9c45c1771c531af2d939a34535",
+    "inheritedGroups": [
+      ["217AB4493CAB5362", "Prefabs/Groups/OPFOR/RHS_AFRF/MSV/VKPO_Summer/Group_RHS_RF_MSV_VKPO_S_Base.et"],
+      ["000CD338713F2B5A", "Prefabs/AI/Groups/Group_Base.et"]
+    ],
+    "slots": [
+      ["6A556A340D5AF1E5", "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Summer/RandomSoldiers/Character_RHS_RF_MSV_VKPO_S_Scout_RTO_Random.et"],
+      ["E57237663E203AF1", "Prefabs/Characters/Factions/OPFOR/RHS_AFRF/MSV/VKPO_Summer/RandomSoldiers/Character_RHS_RF_MSV_VKPO_S_Scout_Random.et"]
+    ]
+  },
   "7A43006F3F254FB2": {
     "path": "Prefabs/Groups/BLUFOR/RHS_USAF/RHS_USAF_MARSOC/Group_USAF_USMC_MARSOC_SentryTeam.et",
     "sha256": "8c6b3adf77d302073eb53d5b9ba1cce55caf20042eec37c1af1c5b2fe139c2d4",

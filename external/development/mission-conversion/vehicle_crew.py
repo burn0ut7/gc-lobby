@@ -14,6 +14,9 @@ from scenery import StockPrefabs
 ZAGORIA_BMP2 = ('1EF865DC4E3F7E0B', 'IFV/BMP2/BMP2_Olive_test.et')
 CORE_BTR70 = ('1C5FE7B7FF49BB8D', 'Prefabs/Vehicles/Wheeled/BTR70/BTR70_Base.et')
 CORE_BTR70_DIGEST = 'ae982b43b504904f7b97947e7fc45c83f584e46ce5f7fa8d7c08c05e386eee74'
+TIGR_DIRECTORY = 'Prefabs/Vehicles/Wheeled/TIGR/'
+CORE_TIGR_AGS17 = ('1C41EF46A9A977D0', TIGR_DIRECTORY + 'AGS/GAZ_TIGR_v2_AGS17.et')
+CORE_TIGR_TURRET_BASE = ('7F038AC225B7330B', TIGR_DIRECTORY + 'GAZ_TIGR_v2_Mounted_Turret_Base.et')
 K17_DIRECTORY = 'Prefabs/Vehicles/Wheeled/K17/'
 CORE_K17 = ('C84FF4497D058530', K17_DIRECTORY + 'APC_K17_Epoch_HTM1_AIGunner.et')
 CORE_K17_TURRET = ('3CED911741EF4D1A', K17_DIRECTORY + 'VehParts/Turret_K17_Epoch_HTM_AIGunner.et')
@@ -42,6 +45,7 @@ SEAT_TYPES = ('Pilot', 'Turret', 'Cargo')
 WORKSHOP_VEHICLES = {
     '130214331292D6B5': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Weapons/Tripods/Tripod_SPG9.et'),
     ZAGORIA_BMP2[0]: ('Zagoria89BMP2_6730D59067916E3D', ZAGORIA_BMP2[1]),
+    CORE_TIGR_AGS17[0]: ('TacticalFlava-TIGR_DEADC0DE00000003', CORE_TIGR_AGS17[1]),
     '0A17C0D659FA2473': ('TacticalFlava-Turrets_DEADC0DE00000007',
                          'Prefabs/Weapons/Tripods/6G10/Tripod_6G10_AGS17.et'),
     'BC52FAAFB89D51AA': ('TacticalFlava-Turrets_DEADC0DE00000007',
@@ -61,6 +65,7 @@ WORKSHOP_VEHICLES = {
                          'Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ammo_tan.et'),
     '31F0866273C46D76': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/K17/APC_K17_Berezok.et'),
     '3312ADBF53A16DD8': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Wheeled/LAV25/LAV25_RHS.et'),
+    'F9137C80D7F169FF': ('RHS-StatusQuo_595F2BF2F44836FB', 'Prefabs/Vehicles/Tracked/T90M2/T90M2_base.et'),
     '3868E03D9A4AF186': ('WCS_BMP-1_5E524E4FEECCA92B', 'Prefabs/Vehicles/Tracked/BMP1/BMP1P_Base.et'),
     '3F0C718D8FA6E1AE': ('WCS_Armaments_629B2BA37EFFD577',
                          'Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_Armed_GUV8700_X2.et'),
@@ -237,6 +242,8 @@ WORKSHOP_VEHICLE_PARENTS = {
     K17_PARENT[0]: ('RHS-StatusQuo_595F2BF2F44836FB', K17_PARENT[1]),
     BMP1_PARENT[0]: ('WCS_BMP-1_5E524E4FEECCA92B', BMP1_PARENT[1]),
     BMP1_TURRET_PARENT[0]: ('ZU-23_5C9AD9EF76F6B5EA', BMP1_TURRET_PARENT[1]),
+    CORE_TIGR_TURRET_BASE[0]: ('TacticalFlava-TIGR_DEADC0DE00000003', CORE_TIGR_TURRET_BASE[1]),
+    'ED23D3FD79C7DECF': ('TacticalFlava-TIGR_DEADC0DE00000003', TIGR_DIRECTORY + 'GAZ_TIGR_v2_Base.et'),
 }
 FLORA_CREW_CONFIG = '47ABFE35CED7D5AA'
 FLORA_CREW_GROUP = 'TILW_CrewGroup "{64F2F8212EF64955}"'
@@ -620,6 +627,26 @@ def verified_core_btr70_transfer(guid, path, source_units, dev_units, stock):
             and sha256(dev_units.read(path).strip().encode()).hexdigest() == CORE_BTR70_DIGEST)
 
 
+def verified_core_tigr_transfer(guid, path, source_units, dev_units, owned, external_parents):
+    """Check both published Core inventory overlays and their Tactical Flava ancestry."""
+    if (guid, path) != CORE_TIGR_AGS17:
+        return False
+    base = 'ED23D3FD79C7DECF'
+    if (external_parents.get(base) != TIGR_DIRECTORY + 'GAZ_TIGR_v2_Base.et'
+            or external_parents.get(CORE_TIGR_TURRET_BASE[0]) != CORE_TIGR_TURRET_BASE[1]
+            or any(base in resources for resources in (owned, source_units.resources, dev_units.resources))):
+        return False
+    return all(
+        identity not in owned and identity not in source_units.resources
+        and dev_units.resources.get(identity) == [file]
+        and sha256(dev_units.read(file).strip().encode()).hexdigest() == digest
+        for (identity, file), digest in (
+            (CORE_TIGR_AGS17, '44854bb4bc53ea800a6eef46c5e0270ec0c768d3c7631cad6d01abcf5b4108ed'),
+            (CORE_TIGR_TURRET_BASE, 'd26451b6a6215a86a199235b572354069d0374f7d726d4fd15e5ec3286d707a6'),
+        )
+    )
+
+
 def verified_core_k17_transfer(resource, path, source_units, dev_units, stock, owned, external_parents):
     if ((resource, path) != CORE_K17 or not stock
             or external_parents.get(K17_PARENT[0]) != K17_PARENT[1]
@@ -689,7 +716,9 @@ def convert(block, source_units, dev_units, stock, owned, external_vehicles=None
                           and source_units.resources.get(guid) == dev_units.resources.get(guid) == [path]
                           and source_units.read(path) == dev_units.read(path)
                           and sha256(dev_units.read(path).strip().encode()).hexdigest() == COMPOSITION_OVERRIDES[guid])
-    vehicle_overlay = vehicle and external_vehicle and verified_btr70_overlay(guid, path, source_units, dev_units)
+    vehicle_overlay = vehicle and external_vehicle and (
+        verified_btr70_overlay(guid, path, source_units, dev_units)
+        or verified_core_tigr_transfer(guid, path, source_units, dev_units, owned, external_parents or {}))
     units_vehicle = (vehicle or vehicle_host) and units_owned and verified_units_crew_prefab(
         guid, path, source_units, dev_units, stock, owned, external_parents or {})
     core_transfer = vehicle and verified_core_btr70_transfer(guid, path, source_units, dev_units, stock)
