@@ -1889,6 +1889,14 @@ Units Dev commit `c82e6b06` corrects registration and reference paths for the 7t
 
 Workbench MCP session `logs_2026-11-22_23-21-01` captured 93 entities and all 26 roles. Missions Dev commit `b14c758d` stores the snapshot. Its portable launch manifest matches the committed header, reports partial authored resource coverage, and lists 67 required addons including WCS M2A2. The source comparison checks all 32 combinations of the five destruction flags.
 
+### Clean House
+
+The two published framework placements both subscribe to Match entry. The isolated legacy scene uses the 17 published layers with names added to the two framework entities for logging. Workbench MCP session `logs_2026-11-22_23-40-44`, lines 31075–31085 and 31526–31527, confirms that both initialized and the placement in the props layer owns the shared flag state. The converter retains both teleport notices at 120 and 240 seconds. It preserves the props layer's two casualty events, including their shared `RUDead` condition. The default layer's two casualty notices only check at Match entry, before the first casualty sample, and receive no later flag updates. The audit records them as dormant.
+
+The component conversion preserves all 1,963 authored cleanup protections in the apartment, mounted PKM and magazine prefabs. It also keeps cleanup protection on the placed groups and firing target. Units Dev commit `59a69b5c` corrects the Flora senior rifleman's registration. The original medic, squad leader and sharpshooter GUIDs resolve to their native RHS Flora prefabs, and the authored group enables those player slots.
+
+Missions Dev commit `6f8e1df3` retains 66 playable slots. Workbench MCP session `logs_2026-11-22_23-48-12` captured 10,251 entities and all 66 roles. Commit `cd84f715` stores the snapshot. The full file audit reproduces all 313 earlier staged files and clears 252 of 277 launchers. Representative Match checks cover the setup and casualty notice timing, teleport use and preservation of the protected entities during startup cleanup.
+
 ### Battle For Zarichne
 
 Missions Dev commit `18dee842` retains the 110-player advertised capacity and all 80 original playable roles. Two independent radius observers preserve the shared `Compound` flag and its two event readers and eight timed spawns. Fifteen minefield markers stay on their original parent placements with their original transforms and faction visibility. The mission's two custom mine assets keep their registered resource IDs, with the obsolete cross-mission warhead path corrected.

@@ -192,17 +192,41 @@ def verified_uk_fireteam(path, stock, uk, locally_owned, source_units, dev_units
 
 
 def verified_rhs_forced_roles(registry, owned, source_units, dev_units):
+    roles = {}
+    senior_rifleman = '6E8835E4D8B1510E'
+    flora = 'Prefabs/Characters/Factions/OPFOR/RHS_AFRF/'
+    authoring_path = flora + 'MSV/Flora/P/Character_RHS_RF_MSV_Flora_SR_P.et'
+    canonical = flora + 'RHS Inherits/MSV/Flora/P/Character_RHS_RF_MSV_Flora_SR_P.et'
+    parent = ('2F8F4C139A8B4941', flora + 'MSV/Flora/Character_RHS_RF_MSV_Flora_BaseLoadout.et')
+    if (registry and registry.contains(*parent) and senior_rifleman not in owned
+            and all(parent[0] not in resources for resources in (owned, source_units.resources, dev_units.resources))
+            and all(snapshot.resources.get(senior_rifleman) == [canonical]
+                    and sha256(snapshot.read(canonical).strip().encode()).hexdigest()
+                        == '544c6439004a28dcd8f622eb2353bed9f70740ef57f5cd5c20529142ffaa7ecb'
+                    for snapshot in (source_units, dev_units))
+            and f' Name "{{{senior_rifleman}}}{canonical}"' in dev_units.read(canonical + '.meta').splitlines()):
+        roles[senior_rifleman] = (authoring_path, canonical)
+    if registry and registry.contains(*parent):
+        for identity, role in (('D9AF475A4E5DC52C', 'Medic'), ('B3C496CCFA72D25E', 'SL'),
+                               ('78976C69F927A7B1', 'Sharpshooter')):
+            path = flora + f'MSV/Flora/Character_RHS_RF_MSV_Flora_{role}.et'
+            if (registry.contains(identity, path) and all(
+                    not ({identity, parent[0]} & resources)
+                    for resources in (owned, source_units.resources.keys(), dev_units.resources.keys()))):
+                roles[identity] = (path, path)
+
     if not registry or RHS_SOBR_BASE[0] in owned or not registry.contains(*RHS_SOBR_BASE):
-        return {}
+        return roles
     identity = RHS_SOBR_BASE[0]
     before, after = inheritance(source_units, identity), inheritance(dev_units, identity)
     if not reviewed_native_ancestry(before, after, dev_units):
-        return {}
+        return roles
     prefix = RHS_SOBR_BASE[1].removesuffix('BaseLoadout.et')
-    roles = {guid: f'{prefix}{role}.et' for guid, role in RHS_SOBR_FORCED_ROLES.items()}
-    return {guid: (path, path) for guid, path in roles.items()
-            if (guid not in owned and guid not in source_units.resources and guid not in dev_units.resources
-                and registry.contains(guid, path))}
+    sobr_roles = {guid: f'{prefix}{role}.et' for guid, role in RHS_SOBR_FORCED_ROLES.items()}
+    roles.update({guid: (path, path) for guid, path in sobr_roles.items()
+                  if (guid not in owned and guid not in source_units.resources and guid not in dev_units.resources
+                      and registry.contains(guid, path))})
+    return roles
 
 
 # These exact Units Dev overlays came from the published legacy Core package.
@@ -581,6 +605,8 @@ def editor_group_preview(lines, start, end):
 
 def native_group_component(lines, start, end):
     header = lines[start].strip()
+    if re.fullmatch(r'GC_StartupCleanupProtectionComponent "\{[\da-fA-F]{16}\}" \{', header):
+        return all(not line.strip() for line in lines[start + 1:end])
     if FORMATION.fullmatch(header):
         return True
     if re.fullmatch(r'SCR_AIGroupSettingsComponent "\{[\da-fA-F]{16}\}" \{', header):

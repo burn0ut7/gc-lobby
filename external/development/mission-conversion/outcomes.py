@@ -1453,6 +1453,33 @@ OLD_WOOD_SPAWNERS = (OLD_WOOD_LAYERS + 'AI.layer', 'e86bf8052472676a1033a19fbd34
 OIL_RIG_POPULATION_AREA = (OIL_RIG_LAYERS + 'Systems/Core.layer', '964662eb622f536b1715ef335f7e72cf6b2d756e')
 
 
+CLEAN_HOUSE_FRAMEWORKS = {
+    'worlds/TheLocalPub/CleanHouse/CleanHouse_Layers/default.layer': 'c21ef42d631a7e4c4ab901bce2f61c4d99dddcf7',
+    'worlds/TheLocalPub/CleanHouse/CleanHouse_Layers/PROPS/Cleanhouse.layer': 'ea781715246140d358bfbe842e4a7990ef6f6448',
+}
+
+
+def clean_house_events(body, origins, supplemental_layer, text):
+    # Both legacy entities subscribe to Match entry, while flag reads and writes
+    # use the shared instance. Their identical casualty policies count once.
+    lines = text.splitlines()
+    root, = (i for i, line in enumerate(lines) if FRAMEWORK.fullmatch(line))
+    last = block_end(lines, root)
+    first = lines.index(' m_missionEvents {', root, last)
+    end = block_end(lines, first)
+    primary_end = block_end(body, body.index(' m_missionEvents {'))
+    if lines[end + 1:last] != body[primary_end + 1:]:
+        raise ValueError('Clean House framework casualty policies differ')
+    supplement = lines[first + 1:end]
+    for i, line in enumerate(supplement):
+        if event := EVENT.fullmatch(line):
+            origins[primary_end + i] = f'{supplemental_layer}:{first + i + 2}'
+            supplement[i] = line.replace(event[1], guid(supplemental_layer + '/' + event[1]), 1)
+        elif line.startswith('   m_name "'):
+            supplement[i] = line[:-1] + ' (props)"'
+    body[primary_end:primary_end] = supplement
+
+
 def compile_outcomes(source, world, captures=None, *, compound=False, notification_audit=None, objective_flags=(),
                      extraction_spawns=None, scripts=None, resolve_spawn=None, resolve_crew=None, hidden_briefings=None,
                      derived_audit=None, identity_flags_audit=None, meta_dividers_audit=None, discovery_resets_audit=None,
@@ -1465,6 +1492,12 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     replacement_flags = replacement_flags or {}
     layers = source.layers[world.lower()]
     owners = [(path, source.read(path)) for path in layers if 'TILW_MissionFrameworkEntity' in source.read(path)]
+    supplemental = None
+    if (compound and world == 'worlds/TheLocalPub/CleanHouse/CleanHouse.ent'
+            and {layer: source.files[layer] for layer, _ in owners} == CLEAN_HOUSE_FRAMEWORKS
+            and scripts is not None and not any(api in scripts for api in SCRIPT_FLAG_APIS)):
+        primary, supplemental = CLEAN_HOUSE_FRAMEWORKS
+        owners = [(primary, source.read(primary))]
     if len(owners) != 1:
         return [], {}, 'requires one reviewed framework owner'
     path, text = owners[0]
@@ -1538,6 +1571,12 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
     base = roots[0]
     stop = block_end(lines, base)
     body = lines[base + 1:stop]
+    event_origins = {}
+    if supplemental:
+        try:
+            clean_house_events(body, event_origins, supplemental, source.read(supplemental))
+        except ValueError as exc:
+            return [], {}, str(exc)
     suppression = [line for line in body if line.startswith(' m_suppressGameEnd ')]
     if suppression not in ([], [' m_suppressGameEnd 0'], [' m_suppressGameEnd 1']):
         return [], {}, 'unsupported game end suppression settings'
@@ -1703,9 +1742,16 @@ def compile_outcomes(source, world, captures=None, *, compound=False, notificati
         if not event:
             continue
         fields = body[i + 1:block_end(body, i)]
-        loc = f'{path}:{i + base + 2}'
+        loc = event_origins.get(i, f'{path}:{i + base + 2}')
         fields, omitted_cleanup = remove_late_cleanup(fields, late_cleanup_refs, cleanup_names)
         label = next((item.strip().removeprefix('m_name ') for item in fields if item.startswith('   m_name ')), '""')
+        if supplemental and i not in event_origins and label != '"SetupTimer"':
+            # The props placement owns the shared flag set in the legacy scene.
+            # The default placement checks its events at Match entry, before
+            # either casualty flag can be set, and sees no later flag updates.
+            audit[loc] = {'name': label[1:-1], 'trigger': 'dormant',
+                          'reason': 'secondary framework does not receive casualty flag updates'}
+            continue
         if dormant_helo and event[1] == '687B646FB4D615D8':
             audit[loc] = {'name': 'Respawn Helo2', 'trigger': 'dormant', 'flag': 'Helo2',
                           'reason': 'no producer or external event activation, and no registered spawn prefab'}

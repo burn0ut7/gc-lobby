@@ -2534,6 +2534,11 @@ def native_placement(block, *, reviewed_character=False):
                 if block[index + 1:index + 3] == [f'   m_setName "{head["name"]}"', '  }']:
                     # The authored entity name already performs the only mutation.
                     block = [*block[:index], *block[index + 3:]]
+    text = '\n'.join(migrate_native_components(block)) + '\n'
+    return None if LEGACY.search(text) else text
+
+
+def migrate_native_components(block):
     lines = block
     if any(rebuilt in line for line in block for rebuilt in
            ('TILW_NavmeshRegenComponent', 'PK_EntityProtectorComponent', 'TILW_NoGarbageComponent')):
@@ -2558,8 +2563,7 @@ def native_placement(block, *, reviewed_character=False):
                 stack.append(line.strip())
             elif line.strip() == '}':
                 stack.pop()
-    text = '\n'.join(lines) + '\n'
-    return None if LEGACY.search(text) else text
+    return lines
 
 
 EDITOR_COMMENT = re.compile(r'(?P<group>\$grp )?EditorCommentEntity(?: (?P<name>[\w.-]+))? \{')
@@ -3497,7 +3501,23 @@ OIL_RIG_FACTION = 'worlds/TheLocalPub/OilRigRangos/Configs/Factions/ECOTERROR.co
 OIL_RIG_DELETED_GUNNER = 'D8F7C335536E5786'
 
 
+CLEAN_HOUSE = 'worlds/TheLocalPub/CleanHouse/'
+CLEAN_HOUSE_PROTECTED_ASSETS = {
+    'Structures/Houses/Prefabricated/ApartmentBuilding_5I01/Pub_ApartmentBuilding_USSR_5I01.et':
+        '4afa030b6237ac5a460d441b5526d2bcb3e0ef62',
+    'Weapons/MachineGuns/PKM/Pub_MG_PKM_mounted_PKDeleter.et': '9135ccc40ca4e13fe2b2350e49600cf3373ae1a7',
+    'Weapons/Magazines/Pub_Box_762x54_PK_100rnd_4Ball_1Tracer_PkDeleter.et': '7408ed1fbe8ca58f69bfbbd809d443e15fd1ba38',
+}
+CLEAN_HOUSE_RANGE_TARGET = ('379D34B0D41DA810', 'Prefabs/Props/Military/Training/TargetInfantry_01.et')
+
+
 def passive_asset(source, path):
+    if path.startswith(CLEAN_HOUSE + 'Prefabs/') and source.files[path] == CLEAN_HOUSE_PROTECTED_ASSETS.get(
+            path.removeprefix(CLEAN_HOUSE + 'Prefabs/')):
+        body = '\n'.join(migrate_native_components(source.read(path).splitlines())) + '\n'
+        if LEGACY.search(body):
+            raise ValueError('unconverted cleanup protection in mission prefab')
+        return body
     if source.files.get(BEBBLE_OBJECTIVES) == BEBBLE_OBJECTIVES_BLOB:
         if path == BEBBLE_HVT and source.files[path] == BEBBLE_HVT_BLOB:
             # The only placement supplies the effective HVTDead observer.
@@ -7153,6 +7173,8 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                 raise ValueError('callsign placement differs from runtime evidence')
                             if not use_placed_callsigns:
                                 group_body = remove_legacy_callsigns(group_body.splitlines())
+                        if 'PK_EntityProtectorComponent' in group_body:
+                            group_body = '\n'.join(migrate_native_components(group_body.splitlines())) + '\n'
                         converted, count, slots = convert_group_block(
                             group_body,
                             {identity: asset['path'] for identity, asset in members.items() if not asset.get('playable')},
@@ -7166,6 +7188,14 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                         result.append(startup_cleanup(block))
                     except ValueError as exc:
                         blockers.append({'rule': kind, 'file': layer, 'line': line, 'detail': str(exc)})
+                elif (kind == 'SCR_FiringRangeTarget' and layer.startswith(CLEAN_HOUSE)
+                      and (ref := REF.search(head)) and ref.groups() == CLEAN_HOUSE_RANGE_TARGET
+                      and resolve_spawn(*CLEAN_HOUSE_RANGE_TARGET)):
+                    converted = '\n'.join(migrate_native_components(block)) + '\n'
+                    if LEGACY.search(converted):
+                        blockers.append({'rule': kind, 'file': layer, 'line': line})
+                    else:
+                        result.append(converted)
                 elif (layer, line) in area_placements:
                     checks, areas = area_placements[(layer, line)]
                     status_checks = {}
