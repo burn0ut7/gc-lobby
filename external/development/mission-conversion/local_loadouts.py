@@ -21,6 +21,15 @@ REVIEWED_MISSION_CHARACTER_BASES = {
     '720A8AEF1DB6795F': ('worlds/arc/CommandosReforged/Prefabs/Commandos_Character_Base.et',
                         '085c5603d72debcad9a21122c90fba889a34cb80'),
 }
+DCU_RIFLEMAN_PARENT = ('EA6EF9C87D023B9B',
+                       'Prefabs/Characters/Factions/BLUFOR/US_Army/1998/Character_US_Rifleman_DCU_1998.et')
+# The authored roles explicitly mark themselves playable. Keep their original
+# parent so the resource audit can hold the drafts while it is unavailable.
+REVIEWED_DCU_ROLE_BLOBS = {
+    '22182BA717A2B9E6': 'f7d6d0852f8790fb0e4dae0dce2a2696e7fa4ef8',
+    '3787254ADF02E746': '86b4543b03c32e0747c9dc040b9408002ac74281',
+    'D970C8776B42A919': '524197d8582bd31185bc02618857db68b7c1f345',
+}
 MOVED_CHARACTER_PARENTS = {
     ('60E1492FD0E1529B', 'Missions/Huska/Prefabs/Character_RHS_USAF_USCM_HeliPilot_P.et'):
         'Missions/Huska/Prefabs/Character_RHS_USAF_USMC_HeliPilot_P.et',
@@ -335,9 +344,11 @@ def collect(source, dev, source_units, dev_units, stock, *, normalize_references
                     and parent_path.startswith('Prefabs/Characters/Factions/BLUFOR/UK_Army/1983/SpecialForces/')
                     and uk.contains(resource, parent_path))
                 mission_base = REVIEWED_MISSION_CHARACTER_BASES.get(guid) == (path, source.files[path])
+                authored_dcu_role = (removed and (resource, parent_path) == DCU_RIFLEMAN_PARENT
+                                     and REVIEWED_DCU_ROLE_BLOBS.get(guid) == source.files[path])
                 if not (removed or verified_forced or mission_base or commandos_role is not None) or not (
                         registered_rhs_pilot or registered_rhs_garrison or registered_commandos_role
-                        or registered_oil_rig_role or registered_bebble_role
+                        or registered_oil_rig_role or registered_bebble_role or authored_dcu_role
                         or stock.contains(resource, parent_path)):
                     return None
         if (guid == '730C15295DBF4543' and source.files[path] == '90e7c82588520852e48f88e85f35bcbeb29b27ef'

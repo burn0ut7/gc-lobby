@@ -2908,6 +2908,31 @@ BEBBLE_OBJECTIVES_BLOB = 'd7ac84420272fa4c521c6ca0e66aaa521cf9bf86'
 ROCKY_TRUCK_LAYER = 'worlds/Burn0ut7/Rocky Road/Rocky_Road_Layers/Blufor.layer'
 ROCKY_TRUCK_LAYER_BLOB = '455b2c7b6792902a5e8f0abc274804b0ce41de32'
 ROCKY_SUPPLY_TRUCK = ('15A15F5EF6FFE4A5', 'Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_covered_GulfWar.et')
+
+# These source layers enumerate the missing roles directly. Keep those exact
+# slots in the draft and leave their resources to the dependency audit.
+REVIEWED_MISSING_PLAYABLE_SLOTS = {
+    'worlds/Jub/CobrasBite/Cobras_bite_Layers/players.layer': (
+        '886f60708771413041d9a65840e1517c6dfe9186',
+        {'6CA5BE07728357DE': 'Prefabs/Characters/Factions/BLUFOR/RHS_USAF/2025/Marines/Desert/'
+                             'Character_2025_USMC_M3MAAW_D.et',
+         '4EA7CF8765E83F76': 'Prefabs/Characters/Factions/BLUFOR/RHS_USAF/2025/Marines/Desert/'
+                             'Character_2025_USMC_M3MAAW_ASST_D.et'},
+    ),
+    'worlds/arc/FactorySiegeRedux/FactorySiegeRedux_Layers/players_us.layer': (
+        '62a0ed1b58908b47dd17ae9f5178d6f233c245e0',
+        {'EDBFF03A830C2966': 'Prefabs/Characters/Factions/BLUFOR/US_Army/2003/Infantry (Woodland)/'
+                             'Character_US_2003_W_FO.et'},
+    ),
+}
+REVIEWED_MISSING_AI_SLOTS = {
+    'worlds/Til/GullBayGuns/GullBayGuns_Layers/AI.layer': (
+        '28fa777501c1e2e0adabc437f2d3dc09a269bec0',
+        {'73D76A624D46BDBE': 'Prefabs/Characters/Factions/OPFOR/RHS_RF_MSV/EMR/Character_RF_MSV_EMR_SL.et'},
+    ),
+}
+HOT_BOXES_FRIENDLY_AI = 'worlds/arc/HotBoxes/HotBoxes_Layers/friendlyAI.layer'
+HOT_BOXES_FRIENDLY_AI_BLOB = '8bd0f6cd7c32e40d7ddd055092def4c8fbeb86b5'
 BEBBLE_HVT = BEBBLE_ROOT + 'Prefabs/Characters/Factions/OPFOR/GC_ARG/1980_Regulars/Character_GC_ARG_1980_HVT.et'
 BEBBLE_HVT_BLOB = '409f34968af01738fb4edf42e71f5301bf1b8b9c'
 BEBBLE_FUEL = (BEBBLE_ROOT + 'Prefabs/Structures/Industrial/Containers/FuelTanks/FuelTank_01/FuelTank_01_green.et')
@@ -8027,6 +8052,13 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                     if unsupported:
                         blockers.append({'rule': 'framework settings', 'file': layer, 'line': line, 'detail': roots})
                 elif kind == 'SCR_AIGroup':
+                    if (layer == HOT_BOXES_FRIENDLY_AI and source.files[layer] == HOT_BOXES_FRIENDLY_AI_BLOB
+                            and line == 1):
+                        # The two AI placements specify only native formation,
+                        # transforms and orders. The resource audit gates their shared parent.
+                        result.append(body)
+                        inactive_placements.append('Compare the original Hot Boxes friendly AI roster and both defense routes.')
+                        continue
                     try:
                         members = {identity: asset for identity, asset in roster_assets.items()
                                    if asset['placement'] == f'{layer}:{line}'}
@@ -8042,6 +8074,14 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                             group_body = '\n'.join(migrate_native_components(group_body.splitlines())) + '\n'
                         playable_members = {identity: asset['path'] for identity, asset in members.items()
                                             if asset.get('playable')}
+                        ai_members = {identity: asset['path'] for identity, asset in members.items()
+                                      if not asset.get('playable')}
+                        playable_review = REVIEWED_MISSING_PLAYABLE_SLOTS.get(layer)
+                        ai_review = REVIEWED_MISSING_AI_SLOTS.get(layer)
+                        if playable_review and source.files[layer] == playable_review[0]:
+                            playable_members.update(playable_review[1])
+                        if ai_review and source.files[layer] == ai_review[0]:
+                            ai_members.update(ai_review[1])
                         if (layer == STASHED_CACHE_PLAYER_LAYER
                                 and source.files[layer] == '366271c69a72f3481a5bc1b61210d8283e80e36d'):
                             for identity, (name, blob) in STASHED_CACHE_COMMAND_ROLES.items():
@@ -8049,10 +8089,7 @@ def world_draft(source, dev, world, row, staged, area_placements, interactions, 
                                 canonical = STASHED_CACHE_PREFABS + path
                                 if source.resources.get(identity) == [canonical] and source.files.get(canonical) == blob:
                                     playable_members[identity] = 'Prefabs/' + path
-                        converted, count, slots = convert_group_block(
-                            group_body,
-                            {identity: asset['path'] for identity, asset in members.items() if not asset.get('playable')},
-                            playable_members)
+                        converted, count, slots = convert_group_block(group_body, ai_members, playable_members)
                         result.append(converted)
                         group_blocks.append({'file': layer, 'line': line, 'groups': count, 'slots': slots})
                     except ValueError as exc:

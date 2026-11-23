@@ -16,20 +16,24 @@ Use the batch workflow for the catalog. The same rules process every legacy laun
 
 ### Remaining migration work
 
-The audit at Missions Dev `010c6b5d` clears 262 of the 277 published launchers with native snapshots and verified portable manifests. Nine of the remaining 15 have generated drafts and six still need conversion rules. The generated `plan.md` lists the remaining launchers individually. Its `plan.json` records their file issues and source locations under `remainingLaunchers`. Review shared providers as a group, then use representative Match checks for each affected behavior family.
+The audit at Missions Dev `010c6b5d` clears 262 of the 277 published launchers with native snapshots and verified portable manifests. All 15 remaining launchers now have generated drafts held by resource checks. The generated `plan.md` lists the remaining launchers individually. Its `plan.json` records their file issues and source locations under `remainingLaunchers`. Review shared providers as a group, then use representative Match checks for each affected behavior family.
 
 | Launchers | Remaining blocker |
 | --- | --- |
-| Abad Day in Kunar US TVT, Heaven and Hell, Hot Boxes | The original 1998 DCU rifleman parent is unavailable. Hot Boxes also uses the retired DCU rifle squad. |
+| Abad Day in Kunar US TVT, Heaven and Hell, Hot Boxes | The original 1998 DCU rifleman parent is unavailable. Kunar also needs the two 2004 Humvee variants. Hot Boxes still needs the retired DCU rifle squad. |
 | Zherebets River Cache, Unowald Cache | Shared equipment and tracer references still need exact providers. The plan records each terrain dependency separately. |
 | Al Hadra Rumble, Nagalam Traffic Jam, Rocky Road | Retired Gulf War vehicle assets block the drafts or their damage objectives. Al Hadra's original tan TIGR is registered in a package that fails current-engine compilation. Nagalam also needs related vehicle parts and equipment. |
 | Direction Found | The archived M113A3 passed its recovery check. The violet RDG-2 registration remains unavailable. |
 | Assad’s Last Stand V2 | The authored insurgent radio, shemagh and black shirt remain unresolved. |
 | Syrian Checkpoint | The original SAA jacket and trousers are missing. The separately recovered cap still needs a compatible graph. |
 | Station Smashers | The authored hostage sandals remain unavailable. |
-| Cobra’s Bite | The two authored USMC M3 MAAW roles remain unavailable. |
+| Cobra’s Bite | Both M3 MAAW roles remain unavailable. The three aircraft have verified Workshop registrations, with compatibility and source comparison in review. |
 | Factory Siege Redux | The authored 2003 woodland forward observer remains unresolved. |
 | Gull Bay Guns | The original RHS EMR squad leader remains unresolved. |
+
+The last six drafts retain the original roles and resource paths. The converter removes explicitly authored legacy playability from the three mission-owned DCU crew roles and retains their original parent. The original Hot Boxes friendly AI layer keeps both placements, formations and routes. The grouped roster pass keeps Cobra's Bite's two M3 MAAW slots, Factory Siege Redux's woodland forward observer and Gull Bay Guns' AI squad leader in their authored order. The resource audit holds all six drafts until their referenced assets can be resolved. The catalog preserves 314 earlier draft files byte for byte and all 262 committed metadata records.
+
+Hot Boxes inherits the original MERDC M113A3 `E9BEA9042617CAAD`. The M113 APC 1.0.17 archive registers the original path. The dedicated fixture in `logs_2026-11-23_04-44-53`, lines 245–246, confirmed 14 wheels and a 600 RPM idle. The source-locked launcher pin uses the same archive as Direction Found. The full audit resolves the M113 and leaves the original DCU rifleman and rifle squad as the two remaining assets. [M113 APC release history](https://reforger.armaplatform.com/workshop/5E5C154FEE1094BB/changelog)
 
 Run the planner from GC Lobby with a clean Missions Dev checkout. Use a fresh output directory when the commits or conversion rules change.
 
@@ -2273,6 +2277,8 @@ The shared crew converter accepts the verified mission-owned BMP-1 after the sav
 The roster now depends on the missing USMC M3 MAAW gunner `6CA5BE07728357DE` and assistant `4EA7CF8765E83F76`. Missions commit `69d1524a` explicitly changed both slots from the original MAAW pair. The current registered MAAW pair cannot establish the authored M3 loadouts. Keep Cobra’s Bite in review until the two exact assets or equivalent source loadouts can be verified.
 
 The archive check covered GC Units 1.0.135 and 1.0.136, the releases around the April 19 roster change. Both register the older gunner and assistant from the previous revision. Both M3 role GUIDs are absent from those registries and from RHS Status Quo and Content Packs 01 and 02 at 0.14.4886, the RHS release available at authoring time. The 0.14.4886 stack also fails current-engine compilation at the removed `RpcAsk_ArsenalRequestItem_` override in `logs_2026-11-23_04-23-27`, lines 241–251. [GC Units release history](https://reforger.armaplatform.com/workshop/6156F2F771D5D73D-GlobalConflictsUnits/changelog?page=2) · [RHS Status Quo release history](https://reforger.armaplatform.com/workshop/595F2BF2F44836FB/changelog)
+
+The completed Cobra's Bite draft retained the three aircraft added by Missions commit `4b78c285` on April 26. Sages UH1Y 1.0.10 and 1.0.34 both register the authored UH-1Y. SagesAH1Z 1.0.23 and 1.0.31 both register the authored M299 and LAU-61 variants. The authoring-era UH-1Y 1.0.10 stack fails current-engine compilation on an unknown WCS type in `logs_2026-11-23_04-42-14`. The isolated stack with UH-1Y 1.0.34 and AH-1Z 1.0.31 mounted online and spawned the three registered vehicles with 11, two and two seats in `logs_2026-11-23_04-50-23`, lines 192–234. Their weapon and flight behavior still need comparison against the authored variants. The main report lists both exact provider packages for the three aircraft. [Sages UH1Y release history](https://reforger.armaplatform.com/workshop/691955E004F3DD9C/changelog) · [SagesAH1Z release history](https://reforger.armaplatform.com/workshop/68981B7716C2E9DB/changelog)
 
 Factory Siege Redux first referenced its woodland forward observer in Missions commit `0d16f0dd` on April 4. The GC Units 1.0.131 registry from that day lacks the authored `EDBFF03A830C2966`. The retained Units Git history contains the desert observer, including its April 3 inventory revision, and has no woodland observer file. The desert role establishes another authored kit for the same function. The original woodland role's issued loadout is still unavailable. [GC Units release history](https://reforger.armaplatform.com/workshop/6156F2F771D5D73D-GlobalConflictsUnits/changelog?page=2)
 

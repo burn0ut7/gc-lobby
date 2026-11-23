@@ -38,6 +38,11 @@ REVIEWED_VERSION_PINS = {
         (('worlds/Blue/DirectionFound/DirectionFound_Layers/BLUFOR/Static.layer',
           'bdc881fd99428dc0f38128c05853ebbe3a854692', '5E5C154FEE1094BB=1.0.17'),),
     ),
+    'Missions/arc/HotBoxes.conf': (
+        '93a505ed61230b9baba1b0e8489006363a650147',
+        (('worlds/arc/HotBoxes/HotBoxes_Layers/vehicles.layer',
+          '65033744336c167e0865849fd0e1fe4f37df2020', '5E5C154FEE1094BB=1.0.17'),),
+    ),
     'Missions/TheLocalPub/OilRigRangos.conf': (
         '3cbbf3fea039dc0f84d984fe4123d5cf63b807c7',
         (('worlds/TheLocalPub/OilRigRangos/Prefabs/Characters/Factions/BLUFOR/UK_Army/2024/VBSS/'
