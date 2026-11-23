@@ -76,6 +76,15 @@ ARCHIVED_AAS_CREW = {
     'C18E05B3F6ACAB13': ('AT', 'd2cbbfe146c86a98cb93444380e2ae7ce0258fcb',
                          'daf412d61e6dc8a23318bcbd5b2d16f6adbd9e50'),
 }
+ASSAD_RETIRED_CLOTHING = {
+    'Rifleman': ('Hat', '1C7BF9EFC11B29D9', 'Prefabs/Characters/HeadGear/Hat_Shemagh/Hat_Shemagh_Green.et'),
+    'AT': ('Jacket', '9802E1302FD7BA7A', 'Prefabs/Characters/Uniforms/T_Shirts/T_Shirt_v2/T_shirt_v2_Blk.et'),
+}
+ASSAD_REVIEWED_RHS_REGISTRIES = {
+    'RHS-StatusQuo_595F2BF2F44836FB': '32d8435e20292c6f6d8c3b48e3d76239ca84881bcbd4f1f9fe56bf2fc64b1c71',
+    'RHS-ContentPack01_1337C0DE5DABBEEF': '29c053dcec2fd7f1e5187188f91eb1b652296e5d8a0f98a9ffd2bb48dcab374b',
+    'RHS-ContentPack02_BADC0DEDABBEDA5E': 'e50f65fb8f49d84fe4819e8bd2b4520b62ca21e1c608099487c070d8834356a2',
+}
 ASSAD_RADIO_PATH = 'Prefabs/Items/Equipment/Radios/Radio_R187P1_OLD_Multi_Insurgent.et'
 ASSAD_RADIO_ID = '139770CBE58E0303'
 ASSAD_RADIO_PARENT = ('D55C4F07EF14A878', 'Prefabs/Items/Equipment/Radios/Radio_R187P1_OLD_Multi.et')
@@ -6514,11 +6523,18 @@ def reviewed_assad_radio(source, dev, source_units, dev_units, historical_roots)
     return {(ASSAD_RADIO_ID, ASSAD_RADIO_PATH): (body, meta)}
 
 
-def reviewed_archived_mission_crew(source, dev, stock):
+def reviewed_archived_mission_crew(source, dev, stock, workshop=None):
     """Restore the original AI-only crew assets removed with Central Anizay AAS."""
     if (not stock or source.files.get(ASSAD_FRAMEWORK_LAYER) != ASSAD_FRAMEWORK_BLOB
             or source.files.get(ASSAD_LAYERS + 'props.layer') != '15d7559e5c9b917375979b7d6f0090e5360771a8'):
         return {}
+    # RHS removed both items before the mission adopted these older crew prefabs.
+    # Empty overrides reproduce the effective kit in the verified graph and avoid inherited FIA clothing.
+    reviewed_clothing = bool(workshop and all(
+        (database := workshop / addon / 'resourceDatabase.rdb').is_file()
+        and sha256(database.read_bytes()).hexdigest() == digest
+        for addon, digest in ASSAD_REVIEWED_RHS_REGISTRIES.items()
+    ))
     restored = {}
     for resource, (role, asset_blob, meta_blob) in ARCHIVED_AAS_CREW.items():
         name = f'Character_GC_INSURGENT_AAS_{role}.et'
@@ -6537,6 +6553,14 @@ def reviewed_archived_mission_crew(source, dev, stock):
                 or not body.startswith('SCR_ChimeraCharacter : ') or LEGACY.search(body)
                 or not parent or not stock.contains(*parent.groups())):
             raise ValueError('archived AAS crew registration or native parent changed ' + resource)
+        slot, clothing_id, clothing_path = ASSAD_RETIRED_CLOTHING[role]
+        if (reviewed_clothing and clothing_id not in source.resources and clothing_id not in dev.resources
+                and not stock.registered_paths(clothing_id)):
+            field = (f'    LoadoutSlotInfo {slot} {{\n'
+                     f'     Prefab "{{{clothing_id}}}{clothing_path}"\n    }}')
+            if body.count(field) != 1:
+                raise ValueError('reviewed Assad clothing override changed ' + role)
+            body = body.replace(field, f'    LoadoutSlotInfo {slot} {{\n     Prefab ""\n    }}', 1)
         meta = replace_reference(meta, META_NAME, resource, path)
         for relative, content in ((path, body), (path + '.meta', meta)):
             if relative in dev.files and dev.read(relative) != content:

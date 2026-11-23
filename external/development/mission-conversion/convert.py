@@ -170,7 +170,7 @@ def main():
     archived_crew = {}
     if args.batch:
         try:
-            archived_crew = batch.reviewed_archived_mission_crew(source, dev, stock)
+            archived_crew = batch.reviewed_archived_mission_crew(source, dev, stock, args.workshop_addons)
         except (OSError, ValueError, CalledProcessError) as exc:
             parser.error(str(exc))
     if args.batch and args.workshop_addons:
