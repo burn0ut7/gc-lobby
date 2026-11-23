@@ -31,7 +31,7 @@ The audit at Missions Dev `f2dd0ebd` clears 256 of the 277 published launchers, 
 | Cobra’s Bite | The two authored USMC M3 MAAW roles remain unavailable. |
 | Factory Siege Redux | The authored 2003 woodland forward observer remains unresolved. |
 | Gull Bay Guns | The original RHS EMR squad leader remains unresolved. |
-| Commandos Reforged | Converted in local Missions Dev `c944ee54`. Native metadata and representative Match checks are pending. |
+| Commandos Reforged | Converted in local Missions Dev `c944ee54` with native metadata in `23c1e214`. Representative Match checks are pending. |
 
 Run the planner from GC Lobby with a clean Missions Dev checkout. Use a fresh output directory when the commits or conversion rules change.
 
@@ -2353,4 +2353,6 @@ The isolated Workbench MCP project mounted Lobby Dev and compiled the manager, t
 
 The Commandos controller variant inherits the native Lobby player controller and keeps the original dog component placement. The port preserves the hidden character body, dog bark sound, 500-metre tracking range, bootprint materials, and local voice suppression on possession. The bark RPC resolves the sending controller's current dog on the server. Workbench MCP compiled all six mission scripts with zero errors in session `logs_2026-11-23_02-41-19`, lines 27798–27869. The representative Match queue covers pre-cleanup registration, interaction retirement, damage notices, private delivery and reconnect, and dog possession, footprints, bark and voice.
 
-Missions Dev commit `c944ee54` installs the reviewed draft, including 62 original roster entries under the 60-player listing. All 121 reviewed files match the committed contents. The asset audit retained all three Tactical Flava magazine IDs and resolved their moved paths through the installed Weapons package. The controller variant retains its original ID and registers at its mission-owned path. The full audit now clears 257 of 277 launchers. Commandos remains pending for native metadata capture and live gameplay verification.
+Missions Dev commit `c944ee54` installs the reviewed draft, including 62 original roster entries under the 60-player listing. All 121 reviewed files match the committed contents. The asset audit retained all three Tactical Flava magazine IDs and resolved their moved paths through the installed Weapons package. The controller variant retains its original ID and registers at its mission-owned path.
+
+Workbench MCP session `logs_2026-11-23_02-50-25` captured 1,298 entities and all 62 slots from the full graph. Missions Dev commit `23c1e214` stores the snapshot. Embedded Play reached Pregame and opened the Lobby preview on the converted controller at lines 31274–31357. The session logged inherited dependency resource errors and a Mi-8 default-weapon-slot warning. The full audit clears 257 of 277 launchers with native snapshots. The portable export lists 65 required addon IDs for Commandos and preserves all previous 256 manifests byte for byte. The representative Match checks remain open.
