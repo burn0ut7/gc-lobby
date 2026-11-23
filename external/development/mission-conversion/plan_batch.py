@@ -1,7 +1,7 @@
 """Generate, audit and prioritize GC Missions conversion work in one pass."""
 import argparse
 from collections import Counter, defaultdict
-from hashlib import sha256
+from hashlib import file_digest, sha256
 import json
 from pathlib import Path
 import re
@@ -12,6 +12,22 @@ from dependencies import database_project, installed_version
 from review import known_compile_failure, known_zagoria_failure
 from scenery import StockPrefabs
 from vehicle_crew import ZAGORIA_BMP2
+
+
+REVIEWED_SUCCESSORS = {
+    ('6730D59067916E3D', '1.0.46'): {
+        'legacy': '1EF865DC4E3F7E0B',
+        'replacement': ('D0C221AB104B740A', 'IFV/BMP2/BMP2_Olive_taloshatchtest.et'),
+        'packageSha256': 'bcb942a6d915851f5f252fcac2248a15c493e651068167090334740fec41aee6',
+        'gameVersion': '1.9.0.37',
+        'findings': [
+            'The two turret stations appear in reverse runtime order.',
+            'The hull inventory retains the magazine counts but changes the armor-piercing round effects.',
+            'The 1,500-health Main physical hit zone is absent.',
+        ],
+        'sessions': ['logs_2026-11-22_20-03-55', 'logs_2026-11-22_20-04-06'],
+    },
+}
 
 
 def run_tool(name, args):
@@ -162,13 +178,34 @@ def historical_provider_candidates(plan, roots, base):
             identities = stock.registered_ids(path)
             if paths or identities:
                 alternates.append({'reference': ref, 'sameIdPaths': paths, 'samePathIds': identities})
-        if not matched and not alternates:
-            continue
         provider = database_project(database)
         if not provider:
             continue
         addon_id, dependencies = provider
+        if not matched and not alternates and not any(addon_id == reviewed for reviewed, _ in REVIEWED_SUCCESSORS):
+            continue
         if not (version := installed_version(database, addon_id)):
+            continue
+        successors = []
+        if (spec := REVIEWED_SUCCESSORS.get((addon_id, version))) and stock.contains(*spec['replacement']):
+            reference = next((ref for ref in sorted(references) if ref[1:17] == spec['legacy']), None)
+            package = database.with_name('data.pak')
+            if reference and package.is_file():
+                with package.open('rb') as archive:
+                    verified = file_digest(archive, 'sha256').hexdigest() == spec['packageSha256']
+                if verified:
+                    identity, path = spec['replacement']
+                    related = {launcher for lead in plan.get('sourceDependencyLeads', ())
+                               if lead['guid'] == spec['legacy'] for launcher in lead['launchers']}
+                    related.update(launcher for draft in plan['heldDrafts'] if draft['world'] in drafts.get(reference, ())
+                                   for launcher in draft['launchers'])
+                    successors.append({
+                        'reference': reference, 'replacement': f'{{{identity}}}{path}',
+                        'sourceLaunchers': sorted(related), 'findings': spec['findings'],
+                        'gameVersion': spec['gameVersion'], 'sessions': spec['sessions'],
+                        'packageSha256': spec['packageSha256'],
+                    })
+        if not matched and not alternates and not successors:
             continue
         zagoria = f"{{{ZAGORIA_BMP2[0]}}}{ZAGORIA_BMP2[1]}"
         runtime_blocked = {zagoria} if zagoria in matched and known_zagoria_failure(base, [database]) else set()
@@ -187,6 +224,7 @@ def historical_provider_candidates(plan, roots, base):
             'exactReferences': sorted(matched), 'worlds': sorted(exact_worlds),
             'conversionWorlds': sorted(conversion_worlds), 'onlyReportedConversionBlocker': sorted(sole_conversion),
             'alternateRegistrations': alternates, 'reviewWorlds': sorted(review_worlds),
+            **({'reviewedSuccessors': successors} if successors else {}),
             'runtimeBlockedReferences': sorted(runtime_blocked),
             **({'runtimeFailure': compile_failure} if compile_failure else {}),
             'onlyMissingPackage': sorted(world for world in exact_worlds if held[world] <= matched - runtime_blocked),
@@ -548,6 +586,14 @@ def markdown(plan):
                 details = [f"original ID at `{path}`" for path in alternate['sameIdPaths']]
                 details.extend(f"original path under ID `{identity}`" for identity in alternate['samePathIds'])
                 lines.extend(['', f"- {label} has " + ', '.join(details) + '.'])
+            for successor in entry.get('reviewedSuccessors', ()):
+                lines.extend(['', f"- `{entry['addonId']} {entry['version']}` · "
+                              f"`{successor['replacement']}` is a reviewed successor for "
+                              f"`{successor['reference']}` with differences observed on "
+                              f"Reforger {successor['gameVersion']}. "
+                              + ' '.join(successor['findings'])])
+                for launcher in successor['sourceLaunchers']:
+                    lines.append(f'  - `{launcher}` references the original asset.')
     if comparison := plan.get('providerComparison'):
         lines.extend(['', '## File clearance compared with the baseline provider graph', ''])
         for key, label in (('committedGains', 'Committed launchers cleared'),
