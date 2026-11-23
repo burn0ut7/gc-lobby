@@ -33,7 +33,13 @@ The final batch staged all ten worlds and their launchers in one external Missio
 
 All ten published Missions 1.2.160 controls also loaded their expected scenarios and worlds and reached online state. Eight produced the same missing-reference set as their Dev counterpart. Heaven and Hell and Syrian Checkpoint logged their missing roles or clothing only in Dev during startup. The source files contain those same authored references, and a scan of each published run's 143 mounted resource databases found no registration for them. The smoke run records startup and asset lookup. It leaves role selection, crew spawning, objectives and Match behavior open for these drafts.
 
-Run the same smoke check from a JSON array of cases with `smoke_batch.py`. Give each case a unique `name`, the exact resource string in `scenario`, the expected world path in `world`, the staged `providerDirectory` and an `addons` array of addon IDs. Set `expectLobby` for Dev cases and copy the exact unresolved resource strings into `watch`. Pair legacy and Dev cases in the same file. Stage version-specific providers in separate directories and select the matching directory on each case.
+Regenerate the staged project and paired smoke cases directly from the audit. Create `graphs.json` with `legacy` and `dev` objects. Under each side, set a `default` object with `providerDirectory` and an `addons` array of addon IDs. Add a separate entry keyed by the sorted version pins, such as `5E5C154FEE1094BB=1.0.17` for Hot Boxes. Use a comma-separated key for multiple pins. The graph for each side must contain the correct Missions project and required providers. The prep command checks actual installed versions for every pin and verifies each draft hash before writing. It uses committed files from the audited revisions and can prepare a batch from a different checkout of the same Missions repository.
+
+```powershell
+python "$tools/prepare_smoke_batch.py" --missions $repo --audit $audit --drafts "$audit/drafts" --graphs "$stageGraphs/graphs.json" --output $stage
+```
+
+Open `$stage/missions/addon.gproj` through Workbench MCP to build the staged resource database. Point the Missions Dev entry in the Dev addon graphs at that project directory. Each generated case includes its exact scenario, expected world, provider graph and watched resource IDs. The preparation reproduced all 20 launch specifications and 238 draft files from the final-ten smoke comparison. A graph missing the Hot Boxes pin was rejected before staging.
 
 ```powershell
 python "$tools/smoke_batch.py" --cases "$stage/cases.json" --server "$server/ArmaReforgerServer.exe" --base-project "$server/addons/data/ArmaReforger.gproj" --output "$stage/smoke-results"
