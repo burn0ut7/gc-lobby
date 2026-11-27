@@ -22,6 +22,6 @@ class GC_EditorManagerStagedAccess : SCR_EditorManagerEntity
 	void CloseAtStagingEnd()
 	{
 		if (Replication.IsServer() && IsOpened() && IsStagingAccessClosed())
-			ToggleServer(false);
+			ToggleServer(false, false);
 	}
 }
