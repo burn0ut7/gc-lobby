@@ -1,6 +1,7 @@
 #include "ArraySelection.h"
 #include "PropertyEditors.h"
 #include "ChoicesClient.h"
+#include "NativeArrayCommands.h"
 #include <QCoreApplication>
 #include <QAbstractItemView>
 #include <QCompleter>
@@ -17,7 +18,8 @@ ArraySelection::ArraySelection(QObject *source, QObject *editor, QComboBox *widg
       build(std::move(expectedBuild)), log(std::move(logger))
 {
     const QPointer<ArraySelection> guard(this);
-    const auto error = PropertyEditors::routeSelection(editor, widget,
+    auto error = NativeArrayCommands::install();
+    if (error.isEmpty()) error = PropertyEditors::routeSelection(editor, widget,
         [guard](int index) {
             if (guard && guard->combo && index >= 0)
                 guard->commit(guard->combo->itemData(index).toString());
@@ -52,7 +54,15 @@ void ArraySelection::commit(const QString &value)
     for (const auto &entry : destination.path) {
         keys.append(entry.key); indices.append(entry.index); classes.append(entry.className);
     }
-    QJsonObject request{{"operation", "set_array_string"}, {"token", QUuid::createUuid().toString(QUuid::Id128)},
+    const auto token = QUuid::createUuid().toString(QUuid::Id128);
+    const auto preparationError = NativeArrayCommands::prepare(token, destination, value);
+    if (!preparationError.isEmpty()) {
+        combo->setToolTip(preparationError);
+        log({{"event", "arrayCommit"}, {"state", "refused"}, {"reason", preparationError}});
+        return;
+    }
+    QJsonObject request{{"operation", "set_array_string"}, {"token", token},
+        {"wireValue", NativeArrayCommands::wireValue(token)},
         {"world", world}, {"destinationHi", qint32(id >> 32)}, {"destinationLo", qint32(id)},
         {"expectedClass", destination.className}, {"key", destination.key},
         {"arrayIndex", destination.arrayIndex}, {"value", value},
@@ -63,7 +73,18 @@ void ArraySelection::commit(const QString &value)
     const QPointer<ArraySelection> guard(this);
     const auto logger = log;
     ChoicesClient::edit(QCoreApplication::instance(), build, request,
-        [guard, logger](EntityEditReply reply) {
+        [guard, logger, token](EntityEditReply reply) {
+            if (reply.state == "committed") {
+                const auto outcome = NativeArrayCommands::outcome(token);
+                if (!outcome.isEmpty()) {
+                    reply.state = "finalization_failed";
+                    reply.reason = outcome;
+                }
+            }
+            // Retain uncertain receipts for inspection; known refusals and
+            // completed writes can release preparation while history owns data.
+            if (reply.error.isEmpty() && (reply.state == "committed" || reply.state == "unchanged" || reply.state == "refused"))
+                NativeArrayCommands::release(token);
             logger({{"event", "arrayCommit"}, {"state", reply.state}, {"value", reply.name},
                 {"reason", reply.reason}, {"error", reply.error}});
             if (!guard) return;

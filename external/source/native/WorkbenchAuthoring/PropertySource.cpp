@@ -13,7 +13,7 @@
 
 namespace gc {
 namespace {
-// Workbench 1.9.0.37 only. Evidence and limitations are recorded in
+// Workbench 1.9.0.42 only. Evidence and limitations are recorded in
 // docs/workbench-authoring-extension.md, entity-reference transaction section.
 template<class T> T function(quintptr image, quintptr rva)
 {
@@ -37,8 +37,8 @@ struct ScopedPath {
     ~ScopedPath()
     {
         // Native path clear destroys member strings, but retains allocation.
-        function<void (*)(SourcePath *)>(image, 0x1b33510)(&path);
-        function<Free>(image, 0x1e95e70)(path.items, 0);
+        function<void (*)(SourcePath *)>(image, 0x1b39850)(&path);
+        function<Free>(image, 0x1e9c350)(path.items, 0);
     }
 };
 struct ScopedString {
@@ -47,7 +47,7 @@ struct ScopedString {
     ~ScopedString()
     {
         if (text && InterlockedDecrement(reinterpret_cast<volatile LONG *>(text - 4)) == 0)
-            function<Free>(image, 0x1e95e70)(text - 12, 0);
+            function<Free>(image, 0x1e9c350)(text - 12, 0);
     }
 };
 
@@ -82,7 +82,7 @@ PropertyDestination captureDestination(SourcePath path, const void *leaf, int ar
     QByteArray identities;
     const auto rootAddress = reinterpret_cast<quintptr>(path.root);
     identities.append(reinterpret_cast<const char *>(&rootAddress), sizeof(rootAddress));
-    const auto resolve = function<void *(*)(SourcePath *, bool)>(image, 0x1b33bf0);
+    const auto resolve = function<void *(*)(SourcePath *, bool)>(image, 0x1b39f30);
     for (unsigned i = 0; i < path.count; ++i) {
         SourcePath prefix = path; // Borrowed; never clear or free this copy.
         prefix.count = i;
@@ -119,7 +119,7 @@ PropertyDestination captureDestination(SourcePath path, const void *leaf, int ar
             const auto count = member<unsigned>(storage, 12);
             if (!count || count > member<unsigned>(storage, 8) || !member<const void *>(storage, 0)) return result;
             // Native object-ID lookup returns both the child and its current index.
-            auto *indexed = function<void *(*)(const void *, const void *, int *)>(image, 0x1ad3b20)(storage, entry + 8, &index);
+            auto *indexed = function<void *(*)(const void *, const void *, int *)>(image, 0x1ad9e60)(storage, entry + 8, &index);
             if (indexed != child || index < 0 || unsigned(index) >= count) return result;
         }
         const auto *childSchema = member<const void *>(child, 0x18);
@@ -147,26 +147,26 @@ QString readPropertyDeclaredType(QObject *property, quintptr image)
 {
     if (!property || !image || !QCoreApplication::instance() ||
         QThread::currentThread() != QCoreApplication::instance()->thread() ||
-        member<quintptr>(property, 0) != image + 0x2e18ab0) return {};
-    auto *grid = function<QObject *(*)(QObject *)>(image, 0x4b1410)(property);
-    grid = reinterpret_cast<const QMetaObject *>(image + 0x2e2c420)->cast(grid);
+        member<quintptr>(property, 0) != image + 0x2e1eac0) return {};
+    auto *grid = function<QObject *(*)(QObject *)>(image, 0x4b14e0)(property);
+    grid = reinterpret_cast<const QMetaObject *>(image + 0x2e32430)->cast(grid);
     if (!grid) return {};
     auto *sourceProperty = property;
-    auto *descriptor = function<const void *(*)(QObject *, QObject *)>(image, 0x318ca0)(grid, property);
+    auto *descriptor = function<const void *(*)(QObject *, QObject *)>(image, 0x318e40)(grid, property);
     bool arrayElement = false;
     if (!descriptor) {
-        sourceProperty = function<QObject *(*)(QObject *, bool)>(image, 0x4b1120)(property, false);
-        if (!sourceProperty || member<quintptr>(sourceProperty, 0) != image + 0x2e1a5b0) return {};
-        descriptor = function<const void *(*)(QObject *, QObject *)>(image, 0x318ca0)(grid, sourceProperty);
+        sourceProperty = function<QObject *(*)(QObject *, bool)>(image, 0x4b11f0)(property, false);
+        if (!sourceProperty || member<quintptr>(sourceProperty, 0) != image + 0x2e205c0) return {};
+        descriptor = function<const void *(*)(QObject *, QObject *)>(image, 0x318e40)(grid, sourceProperty);
         arrayElement = true;
     }
     if (!descriptor) return {};
     ScopedPath source{{}, image};
-    function<void *(*)(QObject *, QObject *, bool, SourcePath *)>(image, 0x318670)
+    function<void *(*)(QObject *, QObject *, bool, SourcePath *)>(image, 0x318810)
         (grid, sourceProperty, false, &source.path);
     if (!source.path.root || source.path.count > 64 || source.path.count > source.path.capacity ||
         (source.path.count && !source.path.items)) return {};
-    auto *container = function<void *(*)(SourcePath *, bool)>(image, 0x1b33bf0)(&source.path, true);
+    auto *container = function<void *(*)(SourcePath *, bool)>(image, 0x1b39f30)(&source.path, true);
     if (!container) return {};
     const auto *schema = member<const void *>(container, 0x18);
     if (!schema) return {};
@@ -175,10 +175,10 @@ QString readPropertyDeclaredType(QObject *property, quintptr image)
     if (className.isEmpty() || key.isEmpty()) return {};
     // Exact string.ToType and typename.GetVariableName/GetVariableType paths.
     // No cached VM pointers: script reload replaces the reflected type graph.
-    auto *context = *reinterpret_cast<void **>(image + 0x3fdcd40);
+    auto *context = *reinterpret_cast<void **>(image + 0x3fe4040);
     if (!context) return {};
     alignas(8) quintptr lookup[4]{};
-    auto *result = function<const void *(*)(void *, void *, const char *, int)>(image, 0x1eb45c0)
+    auto *result = function<const void *(*)(void *, void *, const char *, int)>(image, 0x1ebaaa0)
         (context, lookup, className.constData(), 1);
     const auto *type = result ? member<const void *>(result, 0) : nullptr;
     if (!type) return {};
@@ -188,7 +188,7 @@ QString readPropertyDeclaredType(QObject *property, quintptr image)
     for (unsigned i = 0; i < count; ++i) {
         const auto *field = fields[i];
         if (!field || metadataText(member<const char *>(field, 8)) != key) continue;
-        const auto *fieldType = function<const void *(*)(const void *)>(image, 0x1fea1a0)(field);
+        const auto *fieldType = function<const void *(*)(const void *)>(image, 0x1ff06a0)(field);
         if (!fieldType) return {};
         const auto name = metadataText(member<const char *>(fieldType, 0x10));
         if (arrayElement) {
@@ -208,25 +208,25 @@ PropertySourceValue readPropertySource(QObject *property, quintptr image, Proper
     if (!image || !application || QThread::currentThread() != application->thread())
         return {QStringLiteral("wrong_thread_or_unvalidated_host"), {}};
     if (!property || property->thread() != application->thread() ||
-        member<quintptr>(property, 0) != image + 0x2e18ab0)
+        member<quintptr>(property, 0) != image + 0x2e1eac0)
         return {QStringLiteral("unsupported_property"), {}};
 
-    auto *grid = function<QObject *(*)(QObject *)>(image, 0x4b1410)(property);
-    const auto *gridType = reinterpret_cast<const QMetaObject *>(image + 0x2e2c420);
+    auto *grid = function<QObject *(*)(QObject *)>(image, 0x4b14e0)(property);
+    const auto *gridType = reinterpret_cast<const QMetaObject *>(image + 0x2e32430);
     grid = gridType->cast(grid);
     if (!grid) return {QStringLiteral("unsupported_grid"), {}};
     auto *sourceProperty = property;
     int arrayIndex = -1;
     int rowCount = -1;
-    auto *descriptor = function<const void *(*)(QObject *, QObject *)>(image, 0x318ca0)(grid, property);
+    auto *descriptor = function<const void *(*)(QObject *, QObject *)>(image, 0x318e40)(grid, property);
     if (!descriptor) {
         // Individual StringArrayProperty children have no descriptor. Native
         // 140319ae0 forwards their writes to the descriptor-bearing parent.
         // 1404a3fd0 establishes QTreeWidgetItem at +0x10; 1404c2cc0 builds
         // one child per string in its array iteration order. Refuse a sorted
         // tree: sibling position alone would not prove the source index there.
-        auto *parent = function<QObject *(*)(QObject *, bool)>(image, 0x4b1120)(property, false);
-        if (!parent || member<quintptr>(parent, 0) != image + 0x2e1a5b0)
+        auto *parent = function<QObject *(*)(QObject *, bool)>(image, 0x4b11f0)(property, false);
+        if (!parent || member<quintptr>(parent, 0) != image + 0x2e205c0)
             return {QStringLiteral("property_descriptor_missing"), {}};
         auto *parentItem = reinterpret_cast<QTreeWidgetItem *>(reinterpret_cast<char *>(parent) + 0x10);
         auto *childItem = reinterpret_cast<QTreeWidgetItem *>(reinterpret_cast<char *>(property) + 0x10);
@@ -238,12 +238,12 @@ PropertySourceValue readPropertySource(QObject *property, quintptr image, Proper
         if (arrayIndex < 0 || arrayIndex >= rowCount)
             return {QStringLiteral("array_row_missing"), {}};
         sourceProperty = parent;
-        descriptor = function<const void *(*)(QObject *, QObject *)>(image, 0x318ca0)(grid, parent);
+        descriptor = function<const void *(*)(QObject *, QObject *)>(image, 0x318e40)(grid, parent);
     }
     if (!descriptor) return {QStringLiteral("property_descriptor_missing"), {}};
 
     ScopedPath source{{}, image};
-    function<void *(*)(QObject *, QObject *, bool, SourcePath *)>(image, 0x318670)
+    function<void *(*)(QObject *, QObject *, bool, SourcePath *)>(image, 0x318810)
         (grid, sourceProperty, false, &source.path);
     if (!source.path.root) return {QStringLiteral("source_path_missing"), {}};
     if (source.path.count > 64 || source.path.count > source.path.capacity ||
@@ -251,7 +251,7 @@ PropertySourceValue readPropertySource(QObject *property, quintptr image, Proper
         return {QStringLiteral("source_path_invalid"), {}};
     // Effective lookup, including inherited object members. This is observation,
     // not evidence of a local override or permission to edit the returned source.
-    auto *container = function<void *(*)(SourcePath *, bool)>(image, 0x1b33bf0)(&source.path, true);
+    auto *container = function<void *(*)(SourcePath *, bool)>(image, 0x1b39f30)(&source.path, true);
     if (!container) return {QStringLiteral("source_path_unresolved"), {}};
     const auto *schema = member<const void *>(container, 0x18);
     const auto index = member<unsigned short>(descriptor, 4);

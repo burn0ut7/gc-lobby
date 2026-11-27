@@ -12,15 +12,15 @@
 #include <windows.h>
 
 namespace gc::detail {
-// Workbench 1.9.0.37, exact executable/Qt hashes checked by Compatibility.
+// Workbench 1.9.0.42, exact executable/Qt hashes checked by Compatibility.
 // Ghidra evidence: 6d0f332acf30463bbb2988d90d096d54 (creator references),
 // 5c4b1ac37c51448f8e6ce52780eebd4f (editor layout),
 // 5dfcf04120d94ee3bf9ba548145d6d95 (enum container),
 // 577312fcf62443e69c5c78411800cb95 (native value readback).
-constexpr quintptr stringPropertyVtable = 0x2e18ab0;
-constexpr quintptr createEditorSlot = 0x2e18c08;
-constexpr quintptr createEditorFunction = 0x4adaf0;
-constexpr quintptr stringComboVtable = 0x2e66758;
+constexpr quintptr stringPropertyVtable = 0x2e1eac0;
+constexpr quintptr createEditorSlot = 0x2e1ec18;
+constexpr quintptr createEditorFunction = 0x4adbc0;
+constexpr quintptr stringComboVtable = 0x2e6c768;
 using CreateEditor = QWidget *(*)(QObject *, QWidget *);
 CreateEditor original = nullptr;
 QPointer<PropertyEditors> owner;
@@ -183,11 +183,11 @@ void PropertyEditors::nativeActivate(QObject *editor)
 {
     // Native owning slots ignore the activated index and read current widget.
     if (editor && detail::owner)
-        reinterpret_cast<void (*)(QObject *)>(detail::image + 0x715510)(editor);
+        reinterpret_cast<void (*)(QObject *)>(detail::image + 0x7155e0)(editor);
 }
 void PropertyEditors::nativeFinish(QObject *editor)
 {
     if (editor && detail::owner)
-        reinterpret_cast<void (*)(QObject *)>(detail::image + 0x7157b0)(editor);
+        reinterpret_cast<void (*)(QObject *)>(detail::image + 0x715880)(editor);
 }
 }

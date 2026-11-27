@@ -2,12 +2,12 @@
 class GC_RemoveOpenSlotsScript : GC_MissionScript
 {
 	[Attribute("", UIWidgets.Auto, "Faction keys to remove. Leave empty to include all factions.")]
-	ref array<string> m_aFactions;
+	ref array<FactionKey> m_aFactions;
 
 	//------------------------------------------------------------------------------------------------
 	override bool IsValid()
 	{
-		return GC_RuleAction.ValidTargetNames(m_aFactions);
+		return GC_RuleAction.ValidTargetNames(GC_FactionKeys.ToStrings(m_aFactions));
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -16,9 +16,7 @@ class GC_RemoveOpenSlotsScript : GC_MissionScript
 		if (!manager || !manager.AreMissionInteractionsActive())
 			return false;
 
-		array<string> factions = {};
-		if (m_aFactions)
-			factions = m_aFactions;
+		array<string> factions = GC_FactionKeys.ToStrings(m_aFactions);
 		manager.GC_RemoveOpenMissionSlots(factions);
 		return true;
 	}

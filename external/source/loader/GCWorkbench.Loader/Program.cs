@@ -12,7 +12,7 @@ namespace GCWorkbench.Loader;
 // There are no command-line targets, arbitrary DLLs, scripts or commands.
 internal static class Program
 {
-    private const string HostHash = "456a3e4e3b55f47d89c09e4364df78d9a0b1f7348bdc2354cce3b34e1db70b28";
+    private const string HostHash = "a81dd4ca52ebbca584d56fe4968c4a12f2f80f2ac7a0c0a176b68ea23294c9b6";
     private const string Protocol = "4df00e70851952d140c187dfefe9c59d274c81d0d9e30a12cd06d87b28accd8f";
     private static readonly string Support = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", ".."));
 

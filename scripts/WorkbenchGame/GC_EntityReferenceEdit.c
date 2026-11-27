@@ -463,9 +463,10 @@ class GC_EntityReferenceCommit : Managed
 		return response;
 	}
 }
-//! Direct string-array assignment. No serialized array text or custom undo owner.
+//! Validated array assignment through the DLL's typed native history command.
 class GC_StringArrayEditRequest : JsonApiStruct
 {
+	string wireValue;
 	string adapterBuild;
 	string token;
 	string world;
@@ -481,6 +482,7 @@ class GC_StringArrayEditRequest : JsonApiStruct
 	ref array<string> pathClasses = {};
 	void GC_StringArrayEditRequest()
 	{
+		RegV("wireValue");
 		RegV("adapterBuild");
 		RegV("token");
 		RegV("world");
@@ -515,6 +517,8 @@ class GC_StringArrayEdit : Managed
 			return response;
 		response.token = input.token;
 		if (input.adapterBuild != response.adapterBuild || input.token.IsEmpty() || input.token.Length() > 64 || input.key.IsEmpty())
+			return response;
+		if (!input.wireValue.StartsWith("@GC_ARRAY_") || !input.wireValue.EndsWith("_APPLY") || input.wireValue.Length() > 127)
 			return response;
 		if (!input.expectedArray || input.expectedArray.Count() > 4096 || input.arrayIndex < 0 || input.arrayIndex >= input.expectedArray.Count())
 			return response;
@@ -568,11 +572,10 @@ class GC_StringArrayEdit : Managed
 			api.EndEntityAction();
 			return response;
 		}
-		// Register the field change with the editor so its document is dirty.
-		// Defer entity reconstruction until the complete typed value is assigned;
-		// the temporary empty value must never be consumed by a rebuilt entity.
+		// The native owner adopts this one-use token into the ordinary editor
+		// command and retains complete typed before/after values for undo/redo.
 		IEntitySource editSource = destination;
-		bool registered = api.SetVariableValue(destination, path, input.key, "");
+		bool registered = api.SetVariableValue(destination, path, input.key, input.wireValue);
 		destination = api.FindEntityByID(EntityID.FromInt(input.destinationHi, input.destinationLo));
 		// The owning editor setter creates instance overrides. Never directly
 		// assign into an ancestor if any part of that override is still shared.
@@ -589,11 +592,7 @@ class GC_StringArrayEdit : Managed
 			container = GC_EntityReferenceEdit.Resolve(destination, localPath);
 		}
 		bool writable = container && container.GetClassName() == input.expectedClass && container.IsVariableSetDirectly(input.key);
-		if (writable && registered)
-			container.Set(input.key, values);
-		bool written = registered && GC_EntityReferenceEdit.MatchesArray(container, input.expectedClass, input.key, values);
-		if (!written && writable)
-			container.Set(input.key, input.expectedArray);
+		bool written = writable && registered && GC_EntityReferenceEdit.MatchesArray(container, input.expectedClass, input.key, values);
 		bool rebuilt = api.EndEditSequence(editSource);
 		bool ended = api.EndEntityAction();
 		api.UpdateSelectionGui();

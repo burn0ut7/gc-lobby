@@ -20,9 +20,9 @@
 
 namespace gc {
 namespace {
-// Exact 1.9.0.37 owners; see the array encoding evidence in the delivery record.
-constexpr quintptr undoSlot = 0x32c1e38, redoSlot = 0x32c1e40, destroySlot = 0x32c1e80;
-constexpr quintptr undoRva = 0x1b92f60, redoRva = 0x1b929f0, destroyRva = 0x1b92460;
+// Exact 1.9.0.42 owners; see the array encoding evidence in the delivery record.
+constexpr quintptr undoSlot = 0x32c83b8, redoSlot = 0x32c83c0, destroySlot = 0x32c8400;
+constexpr quintptr undoRva = 0x1b992a0, redoRva = 0x1b98d30, destroyRva = 0x1b987a0;
 using Action = void (*)(void *);
 using Destroy = void *(*)(void *, quintptr);
 template<class T> T member(const void *object, size_t offset)
@@ -340,9 +340,9 @@ QString NativeArrayCommands::install()
     state.owners = {
         reinterpret_cast<Action>(state.image + undoRva), reinterpret_cast<Action>(state.image + redoRva),
         reinterpret_cast<Destroy>(state.image + destroyRva),
-        reinterpret_cast<decltype(NativeOwners::assignString)>(state.image + 0x1e8cc0),
-        reinterpret_cast<decltype(NativeOwners::copyArray)>(state.image + 0x20aa80),
-        reinterpret_cast<decltype(NativeOwners::free)>(state.image + 0x1e95e70)
+        reinterpret_cast<decltype(NativeOwners::assignString)>(state.image + 0x1e8e60),
+        reinterpret_cast<decltype(NativeOwners::copyArray)>(state.image + 0x20ac20),
+        reinterpret_cast<decltype(NativeOwners::free)>(state.image + 0x1e9c350)
     };
     for (const auto &hook : hooks)
         if (member<quintptr>(reinterpret_cast<void *>(state.image + hook.slot), 0) != state.image + hook.owner)

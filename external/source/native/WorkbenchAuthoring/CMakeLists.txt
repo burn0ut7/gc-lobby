@@ -11,7 +11,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
 find_package(Qt6 6.8.3 EXACT REQUIRED COMPONENTS Core Gui Widgets)
 
-add_library(gcworkbench MODULE Plugin.cpp Compatibility.cpp PropertyEditors.cpp PropertySource.cpp EditableChoices.cpp ChoicesClient.cpp ScriptBridge.cpp ArraySelection.cpp EntitySelection.cpp MenuIcons.cpp)
+add_library(gcworkbench MODULE Plugin.cpp Compatibility.cpp PropertyEditors.cpp PropertySource.cpp EditableChoices.cpp ChoicesClient.cpp ScriptBridge.cpp ArraySelection.cpp NativeArrayCommands.cpp EntitySelection.cpp MenuIcons.cpp)
 target_link_libraries(gcworkbench PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets)
 target_compile_options(gcworkbench PRIVATE /W4 /WX /permissive- /Zc:__cplusplus /Brepro)
 target_link_options(gcworkbench PRIVATE /Brepro)

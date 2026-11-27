@@ -16,7 +16,7 @@ struct Module {
 // Identity evidence: NativeWorkbench.Profile.cs and NativeWorkbench.cs.
 // PropertyEditors additionally checks its owning slot before opt-in installation.
 const Module modules[] = {
-    {L"ArmaReforgerWorkbenchSteamDiag.exe", "456a3e4e3b55f47d89c09e4364df78d9a0b1f7348bdc2354cce3b34e1db70b28"},
+    {L"ArmaReforgerWorkbenchSteamDiag.exe", "a81dd4ca52ebbca584d56fe4968c4a12f2f80f2ac7a0c0a176b68ea23294c9b6"},
     {L"Qt6Core.dll", "0cc62e841959fb8f6d366ea116c6f6bbc273e30f0ef90d8aa2e4adeb81fd63f8"},
     {L"Qt6Gui.dll", "ca9f20d9b59d5bc321a87005b926b853ebcd6a2394823e14d3c8b5fc5702fa8c"},
     {L"Qt6Widgets.dll", "d34ef78b3d3b5506ee8279ce6efbfc263d773b74860af76e66b0715346897a3a"}

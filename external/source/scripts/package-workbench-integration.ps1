@@ -18,6 +18,12 @@ if ($nativeDll.Count -ne 1 -or (Get-FileHash -LiteralPath (Join-Path $native 'ge
     throw 'Native DLL does not match its build manifest.'
 }
 $nativeSources = @(Get-ChildItem -LiteralPath (Join-Path $root 'native/WorkbenchAuthoring') -File)
+$loaderSource = Get-Content -LiteralPath (Join-Path $root 'loader/GCWorkbench.Loader/Program.cs') -Raw
+$hostMatch = [regex]::Match($loaderSource, 'const string HostHash = "([0-9a-f]{64})";')
+$compatibility = Get-Content -LiteralPath (Join-Path $root 'native/WorkbenchAuthoring/Compatibility.cpp') -Raw
+if (!$hostMatch.Success -or !$compatibility.Contains($hostMatch.Groups[1].Value)) {
+    throw 'Loader and native DLL target different Workbench builds; update both owners before packaging.'
+}
 if (@($nativeManifest.sourceFiles).Count -ne $nativeSources.Count) { throw 'Native source inventory changed; rebuild before packaging.' }
 foreach ($source in $nativeSources) {
     $record = @($nativeManifest.sourceFiles | Where-Object path -eq $source.Name)

@@ -6,7 +6,7 @@ class GC_OffMapRound
 	[Attribute("81mm HE M821")]
 	string m_roundName;
 	[Attribute("", UIWidgets.Auto, "Authorized factions. Empty allows all factions.")]
-	ref array<string> m_factionKeys;
+	ref array<FactionKey> m_factionKeys;
 	[Attribute("", UIWidgets.Auto, "Authorized radio frequencies. Empty allows any frequency.")]
 	ref array<int> m_allowedFrequencies;
 	[Attribute("16")]
