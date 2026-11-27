@@ -1,6 +1,7 @@
 #include "EntitySelection.h"
 #include "ChoicesClient.h"
 #include "PropertyEditors.h"
+#include "NativeArrayCommands.h"
 #include <QCoreApplication>
 #include <QAbstractItemView>
 #include <QCompleter>
@@ -31,31 +32,48 @@ EntitySelection::EntitySelection(QObject *source, QObject *owner, QComboBox *wid
       build(std::move(expectedBuild)), initialValue(widget->currentText()), log(std::move(logger))
 {
     const auto destination = PropertyEditors::destination(source);
-    if (destination.state != "captured" || destination.arrayIndex >= 0) {
-        log({{"event", "entitySelection"}, {"state", "unavailable"}, {"reason", "Scalar destination required"}});
+    if (destination.state != "captured") {
+        combo->setEnabled(false);
+        combo->setToolTip(QStringLiteral("Entity-reference destination unavailable; reopen the properties"));
+        log({{"event", "entitySelection"}, {"state", "unavailable"}, {"reason", "Captured destination required"}});
         return;
+    }
+    if (destination.arrayIndex >= 0) {
+        const auto error = NativeArrayCommands::install();
+        if (!error.isEmpty()) {
+            combo->setEnabled(false);
+            combo->setToolTip(error);
+            log({{"event", "entitySelection"}, {"state", "unavailable"}, {"reason", error}});
+            return;
+        }
+        literalArray = new ArraySelection(source, owner, widget, build, log, false);
     }
     const QPointer<EntitySelection> guard(this);
     const auto error = PropertyEditors::routeSelection(owner, widget,
         [guard](int index) { if (guard) guard->activate(index); },
         [guard] { if (guard) guard->finishText(); });
     enabled = error.isEmpty();
-    if (!enabled) log({{"event", "entitySelection"}, {"state", "unavailable"}, {"reason", error}});
+    if (!enabled) {
+        combo->setEnabled(false);
+        combo->setToolTip(error);
+        log({{"event", "entitySelection"}, {"state", "unavailable"}, {"reason", error}});
+    }
 }
 
 void EntitySelection::activate(int index)
 {
-    if (busy || !combo || !editor) return;
+    if (isBusy() || !combo || !editor) return;
     if (index >= 0 && !combo->itemData(index, Qt::UserRole + 1).toString().isEmpty()) {
         pick(index);
         return;
     }
-    PropertyEditors::nativeActivate(editor);
+    if (literalArray) literalArray->commit(combo->itemData(index).toString());
+    else PropertyEditors::nativeActivate(editor);
 }
 
 void EntitySelection::finishText()
 {
-    if (busy || !combo || !editor) return;
+    if (isBusy() || !combo || !editor) return;
     // Qt emits editingFinished before accepting an active completion. Leave
     // that explicit choice to activated; do not create a preceding text edit.
     const auto *completer = combo->completer();
@@ -68,6 +86,7 @@ void EntitySelection::finishText()
     // A manually typed display label is still literal input. Native finish
     // searches labels; temporarily give matching rows that literal value.
     const auto text = combo->currentText();
+    if (literalArray) { literalArray->commit(text); return; }
     QVector<QPair<int, QVariant>> restored;
     for (int i = 0; i < combo->count(); ++i) {
         if (combo->itemText(i).compare(text, Qt::CaseInsensitive) != 0 || combo->itemData(i, Qt::UserRole + 1).toString().isEmpty()) continue;
@@ -109,7 +128,7 @@ void EntitySelection::pick(int index)
     const QString oldValue = source.state == "observed" ? source.serializedValue : initialValue;
     busy = true;
     restoreText(oldValue);
-    if (destination.state != "captured" || destination.arrayIndex != -1 ||
+    if (destination.state != "captured" || destination.arrayIndex < -1 ||
         (source.state != "observed" && source.state != "no_local_value")) {
         finish("refused", {}, "This field is not available for entity selection"); return;
     }
@@ -126,14 +145,16 @@ void EntitySelection::pick(int index)
         keys.append(entry.key); indices.append(entry.index); classes.append(entry.className);
     }
     const auto token = QUuid::createUuid().toString(QUuid::Id128);
-    QJsonObject request{{"operation", "prepare_scalar"}, {"token", token}, {"world", world}, {"provider", provider},
+    const bool array = destination.arrayIndex >= 0;
+    QJsonObject request{{"operation", array ? "prepare_array" : "prepare_scalar"}, {"token", token}, {"world", world}, {"provider", provider},
         {"destinationHi", qint32(destinationId >> 32)}, {"destinationLo", qint32(destinationId)},
         {"entityHi", qint32(targetId >> 32)}, {"entityLo", qint32(targetId)}, {"entityName", targetName},
         {"expectedClass", destination.className}, {"key", destination.key}, {"expectedValue", oldValue},
-        {"arrayIndex", -1}, {"pathKeys", keys}, {"pathIndices", indices}, {"pathClasses", classes}};
+        {"arrayIndex", destination.arrayIndex}, {"expectedArray", QJsonArray::fromStringList(destination.arrayValues)},
+        {"pathKeys", keys}, {"pathIndices", indices}, {"pathClasses", classes}};
     combo->setEnabled(false);
     const QPointer<EntitySelection> guard(this);
-    ChoicesClient::edit(this, build, request, [guard, destination, oldValue, token](EntityEditReply reply) {
+    ChoicesClient::edit(this, build, request, [guard, destination, oldValue, token, array](EntityEditReply reply) {
         if (!guard) return;
         guard->log({{"event", "entityPrepare"}, {"state", reply.state}, {"reason", reply.reason}, {"error", reply.error}});
         if (reply.state != "prepared") {
@@ -148,10 +169,24 @@ void EntitySelection::pick(int index)
             guard->finish("refused", {}, "Field changed while preparing the edit"); return;
         }
         const auto logger = guard->log;
+        QJsonObject commit{{"operation", array ? "commit_array" : "commit_scalar"}, {"token", token}};
+        if (array) {
+            const auto error = NativeArrayCommands::prepare(token, destination, reply.name);
+            if (!error.isEmpty()) { guard->finish("refused", {}, error); return; }
+            commit.insert("wireValue", NativeArrayCommands::wireValue(token));
+            commit.insert("rollbackValue", NativeArrayCommands::wireValue(token, true));
+        }
         // Observe a dispatched write even if native reconstruction destroys
         // this property editor. Never retry or cancel it as though read-only.
         ChoicesClient::edit(QCoreApplication::instance(), guard->build,
-            {{"operation", "commit_scalar"}, {"token", token}}, [guard, logger](EntityEditReply committed) {
+            commit, [guard, logger, token, array](EntityEditReply committed) {
+                if (array && committed.state == "committed") {
+                    const auto error = NativeArrayCommands::outcome(token);
+                    if (!error.isEmpty()) { committed.state = "finalization_failed"; committed.reason = error; }
+                }
+                if (array && committed.error.isEmpty() && (committed.state == "committed" ||
+                    committed.state == "unchanged" || committed.state == "refused" || committed.state == "rolled_back"))
+                    NativeArrayCommands::release(token);
                 logger({{"event", "entityCommit"}, {"state", committed.state}, {"name", committed.name},
                     {"reason", committed.reason}, {"error", committed.error}});
                 if (guard) guard->finish(committed.state, committed.name,

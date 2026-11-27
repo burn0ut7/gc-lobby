@@ -208,6 +208,8 @@ class GC_EntityReferenceEdit
 //! Explicit write request; discovery never invokes this handler.
 class GC_EntityReferenceCommitRequest : JsonApiStruct
 {
+	string wireValue;
+	string rollbackValue;
 	string operation;
 	string adapterBuild;
 	string token;
@@ -228,6 +230,8 @@ class GC_EntityReferenceCommitRequest : JsonApiStruct
 	ref array<string> pathClasses = {};
 	void GC_EntityReferenceCommitRequest()
 	{
+		RegV("wireValue");
+		RegV("rollbackValue");
 		RegV("operation");
 		RegV("adapterBuild");
 		RegV("token");
@@ -299,6 +303,121 @@ class GC_EntityReferenceCommit : Managed
 	protected static ref GC_PreparedEntityReference s_Prepared;
 
 	//------------------------------------------------------------------------------------------------
+	protected bool ApplyArrayWire(WorldEditorAPI api, IEntitySource destination, GC_PreparedEntityReference prepared, string wireValue)
+	{
+		if (!destination || !api.BeginEditSequence(destination))
+			return false;
+		bool registered = api.SetVariableValue(destination, prepared.m_aPath, prepared.m_sKey, wireValue);
+		bool rebuilt = api.EndEditSequence(destination);
+		return registered && rebuilt;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected bool NamedArrayMatches(WorldEditorAPI api, GC_PreparedEntityReference prepared, string name, array<string> values)
+	{
+		IEntitySource entity = api.FindEntityByID(prepared.m_EntityId);
+		IEntitySource destination = api.FindEntityByID(prepared.m_DestinationId);
+		IEntity live;
+		if (entity)
+			live = api.SourceToEntity(entity);
+		BaseContainer container = GC_EntityReferenceEdit.Resolve(destination, prepared.m_aPath);
+		if (!entity || !destination || !live || !container || !container.IsVariableSetDirectly(prepared.m_sKey))
+			return false;
+		if (entity.GetName() != name || live.GetName() != name || !GC_EntityReferenceEdit.MatchesArray(container, prepared.m_sExpectedClass, prepared.m_sKey, values))
+			return false;
+		return name.IsEmpty() || (api.FindEntityByName(name) == entity && api.GetWorld().FindEntityByName(name) == live);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected GC_EntityReferenceCommitResponse CommitArray(WorldEditorAPI api, GC_PreparedEntityReference prepared,
+		GC_EntityReferenceCommitRequest input, GC_EntityReferenceCommitResponse response)
+	{
+		response.reason = "Invalid typed command ownership";
+		if (!input.wireValue.StartsWith("@GC_ARRAY_") || !input.wireValue.EndsWith("_APPLY") || input.wireValue.Length() > 127)
+			return response;
+		if (!input.rollbackValue.StartsWith("@GC_ARRAY_") || !input.rollbackValue.EndsWith("_ROLLBACK") || input.rollbackValue.Length() > 127)
+			return response;
+		IEntitySource destination = api.FindEntityByID(prepared.m_DestinationId);
+		IEntitySource entity = api.FindEntityByID(prepared.m_EntityId);
+		response.reason = "Destination layer is not editable";
+		if (!destination || !entity || destination.GetSubScene() != api.GetCurrentSubScene() || api.IsEntityLayerLockedHierarchy(destination.GetSubScene(), destination.GetLayerID()))
+			return response;
+		// The typed command targets a captured local container. Creating inherited
+		// object overrides would replace that identity; refuse before mutation.
+		BaseContainer container = destination;
+		array<ref ContainerIdPathEntry> prefix = {};
+		response.reason = "Array destination is inherited or changed";
+		foreach (ContainerIdPathEntry entry : prepared.m_aPath)
+		{
+			if (!container || !container.IsVariableSetDirectly(entry.PropertyName))
+				return response;
+			prefix.Insert(entry);
+			container = GC_EntityReferenceEdit.Resolve(destination, prefix);
+		}
+		if (!NamedArrayMatches(api, prepared, prepared.m_sEntityName, prepared.m_aExpectedArray))
+			return response;
+		string proposed = GC_EntityReferenceEdit.ProposeName(api, entity, response.reason);
+		if (proposed.IsEmpty() || proposed != prepared.m_sProposedName)
+		{
+			response.reason = "Prepared entity name is no longer available";
+			return response;
+		}
+		response.name = proposed;
+		if (proposed == prepared.m_sExpectedValue && !prepared.m_sEntityName.IsEmpty())
+		{
+			response.state = "unchanged";
+			response.reason = "";
+			return response;
+		}
+		array<string> values = {};
+		foreach (string value : prepared.m_aExpectedArray)
+			values.Insert(value);
+		values[prepared.m_iArrayIndex] = proposed;
+		response.reason = "Cannot begin entity-array action";
+		if (!api.BeginEntityAction("Select entity array reference"))
+			return response;
+		bool written = ApplyArrayWire(api, destination, prepared, input.wireValue);
+		entity = api.FindEntityByID(prepared.m_EntityId);
+		if (written && entity && prepared.m_sEntityName.IsEmpty())
+			written = api.RenameEntity(entity, proposed);
+		written = written && NamedArrayMatches(api, prepared, proposed, values);
+		if (written)
+		{
+			response.state = "committed";
+			response.reason = "";
+		}
+		else
+		{
+			destination = api.FindEntityByID(prepared.m_DestinationId);
+			container = GC_EntityReferenceEdit.Resolve(destination, prepared.m_aPath);
+			bool restored = GC_EntityReferenceEdit.MatchesArray(container, prepared.m_sExpectedClass, prepared.m_sKey, prepared.m_aExpectedArray);
+			if (!restored && GC_EntityReferenceEdit.MatchesArray(container, prepared.m_sExpectedClass, prepared.m_sKey, values))
+				restored = ApplyArrayWire(api, destination, prepared, input.rollbackValue);
+			entity = api.FindEntityByID(prepared.m_EntityId);
+			if (entity && entity.GetName() != prepared.m_sEntityName)
+				restored = api.RenameEntity(entity, prepared.m_sEntityName) && restored;
+			restored = restored && NamedArrayMatches(api, prepared, prepared.m_sEntityName, prepared.m_aExpectedArray);
+			response.state = "rollback_failed";
+			if (restored)
+				response.state = "rolled_back";
+			response.reason = "Entity-array write did not verify";
+		}
+		bool ended = api.EndEntityAction();
+		api.UpdateSelectionGui();
+		bool finalMatches;
+		if (written)
+			finalMatches = NamedArrayMatches(api, prepared, proposed, values);
+		else
+			finalMatches = NamedArrayMatches(api, prepared, prepared.m_sEntityName, prepared.m_aExpectedArray);
+		if (!ended || !finalMatches)
+		{
+			response.state = "finalization_failed";
+			response.reason = "Final entity-array state did not verify; inspect before retrying";
+		}
+		return response;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	protected bool IsEligible(WorldEditorAPI api, string providerName, IEntitySource entity)
 	{
 		typename providerType = providerName.ToType();
@@ -310,17 +429,15 @@ class GC_EntityReferenceCommit : Managed
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected GC_EntityReferenceCommitResponse Commit(WorldEditorAPI api, string token, GC_EntityReferenceCommitResponse response)
+	protected GC_EntityReferenceCommitResponse Commit(WorldEditorAPI api, GC_EntityReferenceCommitRequest input, GC_EntityReferenceCommitResponse response)
 	{
 		response.reason = "Prepared edit is absent, superseded or already consumed";
-		if (!s_Prepared || s_Prepared.m_sToken != token)
+		if (!s_Prepared || s_Prepared.m_sToken != input.token)
 			return response;
 		ref GC_PreparedEntityReference prepared = s_Prepared;
 		s_Prepared = null;
-		// Array preparations cannot enter the scalar setter. Typed array commit
-		// is enabled only once its native-owner readiness contract is connected.
-		response.reason = "Prepared edit requires the typed array command owner";
-		if (prepared.m_iArrayIndex >= 0)
+		response.reason = "Prepared edit kind changed";
+		if ((prepared.m_iArrayIndex >= 0) != (input.operation == "commit_array"))
 			return response;
 		response.reason = "Prepared world or source changed";
 		string world;
@@ -343,6 +460,8 @@ class GC_EntityReferenceCommit : Managed
 			if (!current || current != prepared.m_aContainers[i])
 				return response;
 		}
+		if (prepared.m_iArrayIndex >= 0)
+			return CommitArray(api, prepared, input, response);
 		GC_EntityReferenceEditResult result = GC_EntityReferenceEdit.CommitScalar(api, entity, destination,
 			prepared.m_aPath, prepared.m_sExpectedClass, prepared.m_sKey, prepared.m_sExpectedValue);
 		response.state = result.m_sState;
@@ -366,7 +485,7 @@ class GC_EntityReferenceCommit : Managed
 			return response;
 		response.token = input.token;
 		response.reason = "Invalid or incompatible reference edit request";
-		if ((input.operation != "prepare_scalar" && input.operation != "prepare_array" && input.operation != "commit_scalar") || input.adapterBuild != response.adapterBuild)
+		if ((input.operation != "prepare_scalar" && input.operation != "prepare_array" && input.operation != "commit_scalar" && input.operation != "commit_array") || input.adapterBuild != response.adapterBuild)
 			return response;
 		if (input.token.IsEmpty() || input.token.Length() > 64)
 			return response;
@@ -378,8 +497,8 @@ class GC_EntityReferenceCommit : Managed
 		WorldEditorAPI api = editor.GetApi();
 		if (!api || !api.GetWorld() || !api.IsEditMode() || api.IsGameMode() || api.IsDoingEditAction())
 			return response;
-		if (input.operation == "commit_scalar")
-			return Commit(api, input.token, response);
+		if (input.operation == "commit_scalar" || input.operation == "commit_array")
+			return Commit(api, input, response);
 
 		bool isArray = input.operation == "prepare_array";
 		response.reason = "Invalid reference preparation";

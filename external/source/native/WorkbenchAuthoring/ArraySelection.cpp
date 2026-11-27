@@ -13,13 +13,13 @@
 
 namespace gc {
 ArraySelection::ArraySelection(QObject *source, QObject *editor, QComboBox *widget,
-    QString expectedBuild, std::function<void(QJsonObject)> logger)
+    QString expectedBuild, std::function<void(QJsonObject)> logger, bool routeSignals)
     : QObject(editor), property(source), combo(widget),
       build(std::move(expectedBuild)), log(std::move(logger))
 {
     const QPointer<ArraySelection> guard(this);
     auto error = NativeArrayCommands::install();
-    if (error.isEmpty()) error = PropertyEditors::routeSelection(editor, widget,
+    if (error.isEmpty() && routeSignals) error = PropertyEditors::routeSelection(editor, widget,
         [guard](int index) {
             if (guard && guard->combo && index >= 0)
                 guard->commit(guard->combo->itemData(index).toString());

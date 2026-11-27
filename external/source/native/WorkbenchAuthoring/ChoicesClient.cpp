@@ -43,7 +43,7 @@ private:
         if (editCompleted) {
             const auto operation = editRequest.value("operation").toString();
             static const QRegularExpression token(QStringLiteral("^[A-Za-z0-9_-]{1,64}$"));
-            if ((operation != "prepare_scalar" && operation != "prepare_array" && operation != "commit_scalar" && operation != "set_array_string") ||
+            if ((operation != "prepare_scalar" && operation != "prepare_array" && operation != "commit_scalar" && operation != "commit_array" && operation != "set_array_string") ||
                 !token.match(receipt).hasMatch() || QJsonDocument(editRequest).toJson(QJsonDocument::Compact).size() > 65536) {
                 fail("Invalid entity edit operation, token or request size"); return;
             }

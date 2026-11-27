@@ -41,7 +41,7 @@ manual developer load. Retain previous packages and evidence.
 ## 1.9.0.42 evidence
 
 Host SHA-256: `a81dd4ca52ebbca584d56fe4968c4a12f2f80f2ac7a0c0a176b68ea23294c9b6`.
-Native DLL SHA-256: `07672a3805b319f54f1e393394fec743d5d3904f6b17d08d3b956e4aa0b1ae2f`.
+Native DLL SHA-256: `5e4140b4e583125797b2d6c06d2ba26fec701c0cbb56226916f4b2714e1b9157`.
 The 1.9.0.37 comparison found 31 unique operands, one ambiguous accessor and
 four unresolved table operands. Caller/type evidence and explicit virtual-table
 comparisons resolved those five; the reviewed map is retained in the local
@@ -62,8 +62,14 @@ and restored together by one Redo. Manually typed array text containing a comma
 also preserved its neighbors and survived undo/redo. These exercised the
 installed production DLL and its normal editor signals.
 
-Entity-array identity selection is a separate unfinished contract: existing
-array fields use value providers; scalar identity selection does not imply
-unnamed-entity array support. Do not claim this scenario from string-array tests.
+Entity arrays now use the entity provider's identity contract, including
+waypoints and named targets. A read-only preparation verifies eligibility,
+world, source, local path and complete array contents. Commit revalidates those
+identities and adopts the native typed command; naming and the selected entry
+share one editor history action. Literal text and None use the same string-array
+owner as other arrays. Live tests passed unnamed selection with unchanged
+neighbors, grouped undo/redo and save/reopen. Inherited object paths remain
+explicitly refused: creating an override would invalidate the captured native
+container. Unknown outcomes retain their receipt and disable further edits.
 The broad update acceptance and original multi-addon project verification remain
 separate from these focused receipts.

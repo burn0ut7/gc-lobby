@@ -33,19 +33,20 @@ public:
           expectedBuild(std::move(build)), log(std::move(logger))
     {
 
-        if (arrayIndex >= 0)
-            arraySelection = new ArraySelection(property, editor, combo, expectedBuild, log);
-        else if (entities)
+        if (entities)
             entitySelection = new EntitySelection(property, editor, combo, provider, expectedBuild, log);
+        else if (arrayIndex >= 0)
+            arraySelection = new ArraySelection(property, editor, combo, expectedBuild, log);
         const QPointer<ReferenceField> guard(this);
         binding = new EditableChoices(combo, [guard](quint64 id) { if (guard) guard->refresh(id); });
         connect(property, &QObject::destroyed, this, &QObject::deleteLater);
         // Array commits need a world even when the user only types a literal.
         // Do not populate every dropdown while Workbench builds a property panel.
-        if (!arraySelection) return;
+        if (arrayIndex < 0) return;
         ChoicesClient::fetch(this, expectedBuild, provider, [guard](ChoicesReply reply) {
             if (!guard) return;
             if (guard->arraySelection) guard->arraySelection->setWorld(reply.world);
+            if (guard->entitySelection) guard->entitySelection->setWorld(reply.world);
             guard->log({{"event", "choicesContext"}, {"provider", guard->provider},
                 {"state", reply.state}, {"world", reply.world}, {"error", reply.error}});
         }, ChoiceKind::Context);

@@ -1,5 +1,6 @@
 #pragma once
 #include "PropertySource.h"
+#include "ArraySelection.h"
 #include <QComboBox>
 #include <QJsonObject>
 #include <QPointer>
@@ -12,11 +13,12 @@ public:
     EntitySelection(QObject *property, QObject *editor, QComboBox *combo, QString provider,
         QString build, std::function<void(QJsonObject)> log);
     bool ready() const { return enabled; }
-    void setWorld(QString value) { world = std::move(value); }
-    bool isBusy() const { return busy; }
+    void setWorld(QString value) { world = std::move(value); if (literalArray) literalArray->setWorld(world); }
+    bool isBusy() const { return busy || (literalArray && literalArray->isBusy()); }
 private:
     QPointer<QObject> property, editor;
     QPointer<QComboBox> combo;
+    QPointer<ArraySelection> literalArray;
     QString provider, build, world, initialValue;
     std::function<void(QJsonObject)> log;
     bool enabled = false, busy = false;

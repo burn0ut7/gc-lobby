@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 {
     QCoreApplication app(argc, argv);
     const QString build(64, QChar('A'));
-    for (int scenario = 0; scenario < 23; ++scenario) {
+    for (int scenario = 0; scenario < 24; ++scenario) {
         auto lifetime = std::make_unique<QObject>();
         QEventLoop loop;
         QTimer timeout;
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
                         "Calls edit owner with original preparation receipt and validated build");
                     reply.insert("state", scenario == 11 || scenario == 19 ? "prepared" : "committed");
                     reply.insert("name", "GeneratedEntity1");
-                    if (scenario >= 19) {
+                    if (scenario >= 19 && scenario <= 22) {
                         require(request.value("operation") == (scenario == 22 ? "set_array_string" : "prepare_array") &&
                             request.value("expectedArray").toArray() == QJsonArray{" leading ", "a,b", "", QString::fromUtf8("Équipe"), ""},
                             "Array preparation preserves literal values and trailing empty entries");
@@ -75,6 +75,9 @@ int main(int argc, char **argv)
                     if (scenario == 14) reply.insert("token", "wrong-receipt");
                     if (scenario == 16) { reply.insert("state", "refused"); reply.insert("reason", "Destination changed"); }
                     if (scenario == 17) { reply.insert("state", "finalization_failed"); reply.insert("reason", "Inspect before retrying"); }
+                    if (scenario == 23) require(request.value("operation") == "commit_array" &&
+                        request.value("wireValue") == "@GC_ARRAY_test_APPLY" &&
+                        request.value("rollbackValue") == "@GC_ARRAY_test_ROLLBACK", "Entity-array commit retains both native command tokens");
                 }
                 auto response = QJsonDocument(reply).toJson(QJsonDocument::Compact);
                 if (scenario == 3) response = QByteArray(65537, 'x');
@@ -90,7 +93,8 @@ int main(int argc, char **argv)
             }, scenario >= 5 ? gc::ChoiceKind::Entities : gc::ChoiceKind::Values);
         } else {
             gc::ChoicesClient::edit(lifetime.get(), build,
-                {{"operation", scenario == 22 ? "set_array_string" : (scenario >= 19 ? "prepare_array" : (scenario == 11 || scenario == 13 ? "prepare_scalar" : "commit_scalar"))},
+                {{"operation", scenario == 23 ? "commit_array" : (scenario == 22 ? "set_array_string" : (scenario >= 19 ? "prepare_array" : (scenario == 11 || scenario == 13 ? "prepare_scalar" : "commit_scalar")))},
+                 {"wireValue", "@GC_ARRAY_test_APPLY"}, {"rollbackValue", "@GC_ARRAY_test_ROLLBACK"},
                  {"expectedArray", QJsonArray{" leading ", "a,b", "", QString::fromUtf8("Équipe"), ""}},
                  {"token", "test-receipt"}, {"handler", "must-be-replaced"}, {"adapterBuild", "must-be-replaced"}},
                 [&](gc::EntityEditReply reply) {
@@ -129,6 +133,7 @@ int main(int argc, char **argv)
         if (scenario == 20) require(editObserved.state == "unavailable" && editObserved.error.contains("phase"), "Reject mutation result for array preparation");
         if (scenario == 21) require(editObserved.state == "refused" && editObserved.reason == "Array contents changed", "Preserve array preparation refusal");
         if (scenario == 22) require(editObserved.state == "committed", "Direct string-array edit reaches its owning handler");
+        if (scenario == 23) require(editObserved.state == "committed" && editObserved.name == "GeneratedEntity1", "Entity-array commit reaches identity owner once");
     }
     {
         QObject lifetime;
