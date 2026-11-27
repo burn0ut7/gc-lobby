@@ -771,6 +771,8 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 		if (Replication.IsServer())
 		{
 			RecordAdminSessionEvent(playerId, true, 0);
+			if (mode && mode.GetMapPlans())
+				mode.GetMapPlans().UpdatePlayerMarkerOwnership(playerId, true);
 			QueuePlayerCatchUp(playerId);
 		}
 
@@ -801,6 +803,8 @@ class GC_LobbyManager : SCR_BaseGameModeComponent
 		bool isShutdown = causeGroup == RplKickCauseGroup.REPLICATION && KickCauseCodeAPI.GetReason(cause) == RplError.SHUTDOWN;
 		if (Replication.IsServer() && !isShutdown)
 		{
+			if (mode && mode.GetMapPlans())
+				mode.GetMapPlans().UpdatePlayerMarkerOwnership(playerId, false);
 			RecordAdminSessionEvent(playerId, false, KickCauseCodeAPI.GetReason(cause));
 			HandlePlayerDisconnected(playerId);
 		}

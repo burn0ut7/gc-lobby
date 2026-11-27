@@ -2,6 +2,7 @@
 class GC_MapPlans
 {
 	protected GC_LobbyGameMode m_Mode;
+	protected ref map<int, UUID> m_mMarkerCreators = new map<int, UUID>();
 	protected ref GC_MapPlanDrawings m_Drawings = new GC_MapPlanDrawings();
 	protected bool m_bReady;
 	protected bool m_bReplacing;
@@ -61,6 +62,63 @@ class GC_MapPlans
 	protected bool IsActive()
 	{
 		return Replication.IsServer() && m_Mode && m_Mode == GC_LobbyGameMode.GetGameMode();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	void MarkerAdded(SCR_MapMarkerBase marker)
+	{
+		int ownerId = marker.GetMarkerOwnerID();
+		if (ownerId > 0)
+			m_mMarkerCreators.Set(marker.GetMarkerID(), SCR_PlayerIdentityUtils.GetPlayerIdentityId(ownerId));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	void MarkerRemoved(int markerId)
+	{
+		m_mMarkerCreators.Remove(markerId);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	void UpdatePlayerMarkerOwnership(int playerId, bool connected)
+	{
+		SCR_MapMarkerManagerComponent manager = SCR_MapMarkerManagerComponent.GetInstance();
+		if (!IsActive() || !manager || manager.GetOwner() != m_Mode || playerId <= 0)
+			return;
+
+		PlayerController controller = GetGame().GetPlayerManager().GetPlayerController(playerId);
+		SCR_MapMarkerSyncComponent sync;
+		if (controller)
+			sync = SCR_MapMarkerSyncComponent.Cast(controller.FindComponent(SCR_MapMarkerSyncComponent));
+		UUID identity;
+		if (connected)
+		{
+			identity = SCR_PlayerIdentityUtils.GetPlayerIdentityId(playerId);
+			if (identity.IsEmpty() || !sync)
+				return;
+		}
+
+		array<SCR_MapMarkerBase> markers = manager.GetStaticMarkers();
+		markers.InsertAll(manager.GetDisabledMarkers());
+		foreach (SCR_MapMarkerBase marker : markers)
+		{
+			int id = marker.GetMarkerID();
+			if (connected)
+			{
+				if (m_mMarkerCreators.Get(id) != identity)
+					continue;
+
+				sync.GC_RestoreOwnedMarker(id);
+				if (marker.GetMarkerOwnerID() != playerId)
+					manager.GC_SetSharedMarkerOwner(marker, playerId);
+			}
+			else if (marker.GetMarkerOwnerID() == playerId)
+			{
+				if (sync)
+					sync.RemovePlayerMarker(id);
+				// Zero belongs to no player. -1 is reserved for mission markers.
+				manager.GC_SetSharedMarkerOwner(marker, 0);
+			}
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------

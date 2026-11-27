@@ -1,5 +1,36 @@
 modded class SCR_MapMarkerManagerComponent
 {
+	// Stock disconnect cleanup deletes shared markers and has no retention setting.
+	override void OnPlayerDisconnected(int playerId, KickCauseCode cause, int timeout)
+	{
+		if (GC_MapPlans.GetInstance() && GetOwner() == GC_LobbyGameMode.GetGameMode())
+			return;
+
+		super.OnPlayerDisconnected(playerId, cause, timeout);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	// Ownership is part of the stock JIP snapshot. Existing clients need the delta.
+	void GC_SetSharedMarkerOwner(SCR_MapMarkerBase marker, int ownerId)
+	{
+		marker.SetMarkerOwnerID(ownerId);
+		Rpc(GC_DoSetSharedMarkerOwner, marker.GetMarkerID(), ownerId);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	[RplRpc(RplChannel.Reliable, RplRcver.Broadcast)]
+	protected void GC_DoSetSharedMarkerOwner(int markerId, int ownerId)
+	{
+		if (!GC_LobbyGameMode.GetGameMode() || GetOwner() != GC_LobbyGameMode.GetGameMode())
+			return;
+
+		SCR_MapMarkerBase marker = GetStaticMarkerByID(markerId);
+		if (!marker)
+			marker = GetDisabledMarkerByID(markerId);
+		if (marker)
+			marker.SetMarkerOwnerID(ownerId);
+	}
+
 	//------------------------------------------------------------------------------------------------
 	override void OnAddSynchedMarker(SCR_MapMarkerBase marker)
 	{
@@ -14,6 +45,7 @@ modded class SCR_MapMarkerManagerComponent
 			marker.SetServerDisabled(true);
 			m_aDisabledMarkers.Insert(marker);
 		}
+		plans.MarkerAdded(marker);
 		plans.Changed();
 	}
 
@@ -23,7 +55,10 @@ modded class SCR_MapMarkerManagerComponent
 		super.OnRemoveSynchedMarker(markerID);
 		GC_MapPlans plans = GC_MapPlans.GetInstance();
 		if (plans)
+		{
+			plans.MarkerRemoved(markerID);
 			plans.Changed();
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------
