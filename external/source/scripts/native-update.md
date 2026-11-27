@@ -56,6 +56,12 @@ commas, Unicode, neighboring entries and save/reopen. Scalar entity selection
 and its history passed. Automatic startup verified the installed DLL hash,
 property hook and menu icons on the exact host.
 
+Further live checks verified unnamed scalar entity selection: generated name
+and destination reference were applied together, reverted together by one Undo,
+and restored together by one Redo. Manually typed array text containing a comma
+also preserved its neighbors and survived undo/redo. These exercised the
+installed production DLL and its normal editor signals.
+
 Entity-array identity selection is a separate unfinished contract: existing
 array fields use value providers; scalar identity selection does not imply
 unnamed-entity array support. Do not claim this scenario from string-array tests.
