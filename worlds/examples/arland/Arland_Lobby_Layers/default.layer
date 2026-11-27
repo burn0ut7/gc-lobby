@@ -1,10 +1,6 @@
 GC_LobbyGameMode GC_MissionTemplate : "{A79C4E0A43DEB821}Prefabs/MP/Modes/GC_LobbyGameMode.et" {
  components {
   GC_LobbyManager "{6A137A39106A4973}" {
-   m_aMissionEvents {
-    GC_Event "{6ADCEE025676459B}" {
-    }
-   }
    m_aBriefings {
     GC_Briefing "{6A16111600000001}" {
      m_iOrder 1
