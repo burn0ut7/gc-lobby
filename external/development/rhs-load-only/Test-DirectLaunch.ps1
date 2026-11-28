@@ -94,4 +94,15 @@ try { $errorOutput = & $batch $export -PlanOnly 2>&1 } finally { $ErrorActionPre
 Check ($LASTEXITCODE -ne 0 -and "$errorOutput" -like '*2 server configs*') 'Ambiguous configuration was silently selected'
 & $batch $export -Config "$box\community.json" -PlanOnly | Out-Null
 Check ($LASTEXITCODE -eq 0) 'Explicit config override failed'
+$configFolder = [IO.Directory]::CreateDirectory((Join-Path $box 'configs')).FullName
+$gcConfig = Join-Path $configFolder 'new-modpack.json'
+Copy-Item -LiteralPath $config -Destination $gcConfig
+& $batch $export -PlanOnly | Out-Null
+Check ($LASTEXITCODE -eq 0) 'GC config did not take precedence over root JSON files'
+Save-TestJson $gcConfig @{invalid=$true}
+$ErrorActionPreference = 'Continue'
+try { $errorOutput = & $batch $export -PlanOnly 2>&1 } finally { $ErrorActionPreference = 'Stop' }
+Check ($LASTEXITCODE -ne 0 -and "$errorOutput" -like '*must contain a game object*') 'Invalid GC config was ignored'
+& $batch $export -Config "$box\community.json" -PlanOnly | Out-Null
+Check ($LASTEXITCODE -eq 0) 'Explicit path did not override the GC config'
 Write-Output "Passed shared config, two missions, version pin, optional overlap, transitive receipt and wrong-addon rejection. Evidence: $root"

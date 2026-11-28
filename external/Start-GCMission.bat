@@ -305,6 +305,10 @@ $versionPins = Get-AddonVersionPins $metadata.requiredAddonVersions
 $required = @(@($metadata.requiredAddonIds) + @($versionPins.Keys) |
     ForEach-Object { Get-AddonGuid $_ })
 if (!$Config) {
+    $gcConfig = Join-Path $ServerDirectory 'configs\new-modpack.json'
+    if (Test-Path -LiteralPath $gcConfig -PathType Leaf) { $Config = $gcConfig }
+}
+if (!$Config) {
     $candidates = @(
         foreach ($file in Get-ChildItem -LiteralPath $ServerDirectory -File -Filter '*.json') {
             if ($file.Name -eq 'gc-launch.generated.json') { continue }

@@ -11,9 +11,10 @@ PowerShell 5.1. You can also call it from a terminal or scheduler:
 .\Start-GCMission.bat "C:\GC\MissionAddon\Missions\Operation.conf" -Config "C:\GC\private\event.json"
 ```
 
-Discovery uses the single JSON with a `game` object beside the batch file,
-regardless of its filename or the caller's working directory. With multiple
-matches or a config elsewhere, pass `-Config`. Keep your normal server settings
+By default the launcher uses `configs\new-modpack.json` under the server
+directory beside the batch file. If that file is absent, it looks for a single
+JSON with a `game` object beside the batch file. An explicit `-Config` path
+overrides either default. Keep your normal server settings
 and always-on mods there. Pass a different mission path for the next launch.
 Add `-PlanOnly` to preview the
 scenario and merged mod list without downloading anything or starting a process.
